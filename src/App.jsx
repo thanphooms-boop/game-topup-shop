@@ -200,7 +200,6 @@ export default function GameTopupApp() {
       setOrders([newOrder, ...orders]);
       setIsProcessing(false);
       setOrderSuccess(newOrderId);
-      // รีเซ็ตข้อมูลบัตร
       setCardNumber('');
       setCardExp('');
       setCardCvv('');
@@ -224,10 +223,36 @@ export default function GameTopupApp() {
       
       {/* NAVBAR */}
       <header style={{ backgroundColor: '#111827', borderBottom: '1px solid #1f2937', padding: '15px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
-          <div style={{ backgroundColor: '#9333ea', padding: '8px 12px', borderRadius: '12px', fontSize: '20px' }}>🎮</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
+          
+          {/* LOGO ICON (Cyberpunk Shield with Gamepad & Lightning) */}
+          <div style={{
+            width: '44px',
+            height: '44px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, rgba(147,51,234,0.3), rgba(56,189,248,0.2))',
+            border: '1.5px solid #a855f7',
+            display: 'flex',
+            alignItems: 'center',
+            justify: 'center',
+            boxShadow: '0 0 15px rgba(168, 85, 247, 0.4)'
+          }}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L3 6V12C3 17.52 6.84 22.74 12 24C17.16 22.74 21 17.52 21 12V6L12 2Z" fill="url(#shield-grad)" stroke="#c084fc" strokeWidth="1.5" />
+              <path d="M7 11C6.44772 11 6 11.4477 6 12C6 12.5523 6.44772 13 7 13C7.55228 13 8 12.5523 8 12C8 11.4477 7.55228 11 7 11Z" fill="#38bdf8" />
+              <path d="M17 11C16.4477 11 16 11.4477 16 12C16 12.5523 16.4477 13 17 13C17.5523 13 18 12.5523 18 12C18 11.4477 17.5523 11 17 11Z" fill="#38bdf8" />
+              <path d="M13 3L7 13H12L11 21L17 11H12L13 3Z" fill="#38bdf8" stroke="#ffffff" strokeWidth="0.8" />
+              <defs>
+                <linearGradient id="shield-grad" x1="3" y1="2" x2="21" y2="24" gradientUnits="userSpaceOnUse">
+                  <stop stopColor="#581c87" stopOpacity="0.8"/>
+                  <stop offset="1" stopColor="#0284c7" stopOpacity="0.8"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+
           <div>
-            <div style={{ fontSize: '22px', fontWeight: '900', color: '#c084fc', letterSpacing: '1px' }}>CYBER TOPUP</div>
+            <div style={{ fontSize: '22px', fontWeight: '900', color: '#c084fc', letterSpacing: '1px', textShadow: '0 0 10px rgba(192,132,252,0.5)' }}>CYBER TOPUP</div>
             <div style={{ fontSize: '10px', color: '#9ca3af', letterSpacing: '2px', textTransform: 'uppercase' }}>Fast & Secure Gaming</div>
           </div>
         </div>
@@ -543,7 +568,7 @@ export default function GameTopupApp() {
 
       </main>
 
-      {/* POPUP MODAL (รองรับทั้ง QR PromptPay และ ฟอร์มกรอกบัตรเครดิต) */}
+      {/* POPUP MODAL */}
       {showCheckoutModal && selectedGame && selectedPackage && selectedPayment && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.8)' }}>
@@ -554,7 +579,6 @@ export default function GameTopupApp() {
                 </h3>
 
                 {selectedPayment.id === 'card' ? (
-                  /* ฟอร์มกรอกข้อมูลบัตรเครดิตปกติ */
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', textAlign: 'left' }}>
                     <div>
                       <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>หมายเลขบัตร (16 หลัก)</label>
@@ -596,7 +620,6 @@ export default function GameTopupApp() {
                     </div>
                   </div>
                 ) : (
-                  /* แสดง QR Code สำหรับช่องทางอื่น */
                   <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 20px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ color: '#000000', fontSize: '13px', fontWeight: 'bold' }}>{selectedPayment.name}<br/>฿{selectedPackage.price}</div>
                   </div>
