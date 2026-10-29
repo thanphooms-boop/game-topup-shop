@@ -44,10 +44,11 @@ export default function GameTopupApp() {
   const [adminPin, setAdminPin] = useState('');
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
 
-  // Checkout Modal State & Password Confirmation
+  // Checkout Modal State & Password Confirmation Flow
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState(1); // 1: Password & ID Confirm, 2: QR Code / Pay Execution, 3: Success
   const [checkoutPassword, setCheckoutPassword] = useState('');
-  const [showCheckoutPassword, setShowCheckoutPassword] = useState(false); // State สำหรับซ่อน/แสดงรหัสผ่านตอนจ่ายเงิน
+  const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
   const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
@@ -322,8 +323,8 @@ export default function GameTopupApp() {
     setIsWalletProcessing(false);
   };
 
-  // Checkout Handler with Password Verification & ID Confirmation Popup
-  const handleCheckoutConfirm = (e) => {
+  // Step 1: Verify Password first before showing payment QR Code / Processing
+  const handleVerifyPasswordStep = (e) => {
     e.preventDefault();
     setCheckoutPasswordError('');
 
@@ -332,16 +333,23 @@ export default function GameTopupApp() {
       return;
     }
 
+    if (selectedPayment.id === 'wallet' && user.balance < selectedPackage.price) {
+      setCheckoutPasswordError('ยอดเงินใน Cyber Wallet ของคุณไม่พอ กรุณาเติมเงินเข้าระบบก่อนครับ');
+      return;
+    }
+
+    // Go to Step 2: Pay / QR Code
+    setCheckoutStep(2);
+  };
+
+  // Step 2: Finalize Payment
+  const handleFinalPaymentSubmit = () => {
     if (selectedPayment.id === 'wallet') {
-      if (user.balance < selectedPackage.price) {
-        alert('ยอดเงินใน Cyber Wallet ของคุณไม่พอ กรุณาเติมเงินเข้าระบบก่อนครับ');
-        return;
-      }
       setUser(prev => ({ ...prev, balance: prev.balance - selectedPackage.price }));
     }
 
     setIsProcessing(true);
-    
+
     setTimeout(() => {
       const newOrderId = 'ORD-' + Math.floor(10000 + Math.random() * 90000);
       const now = new Date();
@@ -360,6 +368,7 @@ export default function GameTopupApp() {
       setOrders([newOrder, ...orders]);
       setIsProcessing(false);
       setOrderSuccess(newOrderId);
+      setCheckoutStep(3);
       setCheckoutPassword('');
       setShowCheckoutPassword(false);
       setCardNumber('');
@@ -368,6 +377,15 @@ export default function GameTopupApp() {
       setTrueWalletNumber('');
       setTrueCashCardPin('');
     }, 1200);
+  };
+
+  const resetCheckoutModal = () => {
+    setShowCheckoutModal(false);
+    setCheckoutStep(1);
+    setCheckoutPassword('');
+    setShowCheckoutPassword(false);
+    setCheckoutPasswordError('');
+    setOrderSuccess(null);
   };
 
   const filteredGames = gamesData.filter(game => {
@@ -838,7 +856,7 @@ export default function GameTopupApp() {
                 </div>
               </div>
 
-              {/* RIGHT SUMMARY & DYNAMIC PAYMENT INPUTS / QR CODE BOX */}
+              {/* RIGHT SUMMARY & DYNAMIC PAYMENT INPUTS */}
               <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '20px', height: 'fit-content', position: 'sticky', top: '100px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 15px 0', borderBottom: '1px solid #1f2937', paddingBottom: '10px' }}>สรุปคำสั่งซื้อ</h3>
 
@@ -848,21 +866,6 @@ export default function GameTopupApp() {
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#9ca3af' }}>แพ็กเกจ:</span> <span>{selectedPackage ? selectedPackage.name : '-'}</span></div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#9ca3af' }}>ช่องทางชำระ:</span> <span style={{ color: '#38bdf8' }}>{selectedPayment ? selectedPayment.name : '-'}</span></div>
                 </div>
-
-                {/* SHOW QR CODE WHEN PROMPTPAY IS SELECTED */}
-                {selectedPayment?.id === 'qrcode' && (
-                  <div style={{ backgroundColor: '#030712', border: '1px solid #38bdf8', borderRadius: '16px', padding: '15px', marginBottom: '15px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 'bold', marginBottom: '8px' }}>📱 สแกน QR Code ชำระเงิน</div>
-                    <div style={{ backgroundColor: '#ffffff', padding: '10px', borderRadius: '12px', display: 'inline-block' }}>
-                      <img 
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=PromptPay-CyberTopup-${selectedPackage ? selectedPackage.price : 0}`} 
-                        alt="QR PromptPay" 
-                        style={{ width: '150px', height: '150px', display: 'block' }}
-                      />
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '8px' }}>สแกนได้ด้วยแอปธนาคารทุกธนาคาร</div>
-                  </div>
-                )}
 
                 {/* DYNAMIC INPUTS ACCORDING TO SELECTED PAYMENT */}
                 {selectedPayment?.id === 'true' && (
@@ -945,7 +948,7 @@ export default function GameTopupApp() {
                     (selectedPayment.id === 'truemoney' && (!trueCashCardPin || trueCashCardPin.length < 14)) ||
                     (selectedPayment.id === 'card' && (!cardNumber || cardNumber.length < 16 || !cardExp || !cardCvv))
                   }
-                  onClick={() => setShowCheckoutModal(true)}
+                  onClick={() => { setCheckoutStep(1); setShowCheckoutModal(true); }}
                   style={{ 
                     width: '100%', 
                     backgroundColor: (
@@ -1212,16 +1215,17 @@ export default function GameTopupApp() {
         </div>
       )}
 
-      {/* MODAL 2: CHECKOUT PASSWORD & ID CONFIRMATION */}
+      {/* MODAL 2: CHECKOUT MULTI-STEP (PASSWORD CONFIRM -> QR SCAN/PAY -> SUCCESS) */}
       {showCheckoutModal && selectedGame && selectedPackage && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(147,51,234,0.3)' }}>
-            {!orderSuccess ? (
-              <form onSubmit={handleCheckoutConfirm}>
+            
+            {/* STEP 1: PASSWORD & ID CONFIRMATION */}
+            {checkoutStep === 1 && (
+              <form onSubmit={handleVerifyPasswordStep}>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 10px 0', color: '#c084fc' }}>🔐 ยืนยันความถูกต้องก่อนชำระเงิน</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรุณาตรวจสอบ Player ID และกรอกรหัสผ่านเพื่อยืนยันการทำรายการ</p>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรุณาตรวจสอบ Player ID และกรอกรหัสผ่านเพื่อยืนยันตัวตน</p>
 
-                {/* ID Verification Box */}
                 <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '14px', marginBottom: '20px', textAlign: 'left' }}>
                   <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '2px' }}>เกมที่เติม: <b style={{ color: '#ffffff' }}>{selectedGame.name}</b></div>
                   <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '2px' }}>แพ็กเกจ: <b style={{ color: '#34d399' }}>{selectedPackage.name} (฿{selectedPackage.price})</b></div>
@@ -1239,7 +1243,6 @@ export default function GameTopupApp() {
                 <div style={{ textAlign: 'left', marginBottom: '20px' }}>
                   <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '6px' }}>รหัสผ่านบัญชีของคุณ ({user.username})</label>
                   
-                  {/* Password Input with Toggle Eye Button */}
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <input 
                       type={showCheckoutPassword ? 'text' : 'password'}
@@ -1260,23 +1263,59 @@ export default function GameTopupApp() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={() => { setShowCheckoutModal(false); setCheckoutPassword(''); setShowCheckoutPassword(false); setCheckoutPasswordError(''); }} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
+                  <button type="button" onClick={resetCheckoutModal} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
                   <button 
                     type="submit"
-                    disabled={!checkoutPassword || isProcessing}
-                    style={{ flex: 1, backgroundColor: (!checkoutPassword || isProcessing) ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: (!checkoutPassword || isProcessing) ? 'not-allowed' : 'pointer' }}
+                    disabled={!checkoutPassword}
+                    style={{ flex: 1, backgroundColor: !checkoutPassword ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: !checkoutPassword ? 'not-allowed' : 'pointer' }}
                   >
-                    {isProcessing ? 'กำลังดำเนินการ...' : 'ยืนยันและชำระเงิน'}
+                    ถัดไป (สแกน/ชำระ) →
                   </button>
                 </div>
               </form>
-            ) : (
+            )}
+
+            {/* STEP 2: QR CODE SCAN / EXECUTE PAYMENT */}
+            {checkoutStep === 2 && (
+              <div>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#38bdf8' }}>📱 สแกน QR Code ชำระเงิน</h3>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>
+                  ช่องทาง: <b style={{ color: '#ffffff' }}>{selectedPayment.name}</b> | ยอดชำระ: <b style={{ color: '#34d399' }}>฿{selectedPackage.price}</b>
+                </p>
+
+                <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 15px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Checkout-PromptPay-${selectedPackage.price}`} 
+                    alt="Checkout QR Code" 
+                    style={{ width: '150px', height: '150px' }}
+                  />
+                </div>
+
+                <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*สแกนผ่านแอปธนาคารแล้วกดปุ่ม "ยืนยันการชำระเงิน" ด้านล่าง</p>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="button" onClick={() => setCheckoutStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
+                  <button 
+                    type="button"
+                    disabled={isProcessing}
+                    onClick={handleFinalPaymentSubmit}
+                    style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    {isProcessing ? 'กำลังตรวจสอบ...' : 'ยืนยันการชำระเงิน'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: SUCCESS */}
+            {checkoutStep === 3 && (
               <div>
                 <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเงินสำเร็จ!</h3>
                 <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>เลขออร์เดอร์ของคุณคือ <b style={{ color: '#c084fc' }}>{orderSuccess}</b></p>
-                <button onClick={() => { setShowCheckoutModal(false); setOrderSuccess(null); setSelectedGame(null); }} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>กลับสู่หน้าหลัก</button>
+                <button onClick={resetCheckoutModal} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>กลับสู่หน้าหลัก</button>
               </div>
             )}
+
           </div>
         </div>
       )}
