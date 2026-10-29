@@ -48,14 +48,14 @@ export default function GameTopupApp() {
   const [walletTimeLeft, setWalletTimeLeft] = useState(180);
   const [isWalletQrExpired, setIsWalletQrExpired] = useState(false);
 
-  // ข้อมูลที่ต้องกรอกสำหรับช่องทางพิเศษ
+  // ข้อมูลฟอร์มชำระเงินเพิ่มเติม
   const [truemoneyPhone, setTruemoneyPhone] = useState('');
-  const [truemoneyRef, setTruemoneyRef] = useState('');
+  const [truemoneyCard14, setTruemoneyCard14] = useState('');
   const [creditCardNum, setCreditCardNum] = useState('');
   const [creditCardExp, setCreditCardExp] = useState('');
   const [creditCardCvv, setCreditCardCvv] = useState('');
 
-  // Background Wallet Auto-Topup State (10 Seconds)
+  // Background Wallet Auto-Topup State (10 Seconds with Counter)
   const [isWalletAutoRunning, setIsWalletAutoRunning] = useState(false);
   const [walletAutoSeconds, setWalletAutoSeconds] = useState(10);
   const [pendingWalletAmount, setPendingWalletAmount] = useState(0);
@@ -63,7 +63,7 @@ export default function GameTopupApp() {
   const [showWalletSuccessPopup, setShowWalletSuccessPopup] = useState(false);
   const [lastAddedAmount, setLastAddedAmount] = useState(0);
 
-  // Order Tracking & Pagination State (สูงสุด 10 รายการต่อหน้า แยกตามวัน)
+  // Order Tracking & Pagination State
   const [trackQuery, setTrackQuery] = useState('');
   const [trackCurrentPage, setTrackCurrentPage] = useState(1);
 
@@ -74,7 +74,7 @@ export default function GameTopupApp() {
     }
     return [
       { id: 'ORD-14914', game: 'Avatar Star', package: '1,000 Diamonds', price: 300, player: '11', status: 'รอตรวจสอบ [สะดุดใน 10s]', type: 'game', time: '25/04/2026 22:44 น.', dateKey: '2026-04-25', timestamp: Date.now() - 100000 },
-      { id: 'ORD-48751', game: 'Free Fire', package: '1,166 Diamonds', price: 350, player: '11', status: 'สำเร็จ (เพิ่มออโต้)', type: 'game', time: '25/04/2026 22:44 น.', dateKey: '2026-04-25', timestamp: Date.now() - 200000 }
+      { id: 'ORD-48751', game: 'Genshin Impact', package: '300 Genesis Crystals', price: 179, player: '11', status: 'สำเร็จ (เพิ่มออโต้)', type: 'game', time: '25/04/2026 22:44 น.', dateKey: '2026-04-25', timestamp: Date.now() - 200000 }
     ];
   });
 
@@ -82,7 +82,7 @@ export default function GameTopupApp() {
     localStorage.setItem('cyber_topup_orders', JSON.stringify(orders));
   }, [orders]);
 
-  // Admin State & Dynamic PIN System (PIN: 123456)
+  // Admin State & PIN (PIN: 123456)
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminPin, setAdminPin] = useState('123456');
   const [inputAdminPin, setInputAdminPin] = useState('');
@@ -100,14 +100,14 @@ export default function GameTopupApp() {
   const [timeLeft, setTimeLeft] = useState(180);
   const [isQrExpired, setIsQrExpired] = useState(false);
 
-  // Background Game Checkout Auto-Topup State (10s)
+  // Background Game Checkout Auto-Topup State (10s with Counter)
   const [isGameAutoRunning, setIsGameAutoRunning] = useState(false);
   const [gameAutoSeconds, setGameAutoSeconds] = useState(10);
   const [pendingGameOrderId, setPendingGameOrderId] = useState('');
   const [showGameSuccessPopup, setShowGameSuccessPopup] = useState(false);
   const [lastGameName, setLastGameName] = useState('');
 
-  // ฐานข้อมูลเกมทั้งหมด พร้อมปกที่ไม่ซ้ำกันและสื่อถึงจุดเด่น
+  // ฐานข้อมูลเกมทั้งหมด พร้อมปกที่โดดเด่นไม่ซ้ำกัน
   const [gamesData] = useState([
     {
       id: 'avatarstar',
@@ -120,6 +120,19 @@ export default function GameTopupApp() {
         { id: 'as2', name: '1,000 Diamonds', price: 300, bonus: '+50' },
         { id: 'as3', name: '2,100 Diamonds', price: 600, bonus: '+150' },
         { id: 'as4', name: '3,600 Diamonds', price: 1000, bonus: '+300' },
+      ]
+    },
+    {
+      id: 'genshin',
+      name: 'Genshin Impact',
+      publisher: 'HoYoverse',
+      image: 'https://images.unsplash.com/photo-1612287233202-b51e3ed6168c?auto=format&fit=crop&w=500&q=80',
+      badge: 'ยอดฮิตแนะนำ ✨',
+      packages: [
+        { id: 'g1', name: '60 Genesis Crystals', price: 35, bonus: '+0' },
+        { id: 'g2', name: '300 Genesis Crystals', price: 179, bonus: '+10' },
+        { id: 'g3', name: '980 Genesis Crystals', price: 549, bonus: '+40' },
+        { id: 'g4', name: 'Blessing of the Welkin Moon', price: 179, bonus: 'รายเดือน' }
       ]
     },
     {
@@ -170,26 +183,15 @@ export default function GameTopupApp() {
         { id: 'ff2', name: '341 Diamonds', price: 105, bonus: '+20' },
         { id: 'ff3', name: '572 Diamonds', price: 175, bonus: '+40' },
       ]
-    },
-    {
-      id: 'genshin',
-      name: 'Genshin Impact',
-      publisher: 'HoYoverse',
-      image: 'https://images.unsplash.com/photo-1612287233202-b51e3ed6168c?auto=format&fit=crop&w=500&q=80',
-      badge: 'แนะนำ',
-      packages: [
-        { id: 'g1', name: '60 Genesis Crystals', price: 35, bonus: '+0' },
-        { id: 'g2', name: '300 Genesis Crystals', price: 179, bonus: '+10' },
-        { id: 'g3', name: 'Blessing of the Welkin Moon', price: 179, bonus: 'รายเดือน' }
-      ]
     }
   ]);
 
   const paymentMethods = [
     { id: 'wallet', name: 'Cyber Wallet (เครดิตร้าน)', desc: 'หักจากยอดเงินในบัญชีทันที' },
     { id: 'qrcode', name: 'QR PromptPay', desc: 'ฟรีค่าธรรมเนียม อัตโนมัติ 24 ชม.' },
-    { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนผ่านเบอร์วอลเล็ต' },
-    { id: 'credit', name: 'บัตรเครดิต / เดบิต', desc: 'ชำระผ่านบัตรเครดิตปลอดภัย' }
+    { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนผ่านเบอร์วอลเล็ต 10 หลัก' },
+    { id: 'truemoneycard', name: 'บัตรเติมเงินทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก' },
+    { id: 'credit', name: 'บัตรเครดิต / เดบิต', desc: 'ชำระผ่านบัตรปลอดภัย' }
   ];
 
   // Timers Effect
@@ -361,8 +363,13 @@ export default function GameTopupApp() {
     }
 
     if (walletPaymentMethod === 'true') {
-      if (!truemoneyPhone || truemoneyPhone.length < 10 || !truemoneyRef || truemoneyRef.length < 14) {
-        alert('กรุณากรอกเบอร์ TrueMoney และเลขอ้างอิง 14 หลักให้ครบถ้วน');
+      if (!truemoneyPhone || truemoneyPhone.length < 10) {
+        alert('กรุณากรอกเบอร์ TrueMoney Wallet 10 หลักให้ครบถ้วน');
+        return;
+      }
+    } else if (walletPaymentMethod === 'truemoneycard') {
+      if (!truemoneyCard14 || truemoneyCard14.length < 14) {
+        alert('กรุณากรอกรหัสบัตรเติมเงิน TrueMoney 14 หลักให้ครบถ้วน');
         return;
       }
     } else if (walletPaymentMethod === 'credit') {
@@ -386,7 +393,6 @@ export default function GameTopupApp() {
     const amt = parseFloat(topupAmount) || 0;
     const newOrderId = 'ORD-W-' + Math.floor(10000 + Math.random() * 90000);
     const now = new Date();
-    // รูปแบบวันที่ตามต้องการ: 25/04/2026
     const day = String(now.getDate()).padStart(2, '0');
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const year = now.getFullYear();
@@ -415,7 +421,7 @@ export default function GameTopupApp() {
     setWalletStep(1);
     setTopupAmount('');
     setTruemoneyPhone('');
-    setTruemoneyRef('');
+    setTruemoneyCard14('');
     setCreditCardNum('');
     setCreditCardExp('');
     setCreditCardCvv('');
@@ -428,7 +434,7 @@ export default function GameTopupApp() {
     setWalletTimeLeft(180);
     setIsWalletQrExpired(false);
     setTruemoneyPhone('');
-    setTruemoneyRef('');
+    setTruemoneyCard14('');
     setCreditCardNum('');
     setCreditCardExp('');
     setCreditCardCvv('');
@@ -448,16 +454,17 @@ export default function GameTopupApp() {
       return;
     }
 
-    if (selectedPayment.id === 'true') {
-      if (!truemoneyPhone || !truemoneyRef) {
-        setCheckoutPasswordError('กรุณากรอกข้อมูล TrueMoney ให้ครบถ้วน');
-        return;
-      }
-    } else if (selectedPayment.id === 'credit') {
-      if (!creditCardNum || !creditCardExp || !creditCardCvv) {
-        setCheckoutPasswordError('กรุณากรอกข้อมูลบัตรเครดิตให้ครบถ้วน');
-        return;
-      }
+    if (selectedPayment.id === 'true' && (!truemoneyPhone || truemoneyPhone.length < 10)) {
+      setCheckoutPasswordError('กรุณากรอกเบอร์ TrueMoney Wallet 10 หลัก');
+      return;
+    }
+    if (selectedPayment.id === 'truemoneycard' && (!truemoneyCard14 || truemoneyCard14.length < 14)) {
+      setCheckoutPasswordError('กรุณากรอกรหัสบัตรทรูมันนี่ 14 หลัก');
+      return;
+    }
+    if (selectedPayment.id === 'credit' && (!creditCardNum || !creditCardExp || !creditCardCvv)) {
+      setCheckoutPasswordError('กรุณากรอกข้อมูลบัตรเครดิตให้ครบถ้วน');
+      return;
     }
 
     if (selectedPayment.id === 'qrcode') {
@@ -508,7 +515,7 @@ export default function GameTopupApp() {
       setCheckoutStep(1);
       setCheckoutPassword('');
       setTruemoneyPhone('');
-      setTruemoneyRef('');
+      setTruemoneyCard14('');
       setCreditCardNum('');
       setCreditCardExp('');
       setCreditCardCvv('');
@@ -551,7 +558,7 @@ export default function GameTopupApp() {
     setTimeLeft(180);
     setIsQrExpired(false);
     setTruemoneyPhone('');
-    setTruemoneyRef('');
+    setTruemoneyCard14('');
     setCreditCardNum('');
     setCreditCardExp('');
     setCreditCardCvv('');
@@ -562,7 +569,7 @@ export default function GameTopupApp() {
 
   const isUserAdmin = user && (user.username === 'thanphooms@gmail.com' || user.email === 'thanphooms@gmail.com');
 
-  // การแบ่งหน้าประวัติ (แสดงสูงสุด 10 รายการต่อหน้า แยกตามบัญชีผู้ใช้งาน)
+  // การแบ่งหน้าประวัติ (สูงสุด 10 รายการต่อหน้า แยกตามบัญชีผู้ใช้งาน)
   const userOrders = orders.filter(o => isUserAdmin || (user && o.player.toLowerCase() === user.username.toLowerCase()));
   const searchedOrders = userOrders.filter(o => {
     const q = trackQuery.trim().toLowerCase();
@@ -584,14 +591,14 @@ export default function GameTopupApp() {
       }}>
         <div style={{
           backgroundColor: 'rgba(17, 24, 39, 0.95)', backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(168, 85, 247, 0.4)', borderRadius: '24px',
+          border: '1.5px solid rgba(168, 85, 247, 0.5)', borderRadius: '24px',
           padding: '40px 30px', maxWidth: '420px', width: '100%',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(147,51,234,0.3)', textAlign: 'center'
+          boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 35px rgba(147,51,234,0.4)', textAlign: 'center'
         }}>
-          {/* โลโก้ร้าน */}
+          {/* โลโก้ร้านออร่าเรืองแสง */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '15px' }}>
-            <div style={{ width: '60px', height: '60px', borderRadius: '18px', background: 'linear-gradient(135deg, #a855f7, #38bdf8)', border: '2px solid #38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', boxShadow: '0 0 20px rgba(168,85,247,0.6)', marginBottom: '8px' }}>⚡</div>
-            <div style={{ fontSize: '22px', fontWeight: '900', color: '#ffffff', letterSpacing: '2px' }}>GAMING</div>
+            <div style={{ width: '64px', height: '64px', borderRadius: '18px', background: 'linear-gradient(135deg, #a855f7, #38bdf8)', border: '2px solid #38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '30px', boxShadow: '0 0 25px rgba(168,85,247,0.7)', marginBottom: '8px' }}>⚡</div>
+            <div style={{ fontSize: '22px', fontWeight: '900', color: '#ffffff', letterSpacing: '2px', textShadow: '0 0 10px rgba(168,85,247,0.6)' }}>GAMING</div>
             <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#c084fc', border: '1px solid #c084fc', padding: '2px 10px', borderRadius: '6px', letterSpacing: '1px', marginTop: '2px' }}>TOP-UP STORE</div>
           </div>
 
@@ -638,7 +645,7 @@ export default function GameTopupApp() {
               </div>
             )}
 
-            <button type="submit" style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px' }}>
+            <button type="submit" style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', boxShadow: '0 0 15px rgba(147,51,234,0.5)' }}>
               {authMode === 'login' && 'เข้าสู่ระบบ (Login)'}
               {authMode === 'register' && 'สมัครสมาชิก'}
             </button>
@@ -664,7 +671,7 @@ export default function GameTopupApp() {
       {/* Wallet Success Popup */}
       {showWalletSuccessPopup && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '20px' }}>
-          <div style={{ backgroundColor: '#111827', border: '1px solid #34d399', borderRadius: '24px', maxWidth: '380px', width: '100%', padding: '30px', textAlign: 'center' }}>
+          <div style={{ backgroundColor: '#111827', border: '1px solid #34d399', borderRadius: '24px', maxWidth: '380px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(52,211,153,0.4)' }}>
             <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '2px solid #34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>✓</div>
             <h3 style={{ fontSize: '22px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเครดิตร้านสำเร็จทันที!</h3>
             <p style={{ fontSize: '14px', color: '#ffffff', marginBottom: '20px' }}>ยอดเงิน <b>+฿{lastAddedAmount.toLocaleString()}</b> ถูกเพิ่มเข้าบัญชีของคุณเรียบร้อยแล้ว</p>
@@ -676,7 +683,7 @@ export default function GameTopupApp() {
       {/* Game Success Popup */}
       {showGameSuccessPopup && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '20px' }}>
-          <div style={{ backgroundColor: '#111827', border: '1px solid #34d399', borderRadius: '24px', maxWidth: '380px', width: '100%', padding: '30px', textAlign: 'center' }}>
+          <div style={{ backgroundColor: '#111827', border: '1px solid #34d399', borderRadius: '24px', maxWidth: '380px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(52,211,153,0.4)' }}>
             <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '2px solid #34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>✓</div>
             <h3 style={{ fontSize: '22px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเกมสำเร็จเรียบร้อย!</h3>
             <p style={{ fontSize: '14px', color: '#ffffff', marginBottom: '20px' }}>ระบบส่งยอดเข้าบัญชีเกมสำเร็จ เลขออร์เดอร์: <b style={{ color: '#c084fc' }}>{orderSuccess}</b></p>
@@ -688,7 +695,7 @@ export default function GameTopupApp() {
       {/* NAVBAR */}
       <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '12px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
-          <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'linear-gradient(135deg, #a855f7, #38bdf8)', border: '1.5px solid #38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>⚡</div>
+          <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'linear-gradient(135deg, #a855f7, #38bdf8)', border: '1.5px solid #38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', boxShadow: '0 0 15px rgba(168,85,247,0.6)' }}>⚡</div>
           <div>
             <div style={{ fontSize: '16px', fontWeight: '900', color: '#ffffff', lineHeight: '1' }}>GAMING</div>
             <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#c084fc', border: '1px solid #c084fc', padding: '0 4px', borderRadius: '4px', marginTop: '2px' }}>TOP-UP STORE</div>
@@ -699,12 +706,12 @@ export default function GameTopupApp() {
           <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ fontSize: '12px' }}><span style={{ color: '#9ca3af' }}>👤 ผู้ใช้: </span><b style={{ color: '#c084fc' }}>{user.username}</b></div>
             <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px' }}><span style={{ color: '#9ca3af' }}>💰 เครดิตร้าน: </span><b style={{ color: '#34d399' }}>฿{user.balance.toLocaleString()}</b></div>
-            <button onClick={() => { setShowTopupWalletModal(true); setWalletStep(1); }} style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}>+ เติมเครดิต</button>
+            <button onClick={() => { setShowTopupWalletModal(true); setWalletStep(1); }} style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 10px rgba(147,51,234,0.5)' }}>+ เติมเครดิต</button>
           </div>
 
           <nav style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} style={{ backgroundColor: activeTab === 'shop' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>✨ หน้าแรก</button>
-            <button onClick={() => setActiveTab('track')} style={{ backgroundColor: activeTab === 'track' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>📋 เช็คสถานะ</button>
+            <button onClick={() => setActiveTab('track')} style={{ backgroundColor: activeTab === 'track' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>📋 เช็คสถานะ / ประวัติ</button>
             
             {isUserAdmin && (
               <button onClick={() => setActiveTab('admin')} style={{ backgroundColor: activeTab === 'admin' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>⚙️ หลังบ้าน</button>
@@ -715,7 +722,7 @@ export default function GameTopupApp() {
         </div>
       </header>
 
-      {/* FLOATING LINE OA WIDGET (แสดงเฉพาะหลังล็อกอินแล้ว) */}
+      {/* FLOATING LINE OA WIDGET (ลิงก์จริง https://lin.ee/Nn1UeBC แสดงเฉพาะหลังเข้าสู่ระบบแล้ว) */}
       <a 
         href="https://lin.ee/Nn1UeBC" 
         target="_blank" 
@@ -724,7 +731,7 @@ export default function GameTopupApp() {
           position: 'fixed', bottom: '25px', right: '25px', zIndex: 99,
           backgroundColor: '#06c755', color: '#ffffff', padding: '12px 18px',
           borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '8px',
-          boxShadow: '0 4px 20px rgba(6, 199, 85, 0.5)', textDecoration: 'none',
+          boxShadow: '0 4px 25px rgba(6, 199, 85, 0.6)', textDecoration: 'none',
           fontWeight: 'bold', fontSize: '14px', border: '1.5px solid #ffffff'
         }}
       >
@@ -737,14 +744,14 @@ export default function GameTopupApp() {
         {/* SHOP MAIN PAGE */}
         {activeTab === 'shop' && !selectedGame && (
           <div>
-            {/* ตกแต่งกล่องต้อนรับด้านบนให้สวยงาม ไม่ดูโล่ง */}
-            <div style={{ background: 'linear-gradient(135deg, rgba(88, 28, 135, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%)', border: '1px solid rgba(168, 85, 247, 0.5)', borderRadius: '24px', padding: '40px', marginBottom: '35px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+            {/* ตกแต่งกล่องต้อนรับด้านบนให้สวยงามไม่โล่ง พร้อมสไตล์ออร่าเรืองแสง */}
+            <div style={{ background: 'linear-gradient(135deg, rgba(88, 28, 135, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%)', border: '1.5px solid rgba(168, 85, 247, 0.5)', borderRadius: '24px', padding: '40px', marginBottom: '35px', boxShadow: '0 15px 40px rgba(0,0,0,0.6), 0 0 25px rgba(168,85,247,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
               <div>
                 <span style={{ backgroundColor: 'rgba(168, 85, 247, 0.3)', color: '#c084fc', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>⭐ OFFICIAL GAMING STORE 24 ชม.</span>
-                <h1 style={{ fontSize: '36px', fontWeight: '900', margin: '12px 0 10px 0' }}>ยินดีต้อนรับสู่ <span style={{ color: '#c084fc' }}>GAMING TOP-UP STORE</span></h1>
+                <h1 style={{ fontSize: '36px', fontWeight: '900', margin: '12px 0 10px 0', textShadow: '0 0 15px rgba(168,85,247,0.5)' }}>ยินดีต้อนรับสู่ <span style={{ color: '#c084fc' }}>GAMING TOP-UP STORE</span></h1>
                 <p style={{ fontSize: '14px', color: '#9ca3af', margin: 0, maxWidth: '600px' }}>บริการเติมเกมออนไลน์อัตโนมัติ รวดเร็ว ปลอดภัย รองรับหลากหลายเกมดัง พร้อมระบบซัพพอร์ตตลอด 24 ชั่วโมง</p>
               </div>
-              <div style={{ backgroundColor: 'rgba(3, 7, 18, 0.6)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '16px', padding: '20px', minWidth: '220px', textAlign: 'center' }}>
+              <div style={{ backgroundColor: 'rgba(3, 7, 18, 0.7)', border: '1px solid rgba(168, 85, 247, 0.4)', borderRadius: '16px', padding: '20px', minWidth: '220px', textAlign: 'center', boxShadow: '0 0 15px rgba(52,211,153,0.2)' }}>
                 <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>สถานะระบบเติมเงิน</div>
                 <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#34d399' }}>🟢 พร้อมให้บริการอัตโนมัติ</div>
                 <div style={{ fontSize: '11px', color: '#c084fc', marginTop: '6px' }}>ความเร็วเฉลี่ย: 10 วินาที</div>
@@ -755,15 +762,18 @@ export default function GameTopupApp() {
               <input type="text" placeholder="🔍 ค้นหาชื่อเกมที่คุณต้องการเติม..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', maxWidth: '400px', backgroundColor: 'rgba(17, 24, 39, 0.9)', border: '1px solid #374151', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', outline: 'none' }} />
             </div>
 
+            {/* รายการเกมพร้อมปกที่ไม่ซ้ำกันและออร่านีออน */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
               {filteredGames.map((game) => (
-                <div key={game.id} onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPlayerId(user.username); }} style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '20px', overflow: 'hidden', cursor: 'pointer', transition: 'transform 0.2s' }}>
-                  <img src={game.image} alt={game.name} style={{ width: '100%', height: '170px', objectFit: 'cover' }} />
+                <div key={game.id} onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPlayerId(user.username); }} style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '20px', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.3s', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }} onMouseEnter={(e) => e.currentTarget.style.borderColor = '#c084fc'} onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.3)'}>
+                  <div style={{ height: '170px', overflow: 'hidden', position: 'relative' }}>
+                    <img src={game.image} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }} />
+                  </div>
                   <div style={{ padding: '18px' }}>
-                    <span style={{ backgroundColor: 'rgba(147, 51, 234, 0.2)', color: '#c084fc', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}>{game.badge}</span>
+                    <span style={{ backgroundColor: 'rgba(147, 51, 234, 0.25)', color: '#c084fc', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}>{game.badge}</span>
                     <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '8px 0 4px 0' }}>{game.name}</h3>
                     <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>{game.publisher}</p>
-                    <button style={{ marginTop: '15px', width: '100%', backgroundColor: '#9333ea', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>คลิกเพื่อเติมเงิน →</button>
+                    <button style={{ marginTop: '15px', width: '100%', backgroundColor: '#9333ea', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 10px rgba(147,51,234,0.4)' }}>คลิกเพื่อเติมเงิน →</button>
                   </div>
                 </div>
               ))}
@@ -776,10 +786,10 @@ export default function GameTopupApp() {
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', border: '1px solid #374151', color: '#c084fc', padding: '8px 16px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', marginBottom: '20px' }}>← กลับไปเลือกเกมอื่น</button>
             
-            <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', border: '1px solid #581c87', borderRadius: '20px', padding: '20px', display: 'flex', gap: '20px', marginBottom: '25px', alignItems: 'center' }}>
+            <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', border: '1.5px solid #a855f7', borderRadius: '20px', padding: '20px', display: 'flex', gap: '20px', marginBottom: '25px', alignItems: 'center', boxShadow: '0 0 20px rgba(168,85,247,0.3)' }}>
               <img src={selectedGame.image} alt={selectedGame.name} style={{ width: '80px', height: '80px', borderRadius: '14px', objectFit: 'cover' }} />
               <div>
-                <span style={{ backgroundColor: 'rgba(147, 51, 234, 0.2)', color: '#c084fc', padding: '3px 10px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{selectedGame.badge}</span>
+                <span style={{ backgroundColor: 'rgba(147, 51, 234, 0.3)', color: '#c084fc', padding: '3px 10px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{selectedGame.badge}</span>
                 <h1 style={{ fontSize: '24px', fontWeight: '900', margin: '6px 0 0 0' }}>{selectedGame.name}</h1>
                 <p style={{ fontSize: '12px', color: '#9ca3af', margin: '2px 0 0 0' }}>{selectedGame.publisher}</p>
               </div>
@@ -816,15 +826,23 @@ export default function GameTopupApp() {
                     ))}
                   </div>
 
-                  {/* ฟอร์มข้อมูลเพิ่มเติมตามช่องทางจ่ายเงิน */}
+                  {/* ฟอร์มข้อมูล TrueMoney Wallet (เบอร์ 10 หลัก) */}
                   {selectedPayment?.id === 'true' && (
                     <div style={{ marginTop: '15px', backgroundColor: '#030712', padding: '15px', borderRadius: '12px', border: '1px solid #374151' }}>
                       <h4 style={{ fontSize: '13px', color: '#34d399', margin: '0 0 10px 0' }}>📱 ข้อมูล TrueMoney Wallet</h4>
-                      <input type="text" placeholder="เบอร์วอลเล็ตผู้โอน (10 หลัก)" value={truemoneyPhone} onChange={(e) => setTruemoneyPhone(e.target.value.replace(/[^0-9]/g, ''))} maxLength={10} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '10px', color: '#ffffff', fontSize: '13px', marginBottom: '10px', outline: 'none', boxSizing: 'border-box' }} />
-                      <input type="text" placeholder="เลขอ้างอิงรายการ (14 หลัก)" value={truemoneyRef} onChange={(e) => setTruemoneyRef(e.target.value.replace(/[^0-9]/g, ''))} maxLength={14} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '10px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                      <input type="text" placeholder="เบอร์ TrueMoney Wallet (10 หลัก)" value={truemoneyPhone} onChange={(e) => setTruemoneyPhone(e.target.value.replace(/[^0-9]/g, ''))} maxLength={10} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '10px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
                     </div>
                   )}
 
+                  {/* ฟอร์มข้อมูล บัตรเติมเงินทรูมันนี่ (14 หลัก) */}
+                  {selectedPayment?.id === 'truemoneycard' && (
+                    <div style={{ marginTop: '15px', backgroundColor: '#030712', padding: '15px', borderRadius: '12px', border: '1px solid #374151' }}>
+                      <h4 style={{ fontSize: '13px', color: '#f59e0b', margin: '0 0 10px 0' }}>🎟️ ข้อมูลบัตรเติมเงินทรูมันนี่</h4>
+                      <input type="text" placeholder="รหัสบัตรเติมเงิน 14 หลัก" value={truemoneyCard14} onChange={(e) => setTruemoneyCard14(e.target.value.replace(/[^0-9]/g, ''))} maxLength={14} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '10px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box', letterSpacing: '2px' }} />
+                    </div>
+                  )}
+
+                  {/* ฟอร์มข้อมูล บัตรเครดิต */}
                   {selectedPayment?.id === 'credit' && (
                     <div style={{ marginTop: '15px', backgroundColor: '#030712', padding: '15px', borderRadius: '12px', border: '1px solid #374151' }}>
                       <h4 style={{ fontSize: '13px', color: '#38bdf8', margin: '0 0 10px 0' }}>💳 ข้อมูลบัตรเครดิต / เดบิต</h4>
@@ -839,7 +857,7 @@ export default function GameTopupApp() {
               </div>
 
               {/* SUMMARY BOX */}
-              <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', borderRadius: '20px', padding: '20px', height: 'fit-content', position: 'sticky', top: '100px' }}>
+              <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', borderRadius: '20px', padding: '20px', height: 'fit-content', position: 'sticky', top: '100px', border: '1px solid rgba(168,85,247,0.3)' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 15px 0', borderBottom: '1px solid #1f2937', paddingBottom: '10px' }}>สรุปคำสั่งซื้อ</h3>
                 
                 <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '15px' }}>
@@ -854,16 +872,16 @@ export default function GameTopupApp() {
                   <span style={{ fontSize: '22px', color: '#34d399', fontWeight: 'bold' }}>฿{selectedPackage ? selectedPackage.price : '0'}</span>
                 </div>
                 
-                <button disabled={!playerId || !selectedPackage || !selectedPayment} onClick={() => { setCheckoutStep(1); setShowCheckoutModal(true); }} style={{ width: '100%', backgroundColor: (!playerId || !selectedPackage || !selectedPayment) ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', cursor: (!playerId || !selectedPackage || !selectedPayment) ? 'not-allowed' : 'pointer' }}>ยืนยันการชำระเงิน</button>
+                <button disabled={!playerId || !selectedPackage || !selectedPayment} onClick={() => { setCheckoutStep(1); setShowCheckoutModal(true); }} style={{ width: '100%', backgroundColor: (!playerId || !selectedPackage || !selectedPayment) ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', cursor: (!playerId || !selectedPackage || !selectedPayment) ? 'not-allowed' : 'pointer', boxShadow: (!playerId || !selectedPackage || !selectedPayment) ? 'none' : '0 0 15px rgba(147,51,234,0.5)' }}>ยืนยันการชำระเงิน</button>
               </div>
             </div>
           </div>
         )}
 
-        {/* TRACK STATUS & HISTORY TAB (พร้อมแบ่งหน้า และแสดงวันที่ DD/MM/YYYY) */}
+        {/* TRACK STATUS & HISTORY TAB (หน้าเช็คสถานะและประวัติ พร้อมแบ่งหน้า) */}
         {activeTab === 'track' && (
-          <div style={{ maxWidth: '750px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', border: '1px solid rgba(147,51,234,0.3)' }}>
-            <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>📋 เช็คประวัติและสถานะการทำรายการ</h2>
+          <div style={{ maxWidth: '750px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 0 30px rgba(0,0,0,0.6)' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>📋 เช็คสถานะคำสั่งซื้อและประวัติการทำรายการ</h2>
             <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '20px' }}>
               {isUserAdmin ? '🛡️ (มุมมองแอดมิน: แสดงประวัติทั้งหมดในระบบ)' : `👤 (แสดงเฉพาะประวัติคำสั่งซื้อของบัญชีคุณ: ${user.username})`}
             </p>
@@ -874,7 +892,7 @@ export default function GameTopupApp() {
 
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h3 style={{ fontSize: '15px', color: '#c084fc', margin: 0 }}>ประวัติการทำรายการ (ทั้งหมด {searchedOrders.length} รายการ)</h3>
+                <h3 style={{ fontSize: '15px', color: '#c084fc', margin: 0 }}>รายการออร์เดอร์ (ทั้งหมด {searchedOrders.length} รายการ)</h3>
                 <span style={{ fontSize: '12px', color: '#9ca3af' }}>แสดงหน้าละ 10 รายการ</span>
               </div>
 
@@ -885,7 +903,7 @@ export default function GameTopupApp() {
                       <div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
                           <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px' }}>{ord.id}</span>
-                          <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 {ord.time}</span>
+                          <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 วันที่: {ord.time}</span>
                         </div>
                         <div style={{ fontSize: '15px', fontWeight: 'bold', marginTop: '4px' }}>{ord.game} ({ord.package})</div>
                         <div style={{ fontSize: '12px', color: '#9ca3af' }}>ผู้ซื้อ: <span style={{ color: '#c084fc' }}>{ord.player}</span></div>
@@ -907,7 +925,7 @@ export default function GameTopupApp() {
                   )}
                 </div>
               ) : (
-                <div style={{ textAlign: 'center', padding: '30px', color: '#9ca3af' }}>ไม่พบประวัติการทำรายการ</div>
+                <div style={{ textAlign: 'center', padding: '30px', color: '#9ca3af' }}>ไม่พบรายการออร์เดอร์ในระบบ</div>
               )}
             </div>
           </div>
@@ -917,7 +935,7 @@ export default function GameTopupApp() {
         {activeTab === 'admin' && isUserAdmin && (
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             {!isAdminLoggedIn ? (
-              <div style={{ maxWidth: '400px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', textAlign: 'center', border: '1px solid #9333ea' }}>
+              <div style={{ maxWidth: '400px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', textAlign: 'center', border: '1.5px solid #9333ea', boxShadow: '0 0 25px rgba(147,51,234,0.4)' }}>
                 <h2>ระบบหลังบ้าน Admin</h2>
                 <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>กรุณากรอกรหัส PIN 6 หลักเพื่อเข้าจัดการระบบ (PIN: 123456)</p>
                 <form onSubmit={handleAdminLogin}>
@@ -927,7 +945,7 @@ export default function GameTopupApp() {
                 </form>
               </div>
             ) : (
-              <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1px solid #9333ea' }}>
+              <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #9333ea', boxShadow: '0 0 25px rgba(147,51,234,0.3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                   <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 จัดการคำสั่งซื้อทั้งหมด (Admin Panel)</h2>
                   <button onClick={() => setIsAdminLoggedIn(false)} style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>ล็อกอิน PIN ใหม่</button>
@@ -971,7 +989,7 @@ export default function GameTopupApp() {
       {/* MODAL: TOPUP STORE WALLET */}
       {showTopupWalletModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-          <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center' }}>
+          <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
             
             {walletStep === 1 && (
               <div>
@@ -991,15 +1009,21 @@ export default function GameTopupApp() {
                   <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>เลือกช่องทางชำระเงิน</label>
                   <select value={walletPaymentMethod} onChange={(e) => setWalletPaymentMethod(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '13px', outline: 'none' }}>
                     <option value="qrcode">QR PromptPay</option>
-                    <option value="true">TrueMoney Wallet</option>
+                    <option value="true">TrueMoney Wallet (เบอร์ 10 หลัก)</option>
+                    <option value="truemoneycard">บัตรเติมเงินทรูมันนี่ (14 หลัก)</option>
                     <option value="credit">บัตรเครดิต / เดบิต</option>
                   </select>
                 </div>
 
                 {walletPaymentMethod === 'true' && (
                   <div style={{ textAlign: 'left', marginBottom: '15px', backgroundColor: '#030712', padding: '10px', borderRadius: '10px', border: '1px solid #374151' }}>
-                    <input type="text" placeholder="เบอร์วอลเล็ต (10 หลัก)" value={truemoneyPhone} onChange={(e) => setTruemoneyPhone(e.target.value.replace(/[^0-9]/g, ''))} maxLength={10} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', marginBottom: '8px', outline: 'none', boxSizing: 'border-box' }} />
-                    <input type="text" placeholder="เลขอ้างอิง 14 หลัก" value={truemoneyRef} onChange={(e) => setTruemoneyRef(e.target.value.replace(/[^0-9]/g, ''))} maxLength={14} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
+                    <input type="text" placeholder="เบอร์ TrueMoney Wallet (10 หลัก)" value={truemoneyPhone} onChange={(e) => setTruemoneyPhone(e.target.value.replace(/[^0-9]/g, ''))} maxLength={10} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                )}
+
+                {walletPaymentMethod === 'truemoneycard' && (
+                  <div style={{ textAlign: 'left', marginBottom: '15px', backgroundColor: '#030712', padding: '10px', borderRadius: '10px', border: '1px solid #374151' }}>
+                    <input type="text" placeholder="รหัสบัตรเติมเงิน 14 หลัก" value={truemoneyCard14} onChange={(e) => setTruemoneyCard14(e.target.value.replace(/[^0-9]/g, ''))} maxLength={14} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box', letterSpacing: '2px' }} />
                   </div>
                 )}
 
@@ -1034,12 +1058,12 @@ export default function GameTopupApp() {
                   ยอดชำระ: <b style={{ color: '#34d399' }}>฿{parseFloat(topupAmount).toLocaleString()}</b>
                 </p>
 
-                {/* ตัวนับเวลาถอยหลัง QR Code และสถานะ 10 วิ */}
+                {/* ตัวนับเวลาถอยหลัง QR Code และตัวเลข 10 วินาทีชัดเจน */}
                 <div style={{ fontSize: '12px', color: isWalletQrExpired ? '#ef4444' : '#f59e0b', marginBottom: '8px', fontWeight: 'bold' }}>
                   {isWalletQrExpired ? '❌ QR Code หมดอายุแล้ว' : `⏱️ QR Code จะหมดอายุใน: ${Math.floor(walletTimeLeft / 60)}:${(walletTimeLeft % 60).toString().padStart(2, '0')} นาที`}
                 </div>
                 {isWalletAutoRunning && (
-                  <div style={{ fontSize: '11px', color: '#38bdf8', marginBottom: '10px', animation: 'pulse 1s infinite' }}>
+                  <div style={{ fontSize: '13px', color: '#38bdf8', marginBottom: '10px', fontWeight: 'bold', backgroundColor: 'rgba(56,189,248,0.1)', padding: '6px', borderRadius: '8px' }}>
                     ⏳ ระบบกำลังตรวจสอบยอดโอนอัตโนมัติใน ({walletAutoSeconds} วินาที)...
                   </div>
                 )}
@@ -1072,7 +1096,7 @@ export default function GameTopupApp() {
       {/* CHECKOUT MODAL */}
       {showCheckoutModal && selectedGame && selectedPackage && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-          <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center' }}>
+          <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
             
             {checkoutStep === 1 && (
               <form onSubmit={handleVerifyPasswordStep}>
@@ -1088,8 +1112,13 @@ export default function GameTopupApp() {
 
                 {selectedPayment?.id === 'true' && (
                   <div style={{ textAlign: 'left', marginBottom: '15px', backgroundColor: '#030712', padding: '10px', borderRadius: '10px', border: '1px solid #374151' }}>
-                    <input type="text" placeholder="เบอร์ TrueMoney (10 หลัก)" value={truemoneyPhone} onChange={(e) => setTruemoneyPhone(e.target.value.replace(/[^0-9]/g, ''))} maxLength={10} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', marginBottom: '8px', outline: 'none', boxSizing: 'border-box' }} />
-                    <input type="text" placeholder="เลขอ้างอิง 14 หลัก" value={truemoneyRef} onChange={(e) => setTruemoneyRef(e.target.value.replace(/[^0-9]/g, ''))} maxLength={14} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
+                    <input type="text" placeholder="เบอร์ TrueMoney Wallet (10 หลัก)" value={truemoneyPhone} onChange={(e) => setTruemoneyPhone(e.target.value.replace(/[^0-9]/g, ''))} maxLength={10} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                )}
+
+                {selectedPayment?.id === 'truemoneycard' && (
+                  <div style={{ textAlign: 'left', marginBottom: '15px', backgroundColor: '#030712', padding: '10px', borderRadius: '10px', border: '1px solid #374151' }}>
+                    <input type="text" placeholder="รหัสบัตรเติมเงิน 14 หลัก" value={truemoneyCard14} onChange={(e) => setTruemoneyCard14(e.target.value.replace(/[^0-9]/g, ''))} maxLength={14} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box', letterSpacing: '2px' }} />
                   </div>
                 )}
 
@@ -1117,12 +1146,12 @@ export default function GameTopupApp() {
                   ยอดชำระ: <b style={{ color: '#34d399' }}>฿{selectedPackage.price}</b>
                 </p>
 
-                {/* ตัวนับเวลาถอยหลัง Checkout QR และสถานะ 10 วิ */}
+                {/* ตัวนับเวลาถอยหลัง QR Code และตัวเลข 10 วินาทีชัดเจน */}
                 <div style={{ fontSize: '12px', color: isQrExpired ? '#ef4444' : '#f59e0b', marginBottom: '8px', fontWeight: 'bold' }}>
                   {isQrExpired ? '❌ QR Code หมดอายุแล้ว' : `⏱️ QR Code จะหมดอายุใน: ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')} นาที`}
                 </div>
                 {isGameAutoRunning && (
-                  <div style={{ fontSize: '11px', color: '#38bdf8', marginBottom: '10px', animation: 'pulse 1s infinite' }}>
+                  <div style={{ fontSize: '13px', color: '#38bdf8', marginBottom: '10px', fontWeight: 'bold', backgroundColor: 'rgba(56,189,248,0.1)', padding: '6px', borderRadius: '8px' }}>
                     ⏳ ระบบกำลังตรวจสอบยอดโอนอัตโนมัติใน ({gameAutoSeconds} วินาที)...
                   </div>
                 )}
