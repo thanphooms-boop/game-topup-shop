@@ -396,7 +396,7 @@ export default function GameTopupApp() {
             border: '2px solid #a855f7',
             display: 'flex',
             alignItems: 'center',
-            justify: 'center',
+            justifyContent: 'center',
             boxShadow: '0 0 20px rgba(168, 85, 247, 0.6)'
           }}>
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -471,7 +471,6 @@ export default function GameTopupApp() {
                   onChange={(e) => setPasswordInput(e.target.value)}
                   style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                 />
-                {/* FORGOT PASSWORD BUTTON BELOW PASSWORD AS REQUESTED */}
                 {authMode === 'login' && (
                   <div style={{ textAlign: 'right', marginTop: '6px' }}>
                     <span 
@@ -825,9 +824,34 @@ export default function GameTopupApp() {
                 </div>
 
                 <button 
-                  disabled={!playerId || !selectedPackage || !selectedPayment}
+                  disabled={
+                    !playerId || !selectedPackage || !selectedPayment ||
+                    (selectedPayment.id === 'true' && (!trueWalletNumber || trueWalletNumber.length < 10)) ||
+                    (selectedPayment.id === 'truemoney' && (!trueCashCardPin || trueCashCardPin.length < 14)) ||
+                    (selectedPayment.id === 'card' && (!cardNumber || cardNumber.length < 16 || !cardExp || !cardCvv))
+                  }
                   onClick={() => setShowCheckoutModal(true)}
-                  style={{ width: '100%', backgroundColor: (!playerId || !selectedPackage || !selectedPayment) ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '14px', cursor: (!playerId || !selectedPackage || !selectedPayment) ? 'not-allowed' : 'pointer' }}
+                  style={{ 
+                    width: '100%', 
+                    backgroundColor: (
+                      !playerId || !selectedPackage || !selectedPayment ||
+                      (selectedPayment.id === 'true' && (!trueWalletNumber || trueWalletNumber.length < 10)) ||
+                      (selectedPayment.id === 'truemoney' && (!trueCashCardPin || trueCashCardPin.length < 14)) ||
+                      (selectedPayment.id === 'card' && (!cardNumber || cardNumber.length < 16 || !cardExp || !cardCvv))
+                    ) ? '#374151' : '#9333ea', 
+                    color: '#ffffff', 
+                    border: 'none', 
+                    padding: '14px', 
+                    borderRadius: '12px', 
+                    fontWeight: 'bold', 
+                    fontSize: '14px', 
+                    cursor: (
+                      !playerId || !selectedPackage || !selectedPayment ||
+                      (selectedPayment.id === 'true' && (!trueWalletNumber || trueWalletNumber.length < 10)) ||
+                      (selectedPayment.id === 'truemoney' && (!trueCashCardPin || trueCashCardPin.length < 14)) ||
+                      (selectedPayment.id === 'card' && (!cardNumber || cardNumber.length < 16 || !cardExp || !cardCvv))
+                    ) ? 'not-allowed' : 'pointer' 
+                  }}
                 >
                   ยืนยันการชำระเงิน
                 </button>
@@ -954,7 +978,7 @@ export default function GameTopupApp() {
 
       </main>
 
-      {/* MODAL 1: TOPUP STORE WALLET WITH TRUEMONEY PHONE INPUT */}
+      {/* MODAL 1: TOPUP STORE WALLET */}
       {showTopupWalletModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center' }}>
@@ -964,11 +988,16 @@ export default function GameTopupApp() {
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#c084fc' }}>💳 เติมเครดิตเข้า Cyber Wallet</h3>
                 <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>ขั้นตอนที่ 1: กรอกจำนวนเงินและเลือกช่องทางชำระเงิน</p>
 
+                {/* NUMBER INPUT WITHOUT SPINNERS */}
                 <input 
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="ระบุจำนวนเงิน (บาท)..."
                   value={topupAmount}
-                  onChange={(e) => setTopupAmount(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, '');
+                    setTopupAmount(val);
+                  }}
                   style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', fontSize: '20px', textAlign: 'center', fontWeight: 'bold', outline: 'none', marginBottom: '15px', boxSizing: 'border-box' }}
                 />
 
@@ -1000,7 +1029,7 @@ export default function GameTopupApp() {
                       maxLength={10}
                       placeholder="0891234567"
                       value={walletPhone}
-                      onChange={(e) => setWalletPhone(e.target.value)}
+                      onChange={(e) => setWalletPhone(e.target.value.replace(/[^0-9]/g, ''))}
                       style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                     />
                   </div>
@@ -1008,7 +1037,22 @@ export default function GameTopupApp() {
 
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={resetWalletModal} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
-                  <button onClick={handleWalletNextStep} style={{ flex: 1, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ดำเนินการชำระเงิน →</button>
+                  <button 
+                    disabled={!topupAmount || parseFloat(topupAmount) <= 0 || (walletPaymentMethod === 'true' && walletPhone.length < 10)}
+                    onClick={handleWalletNextStep} 
+                    style={{ 
+                      flex: 1, 
+                      backgroundColor: (!topupAmount || parseFloat(topupAmount) <= 0 || (walletPaymentMethod === 'true' && walletPhone.length < 10)) ? '#374151' : '#9333ea', 
+                      color: '#ffffff', 
+                      border: 'none', 
+                      padding: '12px', 
+                      borderRadius: '10px', 
+                      fontWeight: 'bold', 
+                      cursor: (!topupAmount || parseFloat(topupAmount) <= 0 || (walletPaymentMethod === 'true' && walletPhone.length < 10)) ? 'not-allowed' : 'pointer' 
+                    }}
+                  >
+                    ดำเนินการชำระเงิน →
+                  </button>
                 </div>
               </div>
             )}
@@ -1077,7 +1121,7 @@ export default function GameTopupApp() {
                   </div>
                 ) : selectedPayment.id === 'true' ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', textAlign: 'left' }}>
-                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>กรอกเบอร์โทรศัพท์ TrueMoney Wallet ของคุณเพื่อทำรายการ:</p>
+                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>กรอกเบอร์โทรศัพท์ TrueMoney Wallet ของคุณเพื่อทำรายการ (ต้องครบ 10 หลัก):</p>
                     <div>
                       <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>เบอร์มือถือวอลเล็ต (10 หลัก)</label>
                       <input 
@@ -1085,7 +1129,7 @@ export default function GameTopupApp() {
                         maxLength={10}
                         placeholder="0891234567"
                         value={trueWalletNumber}
-                        onChange={(e) => setTrueWalletNumber(e.target.value)}
+                        onChange={(e) => setTrueWalletNumber(e.target.value.replace(/[^0-9]/g, ''))}
                         style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                       />
                     </div>
@@ -1095,7 +1139,7 @@ export default function GameTopupApp() {
                   </div>
                 ) : selectedPayment.id === 'truemoney' ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', textAlign: 'left' }}>
-                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 4px 0' }}>กรอกรหัสบัตรเงินสดทรูมันนี่ (14 หลัก) [หักค่าธรรมเนียม 14.5%]:</p>
+                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 4px 0' }}>กรอกรหัสบัตรเงินสดทรูมันนี่ (ต้องครบ 14 หลัก):</p>
                     <div>
                       <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัสบัตรเงินสด 14 หลัก</label>
                       <input 
@@ -1103,7 +1147,7 @@ export default function GameTopupApp() {
                         maxLength={14}
                         placeholder="xxxxxxxxxxxxxx"
                         value={trueCashCardPin}
-                        onChange={(e) => setTrueCashCardPin(e.target.value)}
+                        onChange={(e) => setTrueCashCardPin(e.target.value.replace(/[^0-9]/g, ''))}
                         style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box', letterSpacing: '2px' }}
                       />
                     </div>
@@ -1120,7 +1164,7 @@ export default function GameTopupApp() {
                         maxLength={19}
                         placeholder="4111 2222 3333 4444"
                         value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value)}
+                        onChange={(e) => setCardNumber(e.target.value.replace(/[^0-9]/g, ''))}
                         style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                       />
                     </div>
@@ -1143,7 +1187,7 @@ export default function GameTopupApp() {
                           maxLength={4}
                           placeholder="123"
                           value={cardCvv}
-                          onChange={(e) => setCardCvv(e.target.value)}
+                          onChange={(e) => setCardCvv(e.target.value.replace(/[^0-9]/g, ''))}
                           style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                         />
                       </div>
@@ -1159,12 +1203,29 @@ export default function GameTopupApp() {
                   <button onClick={() => setShowCheckoutModal(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
                   <button 
                     disabled={
-                      (selectedPayment.id === 'card' && (!cardNumber || !cardExp || !cardCvv)) ||
-                      (selectedPayment.id === 'true' && !trueWalletNumber) ||
-                      (selectedPayment.id === 'truemoney' && !trueCashCardPin)
+                      (selectedPayment.id === 'card' && (!cardNumber || cardNumber.length < 16 || !cardExp || !cardCvv)) ||
+                      (selectedPayment.id === 'true' && (!trueWalletNumber || trueWalletNumber.length < 10)) ||
+                      (selectedPayment.id === 'truemoney' && (!trueCashCardPin || trueCashCardPin.length < 14))
                     }
                     onClick={handleCheckout} 
-                    style={{ flex: 1, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                    style={{ 
+                      flex: 1, 
+                      backgroundColor: (
+                        (selectedPayment.id === 'card' && (!cardNumber || cardNumber.length < 16 || !cardExp || !cardCvv)) ||
+                        (selectedPayment.id === 'true' && (!trueWalletNumber || trueWalletNumber.length < 10)) ||
+                        (selectedPayment.id === 'truemoney' && (!trueCashCardPin || trueCashCardPin.length < 14))
+                      ) ? '#374151' : '#9333ea', 
+                      color: '#ffffff', 
+                      border: 'none', 
+                      padding: '12px', 
+                      borderRadius: '10px', 
+                      fontWeight: 'bold', 
+                      cursor: (
+                        (selectedPayment.id === 'card' && (!cardNumber || cardNumber.length < 16 || !cardExp || !cardCvv)) ||
+                        (selectedPayment.id === 'true' && (!trueWalletNumber || trueWalletNumber.length < 10)) ||
+                        (selectedPayment.id === 'truemoney' && (!trueCashCardPin || trueCashCardPin.length < 14))
+                      ) ? 'not-allowed' : 'pointer' 
+                    }}
                   >
                     {isProcessing ? 'กำลังชำระเงิน...' : 'ชำระเงินทันที'}
                   </button>
