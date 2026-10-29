@@ -66,7 +66,7 @@ export default function GameTopupApp() {
       try { return JSON.parse(savedOrders); } catch (e) {}
     }
     return [
-      { id: 'ORD-14914', game: 'Free Fire', package: '1,166 Diamonds', price: 350, player: '11', status: 'รอตรวจสอบ [สะดุดใน 10s]', type: 'game', time: '29/10/69 22:44 น.', dateKey: '2029-10-29', timestamp: Date.now() - 100000 },
+      { id: 'ORD-14914', game: 'Avatar Star', package: '1,000 Diamonds', price: 300, player: '11', status: 'รอตรวจสอบ [สะดุดใน 10s]', type: 'game', time: '29/10/69 22:44 น.', dateKey: '2029-10-29', timestamp: Date.now() - 100000 },
       { id: 'ORD-48751', game: 'Free Fire', package: '1,166 Diamonds', price: 350, player: '11', status: 'สำเร็จ (เพิ่มออโต้)', type: 'game', time: '29/10/69 22:44 น.', dateKey: '2029-10-29', timestamp: Date.now() - 200000 }
     ];
   });
@@ -100,8 +100,22 @@ export default function GameTopupApp() {
   const [showGameSuccessPopup, setShowGameSuccessPopup] = useState(false);
   const [lastGameName, setLastGameName] = useState('');
 
-  // ฐานข้อมูลเกมทั้งหมด (รวมครบทุกเกม)
+  // ฐานข้อมูลเกมทั้งหมด (รวม Avatar Star และเกมอื่นๆ)
   const [gamesData] = useState([
+    {
+      id: 'avatarstar',
+      name: 'Avatar Star',
+      publisher: 'Cubinet / AS Global',
+      image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=500&q=80',
+      category: 'pc',
+      badge: 'มาใหม่ล่าสุด 🔥',
+      packages: [
+        { id: 'as1', name: '300 Diamonds', price: 90, bonus: '+0' },
+        { id: 'as2', name: '1,000 Diamonds', price: 300, bonus: '+50' },
+        { id: 'as3', name: '2,100 Diamonds', price: 600, bonus: '+150' },
+        { id: 'as4', name: '3,600 Diamonds', price: 1000, bonus: '+300' },
+      ]
+    },
     {
       id: 'valorant',
       name: 'VALORANT',
@@ -536,18 +550,13 @@ export default function GameTopupApp() {
           padding: '40px 30px', maxWidth: '420px', width: '100%',
           boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(147,51,234,0.3)', textAlign: 'center'
         }}>
-          {/* LOGO ตามรูปที่ส่งมา */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '15px' }}>
-            <img 
-              src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=150&q=80" 
-              alt="Logo" 
-              style={{ width: '50px', height: '50px', borderRadius: '12px', objectFit: 'cover', border: '1.5px solid #a855f7' }} 
-            />
-            <div style={{ textAlign: 'left' }}>
-              <div style={{ fontSize: '20px', fontWeight: '900', color: '#c084fc', lineHeight: '1.1' }}>GAMING</div>
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#38bdf8', letterSpacing: '1px' }}>TOP-UP STORE</div>
-            </div>
+          {/* GAMING TOP-UP STORE LOGO */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '15px' }}>
+            <div style={{ width: '60px', height: '60px', borderRadius: '18px', background: 'linear-gradient(135deg, #a855f7, #38bdf8)', border: '2px solid #38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', boxShadow: '0 0 20px rgba(168,85,247,0.6)', marginBottom: '8px' }}>⚡</div>
+            <div style={{ fontSize: '22px', fontWeight: '900', color: '#ffffff', letterSpacing: '2px' }}>GAMING</div>
+            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#c084fc', border: '1px solid #c084fc', padding: '2px 10px', borderRadius: '6px', letterSpacing: '1px', marginTop: '2px' }}>TOP-UP STORE</div>
           </div>
+
           <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 20px 0' }}>
             {authMode === 'login' && 'เข้าสู่ระบบร้านเติมเกมอัตโนมัติ 24 ชม.'}
             {authMode === 'register' && 'สมัครสมาชิกใหม่'}
@@ -636,17 +645,13 @@ export default function GameTopupApp() {
         </div>
       )}
 
-      {/* NAVBAR WITH GAMING TOP-UP STORE LOGO */}
+      {/* NAVBAR WITH LOGO */}
       <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '12px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
-          <img 
-            src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=150&q=80" 
-            alt="Logo" 
-            style={{ width: '42px', height: '42px', borderRadius: '12px', objectFit: 'cover', border: '1.5px solid #a855f7' }} 
-          />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
+          <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'linear-gradient(135deg, #a855f7, #38bdf8)', border: '1.5px solid #38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>⚡</div>
           <div>
-            <div style={{ fontSize: '18px', fontWeight: '900', color: '#c084fc', lineHeight: '1.1' }}>GAMING</div>
-            <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#38bdf8', letterSpacing: '1px' }}>TOP-UP STORE</div>
+            <div style={{ fontSize: '16px', fontWeight: '900', color: '#ffffff', lineHeight: '1' }}>GAMING</div>
+            <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#c084fc', border: '1px solid #c084fc', padding: '0 4px', borderRadius: '4px', marginTop: '2px' }}>TOP-UP STORE</div>
           </div>
         </div>
 
@@ -679,8 +684,8 @@ export default function GameTopupApp() {
           position: 'fixed', bottom: '25px', right: '25px', zIndex: 99,
           backgroundColor: '#06c755', color: '#ffffff', padding: '12px 18px',
           borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '8px',
-          boxShadow: '0 4px 20px rgba(6, 199, 85, 0.4)', textDecoration: 'none',
-          fontWeight: 'bold', fontSize: '14px', transition: 'transform 0.2s'
+          boxShadow: '0 4px 20px rgba(6, 199, 85, 0.5)', textDecoration: 'none',
+          fontWeight: 'bold', fontSize: '14px', border: '1.5px solid #ffffff'
         }}
       >
         <span style={{ fontSize: '18px' }}>🟢</span> ติดต่อแอดมิน (Line OA)
@@ -694,7 +699,7 @@ export default function GameTopupApp() {
           <div>
             <div style={{ background: 'linear-gradient(135deg, rgba(59, 7, 100, 0.85) 0%, rgba(17, 24, 39, 0.9) 100%)', border: '1px solid rgba(168, 85, 247, 0.4)', borderRadius: '24px', padding: '35px', marginBottom: '35px' }}>
               <h1 style={{ fontSize: '38px', fontWeight: '900', margin: '0 0 15px 0' }}>เติมเกมสะดวกรวดเร็ว <span style={{ color: '#c084fc' }}>24 ชั่วโมง</span></h1>
-              <p style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '20px' }}>บริการเติมเกมอัตโนมัติ รวดเร็ว ปลอดภัย 100%</p>
+              <p style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '20px' }}>บริการเติมเกม Avatar Star, VALORANT, PUBG, ROV, Free Fire และอื่นๆ ปลอดภัย 100%</p>
               <input type="text" placeholder="🔍 ค้นหาชื่อเกม..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', maxWidth: '400px', backgroundColor: 'rgba(17, 24, 39, 0.8)', border: '1px solid #374151', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', outline: 'none' }} />
             </div>
 
