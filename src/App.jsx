@@ -1,18 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  Gamepad2, Shield, Search, Wallet, CheckCircle2, 
-  Settings, Lock, ArrowRight, User, History,
-  LogOut, Sparkles, TrendingUp, RefreshCw
-} from 'lucide-react';
 
 export default function GameTopupApp() {
   const [activeTab, setActiveTab] = useState('shop');
   const [selectedGame, setSelectedGame] = useState(null);
   const [playerId, setPlayerId] = useState('');
-  const [server, setServer] = useState('');
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
-  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -27,7 +20,7 @@ export default function GameTopupApp() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
 
-  const [gamesData, setGamesData] = useState([
+  const [gamesData] = useState([
     {
       id: 'valorant',
       name: 'VALORANT',
@@ -166,10 +159,10 @@ export default function GameTopupApp() {
   ]);
 
   const paymentMethods = [
-    { id: 'qrcode', name: 'QR PromptPay', desc: 'ฟรีค่าธรรมเนียม อัตโนมัติ 24 ชม.', icon: 'qr' },
-    { id: 'true', name: 'TrueMoney Wallet', desc: 'สะดวกรวดเร็ว ปลอดภัย', icon: 'wallet' },
-    { id: 'truemoney', name: 'บัตรเงินสดทรูมันนี่', desc: 'หักค่าธรรมเนียม 14.5%', icon: 'card' },
-    { id: 'card', name: 'บัตรเครดิต / เดบิต', desc: 'VISA / Mastercard', icon: 'credit-card' }
+    { id: 'qrcode', name: 'QR PromptPay', desc: 'ฟรีค่าธรรมเนียม อัตโนมัติ 24 ชม.' },
+    { id: 'true', name: 'TrueMoney Wallet', desc: 'สะดวกรวดเร็ว ปลอดภัย' },
+    { id: 'truemoney', name: 'บัตรเงินสดทรูมันนี่', desc: 'หักค่าธรรมเนียม 14.5%' },
+    { id: 'card', name: 'บัตรเครดิต / เดบิต', desc: 'VISA / Mastercard' }
   ];
 
   const [orders, setOrders] = useState([
@@ -206,138 +199,101 @@ export default function GameTopupApp() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-purple-500 selection:text-white pb-20">
+    <div style={{ backgroundColor: '#090d16', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '60px' }}>
       
-      {/* HEADER NAVBAR */}
-      <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-2xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
-            <div className="bg-gradient-to-tr from-purple-600 to-indigo-500 p-3 rounded-2xl shadow-lg shadow-purple-500/30 flex items-center justify-center">
-              <Gamepad2 className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <span className="text-xl sm:text-2xl font-black tracking-wider bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
-                CYBER TOPUP
-              </span>
-              <span className="block text-[11px] text-slate-400 font-semibold tracking-widest uppercase">Fast & Secure Gaming</span>
-            </div>
+      {/* NAVBAR */}
+      <header style={{ backgroundColor: '#111827', borderBottom: '1 border solid #1f2937', padding: '15px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', itemsCenter: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
+          <div style={{ backgroundColor: '#9333ea', padding: '8px 12px', borderRadius: '12px', fontSize: '20px' }}>🎮</div>
+          <div>
+            <div style={{ fontSize: '22px', fontWeight: '900', color: '#c084fc', letterSpacing: '1px' }}>CYBER TOPUP</div>
+            <div style={{ fontSize: '10px', color: '#9ca3af', letterSpacing: '2px', textTransform: 'uppercase' }}>Fast & Secure Gaming</div>
           </div>
-
-          <nav className="flex items-center space-x-2 sm:space-x-3">
-            <button 
-              onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}
-              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center space-x-2 ${activeTab === 'shop' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/40' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'}`}
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>หน้าแรกเติมเกม</span>
-            </button>
-            <button 
-              onClick={() => setActiveTab('track')}
-              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center space-x-2 ${activeTab === 'track' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/40' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'}`}
-            >
-              <History className="w-4 h-4" />
-              <span>เช็คสถานะ</span>
-            </button>
-            <button 
-              onClick={() => setActiveTab('admin')}
-              className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center space-x-2 ${activeTab === 'admin' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/40' : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'}`}
-            >
-              <Settings className="w-4 h-4" />
-              <span>หลังบ้าน</span>
-            </button>
-          </nav>
         </div>
+
+        <nav style={{ display: 'flex', gap: '10px' }}>
+          <button 
+            onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}
+            style={{ backgroundColor: activeTab === 'shop' ? '#9333ea' : '#1f2937', color: '#ffffff', border: 'none', padding: '10px 18px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
+          >
+            ✨ หน้าแรกเติมเกม
+          </button>
+          <button 
+            onClick={() => setActiveTab('track')}
+            style={{ backgroundColor: activeTab === 'track' ? '#9333ea' : '#1f2937', color: '#ffffff', border: 'none', padding: '10px 18px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
+          >
+            📋 เช็คสถานะ
+          </button>
+          <button 
+            onClick={() => setActiveTab('admin')}
+            style={{ backgroundColor: activeTab === 'admin' ? '#9333ea' : '#1f2937', color: '#ffffff', border: 'none', padding: '10px 18px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
+          >
+            ⚙️ หลังบ้าน
+          </button>
+        </nav>
       </header>
 
       {/* MAIN CONTAINER */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+      <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px' }}>
         
+        {/* SHOP MAIN */}
         {activeTab === 'shop' && !selectedGame && (
           <div>
-            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-purple-900/50 via-indigo-900/40 to-slate-900 border border-purple-500/30 p-6 sm:p-10 mb-8 shadow-2xl">
-              <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
-              <div className="relative z-10 max-w-2xl">
-                <span className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 text-xs font-semibold mb-4">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>ระบบเติมเกมอัตโนมัติ 24 ชั่วโมง ปลอดภัย 100%</span>
-                </span>
-                <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4 text-white">
-                  เติมเกมสะดวกรวดเร็ว <br />
-                  <span className="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">ราคาถูกที่สุด คุ้มค่าที่สุด</span>
-                </h1>
-                <p className="text-slate-300 text-sm sm:text-base mb-6">
-                  เลือกเกมโปรดของคุณ เติมไวภายใน 1 นาที รองรับทั้ง VALORANT, PUBG, ROV, Avatar Star ที่กำลังจะเปิดในไทย และเกมดังอื่นๆ อีกมากมาย
-                </p>
+            {/* HERO BANNER */}
+            <div style={{ background: 'linear-gradient(135deg, #3b0764 0%, #1e1b4b 50%, #111827 100%)', border: '1px solid #581c87', borderRadius: '24px', padding: '35px', marginBottom: '35px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
+              <span style={{ backgroundColor: 'rgba(147, 51, 234, 0.2)', border: '1px solid #a855f7', color: '#e9d5ff', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', display: 'inline-block', marginBottom: '15px' }}>
+                🚀 ระบบเติมเกมอัตโนมัติ 24 ชั่วโมง ปลอดภัย 100%
+              </span>
+              <h1 style={{ fontSize: '38px', fontWeight: '900', margin: '0 0 15px 0', lineHeight: '1.2' }}>
+                เติมเกมสะดวกรวดเร็ว <br />
+                <span style={{ color: '#c084fc' }}>ราคาถูกที่สุด คุ้มค่าที่สุด</span>
+              </h1>
+              <p style={{ color: '#d1d5db', fontSize: '15px', marginBottom: '25px', maxWidth: '650px' }}>
+                เลือกเกมโปรดของคุณ เติมไวภายใน 1 นาที รองรับทั้ง VALORANT, PUBG, ROV, Avatar Star ที่กำลังจะเปิดในไทย และเกมดังอื่นๆ อีกมากมาย
+              </p>
 
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input 
-                      type="text"
-                      placeholder="ค้นหาชื่อเกมที่ต้องการเติม..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full bg-slate-900/90 border border-slate-700 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 transition-all shadow-inner"
-                    />
-                  </div>
-                  <div className="flex space-x-2">
-                    <button 
-                      onClick={() => setSelectedCategory('all')}
-                      className={`px-4 py-3.5 rounded-2xl text-xs font-bold transition-all ${selectedCategory === 'all' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'}`}
-                    >
-                      🎮 ทั้งหมด
-                    </button>
-                    <button 
-                      onClick={() => setSelectedCategory('pc')}
-                      className={`px-4 py-3.5 rounded-2xl text-xs font-bold transition-all ${selectedCategory === 'pc' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'}`}
-                    >
-                      💻 PC Games
-                    </button>
-                    <button 
-                      onClick={() => setSelectedCategory('mobile')}
-                      className={`px-4 py-3.5 rounded-2xl text-xs font-bold transition-all ${selectedCategory === 'mobile' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'}`}
-                    >
-                      📱 Mobile Games
-                    </button>
-                  </div>
+              {/* SEARCH & FILTER */}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <input 
+                  type="text"
+                  placeholder="🔍 ค้นหาชื่อเกม..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{ flex: '1', minWidth: '220px', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', fontSize: '14px', outline: 'none' }}
+                />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => setSelectedCategory('all')} style={{ backgroundColor: selectedCategory === 'all' ? '#9333ea' : '#111827', border: '1px solid #374151', color: '#ffffff', padding: '12px 18px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>🎮 ทั้งหมด</button>
+                  <button onClick={() => setSelectedCategory('pc')} style={{ backgroundColor: selectedCategory === 'pc' ? '#9333ea' : '#111827', border: '1px solid #374151', color: '#ffffff', padding: '12px 18px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>💻 PC</button>
+                  <button onClick={() => setSelectedCategory('mobile')} style={{ backgroundColor: selectedCategory === 'mobile' ? '#9333ea' : '#111827', border: '1px solid #374151', color: '#ffffff', padding: '12px 18px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>📱 Mobile</button>
                 </div>
               </div>
             </div>
 
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-extrabold text-white flex items-center space-x-2">
-                <span>🔥 เลือกเกมที่ต้องการเติมเงิน ({filteredGames.length} เกม)</span>
-              </h2>
-            </div>
+            {/* GAMES GRID */}
+            <h2 style={{ fontSize: '22px', fontWeight: '900', marginBottom: '20px' }}>🔥 เลือกเกมที่ต้องการเติมเงิน ({filteredGames.length} เกม)</h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
               {filteredGames.map((game) => (
                 <div 
                   key={game.id}
                   onClick={() => { setSelectedGame(game); setSelectedPackage(null); }}
-                  className="group relative bg-slate-900/80 rounded-3xl overflow-hidden border border-slate-800 hover:border-purple-500/60 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/20 cursor-pointer flex flex-col transform hover:-translate-y-1"
+                  style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', overflow: 'hidden', cursor: 'pointer', display: 'flex', flexDirection: 'column', transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}
                 >
-                  <div className="relative h-44 sm:h-52 overflow-hidden bg-slate-800">
-                    <img 
-                      src={game.image} 
-                      alt={game.name}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-                    <span className="absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-bold bg-purple-600 text-white shadow-lg">
+                  <div style={{ position: 'relative', height: '170px', backgroundColor: '#1f2937' }}>
+                    <img src={game.image} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <span style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: '#9333ea', color: '#ffffff', padding: '4px 10px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold' }}>
                       {game.badge}
                     </span>
                   </div>
                   
-                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+                  <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', flex: '1', justifyContent: 'space-between' }}>
                     <div>
-                      <h3 className="font-extrabold text-base sm:text-lg text-white group-hover:text-purple-400 transition-colors line-clamp-1">{game.name}</h3>
-                      <p className="text-xs text-slate-400 mt-0.5">{game.publisher}</p>
+                      <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0', color: '#ffffff' }}>{game.name}</h3>
+                      <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>{game.publisher}</p>
                     </div>
                     
-                    <button className="mt-4 w-full bg-slate-800 group-hover:bg-purple-600 text-slate-200 group-hover:text-white py-3 rounded-2xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 shadow-md">
-                      <span>คลิกเพื่อเติมเงิน</span>
-                      <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                    <button style={{ marginTop: '15px', width: '100%', backgroundColor: '#9333ea', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>
+                      คลิกเพื่อเติมเงิน →
                     </button>
                   </div>
                 </div>
@@ -346,124 +302,100 @@ export default function GameTopupApp() {
           </div>
         )}
 
+        {/* TOPUP FORM */}
         {activeTab === 'shop' && selectedGame && (
-          <div className="max-w-4xl mx-auto animate-fade-in">
+          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             <button 
               onClick={() => setSelectedGame(null)}
-              className="mb-6 text-sm text-purple-400 hover:text-purple-300 font-bold flex items-center space-x-1.5 bg-slate-900/90 px-5 py-3 rounded-2xl border border-slate-800 w-fit shadow-md transition-all hover:bg-slate-800"
+              style={{ backgroundColor: '#111827', border: '1px solid #374151', color: '#c084fc', padding: '8px 16px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', marginBottom: '20px', fontSize: '13px' }}
             >
-              <span>← กลับไปเลือกเกมอื่น</span>
+              ← กลับไปเลือกเกมอื่น
             </button>
 
-            <div className="relative rounded-3xl overflow-hidden mb-8 border border-purple-500/40 p-6 sm:p-8 bg-slate-900 shadow-2xl">
-              <div className="absolute inset-0 opacity-20">
-                <img src={selectedGame.image} alt={selectedGame.name} className="w-full h-full object-cover filter blur-sm" />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/90 to-transparent"></div>
-              
-              <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-6">
-                <img src={selectedGame.image} alt={selectedGame.name} className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover shadow-2xl border border-purple-500/40" />
-                <div>
-                  <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 mb-2 inline-block">
-                    {selectedGame.badge}
-                  </span>
-                  <h1 className="text-2xl sm:text-4xl font-black text-white">{selectedGame.name}</h1>
-                  <p className="text-sm text-slate-300 mt-1">ผู้ให้บริการ: {selectedGame.publisher}</p>
-                </div>
+            {/* SELECTED GAME HEADER */}
+            <div style={{ backgroundColor: '#111827', border: '1px solid #581c87', borderRadius: '20px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '25px' }}>
+              <img src={selectedGame.image} alt={selectedGame.name} style={{ width: '80px', height: '80px', borderRadius: '14px', objectFit: 'cover', border: '2px solid #9333ea' }} />
+              <div>
+                <span style={{ backgroundColor: 'rgba(147, 51, 234, 0.2)', color: '#c084fc', padding: '3px 10px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{selectedGame.badge}</span>
+                <h1 style={{ fontSize: '24px', fontWeight: '900', margin: '6px 0 2px 0' }}>{selectedGame.name}</h1>
+                <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>ผู้ให้บริการ: {selectedGame.publisher}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="md:col-span-2 space-y-6">
+            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '25px' }}>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 
-                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
-                  <h2 className="text-base font-bold text-white mb-4 flex items-center space-x-2">
-                    <span className="w-7 h-7 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-black">1</span>
-                    <span>ระบุข้อมูลไอดีผู้เล่น</span>
+                {/* STEP 1: PLAYER ID */}
+                <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '20px' }}>
+                  <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ width: '24px', height: '24px', backgroundColor: '#9333ea', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>1</span>
+                    ระบุข้อมูลไอดีผู้เล่น
                   </h2>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1.5">Player ID / Riot ID / UID</label>
-                      <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <input 
-                          type="text"
-                          placeholder="เช่น PlayerName#1234 หรือ 123456789"
-                          value={playerId}
-                          onChange={(e) => setPlayerId(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
-                        />
-                      </div>
-                    </div>
-
-                    {selectedGame.id === 'rov' && (
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-300 mb-1.5">เลือกเซิร์ฟเวอร์</label>
-                        <select 
-                          value={server} 
-                          onChange={(e) => setServer(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-purple-500"
-                        >
-                          <option value="">-- กรุณาเลือกเซิร์ฟเวอร์ --</option>
-                          <option value="th">Thailand</option>
-                        </select>
-                      </div>
-                    )}
-                  </div>
+                  <input 
+                    type="text"
+                    placeholder="กรอก Player ID / Riot ID / UID..."
+                    value={playerId}
+                    onChange={(e) => setPlayerId(e.target.value)}
+                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                  />
                 </div>
 
-                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
-                  <h2 className="text-base font-bold text-white mb-4 flex items-center space-x-2">
-                    <span className="w-7 h-7 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-black">2</span>
-                    <span>เลือกแพ็กเกจที่ต้องการเติม</span>
+                {/* STEP 2: SELECT PACKAGE */}
+                <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '20px' }}>
+                  <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ width: '24px', height: '24px', backgroundColor: '#9333ea', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>2</span>
+                    เลือกแพ็กเกจที่ต้องการเติม
                   </h2>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                     {selectedGame.packages.map((pkg) => {
                       const isSelected = selectedPackage?.id === pkg.id;
                       return (
                         <div 
                           key={pkg.id}
                           onClick={() => setSelectedPackage(pkg)}
-                          className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${isSelected ? 'bg-purple-600/30 border-purple-500 shadow-lg shadow-purple-500/30 ring-2 ring-purple-500' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}
+                          style={{
+                            backgroundColor: isSelected ? 'rgba(147, 51, 234, 0.2)' : '#030712',
+                            border: isSelected ? '2px solid #9333ea' : '1px solid #1f2937',
+                            borderRadius: '12px',
+                            padding: '12px',
+                            cursor: 'pointer'
+                          }}
                         >
-                          <div>
-                            <span className="text-xs font-bold text-purple-400">{pkg.bonus}</span>
-                            <div className="text-base font-black text-white mt-1">{pkg.name}</div>
-                          </div>
-                          <div className="mt-4 pt-2 border-t border-slate-800 flex items-center justify-between">
-                            <span className="text-xs text-slate-400">ราคา</span>
-                            <span className="text-sm font-black text-emerald-400">฿{pkg.price}</span>
-                          </div>
+                          <div style={{ fontSize: '11px', color: '#c084fc', fontWeight: 'bold' }}>{pkg.bonus}</div>
+                          <div style={{ fontSize: '14px', fontWeight: '900', color: '#ffffff', margin: '4px 0 8px 0' }}>{pkg.name}</div>
+                          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#34d399' }}>฿{pkg.price}</div>
                         </div>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
-                  <h2 className="text-base font-bold text-white mb-4 flex items-center space-x-2">
-                    <span className="w-7 h-7 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-black">3</span>
-                    <span>เลือกช่องทางชำระเงิน</span>
+                {/* STEP 3: PAYMENT */}
+                <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '20px' }}>
+                  <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ width: '24px', height: '24px', backgroundColor: '#9333ea', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>3</span>
+                    เลือกช่องทางชำระเงิน
                   </h2>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                     {paymentMethods.map((pay) => {
                       const isSelected = selectedPayment?.id === pay.id;
                       return (
                         <div 
                           key={pay.id}
                           onClick={() => setSelectedPayment(pay)}
-                          className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center space-x-3 ${isSelected ? 'bg-purple-600/30 border-purple-500 shadow-lg shadow-purple-500/30 ring-2 ring-purple-500' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}
+                          style={{
+                            backgroundColor: isSelected ? 'rgba(147, 51, 234, 0.2)' : '#030712',
+                            border: isSelected ? '2px solid #9333ea' : '1px solid #1f2937',
+                            borderRadius: '12px',
+                            padding: '12px',
+                            cursor: 'pointer'
+                          }}
                         >
-                          <div className={`p-2.5 rounded-xl ${isSelected ? 'bg-purple-600 text-white' : 'bg-slate-900 text-slate-300'}`}>
-                            <Wallet className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-bold text-white">{pay.name}</div>
-                            <div className="text-[11px] text-slate-400">{pay.desc}</div>
-                          </div>
+                          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>{pay.name}</div>
+                          <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>{pay.desc}</div>
                         </div>
                       );
                     })}
@@ -472,308 +404,141 @@ export default function GameTopupApp() {
 
               </div>
 
-              <div className="space-y-6">
-                <div className="bg-slate-900/95 border border-slate-800 rounded-3xl p-6 sm:p-8 sticky top-24 shadow-2xl">
-                  <h3 className="text-lg font-bold text-white mb-4 pb-3 border-b border-slate-800">สรุปคำสั่งซื้อ</h3>
+              {/* SUMMARY SIDEBAR */}
+              <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '20px', height: 'fit-content', position: 'sticky', top: '100px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 15px 0', borderBottom: '1px solid #1f2937', paddingBottom: '10px' }}>สรุปคำสั่งซื้อ</h3>
 
-                  <div className="space-y-3 text-sm mb-6">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">เกม:</span>
-                      <span className="font-semibold text-white">{selectedGame.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">ID ผู้เล่น:</span>
-                      <span className="font-semibold text-purple-300">{playerId || '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">แพ็กเกจ:</span>
-                      <span className="font-semibold text-white">{selectedPackage ? selectedPackage.name : '-'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">ช่องทางชำระ:</span>
-                      <span className="font-semibold text-white">{selectedPayment ? selectedPayment.name : '-'}</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-slate-800 mb-6 flex items-center justify-between">
-                    <span className="text-base font-bold text-white">ยอดชำระสุทธิ:</span>
-                    <span className="text-2xl font-black text-emerald-400">
-                      ฿{selectedPackage ? selectedPackage.price : '0'}
-                    </span>
-                  </div>
-
-                  <button 
-                    disabled={!playerId || !selectedPackage || !selectedPayment}
-                    onClick={() => setShowCheckoutModal(true)}
-                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-2xl font-bold shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center space-x-2"
-                  >
-                    <span>ยืนยันการชำระเงิน</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                  
-                  <div className="mt-4 flex items-center space-x-2 text-[11px] text-slate-400 justify-center">
-                    <Shield className="w-4 h-4 text-emerald-400" />
-                    <span>ระบบเติมเงินอัตโนมัติ ปลอดภัย 100%</span>
-                  </div>
+                <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#9ca3af' }}>เกม:</span> <span>{selectedGame.name}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#9ca3af' }}>ID ผู้เล่น:</span> <span style={{ color: '#c084fc', fontWeight: 'bold' }}>{playerId || '-'}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#9ca3af' }}>แพ็กเกจ:</span> <span>{selectedPackage ? selectedPackage.name : '-'}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#9ca3af' }}>ช่องทางชำระ:</span> <span>{selectedPayment ? selectedPayment.name : '-'}</span></div>
                 </div>
+
+                <div style={{ borderTop: '1px solid #1f2937', paddingTop: '15px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 'bold' }}>ยอดชำระ:</span>
+                  <span style={{ fontSize: '22px', fontWeight: '900', color: '#34d399' }}>฿{selectedPackage ? selectedPackage.price : '0'}</span>
+                </div>
+
+                <button 
+                  disabled={!playerId || !selectedPackage || !selectedPayment}
+                  onClick={() => setShowCheckoutModal(true)}
+                  style={{
+                    width: '100%',
+                    backgroundColor: (!playerId || !selectedPackage || !selectedPayment) ? '#374151' : '#9333ea',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '14px',
+                    borderRadius: '12px',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    cursor: (!playerId || !selectedPackage || !selectedPayment) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  ยืนยันการชำระเงิน
+                </button>
               </div>
+
             </div>
           </div>
         )}
 
+        {/* TRACK TAB */}
         {activeTab === 'track' && (
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
-              <h2 className="text-2xl font-black text-white mb-2">เช็คสถานะการเติมเงิน</h2>
-              <p className="text-slate-400 text-sm mb-6">กรอกเลขออร์เดอร์ (เช่น ORD-98421) หรือชื่อผู้เล่นเพื่อตรวจสอบประวัติการทำรายการ</p>
+          <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '30px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>เช็คสถานะการเติมเงิน</h2>
+            <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '20px' }}>กรอกเลขออร์เดอร์ (เช่น ORD-98421) หรือชื่อผู้เล่นเพื่อตรวจสอบ</p>
 
-              <div className="flex gap-3 mb-8">
-                <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <input 
-                    type="text"
-                    placeholder="กรอกเลขออร์เดอร์ หรือ Player ID..."
-                    value={trackQuery}
-                    onChange={(e) => setTrackQuery(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-                <button 
-                  onClick={() => {
-                    const found = orders.find(o => o.id.toLowerCase().includes(trackQuery.toLowerCase()) || o.player.toLowerCase().includes(trackQuery.toLowerCase()));
-                    setTrackResult(found || { notFound: true });
-                  }}
-                  className="bg-purple-600 hover:bg-purple-500 text-white px-6 rounded-2xl font-bold text-sm transition-all shadow-lg shadow-purple-600/30"
-                >
-                  ค้นหา
-                </button>
-              </div>
-
-              {trackResult && !trackResult.notFound && (
-                <div className="bg-slate-950 border border-purple-500/40 rounded-2xl p-6 shadow-xl space-y-4 animate-fade-in">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                    <span className="text-xs text-purple-400 font-bold">{trackResult.id}</span>
-                    <span className="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center space-x-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>{trackResult.status}</span>
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-xs text-slate-400 block">เกม</span>
-                      <span className="font-bold text-white">{trackResult.game}</span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-slate-400 block">แพ็กเกจ</span>
-                      <span className="font-bold text-white">{trackResult.package}</span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-slate-400 block">ผู้เล่น</span>
-                      <span className="font-bold text-purple-300">{trackResult.player}</span>
-                    </div>
-                    <div>
-                      <span className="text-xs text-slate-400 block">ยอดเงิน</span>
-                      <span className="font-bold text-emerald-400">฿{trackResult.price}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {trackResult && trackResult.notFound && (
-                <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-center text-rose-400 text-sm">
-                  ไม่พบรายการที่คุณค้นหา กรุณาตรวจสอบเลขออร์เดอร์ใหม่อีกครั้ง
-                </div>
-              )}
-
-              <div className="mt-10">
-                <h3 className="text-base font-bold text-white mb-4">รายการเติมเงินล่าสุดในระบบ</h3>
-                <div className="space-y-3">
-                  {orders.map((ord, idx) => (
-                    <div key={idx} className="bg-slate-950 border border-slate-800 p-4 rounded-2xl flex items-center justify-between text-sm">
-                      <div>
-                        <div className="font-bold text-white flex items-center space-x-2">
-                          <span>{ord.game}</span>
-                          <span className="text-xs text-slate-400 font-normal">({ord.package})</span>
-                        </div>
-                        <div className="text-xs text-purple-400 mt-0.5">ID: {ord.player} • {ord.time}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold text-emerald-400">฿{ord.price}</div>
-                        <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">สำเร็จ</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '25px' }}>
+              <input 
+                type="text"
+                placeholder="กรอกเลขออร์เดอร์ หรือ Player ID..."
+                value={trackQuery}
+                onChange={(e) => setTrackQuery(e.target.value)}
+                style={{ flex: 1, backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none' }}
+              />
+              <button 
+                onClick={() => {
+                  const found = orders.find(o => o.id.toLowerCase().includes(trackQuery.toLowerCase()) || o.player.toLowerCase().includes(trackQuery.toLowerCase()));
+                  setTrackResult(found || { notFound: true });
+                }}
+                style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '0 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                ค้นหา
+              </button>
             </div>
-          </div>
-        )}
 
-        {activeTab === 'admin' && (
-          <div className="max-w-4xl mx-auto">
-            {!isAdminLoggedIn ? (
-              <div className="max-w-md mx-auto bg-slate-900/90 border border-slate-800 rounded-3xl p-8 shadow-2xl text-center">
-                <div className="w-12 h-12 bg-purple-600/20 border border-purple-500/40 rounded-2xl flex items-center justify-center mx-auto mb-4 text-purple-400">
-                  <Lock className="w-6 h-6" />
+            {trackResult && !trackResult.notFound && (
+              <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '14px', padding: '18px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1f2937', paddingBottom: '8px', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '12px', color: '#c084fc', fontWeight: 'bold' }}>{trackResult.id}</span>
+                  <span style={{ fontSize: '12px', color: '#34d399', fontWeight: 'bold' }}>✓ {trackResult.status}</span>
                 </div>
-                <h2 className="text-xl font-bold text-white mb-2">ระบบหลังบ้าน Admin</h2>
-                <p className="text-xs text-slate-400 mb-6">กรุณากรอกรหัส PIN 6 หลักเพื่อเข้าสู่ระบบ (รหัสทดสอบ: <span className="text-purple-400 font-bold">123456</span>)</p>
-
-                <input 
-                  type="password"
-                  maxLength={6}
-                  placeholder="PIN 6 หลัก"
-                  value={adminPin}
-                  onChange={(e) => setAdminPin(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3.5 text-center text-lg tracking-widest text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 mb-4"
-                />
-
-                {adminPinError && (
-                  <p className="text-xs text-rose-400 mb-4">รหัส PIN ไม่ถูกต้อง (ลองกรอก 123456)</p>
-                )}
-
-                <button 
-                  onClick={() => {
-                    if (adminPin === '123456') {
-                      setIsAdminLoggedIn(true);
-                      setAdminPinError(false);
-                    } else {
-                      setAdminPinError(true);
-                    }
-                  }}
-                  className="w-full bg-purple-600 hover:bg-purple-500 text-white py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-purple-600/30 transition-all"
-                >
-                  เข้าสู่ระบบ
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-6 animate-fade-in">
-                <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
-                  <div>
-                    <h2 className="text-xl font-bold text-white">ยินดีต้อนรับผู้ดูแลระบบ (Admin)</h2>
-                    <p className="text-xs text-slate-400 mt-0.5">จัดการราคาแพ็กเกจเกม และตรวจสอบยอดขายทั้งหมด</p>
-                  </div>
-                  <button 
-                    onClick={() => setIsAdminLoggedIn(false)}
-                    className="bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 px-4 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>ออกจากระบบ</span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-3xl shadow">
-                    <span className="text-xs text-slate-400 font-medium">ยอดขายรวมวันนี้</span>
-                    <div className="text-2xl font-black text-emerald-400 mt-2">฿12,450</div>
-                  </div>
-                  <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-3xl shadow">
-                    <span className="text-xs text-slate-400 font-medium">รายการเติมสำเร็จ</span>
-                    <div className="text-2xl font-black text-purple-400 mt-2">48 รายการ</div>
-                  </div>
-                  <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-3xl shadow">
-                    <span className="text-xs text-slate-400 font-medium">จำนวนเกมในระบบ</span>
-                    <div className="text-2xl font-black text-indigo-400 mt-2">{gamesData.length} เกม</div>
-                  </div>
-                </div>
-
-                <div className="bg-slate-900/90 border border-slate-800 p-6 rounded-3xl shadow-xl">
-                  <h3 className="text-base font-bold text-white mb-4">รายการคำสั่งซื้อล่าสุด</h3>
-                  <div className="space-y-3">
-                    {orders.map((ord, idx) => (
-                      <div key={idx} className="bg-slate-950 border border-slate-800 p-4 rounded-2xl flex items-center justify-between text-sm">
-                        <div>
-                          <div className="font-bold text-white">{ord.id} - {ord.game} ({ord.package})</div>
-                          <div className="text-xs text-purple-400 mt-0.5">ผู้เล่น: {ord.player} • {ord.time}</div>
-                        </div>
-                        <div className="text-right">
-                          <span className="font-bold text-emerald-400">฿{ord.price}</span>
-                          <div className="text-[10px] text-emerald-400">{ord.status}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div>เกม: <b>{trackResult.game}</b></div>
+                  <div>แพ็กเกจ: <b>{trackResult.package}</b></div>
+                  <div>ผู้เล่น: <b style={{ color: '#c084fc' }}>{trackResult.player}</b></div>
+                  <div>ยอดเงิน: <b style={{ color: '#34d399' }}>฿{trackResult.price}</b></div>
                 </div>
               </div>
             )}
           </div>
         )}
+
+        {/* ADMIN TAB */}
+        {activeTab === 'admin' && (
+          <div style={{ maxWidth: '400px', margin: '0 auto', backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '30px', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0' }}>ระบบหลังบ้าน Admin</h2>
+            <p style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '20px' }}>กรอก PIN 6 หลักเพื่อเข้าสู่ระบบ (รหัสทดสอบ: 123456)</p>
+
+            <input 
+              type="password"
+              maxLength={6}
+              placeholder="PIN 6 หลัก"
+              value={adminPin}
+              onChange={(e) => setAdminPin(e.target.value)}
+              style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', textAlign: 'center', fontSize: '18px', letterSpacing: '4px', marginBottom: '15px', boxSizing: 'border-box' }}
+            />
+
+            <button 
+              onClick={() => {
+                if (adminPin === '123456') setIsAdminLoggedIn(true);
+                else setAdminPinError(true);
+              }}
+              style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              เข้าสู่ระบบ
+            </button>
+          </div>
+        )}
+
       </main>
 
+      {/* PAYMENT POPUP MODAL */}
       {showCheckoutModal && selectedGame && selectedPackage && selectedPayment && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-purple-500/40 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-scale-up">
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+          <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.8)' }}>
             {!orderSuccess ? (
               <div>
-                <h3 className="text-xl font-bold text-white mb-2 text-center">ยืนยันการชำระเงิน</h3>
-                <p className="text-xs text-slate-400 text-center mb-6">สแกน QR Code หรือชำระเงินผ่านช่องทางที่เลือก</p>
-
-                {selectedPayment.id === 'qrcode' && (
-                  <div className="bg-white p-4 rounded-2xl w-48 h-48 mx-auto mb-6 flex flex-col items-center justify-center shadow-lg">
-                    <div className="w-36 h-36 border-4 border-slate-900 flex items-center justify-center bg-slate-100 rounded-lg">
-                      <span className="text-xs font-bold text-slate-900 text-center">QR PromptPay<br/>฿{selectedPackage.price}</span>
-                    </div>
-                  </div>
-                )}
-
-                <div className="bg-slate-950 rounded-2xl p-4 border border-slate-800 text-sm space-y-2 mb-6">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">เกม:</span>
-                    <span className="font-bold text-white">{selectedGame.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">แพ็กเกจ:</span>
-                    <span className="font-bold text-white">{selectedPackage.name}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">ยอดโอน:</span>
-                    <span className="font-bold text-emerald-400">฿{selectedPackage.price}</span>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 15px 0' }}>ยืนยันการชำระเงิน</h3>
+                <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 20px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ color: '#000000', fontSize: '13px', fontWeight: 'bold' }}>
+                    QR PromptPay<br/>฿{selectedPackage.price}
                   </div>
                 </div>
 
-                <div className="flex space-x-3">
-                  <button 
-                    onClick={() => setShowCheckoutModal(false)}
-                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-2xl font-semibold text-sm transition-all"
-                  >
-                    ยกเลิก
-                  </button>
-                  <button 
-                    disabled={isProcessing}
-                    onClick={handleCheckout}
-                    className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white py-3 rounded-2xl font-bold text-sm shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center space-x-2"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>กำลังตรวจสอบ...</span>
-                      </>
-                    ) : (
-                      <span>ยืนยันการโอนเงิน</span>
-                    )}
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button onClick={() => setShowCheckoutModal(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
+                  <button onClick={handleCheckout} style={{ flex: 1, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
+                    {isProcessing ? 'กำลังตรวจสอบ...' : 'ยืนยันโอนเงิน'}
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="text-center py-4">
-                <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/40">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <h3 className="text-2xl font-bold text-white mb-2">เติมเงินสำเร็จ!</h3>
-                <p className="text-xs text-slate-400 mb-6">เลขออร์เดอร์ของคุณคือ <span className="text-purple-400 font-bold">{orderSuccess}</span><br/>ระบบได้เติมไอเทมเข้าไอดีให้เรียบร้อยแล้วครับ</p>
-                
-                <button 
-                  onClick={() => {
-                    setShowCheckoutModal(false);
-                    setOrderSuccess(null);
-                    setSelectedGame(null);
-                    setPlayerId('');
-                    setSelectedPackage(null);
-                  }}
-                  className="w-full bg-purple-600 hover:bg-purple-500 text-white py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-purple-600/30 transition-all"
-                >
-                  กลับสู่หน้าหลัก
-                </button>
+              <div>
+                <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเงินสำเร็จ!</h3>
+                <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>เลขออร์เดอร์ของคุณคือ <b style={{ color: '#c084fc' }}>{orderSuccess}</b></p>
+                <button onClick={() => { setShowCheckoutModal(false); setOrderSuccess(null); setSelectedGame(null); }} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>กลับสู่หน้าหลัก</button>
               </div>
             )}
           </div>
