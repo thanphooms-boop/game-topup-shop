@@ -208,12 +208,11 @@ export default function GameTopupApp() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-purple-500 selection:text-white pb-20">
       
-      {/* HEADER NAVBAR (จัดระเบียบให้เด่นชัดและสวยงาม) */}
+      {/* HEADER NAVBAR */}
       <header className="sticky top-0 z-50 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
-            <div className="bg-gradient-to-tr from-purple-600 to-indigo-500 p-3 rounded-2xl shadow-lg shadow-purple-500/30">
+            <div className="bg-gradient-to-tr from-purple-600 to-indigo-500 p-3 rounded-2xl shadow-lg shadow-purple-500/30 flex items-center justify-center">
               <Gamepad2 className="w-7 h-7 text-white" />
             </div>
             <div>
@@ -247,7 +246,6 @@ export default function GameTopupApp() {
               <span>หลังบ้าน</span>
             </button>
           </nav>
-
         </div>
       </header>
 
@@ -256,7 +254,6 @@ export default function GameTopupApp() {
         
         {activeTab === 'shop' && !selectedGame && (
           <div>
-            {/* HERO BANNER */}
             <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-purple-900/50 via-indigo-900/40 to-slate-900 border border-purple-500/30 p-6 sm:p-10 mb-8 shadow-2xl">
               <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
               <div className="relative z-10 max-w-2xl">
@@ -272,7 +269,6 @@ export default function GameTopupApp() {
                   เลือกเกมโปรดของคุณ เติมไวภายใน 1 นาที รองรับทั้ง VALORANT, PUBG, ROV, Avatar Star ที่กำลังจะเปิดในไทย และเกมดังอื่นๆ อีกมากมาย
                 </p>
 
-                {/* SEARCH & FILTER BUTTONS */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -308,7 +304,6 @@ export default function GameTopupApp() {
               </div>
             </div>
 
-            {/* GAMES GRID */}
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-extrabold text-white flex items-center space-x-2">
                 <span>🔥 เลือกเกมที่ต้องการเติมเงิน ({filteredGames.length} เกม)</span>
@@ -381,7 +376,6 @@ export default function GameTopupApp() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-2 space-y-6">
                 
-                {/* STEP 1 */}
                 <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
                   <h2 className="text-base font-bold text-white mb-4 flex items-center space-x-2">
                     <span className="w-7 h-7 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-black">1</span>
@@ -419,7 +413,6 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                {/* STEP 2 */}
                 <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
                   <h2 className="text-base font-bold text-white mb-4 flex items-center space-x-2">
                     <span className="w-7 h-7 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-black">2</span>
@@ -449,7 +442,6 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                {/* STEP 3 */}
                 <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
                   <h2 className="text-base font-bold text-white mb-4 flex items-center space-x-2">
                     <span className="w-7 h-7 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-black">3</span>
@@ -480,7 +472,6 @@ export default function GameTopupApp() {
 
               </div>
 
-              {/* SUMMARY */}
               <div className="space-y-6">
                 <div className="bg-slate-900/95 border border-slate-800 rounded-3xl p-6 sm:p-8 sticky top-24 shadow-2xl">
                   <h3 className="text-lg font-bold text-white mb-4 pb-3 border-b border-slate-800">สรุปคำสั่งซื้อ</h3>
