@@ -23,16 +23,21 @@ export default function GameTopupApp() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // Topup Wallet State & Multi-Step Flow (Now includes QR Timer & Auto-Topup)
+  // Topup Wallet State & Background 30s Countdown State
   const [showTopupWalletModal, setShowTopupWalletModal] = useState(false);
   const [topupAmount, setTopupAmount] = useState('');
   const [walletPaymentMethod, setWalletPaymentMethod] = useState('qrcode');
   const [walletPhone, setWalletPhone] = useState('');
-  const [isWalletProcessing, setIsWalletProcessing] = useState(false);
-  const [walletStep, setWalletStep] = useState(1); // 1: Input Amount, 2: QR Scan & 3-Min Timer, 3: Auto-processing 30s, 4: Success
+  const [walletStep, setWalletStep] = useState(1); // 1: Input Amount, 2: QR Scan & 3-Min Timer, 3: Success Modal
   const [walletTimeLeft, setWalletTimeLeft] = useState(180);
   const [isWalletQrExpired, setIsWalletQrExpired] = useState(false);
+
+  // Background Wallet Auto-Topup State (Runs even if modal is closed)
+  const [isWalletAutoRunning, setIsWalletAutoRunning] = useState(false);
   const [walletAutoSeconds, setWalletAutoSeconds] = useState(30);
+  const [pendingWalletAmount, setPendingWalletAmount] = useState(0);
+  const [showWalletSuccessPopup, setShowWalletSuccessPopup] = useState(false);
+  const [lastAddedAmount, setLastAddedAmount] = useState(0);
 
   // Payment Input States for Checkout
   const [trueWalletNumber, setTrueWalletNumber] = useState('');
@@ -49,7 +54,7 @@ export default function GameTopupApp() {
 
   // Checkout Modal State & Multi-Step Flow
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState(1); // 1: Password & ID Confirm, 2: QR Code / Pay Execution, 3: Auto-processing 30s / Pending, 4: Success
+  const [checkoutStep, setCheckoutStep] = useState(1); // 1: Password & ID Confirm, 2: QR Code / Pay Execution, 4: Success
   const [checkoutPassword, setCheckoutPassword] = useState('');
   const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
   const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
@@ -60,8 +65,12 @@ export default function GameTopupApp() {
   const [timeLeft, setTimeLeft] = useState(180);
   const [isQrExpired, setIsQrExpired] = useState(false);
 
-  // Auto-topup 30s Countdown State for Game Checkout
-  const [autoTopupSeconds, setAutoTopupSeconds] = useState(30);
+  // Background Game Checkout Auto-Topup State (Runs even if modal is closed)
+  const [isGameAutoRunning, setIsGameAutoRunning] = useState(false);
+  const [gameAutoSeconds, setGameAutoSeconds] = useState(30);
+  const [pendingGameOrderId, setPendingGameOrderId] = useState('');
+  const [showGameSuccessPopup, setShowGameSuccessPopup] = useState(false);
+  const [lastGameName, setLastGameName] = useState('');
 
   // Card Info State
   const [cardNumber, setCardNumber] = useState('');
@@ -238,7 +247,7 @@ export default function GameTopupApp() {
     return () => clearInterval(timer);
   }, [showCheckoutModal, checkoutStep, isQrExpired]);
 
-  // Countdown Timer Effect for Wallet Topup QR Code (3 Mins)
+  // Countdown Timer Effect for Wallet QR Code (3 Mins)
   useEffect(() => {
     let timer;
     if (showTopupWalletModal && walletStep === 2 && !isWalletQrExpired) {
@@ -256,53 +265,56 @@ export default function GameTopupApp() {
     return () => clearInterval(timer);
   }, [showTopupWalletModal, walletStep, isWalletQrExpired]);
 
-  // Auto-topup 30-Second Timer Effect for Game Checkout
+  // BACKGROUND WALLET AUTO-TOPUP TIMER (Runs continuously if isWalletAutoRunning is true)
   useEffect(() => {
-    let autoTimer;
-    if (showCheckoutModal && checkoutStep === 3) {
-      autoTimer = setInterval(() => {
-        setAutoTopupSeconds((prev) => {
-          if (prev <= 1) {
-            clearInterval(autoTimer);
-            if (orderSuccess) {
-              setOrders((prevOrders) =>
-                prevOrders.map((ord) =>
-                  ord.id === orderSuccess ? { ...ord, status: 'สำเร็จ (เติมออโต้)' } : ord
-                )
-              );
-            }
-            setCheckoutStep(4);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(autoTimer);
-  }, [showCheckoutModal, checkoutStep, orderSuccess]);
-
-  // Auto-topup 30-Second Timer Effect for Wallet Topup
-  useEffect(() => {
-    let walletAutoTimer;
-    if (showTopupWalletModal && walletStep === 3) {
-      walletAutoTimer = setInterval(() => {
+    let bgWalletTimer;
+    if (isWalletAutoRunning) {
+      bgWalletTimer = setInterval(() => {
         setWalletAutoSeconds((prev) => {
           if (prev <= 1) {
-            clearInterval(walletAutoTimer);
-            const amt = parseFloat(topupAmount) || 0;
+            clearInterval(bgWalletTimer);
+            const amt = pendingWalletAmount;
             setUser((prevUser) => ({
               ...prevUser,
               balance: prevUser.balance + amt
             }));
-            setWalletStep(4); // Success
+            setIsWalletAutoRunning(false);
+            setLastAddedAmount(amt);
+            setShowWalletSuccessPopup(true);
             return 0;
           }
           return prev - 1;
         });
       }, 1000);
     }
-    return () => clearInterval(walletAutoTimer);
-  }, [showTopupWalletModal, walletStep, topupAmount]);
+    return () => clearInterval(bgWalletTimer);
+  }, [isWalletAutoRunning, pendingWalletAmount]);
+
+  // BACKGROUND GAME CHECKOUT AUTO-TOPUP TIMER (Runs continuously if isGameAutoRunning is true)
+  useEffect(() => {
+    let bgGameTimer;
+    if (isGameAutoRunning) {
+      bgGameTimer = setInterval(() => {
+        setGameAutoSeconds((prev) => {
+          if (prev <= 1) {
+            clearInterval(bgGameTimer);
+            const ordId = pendingGameOrderId;
+            setOrders((prevOrders) =>
+              prevOrders.map((ord) =>
+                ord.id === ordId ? { ...ord, status: 'สำเร็จ (เติมออโต้)' } : ord
+              )
+            );
+            setIsGameAutoRunning(false);
+            setOrderSuccess(ordId);
+            setShowGameSuccessPopup(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(bgGameTimer);
+  }, [isGameAutoRunning, pendingGameOrderId]);
 
   // Auto-Cancel Pending Orders after 30 Minutes
   useEffect(() => {
@@ -421,13 +433,16 @@ export default function GameTopupApp() {
     setWalletStep(2); // Go to QR Code / Payment screen
   };
 
+  // When user clicks confirm payment for wallet topup -> Start background 30s counter
   const handleWalletConfirmPayment = () => {
-    setIsWalletProcessing(true);
-    setTimeout(() => {
-      setIsWalletProcessing(false);
-      setWalletAutoSeconds(30);
-      setWalletStep(3); // Go to 30s Auto Verification screen
-    }, 1000);
+    const amt = parseFloat(topupAmount) || 0;
+    setPendingWalletAmount(amt);
+    setWalletAutoSeconds(30);
+    setIsWalletAutoRunning(true);
+    setShowTopupWalletModal(false); // Close modal immediately so user can go anywhere!
+    setWalletStep(1);
+    setTopupAmount('');
+    setWalletPhone('');
   };
 
   const resetWalletModal = () => {
@@ -435,10 +450,8 @@ export default function GameTopupApp() {
     setWalletStep(1);
     setTopupAmount('');
     setWalletPhone('');
-    setIsWalletProcessing(false);
     setWalletTimeLeft(180);
     setIsWalletQrExpired(false);
-    setWalletAutoSeconds(30);
   };
 
   // Step 1: Verify Password first before showing payment QR Code
@@ -461,7 +474,7 @@ export default function GameTopupApp() {
     setCheckoutStep(2);
   };
 
-  // Step 2: Finalize Payment -> Create Pending Order -> Go to Step 3 (30s Auto Countdown)
+  // Step 2: Finalize Game Payment -> Create Pending Order -> Start Background 30s Counter
   const handleFinalPaymentSubmit = () => {
     if (selectedPayment.id === 'wallet') {
       setUser((prev) => ({ ...prev, balance: prev.balance - selectedPackage.price }));
@@ -491,9 +504,14 @@ export default function GameTopupApp() {
 
       setOrders([newOrder, ...orders]);
       setIsProcessing(false);
-      setOrderSuccess(newOrderId);
-      setAutoTopupSeconds(30);
-      setCheckoutStep(3); // Start 30s Auto Topup Screen
+      setPendingGameOrderId(newOrderId);
+      setLastGameName(selectedGame.name);
+      setGameAutoSeconds(30);
+      setIsGameAutoRunning(true);
+      setShowCheckoutModal(false); // Close modal immediately so user can go back to home/anywhere!
+      
+      // Reset checkout states
+      setCheckoutStep(1);
       setCheckoutPassword('');
       setShowCheckoutPassword(false);
       setCardNumber('');
@@ -523,10 +541,8 @@ export default function GameTopupApp() {
     setCheckoutPassword('');
     setShowCheckoutPassword(false);
     setCheckoutPasswordError('');
-    setOrderSuccess(null);
     setTimeLeft(180);
     setIsQrExpired(false);
-    setAutoTopupSeconds(30);
   };
 
   // Format seconds to mm:ss
@@ -774,6 +790,64 @@ export default function GameTopupApp() {
       position: 'relative'
     }}>
       
+      {/* FLOATING BACKGROUND COUNTER BADGES (TOP-LEFT) */}
+      <div style={{ position: 'fixed', top: '75px', left: '20px', zIndex: 99, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        
+        {/* WALLET TOPUP BACKGROUND BADGE */}
+        {isWalletAutoRunning && (
+          <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1px solid #f59e0b', borderRadius: '12px', padding: '10px 14px', boxShadow: '0 4px 20px rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', gap: '10px', backdropFilter: 'blur(8px)' }}>
+            <span style={{ fontSize: '18px' }}>⚡</span>
+            <div style={{ fontSize: '12px' }}>
+              <div style={{ color: '#f59e0b', fontWeight: 'bold' }}>กำลังเติมเครดิตร้าน (฿{pendingWalletAmount.toLocaleString()})</div>
+              <div style={{ color: '#9ca3af' }}>ตรวจสอบออโต้ใน: <b style={{ color: '#38bdf8' }}>{walletAutoSeconds}s</b></div>
+            </div>
+          </div>
+        )}
+
+        {/* GAME CHECKOUT BACKGROUND BADGE */}
+        {isGameAutoRunning && (
+          <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1px solid #a855f7', borderRadius: '12px', padding: '10px 14px', boxShadow: '0 4px 20px rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', gap: '10px', backdropFilter: 'blur(8px)' }}>
+            <span style={{ fontSize: '18px' }}>🎮</span>
+            <div style={{ fontSize: '12px' }}>
+              <div style={{ color: '#c084fc', fontWeight: 'bold' }}>กำลังเติมเกม {lastGameName}</div>
+              <div style={{ color: '#9ca3af' }}>เติมออโต้ใน: <b style={{ color: '#38bdf8' }}>{gameAutoSeconds}s</b></div>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* SUCCESS POPUP MODALS WHEN BACKGROUND COUNTER REACHES 0 */}
+      {showWalletSuccessPopup && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '20px' }}>
+          <div style={{ backgroundColor: '#111827', border: '1px solid #34d399', borderRadius: '24px', maxWidth: '380px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(52,211,153,0.3)' }}>
+            <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '2px solid #34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
+              ✓
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเครดิตร้านสำเร็จ!</h3>
+            <p style={{ fontSize: '14px', color: '#ffffff', marginBottom: '20px' }}>
+              ยอดเงิน <b>+฿{lastAddedAmount.toLocaleString()}</b> ถูกเพิ่มเข้าบัญชีของคุณเรียบร้อยแล้ว
+            </p>
+            <button onClick={() => setShowWalletSuccessPopup(false)} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ตกลง</button>
+          </div>
+        </div>
+      )}
+
+      {showGameSuccessPopup && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '20px' }}>
+          <div style={{ backgroundColor: '#111827', border: '1px solid #34d399', borderRadius: '24px', maxWidth: '380px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(52,211,153,0.3)' }}>
+            <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '2px solid #34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
+              ✓
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเกมสำเร็จเรียบร้อย!</h3>
+            <p style={{ fontSize: '14px', color: '#ffffff', marginBottom: '20px' }}>
+              ระบบส่งยอดเข้าบัญชีเกม {lastGameName} สำเร็จ เลขออร์เดอร์: <b style={{ color: '#c084fc' }}>{orderSuccess}</b>
+            </p>
+            <button onClick={() => setShowGameSuccessPopup(false)} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ตกลง</button>
+          </div>
+        </div>
+      )}
+
       {/* NAVBAR */}
       <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '15px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
@@ -1280,7 +1354,7 @@ export default function GameTopupApp() {
 
       </main>
 
-      {/* MODAL 1: TOPUP STORE WALLET (Now with 3-Min Timer & 30s Auto Verification) */}
+      {/* MODAL 1: TOPUP STORE WALLET */}
       {showTopupWalletModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center' }}>
@@ -1380,16 +1454,15 @@ export default function GameTopupApp() {
                       />
                     </div>
 
-                    <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อชำระเงินแล้ว กดปุ่ม "ฉันโอนเงินเรียบร้อยแล้ว" ด้านล่าง</p>
+                    <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อโอนแล้ว กดปุ่มด้านล่าง ระบบจะไปนับถอยหลังเบื้องหลังให้ทันที</p>
 
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button onClick={() => setWalletStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
                       <button 
-                        disabled={isWalletProcessing}
                         onClick={handleWalletConfirmPayment} 
                         style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
                       >
-                        {isWalletProcessing ? 'กำลังส่งข้อมูล...' : 'ฉันโอนเงินเรียบร้อยแล้ว'}
+                        ฉันโอนเงินเรียบร้อยแล้ว
                       </button>
                     </div>
                   </>
@@ -1402,39 +1475,6 @@ export default function GameTopupApp() {
                     <button onClick={resetWalletModal} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ลองใหม่อีกครั้ง</button>
                   </div>
                 )}
-              </div>
-            )}
-
-            {walletStep === 3 && (
-              <div style={{ padding: '10px 0' }}>
-                <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '2px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
-                  ⚡
-                </div>
-
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#f59e0b', margin: '0 0 8px 0' }}>ระบบกำลังตรวจสอบยอดโอน</h3>
-                <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>
-                  กำลังตรวจสอบยอดเงินและเพิ่มเครดิตเข้าร้านอัตโนมัติใน <b style={{ color: '#38bdf8', fontSize: '18px' }}>{walletAutoSeconds}</b> วินาที
-                </p>
-
-                <button 
-                  onClick={resetWalletModal} 
-                  style={{ width: '100%', backgroundColor: 'rgba(55, 65, 81, 0.8)', color: '#ffffff', border: '1px solid #4b5563', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', marginTop: '10px' }}
-                >
-                  🏠 กลับสู่หน้าหลักทันที (ไม่ต้องรอ)
-                </button>
-              </div>
-            )}
-
-            {walletStep === 4 && (
-              <div>
-                <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '2px solid #34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
-                  ✓
-                </div>
-                <h3 style={{ fontSize: '22px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเครดิตร้านสำเร็จ!</h3>
-                <p style={{ fontSize: '14px', color: '#ffffff', marginBottom: '20px' }}>
-                  เพิ่มเครดิต <b>+฿{parseFloat(topupAmount).toLocaleString()}</b> เข้าบัญชีของคุณเรียบร้อยแล้ว
-                </p>
-                <button onClick={resetWalletModal} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ตกลง / กลับสู่หน้าหลัก</button>
               </div>
             )}
 
@@ -1525,7 +1565,7 @@ export default function GameTopupApp() {
                       />
                     </div>
 
-                    <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อชำระเงินแล้ว กดปุ่ม "ฉันโอนเงินเรียบร้อยแล้ว" ด้านล่าง</p>
+                    <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อโอนแล้ว กดปุ่มด้านล่าง ระบบจะไปนับถอยหลังเบื้องหลังให้ทันที</p>
 
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button type="button" onClick={() => setCheckoutStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
@@ -1548,50 +1588,6 @@ export default function GameTopupApp() {
                     <button onClick={resetCheckoutModal} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>กลับไปหน้าหลัก / ลองใหม่อีกครั้ง</button>
                   </div>
                 )}
-              </div>
-            )}
-
-            {/* STEP 3: AUTO-TOPUP 30-SECOND COUNTDOWN & PENDING DISPLAY WITH HOME BUTTON */}
-            {checkoutStep === 3 && (
-              <div style={{ padding: '10px 0' }}>
-                <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '2px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
-                  ⚡
-                </div>
-
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#f59e0b', margin: '0 0 8px 0' }}>ระบบกำลังส่งยอดเข้าบัญชีเกม</h3>
-                <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>
-                  ระบบกำลังตรวจสอบยอดโอนและเติมเกมให้อัตโนมัติใน <b style={{ color: '#38bdf8', fontSize: '18px' }}>{autoTopupSeconds}</b> วินาที
-                </p>
-
-                <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '14px', textAlign: 'left', marginBottom: '15px', fontSize: '12px' }}>
-                  <div style={{ color: '#9ca3af', marginBottom: '4px' }}>เลขออร์เดอร์: <b style={{ color: '#c084fc' }}>{orderSuccess}</b></div>
-                  <div style={{ color: '#9ca3af', marginBottom: '4px' }}>ผู้เล่น ID: <b style={{ color: '#38bdf8' }}>{playerId}</b></div>
-                  <div style={{ color: '#9ca3af' }}>สถานะ: <b style={{ color: '#f59e0b' }}>รอตรวจสอบ (ระบบเติมออโต้)</b></div>
-                </div>
-
-                {/* ปุ่มกลับสู่หน้าหลักทันทีตามที่คุณต้องการ */}
-                <button 
-                  onClick={resetCheckoutModal} 
-                  style={{ width: '100%', backgroundColor: 'rgba(55, 65, 81, 0.8)', color: '#ffffff', border: '1px solid #4b5563', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', marginBottom: '10px' }}
-                >
-                  🏠 กลับสู่หน้าหลักทันที (ไม่ต้องรอ)
-                </button>
-
-                <p style={{ fontSize: '11px', color: '#6b7280', margin: 0 }}>
-                  *หากแอดมินไม่ได้เฝ้าหน้าจอ ระบบจะดำเนินการตัดรอบและยกเลิกออร์เดอร์ที่ไม่พบยอดโอนภายใน 30 นาทีโดยอัตโนมัติ
-                </p>
-              </div>
-            )}
-
-            {/* STEP 4: SUCCESS */}
-            {checkoutStep === 4 && (
-              <div>
-                <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '2px solid #34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
-                  ✓
-                </div>
-                <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเงินสำเร็จเรียบร้อย!</h3>
-                <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>ระบบส่งยอดเข้าบัญชีเกมเรียบร้อยแล้ว เลขออร์เดอร์: <b style={{ color: '#c084fc' }}>{orderSuccess}</b></p>
-                <button onClick={resetCheckoutModal} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ตกลง / กลับสู่หน้าหลัก</button>
               </div>
             )}
 
