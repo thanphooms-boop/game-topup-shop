@@ -16,12 +16,16 @@ export default function GameTopupApp() {
   const [adminPin, setAdminPin] = useState('');
   const [adminPinError, setAdminPinError] = useState(false);
   
-  // เพิ่ม State สำหรับค้นหาในหน้า Admin
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
 
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
+
+  // State สำหรับเก็บข้อมูลบัตรเครดิต
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExp, setCardExp] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
 
   const [gamesData] = useState([
     {
@@ -196,6 +200,10 @@ export default function GameTopupApp() {
       setOrders([newOrder, ...orders]);
       setIsProcessing(false);
       setOrderSuccess(newOrderId);
+      // รีเซ็ตข้อมูลบัตร
+      setCardNumber('');
+      setCardExp('');
+      setCardCvv('');
     }, 1500);
   };
 
@@ -206,7 +214,6 @@ export default function GameTopupApp() {
     return matchesSearch && matchesCategory;
   });
 
-  // กรองรายการคำสั่งซื้อในหน้า Admin ตาม Player ID หรือ Order ID
   const filteredOrders = orders.filter(ord => 
     ord.player.toLowerCase().includes(adminSearchQuery.toLowerCase()) || 
     ord.id.toLowerCase().includes(adminSearchQuery.toLowerCase())
@@ -458,7 +465,6 @@ export default function GameTopupApp() {
           </div>
         )}
 
-        {/* ADMIN TAB - พร้อมช่องค้นหา Player ID / Order ID */}
         {activeTab === 'admin' && (
           <div style={{ maxWidth: '800px', margin: '0 auto' }}>
             {!isAdminLoggedIn ? (
@@ -495,7 +501,6 @@ export default function GameTopupApp() {
                   <button onClick={() => setIsAdminLoggedIn(false)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>ออกจากระบบ</button>
                 </div>
 
-                {/* ช่องค้นหา Player ID หรือเลขออร์เดอร์สำหรับแอดมิน */}
                 <div style={{ marginBottom: '20px' }}>
                   <input 
                     type="text"
@@ -538,21 +543,73 @@ export default function GameTopupApp() {
 
       </main>
 
-      {/* POPUP MODAL */}
+      {/* POPUP MODAL (รองรับทั้ง QR PromptPay และ ฟอร์มกรอกบัตรเครดิต) */}
       {showCheckoutModal && selectedGame && selectedPackage && selectedPayment && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-          <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.8)' }}>
+          <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.8)' }}>
             {!orderSuccess ? (
               <div>
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 15px 0' }}>ยืนยันการชำระเงิน</h3>
-                <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 20px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ color: '#000000', fontSize: '13px', fontWeight: 'bold' }}>QR PromptPay<br/>฿{selectedPackage.price}</div>
-                </div>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 15px 0' }}>
+                  {selectedPayment.id === 'card' ? '💳 กรอกข้อมูลบัตรเครดิต / เดบิต' : 'ยืนยันการชำระเงิน'}
+                </h3>
+
+                {selectedPayment.id === 'card' ? (
+                  /* ฟอร์มกรอกข้อมูลบัตรเครดิตปกติ */
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', textAlign: 'left' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>หมายเลขบัตร (16 หลัก)</label>
+                      <input 
+                        type="text"
+                        maxLength={19}
+                        placeholder="4111 2222 3333 4444"
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(e.target.value)}
+                        style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>วันหมดอายุ (MM/YY)</label>
+                        <input 
+                          type="text"
+                          maxLength={5}
+                          placeholder="MM/YY"
+                          value={cardExp}
+                          onChange={(e) => setCardExp(e.target.value)}
+                          style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัส CVV</label>
+                        <input 
+                          type="password"
+                          maxLength={4}
+                          placeholder="123"
+                          value={cardCvv}
+                          onChange={(e) => setCardCvv(e.target.value)}
+                          style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#34d399', textAlign: 'center', marginTop: '4px' }}>
+                      ยอดชำระสุทธิ: <b>฿{selectedPackage.price}</b>
+                    </div>
+                  </div>
+                ) : (
+                  /* แสดง QR Code สำหรับช่องทางอื่น */
+                  <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 20px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ color: '#000000', fontSize: '13px', fontWeight: 'bold' }}>{selectedPayment.name}<br/>฿{selectedPackage.price}</div>
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={() => setShowCheckoutModal(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
-                  <button onClick={handleCheckout} style={{ flex: 1, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
-                    {isProcessing ? 'กำลังตรวจสอบ...' : 'ยืนยันโอนเงิน'}
+                  <button 
+                    disabled={selectedPayment.id === 'card' && (!cardNumber || !cardExp || !cardCvv)}
+                    onClick={handleCheckout} 
+                    style={{ flex: 1, backgroundColor: (selectedPayment.id === 'card' && (!cardNumber || !cardExp || !cardCvv)) ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', opacity: (selectedPayment.id === 'card' && (!cardNumber || !cardExp || !cardCvv)) ? 0.5 : 1 }}
+                  >
+                    {isProcessing ? 'กำลังตรวจสอบ...' : (selectedPayment.id === 'card' ? 'ชำระเงินทันที' : 'ยืนยันโอนเงิน')}
                   </button>
                 </div>
               </div>
