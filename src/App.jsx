@@ -23,13 +23,16 @@ export default function GameTopupApp() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // Topup Wallet State
+  // Topup Wallet State & Multi-Step Flow (Now includes QR Timer & Auto-Topup)
   const [showTopupWalletModal, setShowTopupWalletModal] = useState(false);
   const [topupAmount, setTopupAmount] = useState('');
   const [walletPaymentMethod, setWalletPaymentMethod] = useState('qrcode');
   const [walletPhone, setWalletPhone] = useState('');
   const [isWalletProcessing, setIsWalletProcessing] = useState(false);
-  const [walletPaymentStep, setWalletPaymentStep] = useState(1); // 1: Input Amount, 2: Pay, 3: Success
+  const [walletStep, setWalletStep] = useState(1); // 1: Input Amount, 2: QR Scan & 3-Min Timer, 3: Auto-processing 30s, 4: Success
+  const [walletTimeLeft, setWalletTimeLeft] = useState(180);
+  const [isWalletQrExpired, setIsWalletQrExpired] = useState(false);
+  const [walletAutoSeconds, setWalletAutoSeconds] = useState(30);
 
   // Payment Input States for Checkout
   const [trueWalletNumber, setTrueWalletNumber] = useState('');
@@ -53,11 +56,11 @@ export default function GameTopupApp() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
   
-  // Timer State for QR Code Payment (180 seconds = 3 minutes)
+  // Timer State for Checkout QR Code (180 seconds = 3 minutes)
   const [timeLeft, setTimeLeft] = useState(180);
   const [isQrExpired, setIsQrExpired] = useState(false);
 
-  // Auto-topup 30s Countdown State
+  // Auto-topup 30s Countdown State for Game Checkout
   const [autoTopupSeconds, setAutoTopupSeconds] = useState(30);
 
   // Card Info State
@@ -217,7 +220,7 @@ export default function GameTopupApp() {
     { id: 'ORD-98420', game: 'ROV', package: '220 Coupons', price: 175, player: 'ProPlayer99', status: 'สำเร็จ', time: '29/10/2569 12:45 น.', timestamp: Date.now() - 7200000 }
   ]);
 
-  // Countdown Timer Effect for Step 2 (QR Code 3 Mins)
+  // Countdown Timer Effect for Checkout QR Code (3 Mins)
   useEffect(() => {
     let timer;
     if (showCheckoutModal && checkoutStep === 2 && !isQrExpired) {
@@ -235,7 +238,25 @@ export default function GameTopupApp() {
     return () => clearInterval(timer);
   }, [showCheckoutModal, checkoutStep, isQrExpired]);
 
-  // Auto-topup 30-Second Timer Effect for Step 3
+  // Countdown Timer Effect for Wallet Topup QR Code (3 Mins)
+  useEffect(() => {
+    let timer;
+    if (showTopupWalletModal && walletStep === 2 && !isWalletQrExpired) {
+      timer = setInterval(() => {
+        setWalletTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setIsWalletQrExpired(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [showTopupWalletModal, walletStep, isWalletQrExpired]);
+
+  // Auto-topup 30-Second Timer Effect for Game Checkout
   useEffect(() => {
     let autoTimer;
     if (showCheckoutModal && checkoutStep === 3) {
@@ -243,7 +264,6 @@ export default function GameTopupApp() {
         setAutoTopupSeconds((prev) => {
           if (prev <= 1) {
             clearInterval(autoTimer);
-            // Complete Auto-Topup
             if (orderSuccess) {
               setOrders((prevOrders) =>
                 prevOrders.map((ord) =>
@@ -251,7 +271,7 @@ export default function GameTopupApp() {
                 )
               );
             }
-            setCheckoutStep(4); // Go to Success Screen
+            setCheckoutStep(4);
             return 0;
           }
           return prev - 1;
@@ -260,6 +280,29 @@ export default function GameTopupApp() {
     }
     return () => clearInterval(autoTimer);
   }, [showCheckoutModal, checkoutStep, orderSuccess]);
+
+  // Auto-topup 30-Second Timer Effect for Wallet Topup
+  useEffect(() => {
+    let walletAutoTimer;
+    if (showTopupWalletModal && walletStep === 3) {
+      walletAutoTimer = setInterval(() => {
+        setWalletAutoSeconds((prev) => {
+          if (prev <= 1) {
+            clearInterval(walletAutoTimer);
+            const amt = parseFloat(topupAmount) || 0;
+            setUser((prevUser) => ({
+              ...prevUser,
+              balance: prevUser.balance + amt
+            }));
+            setWalletStep(4); // Success
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(walletAutoTimer);
+  }, [showTopupWalletModal, walletStep, topupAmount]);
 
   // Auto-Cancel Pending Orders after 30 Minutes
   useEffect(() => {
@@ -279,7 +322,7 @@ export default function GameTopupApp() {
           return ord;
         })
       );
-    }, 10000); // Check every 10 seconds
+    }, 10000);
 
     return () => clearInterval(cancelInterval);
   }, []);
@@ -373,31 +416,32 @@ export default function GameTopupApp() {
       alert('กรุณากรอกเบอร์โทรศัพท์ TrueMoney Wallet ให้ครบ 10 หลัก');
       return;
     }
-    setWalletPaymentStep(2);
+    setWalletTimeLeft(180);
+    setIsWalletQrExpired(false);
+    setWalletStep(2); // Go to QR Code / Payment screen
   };
 
   const handleWalletConfirmPayment = () => {
     setIsWalletProcessing(true);
     setTimeout(() => {
-      const amt = parseFloat(topupAmount);
-      setUser(prev => ({
-        ...prev,
-        balance: prev.balance + amt
-      }));
       setIsWalletProcessing(false);
-      setWalletPaymentStep(3);
-    }, 1500);
+      setWalletAutoSeconds(30);
+      setWalletStep(3); // Go to 30s Auto Verification screen
+    }, 1000);
   };
 
   const resetWalletModal = () => {
     setShowTopupWalletModal(false);
-    setWalletPaymentStep(1);
+    setWalletStep(1);
     setTopupAmount('');
     setWalletPhone('');
     setIsWalletProcessing(false);
+    setWalletTimeLeft(180);
+    setIsWalletQrExpired(false);
+    setWalletAutoSeconds(30);
   };
 
-  // Step 1: Verify Password first before showing payment QR Code / Processing & Reset Timer to 3 mins
+  // Step 1: Verify Password first before showing payment QR Code
   const handleVerifyPasswordStep = (e) => {
     e.preventDefault();
     setCheckoutPasswordError('');
@@ -412,7 +456,6 @@ export default function GameTopupApp() {
       return;
     }
 
-    // Reset timer to 180 seconds (3 minutes) & go to Step 2
     setTimeLeft(180);
     setIsQrExpired(false);
     setCheckoutStep(2);
@@ -778,7 +821,7 @@ export default function GameTopupApp() {
               <b style={{ color: '#34d399' }}>฿{user.balance.toLocaleString()}</b>
             </div>
             <button 
-              onClick={() => { setShowTopupWalletModal(true); setWalletPaymentStep(1); }}
+              onClick={() => { setShowTopupWalletModal(true); setWalletStep(1); }}
               style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
             >
               + เติมเครดิต
@@ -1204,7 +1247,6 @@ export default function GameTopupApp() {
                               {ord.status}
                             </span>
 
-                            {/* ADMIN MANUAL ACTION BUTTONS */}
                             {isPending && (
                               <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
                                 <button 
@@ -1238,12 +1280,12 @@ export default function GameTopupApp() {
 
       </main>
 
-      {/* MODAL 1: TOPUP STORE WALLET */}
+      {/* MODAL 1: TOPUP STORE WALLET (Now with 3-Min Timer & 30s Auto Verification) */}
       {showTopupWalletModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center' }}>
             
-            {walletPaymentStep === 1 && (
+            {walletStep === 1 && (
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#c084fc' }}>💳 เติมเครดิตเข้า Cyber Wallet</h3>
                 <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>ขั้นตอนที่ 1: กรอกจำนวนเงินและเลือกช่องทางชำระเงิน</p>
@@ -1316,40 +1358,83 @@ export default function GameTopupApp() {
               </div>
             )}
 
-            {walletPaymentStep === 2 && (
+            {walletStep === 2 && (
               <div>
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#34d399' }}>ชำระเงินเพื่อเติมเครดิต</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>
-                  ขั้นตอนที่ 2: ชำระยอด <b>฿{parseFloat(topupAmount).toLocaleString()}</b> 
-                  {walletPaymentMethod === 'true' && <span style={{ display: 'block', color: '#c084fc', marginTop: '4px' }}>ผ่านเบอร์ TrueMoney: {walletPhone}</span>}
-                </p>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#38bdf8' }}>📱 สแกน QR Code เติมเครดิต</h3>
 
-                <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 15px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Topup-Wallet-${topupAmount}`} 
-                    alt="Topup QR Code" 
-                    style={{ width: '150px', height: '150px' }}
-                  />
-                </div>
+                {!isWalletQrExpired ? (
+                  <>
+                    <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', borderRadius: '10px', padding: '8px', marginBottom: '12px', color: '#fca5a5', fontSize: '13px', fontWeight: 'bold' }}>
+                      ⏳ กรุณาโอนเงินภายใน: <span style={{ color: '#ffffff', fontSize: '16px' }}>{formatTime(walletTimeLeft)}</span> นาที
+                    </div>
 
-                <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อชำระเงินเสร็จแล้ว กดปุ่ม "ฉันชำระเงินเรียบร้อยแล้ว" ด้านล่าง</p>
+                    <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '12px' }}>
+                      ยอดชำระ: <b style={{ color: '#34d399' }}>฿{parseFloat(topupAmount).toLocaleString()}</b>
+                    </p>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setWalletPaymentStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
-                  <button onClick={handleWalletConfirmPayment} style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
-                    {isWalletProcessing ? 'กำลังตรวจสอบ...' : 'ฉันชำระเงินเรียบร้อยแล้ว'}
-                  </button>
-                </div>
+                    <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 15px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Topup-Wallet-${topupAmount}`} 
+                        alt="Topup QR Code" 
+                        style={{ width: '150px', height: '150px' }}
+                      />
+                    </div>
+
+                    <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อชำระเงินแล้ว กดปุ่ม "ฉันโอนเงินเรียบร้อยแล้ว" ด้านล่าง</p>
+
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button onClick={() => setWalletStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
+                      <button 
+                        disabled={isWalletProcessing}
+                        onClick={handleWalletConfirmPayment} 
+                        style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        {isWalletProcessing ? 'กำลังส่งข้อมูล...' : 'ฉันโอนเงินเรียบร้อยแล้ว'}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ padding: '20px 0' }}>
+                    <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                      <h4 style={{ color: '#fca5a5', margin: '0 0 8px 0', fontSize: '18px' }}>❌ QR Code หมดอายุแล้ว</h4>
+                      <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>เนื่องจากหมดเวลา 3 นาที ระบบได้ยกเลิกรายการนี้เพื่อความปลอดภัย</p>
+                    </div>
+                    <button onClick={resetWalletModal} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ลองใหม่อีกครั้ง</button>
+                  </div>
+                )}
               </div>
             )}
 
-            {walletPaymentStep === 3 && (
+            {walletStep === 3 && (
+              <div style={{ padding: '10px 0' }}>
+                <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '2px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+                  ⚡
+                </div>
+
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#f59e0b', margin: '0 0 8px 0' }}>ระบบกำลังตรวจสอบยอดโอน</h3>
+                <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>
+                  กำลังตรวจสอบยอดเงินและเพิ่มเครดิตเข้าร้านอัตโนมัติใน <b style={{ color: '#38bdf8', fontSize: '18px' }}>{walletAutoSeconds}</b> วินาที
+                </p>
+
+                <button 
+                  onClick={resetWalletModal} 
+                  style={{ width: '100%', backgroundColor: 'rgba(55, 65, 81, 0.8)', color: '#ffffff', border: '1px solid #4b5563', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', marginTop: '10px' }}
+                >
+                  🏠 กลับสู่หน้าหลักทันที (ไม่ต้องรอ)
+                </button>
+              </div>
+            )}
+
+            {walletStep === 4 && (
               <div>
+                <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '2px solid #34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
+                  ✓
+                </div>
                 <h3 style={{ fontSize: '22px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเครดิตร้านสำเร็จ!</h3>
                 <p style={{ fontSize: '14px', color: '#ffffff', marginBottom: '20px' }}>
                   เพิ่มเครดิต <b>+฿{parseFloat(topupAmount).toLocaleString()}</b> เข้าบัญชีของคุณเรียบร้อยแล้ว
                 </p>
-                <button onClick={resetWalletModal} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ตกลง</button>
+                <button onClick={resetWalletModal} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ตกลง / กลับสู่หน้าหลัก</button>
               </div>
             )}
 
@@ -1466,7 +1551,7 @@ export default function GameTopupApp() {
               </div>
             )}
 
-            {/* STEP 3: AUTO-TOPUP 30-SECOND COUNTDOWN & PENDING DISPLAY */}
+            {/* STEP 3: AUTO-TOPUP 30-SECOND COUNTDOWN & PENDING DISPLAY WITH HOME BUTTON */}
             {checkoutStep === 3 && (
               <div style={{ padding: '10px 0' }}>
                 <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '2px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
@@ -1478,11 +1563,19 @@ export default function GameTopupApp() {
                   ระบบกำลังตรวจสอบยอดโอนและเติมเกมให้อัตโนมัติใน <b style={{ color: '#38bdf8', fontSize: '18px' }}>{autoTopupSeconds}</b> วินาที
                 </p>
 
-                <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '14px', textAlign: 'left', marginBottom: '20px', fontSize: '12px' }}>
+                <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '14px', textAlign: 'left', marginBottom: '15px', fontSize: '12px' }}>
                   <div style={{ color: '#9ca3af', marginBottom: '4px' }}>เลขออร์เดอร์: <b style={{ color: '#c084fc' }}>{orderSuccess}</b></div>
                   <div style={{ color: '#9ca3af', marginBottom: '4px' }}>ผู้เล่น ID: <b style={{ color: '#38bdf8' }}>{playerId}</b></div>
                   <div style={{ color: '#9ca3af' }}>สถานะ: <b style={{ color: '#f59e0b' }}>รอตรวจสอบ (ระบบเติมออโต้)</b></div>
                 </div>
+
+                {/* ปุ่มกลับสู่หน้าหลักทันทีตามที่คุณต้องการ */}
+                <button 
+                  onClick={resetCheckoutModal} 
+                  style={{ width: '100%', backgroundColor: 'rgba(55, 65, 81, 0.8)', color: '#ffffff', border: '1px solid #4b5563', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', marginBottom: '10px' }}
+                >
+                  🏠 กลับสู่หน้าหลักทันที (ไม่ต้องรอ)
+                </button>
 
                 <p style={{ fontSize: '11px', color: '#6b7280', margin: 0 }}>
                   *หากแอดมินไม่ได้เฝ้าหน้าจอ ระบบจะดำเนินการตัดรอบและยกเลิกออร์เดอร์ที่ไม่พบยอดโอนภายใน 30 นาทีโดยอัตโนมัติ
