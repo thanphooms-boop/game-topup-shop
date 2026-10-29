@@ -12,7 +12,7 @@ export default function GameTopupApp() {
   const [usernameInput, setUsernameInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
-  const [showLoginPassword, setShowLoginPassword] = useState(false); // สถานะเปิด/ปิดตา รหัสผ่านหน้า Login
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [otpInput, setOtpInput] = useState('');
@@ -50,10 +50,31 @@ export default function GameTopupApp() {
   const [trueWalletNumber, setTrueWalletNumber] = useState('');
   const [trueCashCardPin, setTrueCashCardPin] = useState('');
 
-  // Order Tracking State & Date Filter
+  // Order Tracking State & Date Filter (โหลดข้อมูลเก่าเก็บไว้ใน localStorage ไม่ให้หายตอนรีเฟรช)
   const [trackQuery, setTrackQuery] = useState('');
   const [trackDateFilter, setTrackDateFilter] = useState('');
   const [trackResultList, setTrackResultList] = useState(null);
+
+  const [orders, setOrders] = useState(() => {
+    const savedOrders = localStorage.getItem('cyber_topup_orders');
+    if (savedOrders) {
+      try {
+        return JSON.parse(savedOrders);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return [
+      { id: 'ORD-14914', game: 'Free Fire', package: '1,166 Diamonds', price: 350, player: '11', status: 'รอตรวจสอบ [สะดุดใน 10s]', type: 'game', time: '29/10/69 22:44 น.', dateKey: '2029-10-29', timestamp: Date.now() - 100000 },
+      { id: 'ORD-48751', game: 'Free Fire', package: '1,166 Diamonds', price: 350, player: '11', status: 'สำเร็จ (เพิ่มออโต้)', type: 'game', time: '29/10/69 22:44 น.', dateKey: '2029-10-29', timestamp: Date.now() - 200000 },
+      { id: 'ORD-23664', game: 'VALORANT', package: '4,050 VP', price: 2790, player: '11', status: 'สำเร็จ', type: 'game', time: '29/10/69 13:54 น.', dateKey: '2029-10-29', timestamp: Date.now() - 500000 }
+    ];
+  });
+
+  // บันทึกออร์เดอร์ลง localStorage ทุกครั้งที่มีการเปลี่ยนแปลง
+  useEffect(() => {
+    localStorage.setItem('cyber_topup_orders', JSON.stringify(orders));
+  }, [orders]);
 
   // Admin State & Dynamic PIN System
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -239,12 +260,6 @@ export default function GameTopupApp() {
     { id: 'truemoney', name: 'บัตรเงินสดทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก (หัก 14.5%)' },
     { id: 'card', name: 'บัตรเครดิต / เดบิต', desc: 'VISA / Mastercard' }
   ];
-
-  const [orders, setOrders] = useState([
-    { id: 'ORD-14914', game: 'Free Fire', package: '1,166 Diamonds', price: 350, player: '11', status: 'รอตรวจสอบ [สะดุดใน 10s]', type: 'game', time: '29/10/69 22:44 น.', dateKey: '2029-10-29', timestamp: Date.now() - 100000 },
-    { id: 'ORD-48751', game: 'Free Fire', package: '1,166 Diamonds', price: 350, player: '11', status: 'สำเร็จ (เพิ่มออโต้)', type: 'game', time: '29/10/69 22:44 น.', dateKey: '2029-10-29', timestamp: Date.now() - 200000 },
-    { id: 'ORD-23664', game: 'VALORANT', package: '4,050 VP', price: 2790, player: '11', status: 'สำเร็จ', type: 'game', time: '29/10/69 13:54 น.', dateKey: '2029-10-29', timestamp: Date.now() - 500000 }
-  ]);
 
   // Countdown Timer Effect for Checkout QR Code (3 Mins)
   useEffect(() => {
