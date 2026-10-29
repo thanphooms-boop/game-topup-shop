@@ -27,6 +27,7 @@ export default function GameTopupApp() {
   const [showTopupWalletModal, setShowTopupWalletModal] = useState(false);
   const [topupAmount, setTopupAmount] = useState('');
   const [walletPaymentMethod, setWalletPaymentMethod] = useState('qrcode');
+  const [walletPhone, setWalletPhone] = useState('');
   const [isWalletProcessing, setIsWalletProcessing] = useState(false);
   const [walletPaymentStep, setWalletPaymentStep] = useState(1); // 1: Input Amount, 2: Pay, 3: Success
 
@@ -278,6 +279,10 @@ export default function GameTopupApp() {
       alert('กรุณากรอกจำนวนเงินให้ถูกต้อง');
       return;
     }
+    if (walletPaymentMethod === 'true' && (!walletPhone || walletPhone.length < 10)) {
+      alert('กรุณากรอกเบอร์โทรศัพท์ TrueMoney Wallet ให้ครบ 10 หลัก');
+      return;
+    }
     setWalletPaymentStep(2);
   };
 
@@ -298,6 +303,7 @@ export default function GameTopupApp() {
     setShowTopupWalletModal(false);
     setWalletPaymentStep(1);
     setTopupAmount('');
+    setWalletPhone('');
     setIsWalletProcessing(false);
   };
 
@@ -396,7 +402,7 @@ export default function GameTopupApp() {
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L3 6V12C3 17.52 6.84 22.74 12 24C17.16 22.74 21 17.52 21 12V6L12 2Z" fill="url(#shield-grad-login)" stroke="#c084fc" strokeWidth="1.5" />
               <path d="M7 11C6.44772 11 6 11.4477 6 12C6 12.5523 6.44772 13 7 13C7.55228 13 8 12.5523 8 12C8 11.4477 7.55228 11 7 11Z" fill="#38bdf8" />
-              <path d="M17 11C16.4477 11 16 11.4477 16 12C16 12.5523 16.4477 13 17 13C17.5523 13 18 12.5523 18 12C18 11.4477 17.523 11 17 11Z" fill="#38bdf8" />
+              <path d="M17 11C16.4477 11 16 11.4477 16 12C16 12.5523 16.4477 13 17 13C17.523 13 18 12.5523 18 12C18 11.4477 17.523 11 17 11Z" fill="#38bdf8" />
               <path d="M13 3L7 13H12L11 21L17 11H12L13 3Z" fill="#38bdf8" stroke="#ffffff" strokeWidth="0.8" />
               <defs>
                 <linearGradient id="shield-grad-login" x1="3" y1="2" x2="21" y2="24" gradientUnits="userSpaceOnUse">
@@ -426,7 +432,7 @@ export default function GameTopupApp() {
               </div>
             )}
 
-            {/* EMAIL INPUT FOR REGISTER & FORGOT (MOVED TO TOP FOR REGISTER) */}
+            {/* EMAIL INPUT FOR REGISTER & FORGOT */}
             {(authMode === 'register' || authMode === 'forgot') && (
               <div style={{ textAlign: 'left' }}>
                 <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>อีเมล (Email ยืนยันตัวตน)</label>
@@ -457,17 +463,7 @@ export default function GameTopupApp() {
             {/* PASSWORD INPUT FOR LOGIN & REGISTER */}
             {authMode !== 'forgot' && (
               <div style={{ textAlign: 'left' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                  <label style={{ fontSize: '12px', color: '#9ca3af' }}>รหัสผ่าน (Password)</label>
-                  {authMode === 'login' && (
-                    <span 
-                      onClick={() => { setAuthMode('forgot'); setAuthError(''); setAuthSuccessMsg(''); }} 
-                      style={{ fontSize: '11px', color: '#38bdf8', cursor: 'pointer' }}
-                    >
-                      ลืมรหัสผ่าน?
-                    </span>
-                  )}
-                </div>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัสผ่าน (Password)</label>
                 <input 
                   type="password" 
                   placeholder="กรอกรหัสผ่าน..."
@@ -475,6 +471,17 @@ export default function GameTopupApp() {
                   onChange={(e) => setPasswordInput(e.target.value)}
                   style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                 />
+                {/* FORGOT PASSWORD BUTTON BELOW PASSWORD AS REQUESTED */}
+                {authMode === 'login' && (
+                  <div style={{ textAlign: 'right', marginTop: '6px' }}>
+                    <span 
+                      onClick={() => { setAuthMode('forgot'); setAuthError(''); setAuthSuccessMsg(''); }} 
+                      style={{ fontSize: '11px', color: '#38bdf8', cursor: 'pointer' }}
+                    >
+                      ลืมรหัสผ่าน?
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -588,7 +595,7 @@ export default function GameTopupApp() {
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L3 6V12C3 17.52 6.84 22.74 12 24C17.16 22.74 21 17.52 21 12V6L12 2Z" fill="url(#shield-grad)" stroke="#c084fc" strokeWidth="1.5" />
               <path d="M7 11C6.44772 11 6 11.4477 6 12C6 12.5523 6.44772 13 7 13C7.55228 13 8 12.5523 8 12C8 11.4477 7.55228 11 7 11Z" fill="#38bdf8" />
-              <path d="M17 11C16.4477 11 16 11.4477 16 12C16 12.5523 16.4477 13 17 13C17.5523 13 18 12.5523 18 12C18 11.4477 17.523 11 17 11Z" fill="#38bdf8" />
+              <path d="M17 11C16.4477 11 16 11.4477 16 12C16 12.5523 16.4477 13 17 13C17.523 13 18 12.5523 18 12C18 11.4477 17.523 11 17 11Z" fill="#38bdf8" />
               <path d="M13 3L7 13H12L11 21L17 11H12L13 3Z" fill="#38bdf8" stroke="#ffffff" strokeWidth="0.8" />
               <defs>
                 <linearGradient id="shield-grad" x1="3" y1="2" x2="21" y2="24" gradientUnits="userSpaceOnUse">
@@ -947,7 +954,7 @@ export default function GameTopupApp() {
 
       </main>
 
-      {/* MODAL 1: TOPUP STORE WALLET WITH PAYMENT PROCESS */}
+      {/* MODAL 1: TOPUP STORE WALLET WITH TRUEMONEY PHONE INPUT */}
       {showTopupWalletModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center' }}>
@@ -955,17 +962,17 @@ export default function GameTopupApp() {
             {walletPaymentStep === 1 && (
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#c084fc' }}>💳 เติมเครดิตเข้า Cyber Wallet</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>ขั้นตอนที่ 1: กรอกจำนวนเงินที่ต้องการเติม</p>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>ขั้นตอนที่ 1: กรอกจำนวนเงินและเลือกช่องทางชำระเงิน</p>
 
                 <input 
                   type="number"
                   placeholder="ระบุจำนวนเงิน (บาท)..."
                   value={topupAmount}
                   onChange={(e) => setTopupAmount(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', fontSize: '20px', textAlign: 'center', fontWeight: 'bold', outline: 'none', marginBottom: '20px', boxSizing: 'border-box' }}
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', fontSize: '20px', textAlign: 'center', fontWeight: 'bold', outline: 'none', marginBottom: '15px', boxSizing: 'border-box' }}
                 />
 
-                <div style={{ textAlign: 'left', marginBottom: '20px' }}>
+                <div style={{ textAlign: 'left', marginBottom: '15px' }}>
                   <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>เลือกช่องทางชำระเงินเติมเครดิต</label>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <button 
@@ -985,6 +992,20 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
+                {walletPaymentMethod === 'true' && (
+                  <div style={{ textAlign: 'left', marginBottom: '20px' }}>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>เบอร์มือถือ TrueMoney Wallet (10 หลัก)</label>
+                    <input 
+                      type="text"
+                      maxLength={10}
+                      placeholder="0891234567"
+                      value={walletPhone}
+                      onChange={(e) => setWalletPhone(e.target.value)}
+                      style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                )}
+
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={resetWalletModal} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
                   <button onClick={handleWalletNextStep} style={{ flex: 1, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ดำเนินการชำระเงิน →</button>
@@ -995,7 +1016,10 @@ export default function GameTopupApp() {
             {walletPaymentStep === 2 && (
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#34d399' }}>ชำระเงินเพื่อเติมเครดิต</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>ขั้นตอนที่ 2: สแกน/ชำระเงิน <b>฿{parseFloat(topupAmount).toLocaleString()}</b></p>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>
+                  ขั้นตอนที่ 2: ชำระยอด <b>฿{parseFloat(topupAmount).toLocaleString()}</b> 
+                  {walletPaymentMethod === 'true' && <span style={{ display: 'block', color: '#c084fc', marginTop: '4px' }}>ผ่านเบอร์ TrueMoney: {walletPhone}</span>}
+                </p>
 
                 <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 15px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <div style={{ color: '#000000', fontSize: '13px', fontWeight: 'bold' }}>
