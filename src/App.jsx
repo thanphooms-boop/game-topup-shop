@@ -47,10 +47,19 @@ export default function GameTopupApp() {
   const [trackQuery, setTrackQuery] = useState('');
   const [trackResult, setTrackResult] = useState(null);
 
-  // Admin State
+  // Admin State & Dynamic PIN System
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [adminPin, setAdminPin] = useState('');
+  const [adminPin, setAdminPin] = useState('123456'); // Dynamic Admin PIN (Default: 123456)
+  const [inputAdminPin, setInputAdminPin] = useState('');
+  const [adminPinError, setAdminPinError] = useState('');
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
+
+  // Change Admin PIN Form States
+  const [showChangePinModal, setShowChangePinModal] = useState(false);
+  const [oldPinInput, setOldPinInput] = useState('');
+  const [newPinInput, setNewPinInput] = useState('');
+  const [confirmNewPinInput, setConfirmNewPinInput] = useState('');
+  const [changePinMsg, setChangePinMsg] = useState({ type: '', text: '' });
 
   // Checkout Modal State & Multi-Step Flow
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
@@ -417,6 +426,46 @@ export default function GameTopupApp() {
     setEmailInput('');
   };
 
+  // Admin PIN Handlers
+  const handleAdminLogin = (e) => {
+    e.preventDefault();
+    setAdminPinError('');
+    if (inputAdminPin === adminPin) {
+      setIsAdminLoggedIn(true);
+      setInputAdminPin('');
+    } else {
+      setAdminPinError('รหัส PIN ไม่ถูกต้อง');
+    }
+  };
+
+  const handleChangePinSubmit = (e) => {
+    e.preventDefault();
+    setChangePinMsg({ type: '', text: '' });
+
+    if (oldPinInput !== adminPin) {
+      setChangePinMsg({ type: 'error', text: 'รหัส PIN เดิมไม่ถูกต้อง' });
+      return;
+    }
+    if (newPinInput.length !== 6) {
+      setChangePinMsg({ type: 'error', text: 'รหัส PIN ใหม่ต้องเป็นตัวเลข 6 หลัก' });
+      return;
+    }
+    if (newPinInput !== confirmNewPinInput) {
+      setChangePinMsg({ type: 'error', text: 'รหัส PIN ใหม่ และการยืนยันรหัส ไม่ตรงกัน' });
+      return;
+    }
+
+    setAdminPin(newPinInput);
+    setChangePinMsg({ type: 'success', text: 'เปลี่ยนรหัส PIN 6 หลักสำเร็จแล้ว!' });
+    setTimeout(() => {
+      setShowChangePinModal(false);
+      setOldPinInput('');
+      setNewPinInput('');
+      setConfirmNewPinInput('');
+      setChangePinMsg({ type: '', text: '' });
+    }, 1500);
+  };
+
   // Wallet Topup Flow Handlers
   const handleWalletNextStep = () => {
     const amt = parseFloat(topupAmount);
@@ -431,7 +480,6 @@ export default function GameTopupApp() {
     setWalletTimeLeft(180);
     setIsWalletQrExpired(false);
     
-    // ถ้าเลือก QR Code ให้ไปหน้าสแกน (Step 2) แต่ถ้าเลือกช่องทางอื่น (เช่น TrueWallet) ให้กดเติมแล้วรัน 10s เบื้องหลังทันที
     if (walletPaymentMethod === 'qrcode') {
       setWalletStep(2);
     } else {
@@ -474,7 +522,6 @@ export default function GameTopupApp() {
       return;
     }
 
-    // ถ้าเลือก QR Code ให้ไปหน้าแสดง QR (Step 2) แต่ถ้าเลือกช่องทางอื่น ให้ดำเนินการชำระเงินและนับ 10s เบื้องหลังทันที
     if (selectedPayment.id === 'qrcode') {
       setTimeLeft(180);
       setIsQrExpired(false);
@@ -1261,25 +1308,31 @@ export default function GameTopupApp() {
             {!isAdminLoggedIn ? (
               <div style={{ maxWidth: '400px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '30px', textAlign: 'center' }}>
                 <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0' }}>ระบบหลังบ้าน Admin</h2>
-                <p style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '20px' }}>กรอก PIN 6 หลักเพื่อเข้าสู่ระบบ (รหัสทดสอบ: 123456)</p>
+                <p style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '20px' }}>กรอกรหัส PIN 6 หลักเพื่อเข้าสู่ระบบ</p>
 
-                <input 
-                  type="password"
-                  maxLength={6}
-                  placeholder="PIN 6 หลัก"
-                  value={adminPin}
-                  onChange={(e) => setAdminPin(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', textAlign: 'center', fontSize: '18px', letterSpacing: '4px', marginBottom: '15px', boxSizing: 'border-box' }}
-                />
+                <form onSubmit={handleAdminLogin}>
+                  {adminPinError && (
+                    <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px', borderRadius: '8px', fontSize: '12px', marginBottom: '15px' }}>
+                      {adminPinError}
+                    </div>
+                  )}
 
-                <button 
-                  onClick={() => {
-                    if (adminPin === '123456') setIsAdminLoggedIn(true);
-                  }}
-                  style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
-                >
-                  เข้าสู่ระบบ
-                </button>
+                  <input 
+                    type="password"
+                    maxLength={6}
+                    placeholder="PIN 6 หลัก"
+                    value={inputAdminPin}
+                    onChange={(e) => setInputAdminPin(e.target.value.replace(/[^0-9]/g, ''))}
+                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', textAlign: 'center', fontSize: '18px', letterSpacing: '4px', marginBottom: '15px', boxSizing: 'border-box', outline: 'none' }}
+                  />
+
+                  <button 
+                    type="submit"
+                    style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                  >
+                    เข้าสู่ระบบ
+                  </button>
+                </form>
               </div>
             ) : (
               <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '25px' }}>
@@ -1288,7 +1341,20 @@ export default function GameTopupApp() {
                     <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการคำสั่งซื้อทั้งหมด (จัดการโดย Admin)</h2>
                     <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0 0' }}>ตรวจสอบรายการค้าง ยืนยันสลิปโอนเงิน หรือยกเลิกออร์เดอร์ที่หมดเวลา</p>
                   </div>
-                  <button onClick={() => setIsAdminLoggedIn(false)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>ออกจากระบบ</button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button 
+                      onClick={() => setShowChangePinModal(true)} 
+                      style={{ backgroundColor: '#3b82f6', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                    >
+                      🔑 เปลี่ยน PIN 6 หลัก
+                    </button>
+                    <button 
+                      onClick={() => setIsAdminLoggedIn(false)} 
+                      style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                    >
+                      ออกจากระบบ
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ marginBottom: '20px' }}>
@@ -1363,6 +1429,90 @@ export default function GameTopupApp() {
         )}
 
       </main>
+
+      {/* MODAL: CHANGE ADMIN PIN 6 DIGITS */}
+      {showChangePinModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '20px' }}>
+          <div style={{ backgroundColor: '#111827', border: '1px solid #3b82f6', borderRadius: '24px', maxWidth: '400px', width: '100%', padding: '30px', textAlign: 'center' }}>
+            <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#60a5fa' }}>🔑 เปลี่ยนรหัส PIN Admin (6 หลัก)</h3>
+            <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรอกรหัสเดิม และตั้งรหัส PIN ใหม่ 6 หลักของคุณ</p>
+
+            <form onSubmit={handleChangePinSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {changePinMsg.text && (
+                <div style={{ 
+                  backgroundColor: changePinMsg.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(52, 211, 153, 0.2)', 
+                  border: changePinMsg.type === 'error' ? '1px solid #ef4444' : '1px solid #34d399', 
+                  color: changePinMsg.type === 'error' ? '#fca5a5' : '#34d399', 
+                  padding: '10px', 
+                  borderRadius: '10px', 
+                  fontSize: '12px' 
+                }}>
+                  {changePinMsg.text}
+                </div>
+              )}
+
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัส PIN เดิม (6 หลัก)</label>
+                <input 
+                  type="password"
+                  maxLength={6}
+                  placeholder="กรอกรหัส PIN เดิม..."
+                  value={oldPinInput}
+                  onChange={(e) => setOldPinInput(e.target.value.replace(/[^0-9]/g, ''))}
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '16px', letterSpacing: '2px', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัส PIN ใหม่ (6 หลัก)</label>
+                <input 
+                  type="password"
+                  maxLength={6}
+                  placeholder="กรอกรหัส PIN ใหม่..."
+                  value={newPinInput}
+                  onChange={(e) => setNewPinInput(e.target.value.replace(/[^0-9]/g, ''))}
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '16px', letterSpacing: '2px', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ยืนยันรหัส PIN ใหม่ (6 หลัก)</label>
+                <input 
+                  type="password"
+                  maxLength={6}
+                  placeholder="ยืนยันรหัส PIN ใหม่..."
+                  value={confirmNewPinInput}
+                  onChange={(e) => setConfirmNewPinInput(e.target.value.replace(/[^0-9]/g, ''))}
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '16px', letterSpacing: '2px', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setShowChangePinModal(false);
+                    setOldPinInput('');
+                    setNewPinInput('');
+                    setConfirmNewPinInput('');
+                    setChangePinMsg({ type: '', text: '' });
+                  }} 
+                  style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  ยกเลิก
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={!oldPinInput || !newPinInput || !confirmNewPinInput}
+                  style={{ flex: 1, backgroundColor: (!oldPinInput || !newPinInput || !confirmNewPinInput) ? '#374151' : '#3b82f6', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: (!oldPinInput || !newPinInput || !confirmNewPinInput) ? 'not-allowed' : 'pointer' }}
+                >
+                  บันทึกรหัส PIN ใหม่
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* MODAL 1: TOPUP STORE WALLET */}
       {showTopupWalletModal && (
