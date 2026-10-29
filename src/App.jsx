@@ -17,7 +17,7 @@ export default function GameTopupApp() {
     localStorage.setItem('cyber_topup_users', JSON.stringify(registeredUsers));
   }, [registeredUsers]);
 
-  // สถานะการล็อกอิน (เริ่มต้นเป็น null และช่องว่างเพื่อให้ผู้ใช้พิมพ์เองทั้งหมด)
+  // สถานะการล็อกอิน (เริ่มต้นเป็น null เพื่อให้พิมพ์เองทั้งหมด)
   const [user, setUser] = useState(null);
   const [authMode, setAuthMode] = useState('login');
   const [usernameInput, setUsernameInput] = useState('');
@@ -96,7 +96,7 @@ export default function GameTopupApp() {
   const [showGameSuccessPopup, setShowGameSuccessPopup] = useState(false);
   const [lastGameName, setLastGameName] = useState('');
 
-  // ฐานข้อมูลเกมและแพ็กเกจเติมเงิน
+  // ฐานข้อมูลเกมทั้งหมดที่เราเคยทำร่วมกัน (รวม VALORANT, PUBG, ROV, Free Fire, Genshin Impact, Honkai Star Rail)
   const [gamesData] = useState([
     {
       id: 'valorant',
@@ -153,6 +153,33 @@ export default function GameTopupApp() {
         { id: 'ff2', name: '341 Diamonds', price: 105, bonus: '+20' },
         { id: 'ff3', name: '572 Diamonds', price: 175, bonus: '+40' },
         { id: 'ff4', name: '1,166 Diamonds', price: 350, bonus: '+100' },
+      ]
+    },
+    {
+      id: 'genshin',
+      name: 'Genshin Impact',
+      publisher: 'HoYoverse',
+      image: 'https://images.unsplash.com/photo-1612287233202-b51e3ed6168c?auto=format&fit=crop&w=500&q=80',
+      category: 'pc',
+      badge: 'แนะนำ',
+      packages: [
+        { id: 'g1', name: '60 Genesis Crystals', price: 35, bonus: '+0' },
+        { id: 'g2', name: '300 Genesis Crystals', price: 179, bonus: '+10' },
+        { id: 'g3', name: '980 Genesis Crystals', price: 549, bonus: '+40' },
+        { id: 'g4', name: 'Blessing of the Welkin Moon', price: 179, bonus: 'รายเดือน' }
+      ]
+    },
+    {
+      id: 'hsr',
+      name: 'Honkai: Star Rail',
+      publisher: 'HoYoverse',
+      image: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=500&q=80',
+      category: 'pc',
+      badge: 'แนะนำ',
+      packages: [
+        { id: 'h1', name: '60 Oneiric Shards', price: 35, bonus: '+0' },
+        { id: 'h2', name: '300 Oneiric Shards', price: 179, bonus: '+10' },
+        { id: 'h3', name: 'Supply Pass', price: 179, bonus: 'รายเดือน' }
       ]
     }
   ]);
@@ -501,9 +528,13 @@ export default function GameTopupApp() {
           padding: '40px 30px', maxWidth: '420px', width: '100%',
           boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(147,51,234,0.3)', textAlign: 'center'
         }}>
-          <h1 style={{ fontSize: '26px', fontWeight: '900', color: '#c084fc', margin: '0 0 4px 0' }}>CYBER TOPUP</h1>
-          <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 25px 0' }}>
-            {authMode === 'login' && 'เข้าสู่ระบบร้านเติมเกม'}
+          {/* โลโก้ร้านในหน้า Login */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '10px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(147,51,234,0.6), rgba(56,189,248,0.4))', border: '1.5px solid #a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>⚡</div>
+            <h1 style={{ fontSize: '24px', fontWeight: '900', color: '#c084fc', margin: 0 }}>CYBER TOPUP</h1>
+          </div>
+          <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 20px 0' }}>
+            {authMode === 'login' && 'เข้าสู่ระบบร้านเติมเกมอัตโนมัติ 24 ชม.'}
             {authMode === 'register' && 'สมัครสมาชิกใหม่'}
           </p>
 
@@ -544,7 +575,12 @@ export default function GameTopupApp() {
             </button>
           </form>
 
-          <div style={{ marginTop: '20px', fontSize: '13px', color: '#9ca3af' }}>
+          {/* ช่องทางติดต่อ Line OA ในหน้า Login */}
+          <div style={{ marginTop: '20px', padding: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '10px', fontSize: '12px', color: '#34d399' }}>
+            💬 สนใจติดต่อแอดมิน / แจ้งปัญหา: <b>Line: @cybertopup</b>
+          </div>
+
+          <div style={{ marginTop: '15px', fontSize: '13px', color: '#9ca3af' }}>
             {authMode === 'login' && <>ยังไม่มีบัญชี? <span onClick={() => { setAuthMode('register'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>สมัครสมาชิก</span></>}
             {authMode === 'register' && <>มีบัญชีแล้ว? <span onClick={() => { setAuthMode('login'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>เข้าสู่ระบบ</span></>}
           </div>
@@ -583,13 +619,13 @@ export default function GameTopupApp() {
         </div>
       )}
 
-      {/* NAVBAR */}
+      {/* NAVBAR WITH LOGO & LINE OA */}
       <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '15px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
           <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(147,51,234,0.4), rgba(56,189,248,0.2))', border: '1.5px solid #a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⚡</div>
           <div>
             <div style={{ fontSize: '22px', fontWeight: '900', color: '#c084fc' }}>CYBER TOPUP</div>
-            <div style={{ fontSize: '10px', color: '#9ca3af', letterSpacing: '2px' }}>Fast & Secure Gaming</div>
+            <div style={{ fontSize: '10px', color: '#34d399', letterSpacing: '1px' }}>🟢 Line Official: @cybertopup</div>
           </div>
         </div>
 
@@ -621,6 +657,7 @@ export default function GameTopupApp() {
           <div>
             <div style={{ background: 'linear-gradient(135deg, rgba(59, 7, 100, 0.85) 0%, rgba(17, 24, 39, 0.9) 100%)', border: '1px solid rgba(168, 85, 247, 0.4)', borderRadius: '24px', padding: '35px', marginBottom: '35px' }}>
               <h1 style={{ fontSize: '38px', fontWeight: '900', margin: '0 0 15px 0' }}>เติมเกมสะดวกรวดเร็ว <span style={{ color: '#c084fc' }}>24 ชั่วโมง</span></h1>
+              <p style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '20px' }}>บริการเติมเกม VALORANT, PUBG, ROV, Free Fire, Genshin Impact และ Honkai: Star Rail อัตโนมัติ ปลอดภัย 100%</p>
               <input type="text" placeholder="🔍 ค้นหาชื่อเกม..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', maxWidth: '400px', backgroundColor: 'rgba(17, 24, 39, 0.8)', border: '1px solid #374151', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', outline: 'none' }} />
             </div>
 
@@ -629,7 +666,9 @@ export default function GameTopupApp() {
                 <div key={game.id} onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPlayerId(user.username); }} style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '20px', overflow: 'hidden', cursor: 'pointer' }}>
                   <img src={game.image} alt={game.name} style={{ width: '100%', height: '170px', objectFit: 'cover' }} />
                   <div style={{ padding: '18px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0' }}>{game.name}</h3>
+                    <span style={{ backgroundColor: 'rgba(147, 51, 234, 0.2)', color: '#c084fc', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}>{game.badge}</span>
+                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '8px 0 4px 0' }}>{game.name}</h3>
+                    <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>{game.publisher}</p>
                     <button style={{ marginTop: '15px', width: '100%', backgroundColor: '#9333ea', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>คลิกเพื่อเติมเงิน →</button>
                   </div>
                 </div>
@@ -802,6 +841,12 @@ export default function GameTopupApp() {
           </div>
         )}
       </main>
+
+      {/* FOOTER WITH LINE OA */}
+      <footer style={{ textAlign: 'center', marginTop: '50px', padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', color: '#9ca3af', fontSize: '13px' }}>
+        <p style={{ margin: '0 0 5px 0' }}>⚡ <b>CYBER TOPUP</b> - บริการเติมเกมออนไลน์ตลอด 24 ชั่วโมง</p>
+        <p style={{ margin: 0, color: '#34d399' }}>🟢 ติดต่อสอบถาม / แจ้งปัญหา Line Official: <b>@cybertopup</b></p>
+      </footer>
 
       {/* MODAL: TOPUP STORE WALLET */}
       {showTopupWalletModal && (
