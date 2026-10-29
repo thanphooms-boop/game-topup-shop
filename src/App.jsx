@@ -22,7 +22,6 @@ export default function GameTopupApp() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
 
-  // State สำหรับเก็บข้อมูลบัตรเครดิต
   const [cardNumber, setCardNumber] = useState('');
   const [cardExp, setCardExp] = useState('');
   const [cardCvv, setCardCvv] = useState('');
@@ -219,23 +218,36 @@ export default function GameTopupApp() {
   );
 
   return (
-    <div style={{ backgroundColor: '#090d16', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '60px', position: 'relative' }}>
+    <div style={{
+      backgroundColor: '#070a12',
+      color: '#ffffff',
+      minHeight: '100vh',
+      fontFamily: 'sans-serif',
+      paddingBottom: '60px',
+      position: 'relative',
+      overflowX: 'hidden',
+      backgroundImage: 'radial-gradient(rgba(147, 51, 234, 0.15) 1px, transparent 0)',
+      backgroundSize: '32px 32px'
+    }}>
       
+      {/* CYBERPUNK BACKGROUND GLOWS */}
+      <div style={{ position: 'absolute', top: '-100px', left: '-100px', width: '500px', height: '500px', background: 'radial-gradient(circle, rgba(147,51,234,0.25) 0%, rgba(0,0,0,0) 70%)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'absolute', top: '200px', right: '-150px', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(56,189,248,0.2) 0%, rgba(0,0,0,0) 70%)', pointerEvents: 'none', zIndex: 0 }} />
+
       {/* NAVBAR */}
-      <header style={{ backgroundColor: '#111827', borderBottom: '1px solid #1f2937', padding: '15px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '15px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
           
-          {/* LOGO ICON (Cyberpunk Shield with Gamepad & Lightning) */}
           <div style={{
             width: '44px',
             height: '44px',
             borderRadius: '12px',
-            background: 'linear-gradient(135deg, rgba(147,51,234,0.3), rgba(56,189,248,0.2))',
+            background: 'linear-gradient(135deg, rgba(147,51,234,0.4), rgba(56,189,248,0.2))',
             border: '1.5px solid #a855f7',
             display: 'flex',
             alignItems: 'center',
             justify: 'center',
-            boxShadow: '0 0 15px rgba(168, 85, 247, 0.4)'
+            boxShadow: '0 0 15px rgba(168, 85, 247, 0.5)'
           }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L3 6V12C3 17.52 6.84 22.74 12 24C17.16 22.74 21 17.52 21 12V6L12 2Z" fill="url(#shield-grad)" stroke="#c084fc" strokeWidth="1.5" />
@@ -252,15 +264,15 @@ export default function GameTopupApp() {
           </div>
 
           <div>
-            <div style={{ fontSize: '22px', fontWeight: '900', color: '#c084fc', letterSpacing: '1px', textShadow: '0 0 10px rgba(192,132,252,0.5)' }}>CYBER TOPUP</div>
+            <div style={{ fontSize: '22px', fontWeight: '900', color: '#c084fc', letterSpacing: '1px', textShadow: '0 0 10px rgba(192,132,252,0.6)' }}>CYBER TOPUP</div>
             <div style={{ fontSize: '10px', color: '#9ca3af', letterSpacing: '2px', textTransform: 'uppercase' }}>Fast & Secure Gaming</div>
           </div>
         </div>
 
         <nav style={{ display: 'flex', gap: '10px' }}>
-          <button onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} style={{ backgroundColor: activeTab === 'shop' ? '#9333ea' : '#1f2937', color: '#ffffff', border: 'none', padding: '10px 18px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>✨ หน้าแรก</button>
-          <button onClick={() => setActiveTab('track')} style={{ backgroundColor: activeTab === 'track' ? '#9333ea' : '#1f2937', color: '#ffffff', border: 'none', padding: '10px 18px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>📋 เช็คสถานะ</button>
-          <button onClick={() => setActiveTab('admin')} style={{ backgroundColor: activeTab === 'admin' ? '#9333ea' : '#1f2937', color: '#ffffff', border: 'none', padding: '10px 18px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>⚙️ หลังบ้าน</button>
+          <button onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} style={{ backgroundColor: activeTab === 'shop' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '10px 18px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>✨ หน้าแรก</button>
+          <button onClick={() => setActiveTab('track')} style={{ backgroundColor: activeTab === 'track' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '10px 18px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>📋 เช็คสถานะ</button>
+          <button onClick={() => setActiveTab('admin')} style={{ backgroundColor: activeTab === 'admin' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '10px 18px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>⚙️ หลังบ้าน</button>
         </nav>
       </header>
 
@@ -269,21 +281,21 @@ export default function GameTopupApp() {
         href="https://lin.ee/XRpYKph" 
         target="_blank" 
         rel="noopener noreferrer"
-        style={{ position: 'fixed', bottom: '25px', right: '25px', backgroundColor: '#06c755', color: '#ffffff', padding: '12px 20px', borderRadius: '30px', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 99, boxShadow: '0 4px 20px rgba(6,199,85,0.4)', fontSize: '14px' }}
+        style={{ position: 'fixed', bottom: '25px', right: '25px', backgroundColor: '#06c755', color: '#ffffff', padding: '12px 20px', borderRadius: '30px', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 99, boxShadow: '0 4px 25px rgba(6,199,85,0.5)', fontSize: '14px' }}
       >
         💬 ติดต่อแอดมิน (LINE)
       </a>
 
       {/* MAIN CONTAINER */}
-      <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px' }}>
+      <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px', position: 'relative', zIndex: 1 }}>
         
         {activeTab === 'shop' && !selectedGame && (
           <div>
-            <div style={{ background: 'linear-gradient(135deg, #3b0764 0%, #1e1b4b 50%, #111827 100%)', border: '1px solid #581c87', borderRadius: '24px', padding: '35px', marginBottom: '35px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-              <span style={{ backgroundColor: 'rgba(147, 51, 234, 0.2)', border: '1px solid #a855f7', color: '#e9d5ff', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', display: 'inline-block', marginBottom: '15px' }}>🚀 ระบบเติมเกมอัตโนมัติ 24 ชั่วโมง ปลอดภัย 100%</span>
+            <div style={{ background: 'linear-gradient(135deg, rgba(59, 7, 100, 0.8) 0%, rgba(30, 27, 75, 0.8) 50%, rgba(17, 24, 39, 0.9) 100%)', backdropFilter: 'blur(10px)', border: '1px solid rgba(168, 85, 247, 0.4)', borderRadius: '24px', padding: '35px', marginBottom: '35px', boxShadow: '0 10px 40px rgba(147,51,234,0.25)' }}>
+              <span style={{ backgroundColor: 'rgba(147, 51, 234, 0.25)', border: '1px solid #a855f7', color: '#e9d5ff', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', display: 'inline-block', marginBottom: '15px' }}>🚀 ระบบเติมเกมอัตโนมัติ 24 ชั่วโมง ปลอดภัย 100%</span>
               <h1 style={{ fontSize: '38px', fontWeight: '900', margin: '0 0 15px 0', lineHeight: '1.2' }}>
                 เติมเกมสะดวกรวดเร็ว <br />
-                <span style={{ color: '#c084fc' }}>ราคาถูกที่สุด คุ้มค่าที่สุด</span>
+                <span style={{ color: '#c084fc', textShadow: '0 0 15px rgba(192,132,252,0.4)' }}>ราคาถูกที่สุด คุ้มค่าที่สุด</span>
               </h1>
               <p style={{ color: '#d1d5db', fontSize: '15px', marginBottom: '25px', maxWidth: '650px' }}>
                 เลือกเกมโปรดของคุณ เติมไวภายใน 1 นาที รองรับทั้ง VALORANT, PUBG, ROV, Avatar Star ที่กำลังจะเปิดในไทย และเกมดังอื่นๆ อีกมากมาย
@@ -295,7 +307,7 @@ export default function GameTopupApp() {
                   placeholder="🔍 ค้นหาชื่อเกม..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{ flex: '1', minWidth: '220px', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', fontSize: '14px', outline: 'none' }}
+                  style={{ flex: '1', minWidth: '220px', backgroundColor: 'rgba(17, 24, 39, 0.8)', border: '1px solid #374151', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', fontSize: '14px', outline: 'none' }}
                 />
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={() => setSelectedCategory('all')} style={{ backgroundColor: selectedCategory === 'all' ? '#9333ea' : '#111827', border: '1px solid #374151', color: '#ffffff', padding: '12px 18px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>🎮 ทั้งหมด</button>
@@ -312,11 +324,22 @@ export default function GameTopupApp() {
                 <div 
                   key={game.id}
                   onClick={() => { setSelectedGame(game); setSelectedPackage(null); }}
-                  style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', overflow: 'hidden', cursor: 'pointer', display: 'flex', flexDirection: 'column', transition: 'all 0.2s', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}
+                  style={{
+                    backgroundColor: 'rgba(17, 24, 39, 0.75)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '20px',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'transform 0.2s, border 0.2s',
+                    boxShadow: '0 8px 25px rgba(0,0,0,0.4)'
+                  }}
                 >
                   <div style={{ position: 'relative', height: '170px', backgroundColor: '#1f2937' }}>
                     <img src={game.image} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <span style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: '#9333ea', color: '#ffffff', padding: '4px 10px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold' }}>{game.badge}</span>
+                    <span style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: '#9333ea', color: '#ffffff', padding: '4px 10px', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold', boxShadow: '0 0 10px rgba(147,51,234,0.6)' }}>{game.badge}</span>
                   </div>
                   
                   <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', flex: '1', justifyContent: 'space-between' }}>
@@ -337,7 +360,7 @@ export default function GameTopupApp() {
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: '#111827', border: '1px solid #374151', color: '#c084fc', padding: '8px 16px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', marginBottom: '20px', fontSize: '13px' }}>← กลับไปเลือกเกมอื่น</button>
 
-            <div style={{ backgroundColor: '#111827', border: '1px solid #581c87', borderRadius: '20px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '25px' }}>
+            <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid #581c87', borderRadius: '20px', padding: '20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '25px' }}>
               <img src={selectedGame.image} alt={selectedGame.name} style={{ width: '80px', height: '80px', borderRadius: '14px', objectFit: 'cover', border: '2px solid #9333ea' }} />
               <div>
                 <span style={{ backgroundColor: 'rgba(147, 51, 234, 0.2)', color: '#c084fc', padding: '3px 10px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>{selectedGame.badge}</span>
@@ -348,7 +371,7 @@ export default function GameTopupApp() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '25px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '20px' }}>
+                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '20px' }}>
                   <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ width: '24px', height: '24px', backgroundColor: '#9333ea', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>1</span>
                     ระบุข้อมูลไอดีผู้เล่น
@@ -362,7 +385,7 @@ export default function GameTopupApp() {
                   />
                 </div>
 
-                <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '20px' }}>
+                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '20px' }}>
                   <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ width: '24px', height: '24px', backgroundColor: '#9333ea', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>2</span>
                     เลือกแพ็กเกจที่ต้องการเติม
@@ -376,7 +399,7 @@ export default function GameTopupApp() {
                           key={pkg.id}
                           onClick={() => setSelectedPackage(pkg)}
                           style={{
-                            backgroundColor: isSelected ? 'rgba(147, 51, 234, 0.2)' : '#030712',
+                            backgroundColor: isSelected ? 'rgba(147, 51, 234, 0.25)' : '#030712',
                             border: isSelected ? '2px solid #9333ea' : '1px solid #1f2937',
                             borderRadius: '12px',
                             padding: '12px',
@@ -392,7 +415,7 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '20px' }}>
+                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '20px' }}>
                   <h2 style={{ fontSize: '15px', fontWeight: 'bold', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <span style={{ width: '24px', height: '24px', backgroundColor: '#9333ea', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>3</span>
                     เลือกช่องทางชำระเงิน
@@ -406,7 +429,7 @@ export default function GameTopupApp() {
                           key={pay.id}
                           onClick={() => setSelectedPayment(pay)}
                           style={{
-                            backgroundColor: isSelected ? 'rgba(147, 51, 234, 0.2)' : '#030712',
+                            backgroundColor: isSelected ? 'rgba(147, 51, 234, 0.25)' : '#030712',
                             border: isSelected ? '2px solid #9333ea' : '1px solid #1f2937',
                             borderRadius: '12px',
                             padding: '12px',
@@ -422,7 +445,7 @@ export default function GameTopupApp() {
                 </div>
               </div>
 
-              <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '20px', height: 'fit-content', position: 'sticky', top: '100px' }}>
+              <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '20px', height: 'fit-content', position: 'sticky', top: '100px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 15px 0', borderBottom: '1px solid #1f2937', paddingBottom: '10px' }}>สรุปคำสั่งซื้อ</h3>
 
                 <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
@@ -450,7 +473,7 @@ export default function GameTopupApp() {
         )}
 
         {activeTab === 'track' && (
-          <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '30px' }}>
+          <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '30px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>เช็คสถานะการเติมเงิน</h2>
             <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '20px' }}>กรอกเลขออร์เดอร์ (เช่น ORD-98421) หรือชื่อผู้เล่นเพื่อตรวจสอบ</p>
 
@@ -493,7 +516,7 @@ export default function GameTopupApp() {
         {activeTab === 'admin' && (
           <div style={{ maxWidth: '800px', margin: '0 auto' }}>
             {!isAdminLoggedIn ? (
-              <div style={{ maxWidth: '400px', margin: '0 auto', backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '30px', textAlign: 'center' }}>
+              <div style={{ maxWidth: '400px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '30px', textAlign: 'center' }}>
                 <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0' }}>ระบบหลังบ้าน Admin</h2>
                 <p style={{ color: '#9ca3af', fontSize: '12px', marginBottom: '20px' }}>กรอก PIN 6 หลักเพื่อเข้าสู่ระบบ (รหัสทดสอบ: 123456)</p>
 
@@ -517,7 +540,7 @@ export default function GameTopupApp() {
                 </button>
               </div>
             ) : (
-              <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '20px', padding: '25px' }}>
+              <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '25px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #1f2937', paddingBottom: '15px' }}>
                   <div>
                     <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการคำสั่งซื้อทั้งหมดของลูกค้า</h2>
@@ -570,8 +593,8 @@ export default function GameTopupApp() {
 
       {/* POPUP MODAL */}
       {showCheckoutModal && selectedGame && selectedPackage && selectedPayment && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-          <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(0,0,0,0.8)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+          <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(147,51,234,0.3)' }}>
             {!orderSuccess ? (
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 15px 0' }}>
