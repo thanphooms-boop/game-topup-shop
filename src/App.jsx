@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export default function GameTopupApp() {
   // Authentication State
@@ -44,14 +44,21 @@ export default function GameTopupApp() {
   const [adminPin, setAdminPin] = useState('');
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
 
-  // Checkout Modal State & Password Confirmation Flow
+  // Checkout Modal State & Multi-Step Flow
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState(1); // 1: Password & ID Confirm, 2: QR Code / Pay Execution, 3: Success
+  const [checkoutStep, setCheckoutStep] = useState(1); // 1: Password & ID Confirm, 2: QR Code / Pay Execution, 3: Auto-processing 30s / Pending, 4: Success
   const [checkoutPassword, setCheckoutPassword] = useState('');
   const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
   const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
+  
+  // Timer State for QR Code Payment (180 seconds = 3 minutes)
+  const [timeLeft, setTimeLeft] = useState(180);
+  const [isQrExpired, setIsQrExpired] = useState(false);
+
+  // Auto-topup 30s Countdown State
+  const [autoTopupSeconds, setAutoTopupSeconds] = useState(30);
 
   // Card Info State
   const [cardNumber, setCardNumber] = useState('');
@@ -205,10 +212,77 @@ export default function GameTopupApp() {
   ];
 
   const [orders, setOrders] = useState([
-    { id: 'ORD-23664', game: 'VALORANT', package: '4,050 VP', price: 2790, player: '11', status: 'สำเร็จ', time: '29/10/69 13:54 น.' },
-    { id: 'ORD-98421', game: 'VALORANT', package: '420 VP', price: 319, player: 'CyberNinja#1234', status: 'สำเร็จ', time: '29/10/2569 13:10 น.' },
-    { id: 'ORD-98420', game: 'ROV', package: '220 Coupons', price: 175, player: 'ProPlayer99', status: 'สำเร็จ', time: '29/10/2569 12:45 น.' }
+    { id: 'ORD-23664', game: 'VALORANT', package: '4,050 VP', price: 2790, player: '11', status: 'สำเร็จ', time: '29/10/69 13:54 น.', timestamp: Date.now() - 500000 },
+    { id: 'ORD-98421', game: 'VALORANT', package: '420 VP', price: 319, player: 'CyberNinja#1234', status: 'สำเร็จ', time: '29/10/2569 13:10 น.', timestamp: Date.now() - 3600000 },
+    { id: 'ORD-98420', game: 'ROV', package: '220 Coupons', price: 175, player: 'ProPlayer99', status: 'สำเร็จ', time: '29/10/2569 12:45 น.', timestamp: Date.now() - 7200000 }
   ]);
+
+  // Countdown Timer Effect for Step 2 (QR Code 3 Mins)
+  useEffect(() => {
+    let timer;
+    if (showCheckoutModal && checkoutStep === 2 && !isQrExpired) {
+      timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setIsQrExpired(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [showCheckoutModal, checkoutStep, isQrExpired]);
+
+  // Auto-topup 30-Second Timer Effect for Step 3
+  useEffect(() => {
+    let autoTimer;
+    if (showCheckoutModal && checkoutStep === 3) {
+      autoTimer = setInterval(() => {
+        setAutoTopupSeconds((prev) => {
+          if (prev <= 1) {
+            clearInterval(autoTimer);
+            // Complete Auto-Topup
+            if (orderSuccess) {
+              setOrders((prevOrders) =>
+                prevOrders.map((ord) =>
+                  ord.id === orderSuccess ? { ...ord, status: 'สำเร็จ (เติมออโต้)' } : ord
+                )
+              );
+            }
+            setCheckoutStep(4); // Go to Success Screen
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(autoTimer);
+  }, [showCheckoutModal, checkoutStep, orderSuccess]);
+
+  // Auto-Cancel Pending Orders after 30 Minutes
+  useEffect(() => {
+    const cancelInterval = setInterval(() => {
+      const now = Date.now();
+      const thirtyMins = 30 * 60 * 1000;
+
+      setOrders((prevOrders) =>
+        prevOrders.map((ord) => {
+          if (
+            (ord.status === 'รอตรวจสอบ' || ord.status.includes('รอตรวจสอบ')) &&
+            ord.timestamp &&
+            now - ord.timestamp > thirtyMins
+          ) {
+            return { ...ord, status: 'ยกเลิกอัตโนมัติ (หมดเวลา 30 นาที)' };
+          }
+          return ord;
+        })
+      );
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(cancelInterval);
+  }, []);
 
   // Auth Handlers
   const handleAuthSubmit = (e) => {
@@ -323,7 +397,7 @@ export default function GameTopupApp() {
     setIsWalletProcessing(false);
   };
 
-  // Step 1: Verify Password first before showing payment QR Code / Processing
+  // Step 1: Verify Password first before showing payment QR Code / Processing & Reset Timer to 3 mins
   const handleVerifyPasswordStep = (e) => {
     e.preventDefault();
     setCheckoutPasswordError('');
@@ -338,14 +412,16 @@ export default function GameTopupApp() {
       return;
     }
 
-    // Go to Step 2: Pay / QR Code
+    // Reset timer to 180 seconds (3 minutes) & go to Step 2
+    setTimeLeft(180);
+    setIsQrExpired(false);
     setCheckoutStep(2);
   };
 
-  // Step 2: Finalize Payment
+  // Step 2: Finalize Payment -> Create Pending Order -> Go to Step 3 (30s Auto Countdown)
   const handleFinalPaymentSubmit = () => {
     if (selectedPayment.id === 'wallet') {
-      setUser(prev => ({ ...prev, balance: prev.balance - selectedPackage.price }));
+      setUser((prev) => ({ ...prev, balance: prev.balance - selectedPackage.price }));
     }
 
     setIsProcessing(true);
@@ -353,7 +429,11 @@ export default function GameTopupApp() {
     setTimeout(() => {
       const newOrderId = 'ORD-' + Math.floor(10000 + Math.random() * 90000);
       const now = new Date();
-      const thaiTime = now.toLocaleDateString('th-TH', { year: '2-digit', month: '2-digit', day: '2-digit' }) + ' ' + now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+      const thaiTime =
+        now.toLocaleDateString('th-TH', { year: '2-digit', month: '2-digit', day: '2-digit' }) +
+        ' ' +
+        now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) +
+        ' น.';
 
       const newOrder = {
         id: newOrderId,
@@ -361,14 +441,16 @@ export default function GameTopupApp() {
         package: selectedPackage.name,
         price: selectedPackage.price,
         player: playerId,
-        status: 'สำเร็จ',
-        time: thaiTime
+        status: 'รอตรวจสอบ (ออโต้ใน 30s)',
+        time: thaiTime,
+        timestamp: Date.now(),
       };
 
       setOrders([newOrder, ...orders]);
       setIsProcessing(false);
       setOrderSuccess(newOrderId);
-      setCheckoutStep(3);
+      setAutoTopupSeconds(30);
+      setCheckoutStep(3); // Start 30s Auto Topup Screen
       setCheckoutPassword('');
       setShowCheckoutPassword(false);
       setCardNumber('');
@@ -376,7 +458,20 @@ export default function GameTopupApp() {
       setCardCvv('');
       setTrueWalletNumber('');
       setTrueCashCardPin('');
-    }, 1200);
+    }, 1000);
+  };
+
+  // Admin Manual Order Approval/Rejection
+  const handleAdminApproveOrder = (orderId) => {
+    setOrders((prevOrders) =>
+      prevOrders.map((ord) => (ord.id === orderId ? { ...ord, status: 'สำเร็จ (อนุมัติโดย Admin)' } : ord))
+    );
+  };
+
+  const handleAdminRejectOrder = (orderId) => {
+    setOrders((prevOrders) =>
+      prevOrders.map((ord) => (ord.id === orderId ? { ...ord, status: 'ยกเลิก (ไม่พบยอดโอนเงิน)' } : ord))
+    );
   };
 
   const resetCheckoutModal = () => {
@@ -386,18 +481,30 @@ export default function GameTopupApp() {
     setShowCheckoutPassword(false);
     setCheckoutPasswordError('');
     setOrderSuccess(null);
+    setTimeLeft(180);
+    setIsQrExpired(false);
+    setAutoTopupSeconds(30);
   };
 
-  const filteredGames = gamesData.filter(game => {
-    const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          game.publisher.toLowerCase().includes(searchTerm.toLowerCase());
+  // Format seconds to mm:ss
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
+  const filteredGames = gamesData.filter((game) => {
+    const matchesSearch =
+      game.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      game.publisher.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || game.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const filteredOrders = orders.filter(ord => 
-    ord.player.toLowerCase().includes(adminSearchQuery.toLowerCase()) || 
-    ord.id.toLowerCase().includes(adminSearchQuery.toLowerCase())
+  const filteredOrders = orders.filter(
+    (ord) =>
+      ord.player.toLowerCase().includes(adminSearchQuery.toLowerCase()) ||
+      ord.id.toLowerCase().includes(adminSearchQuery.toLowerCase())
   );
 
   // 1. LOGIN / REGISTER / FORGOT PASSWORD SCREEN
@@ -1006,7 +1113,9 @@ export default function GameTopupApp() {
               <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '14px', padding: '18px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1f2937', paddingBottom: '8px', marginBottom: '10px' }}>
                   <span style={{ fontSize: '12px', color: '#c084fc', fontWeight: 'bold' }}>{trackResult.id}</span>
-                  <span style={{ fontSize: '12px', color: '#34d399', fontWeight: 'bold' }}>✓ {trackResult.status} ({trackResult.time})</span>
+                  <span style={{ fontSize: '12px', color: trackResult.status.includes('สำเร็จ') ? '#34d399' : '#f59e0b', fontWeight: 'bold' }}>
+                    {trackResult.status} ({trackResult.time})
+                  </span>
                 </div>
                 <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div>เกม: <b>{trackResult.game}</b></div>
@@ -1019,8 +1128,9 @@ export default function GameTopupApp() {
           </div>
         )}
 
+        {/* ADMIN MANAGEMENT TAB */}
         {activeTab === 'admin' && (
-          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             {!isAdminLoggedIn ? (
               <div style={{ maxWidth: '400px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '30px', textAlign: 'center' }}>
                 <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0' }}>ระบบหลังบ้าน Admin</h2>
@@ -1048,8 +1158,8 @@ export default function GameTopupApp() {
               <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '25px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #1f2937', paddingBottom: '15px' }}>
                   <div>
-                    <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการคำสั่งซื้อทั้งหมดของลูกค้า</h2>
-                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0 0' }}>ตรวจสอบเกมที่ลูกค้าเติม แพ็กเกจ และเวลาไทยแบบเรียลไทม์</p>
+                    <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการคำสั่งซื้อทั้งหมด (จัดการโดย Admin)</h2>
+                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0 0' }}>ตรวจสอบรายการค้าง ยืนยันสลิปโอนเงิน หรือยกเลิกออร์เดอร์ที่หมดเวลา</p>
                   </div>
                   <button onClick={() => setIsAdminLoggedIn(false)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>ออกจากระบบ</button>
                 </div>
@@ -1066,23 +1176,55 @@ export default function GameTopupApp() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {filteredOrders.length > 0 ? (
-                    filteredOrders.map((ord, idx) => (
-                      <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '4px' }}>
-                            <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
-                            <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff' }}>{ord.game} ({ord.package})</span>
+                    filteredOrders.map((ord, idx) => {
+                      const isPending = ord.status.includes('รอตรวจสอบ');
+                      return (
+                        <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                          <div>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '4px' }}>
+                              <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
+                              <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff' }}>{ord.game} ({ord.package})</span>
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+                              ผู้เล่น ID: <span style={{ color: '#c084fc', fontWeight: 'bold' }}>{ord.player}</span> | เวลาเติม (ไทย): <span style={{ color: '#38bdf8' }}>{ord.time}</span>
+                            </div>
                           </div>
-                          <div style={{ fontSize: '12px', color: '#9ca3af' }}>
-                            ผู้เล่น ID: <span style={{ color: '#c084fc', fontWeight: 'bold' }}>{ord.player}</span> | เวลาเติม (ไทย): <span style={{ color: '#38bdf8' }}>{ord.time}</span>
+
+                          <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                            <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price}</div>
+                            
+                            <span style={{ 
+                              fontSize: '11px', 
+                              backgroundColor: isPending ? 'rgba(245, 158, 11, 0.2)' : ord.status.includes('สำเร็จ') ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', 
+                              color: isPending ? '#f59e0b' : ord.status.includes('สำเร็จ') ? '#34d399' : '#fca5a5', 
+                              padding: '3px 8px', 
+                              borderRadius: '6px', 
+                              fontWeight: 'bold' 
+                            }}>
+                              {ord.status}
+                            </span>
+
+                            {/* ADMIN MANUAL ACTION BUTTONS */}
+                            {isPending && (
+                              <div style={{ display: 'flex', gap: '6px', marginTop: '4px' }}>
+                                <button 
+                                  onClick={() => handleAdminApproveOrder(ord.id)}
+                                  style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                                >
+                                  ✅ อนุมัติ (เติม)
+                                </button>
+                                <button 
+                                  onClick={() => handleAdminRejectOrder(ord.id)}
+                                  style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                                >
+                                  ❌ ยกเลิก
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price}</div>
-                          <span style={{ fontSize: '10px', backgroundColor: 'rgba(52, 211, 153, 0.2)', color: '#34d399', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>{ord.status}</span>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div style={{ textAlign: 'center', padding: '30px', color: '#9ca3af', fontSize: '14px' }}>
                       ไม่พบรายการที่ค้นหา
@@ -1215,7 +1357,7 @@ export default function GameTopupApp() {
         </div>
       )}
 
-      {/* MODAL 2: CHECKOUT MULTI-STEP (PASSWORD CONFIRM -> QR SCAN/PAY -> SUCCESS) */}
+      {/* MODAL 2: CHECKOUT MULTI-STEP */}
       {showCheckoutModal && selectedGame && selectedPackage && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(147,51,234,0.3)' }}>
@@ -1275,44 +1417,88 @@ export default function GameTopupApp() {
               </form>
             )}
 
-            {/* STEP 2: QR CODE SCAN / EXECUTE PAYMENT */}
+            {/* STEP 2: QR CODE SCAN WITH 3 MINUTE TIMER */}
             {checkoutStep === 2 && (
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#38bdf8' }}>📱 สแกน QR Code ชำระเงิน</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>
-                  ช่องทาง: <b style={{ color: '#ffffff' }}>{selectedPayment.name}</b> | ยอดชำระ: <b style={{ color: '#34d399' }}>฿{selectedPackage.price}</b>
-                </p>
+                
+                {!isQrExpired ? (
+                  <>
+                    <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', borderRadius: '10px', padding: '8px', marginBottom: '12px', color: '#fca5a5', fontSize: '13px', fontWeight: 'bold' }}>
+                      ⏳ กรุณาโอนเงินภายใน: <span style={{ color: '#ffffff', fontSize: '16px' }}>{formatTime(timeLeft)}</span> นาที
+                    </div>
 
-                <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 15px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Checkout-PromptPay-${selectedPackage.price}`} 
-                    alt="Checkout QR Code" 
-                    style={{ width: '150px', height: '150px' }}
-                  />
-                </div>
+                    <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '12px' }}>
+                      ยอดชำระ: <b style={{ color: '#34d399' }}>฿{selectedPackage.price}</b>
+                    </p>
 
-                <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*สแกนผ่านแอปธนาคารแล้วกดปุ่ม "ยืนยันการชำระเงิน" ด้านล่าง</p>
+                    <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 15px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <img 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Checkout-PromptPay-${selectedPackage.price}`} 
+                        alt="Checkout QR Code" 
+                        style={{ width: '150px', height: '150px' }}
+                      />
+                    </div>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={() => setCheckoutStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
-                  <button 
-                    type="button"
-                    disabled={isProcessing}
-                    onClick={handleFinalPaymentSubmit}
-                    style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
-                  >
-                    {isProcessing ? 'กำลังตรวจสอบ...' : 'ยืนยันการชำระเงิน'}
-                  </button>
-                </div>
+                    <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อชำระเงินแล้ว กดปุ่ม "ฉันโอนเงินเรียบร้อยแล้ว" ด้านล่าง</p>
+
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button type="button" onClick={() => setCheckoutStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
+                      <button 
+                        type="button"
+                        disabled={isProcessing}
+                        onClick={handleFinalPaymentSubmit}
+                        style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        {isProcessing ? 'กำลังส่งข้อมูล...' : 'ฉันโอนเงินเรียบร้อยแล้ว'}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ padding: '20px 0' }}>
+                    <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', borderRadius: '14px', padding: '20px', marginBottom: '20px' }}>
+                      <h4 style={{ color: '#fca5a5', margin: '0 0 8px 0', fontSize: '18px' }}>❌ QR Code หมดอายุแล้ว</h4>
+                      <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>เนื่องจากหมดเวลา 3 นาที ระบบได้ยกเลิกรายการนี้เพื่อความปลอดภัย</p>
+                    </div>
+                    <button onClick={resetCheckoutModal} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>กลับไปหน้าหลัก / ลองใหม่อีกครั้ง</button>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* STEP 3: SUCCESS */}
+            {/* STEP 3: AUTO-TOPUP 30-SECOND COUNTDOWN & PENDING DISPLAY */}
             {checkoutStep === 3 && (
+              <div style={{ padding: '10px 0' }}>
+                <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '2px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+                  ⚡
+                </div>
+
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#f59e0b', margin: '0 0 8px 0' }}>ระบบกำลังส่งยอดเข้าบัญชีเกม</h3>
+                <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>
+                  ระบบกำลังตรวจสอบยอดโอนและเติมเกมให้อัตโนมัติใน <b style={{ color: '#38bdf8', fontSize: '18px' }}>{autoTopupSeconds}</b> วินาที
+                </p>
+
+                <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '14px', textAlign: 'left', marginBottom: '20px', fontSize: '12px' }}>
+                  <div style={{ color: '#9ca3af', marginBottom: '4px' }}>เลขออร์เดอร์: <b style={{ color: '#c084fc' }}>{orderSuccess}</b></div>
+                  <div style={{ color: '#9ca3af', marginBottom: '4px' }}>ผู้เล่น ID: <b style={{ color: '#38bdf8' }}>{playerId}</b></div>
+                  <div style={{ color: '#9ca3af' }}>สถานะ: <b style={{ color: '#f59e0b' }}>รอตรวจสอบ (ระบบเติมออโต้)</b></div>
+                </div>
+
+                <p style={{ fontSize: '11px', color: '#6b7280', margin: 0 }}>
+                  *หากแอดมินไม่ได้เฝ้าหน้าจอ ระบบจะดำเนินการตัดรอบและยกเลิกออร์เดอร์ที่ไม่พบยอดโอนภายใน 30 นาทีโดยอัตโนมัติ
+                </p>
+              </div>
+            )}
+
+            {/* STEP 4: SUCCESS */}
+            {checkoutStep === 4 && (
               <div>
-                <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเงินสำเร็จ!</h3>
-                <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>เลขออร์เดอร์ของคุณคือ <b style={{ color: '#c084fc' }}>{orderSuccess}</b></p>
-                <button onClick={resetCheckoutModal} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>กลับสู่หน้าหลัก</button>
+                <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '2px solid #34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
+                  ✓
+                </div>
+                <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเงินสำเร็จเรียบร้อย!</h3>
+                <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>ระบบส่งยอดเข้าบัญชีเกมเรียบร้อยแล้ว เลขออร์เดอร์: <b style={{ color: '#c084fc' }}>{orderSuccess}</b></p>
+                <button onClick={resetCheckoutModal} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ตกลง / กลับสู่หน้าหลัก</button>
               </div>
             )}
 
