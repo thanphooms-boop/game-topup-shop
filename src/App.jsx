@@ -44,8 +44,10 @@ export default function GameTopupApp() {
   const [adminPin, setAdminPin] = useState('');
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
 
-  // Checkout Modal State
+  // Checkout Modal State & Password Confirmation
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [checkoutPassword, setCheckoutPassword] = useState('');
+  const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
 
@@ -220,6 +222,7 @@ export default function GameTopupApp() {
       setUser({
         username: usernameInput,
         email: 'user@example.com',
+        password: passwordInput, // เก็บ password ไว้จำลองการตรวจสอบตอนชำระเงิน
         balance: 1000
       });
     } else if (authMode === 'register') {
@@ -238,6 +241,7 @@ export default function GameTopupApp() {
       setUser({
         username: usernameInput,
         email: emailInput,
+        password: passwordInput,
         balance: 1000
       });
     } else if (authMode === 'forgot') {
@@ -317,9 +321,15 @@ export default function GameTopupApp() {
     setIsWalletProcessing(false);
   };
 
-  // Checkout Handler
-  const handleCheckoutDirect = () => {
-    if (!selectedGame || !playerId || !selectedPackage || !selectedPayment) return;
+  // Checkout Handler with Password Verification & ID Confirmation Popup
+  const handleCheckoutConfirm = (e) => {
+    e.preventDefault();
+    setCheckoutPasswordError('');
+
+    if (checkoutPassword !== user.password) {
+      setCheckoutPasswordError('รหัสผ่านบัญชีไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
+      return;
+    }
 
     if (selectedPayment.id === 'wallet') {
       if (user.balance < selectedPackage.price) {
@@ -349,7 +359,7 @@ export default function GameTopupApp() {
       setOrders([newOrder, ...orders]);
       setIsProcessing(false);
       setOrderSuccess(newOrderId);
-      setShowCheckoutModal(true);
+      setCheckoutPassword('');
       setCardNumber('');
       setCardExp('');
       setCardCvv('');
@@ -933,7 +943,7 @@ export default function GameTopupApp() {
                     (selectedPayment.id === 'truemoney' && (!trueCashCardPin || trueCashCardPin.length < 14)) ||
                     (selectedPayment.id === 'card' && (!cardNumber || cardNumber.length < 16 || !cardExp || !cardCvv))
                   }
-                  onClick={handleCheckoutDirect}
+                  onClick={() => setShowCheckoutModal(true)}
                   style={{ 
                     width: '100%', 
                     backgroundColor: (
@@ -956,7 +966,7 @@ export default function GameTopupApp() {
                     ) ? 'not-allowed' : 'pointer' 
                   }}
                 >
-                  {isProcessing ? 'กำลังตรวจสอบการชำระเงิน...' : 'ยืนยันการชำระเงิน'}
+                  ยืนยันการชำระเงิน
                 </button>
               </div>
             </div>
@@ -1200,13 +1210,59 @@ export default function GameTopupApp() {
         </div>
       )}
 
-      {/* SUCCESS POPUP MODAL */}
-      {showCheckoutModal && (
+      {/* MODAL 2: CHECKOUT PASSWORD & ID CONFIRMATION */}
+      {showCheckoutModal && selectedGame && selectedPackage && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-          <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '400px', width: '100%', padding: '30px', textAlign: 'center' }}>
-            <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเงินสำเร็จ!</h3>
-            <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>เลขออร์เดอร์ของคุณคือ <b style={{ color: '#c084fc' }}>{orderSuccess}</b></p>
-            <button onClick={() => { setShowCheckoutModal(false); setOrderSuccess(null); setSelectedGame(null); }} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>กลับสู่หน้าหลัก</button>
+          <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(147,51,234,0.3)' }}>
+            {!orderSuccess ? (
+              <form onSubmit={handleCheckoutConfirm}>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 10px 0', color: '#c084fc' }}>🔐 ยืนยันความถูกต้องก่อนชำระเงิน</h3>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรุณาตรวจสอบ Player ID และกรอกรหัสผ่านเพื่อยืนยันการทำรายการ</p>
+
+                {/* ID Verification Box */}
+                <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '14px', marginBottom: '20px', textAlign: 'left' }}>
+                  <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '2px' }}>เกมที่เติม: <b style={{ color: '#ffffff' }}>{selectedGame.name}</b></div>
+                  <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '2px' }}>แพ็กเกจ: <b style={{ color: '#34d399' }}>{selectedPackage.name} (฿{selectedPackage.price})</b></div>
+                  <div style={{ fontSize: '12px', color: '#c084fc', marginTop: '6px', borderTop: '1px dashed #374151', paddingTop: '6px' }}>
+                    Player ID ปลายทาง: <b style={{ fontSize: '14px', color: '#38bdf8' }}>{playerId}</b>
+                  </div>
+                </div>
+
+                {checkoutPasswordError && (
+                  <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px' }}>
+                    {checkoutPasswordError}
+                  </div>
+                )}
+
+                <div style={{ textAlign: 'left', marginBottom: '20px' }}>
+                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '6px' }}>รหัสผ่านบัญชีของคุณ ({user.username})</label>
+                  <input 
+                    type="password"
+                    placeholder="กรอกรหัสผ่านเพื่อยืนยัน..."
+                    value={checkoutPassword}
+                    onChange={(e) => setCheckoutPassword(e.target.value)}
+                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="button" onClick={() => { setShowCheckoutModal(false); setCheckoutPassword(''); setCheckoutPasswordError(''); }} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
+                  <button 
+                    type="submit"
+                    disabled={!checkoutPassword || isProcessing}
+                    style={{ flex: 1, backgroundColor: (!checkoutPassword || isProcessing) ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: (!checkoutPassword || isProcessing) ? 'not-allowed' : 'pointer' }}
+                  >
+                    {isProcessing ? 'กำลังดำเนินการ...' : 'ยืนยันและชำระเงิน'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div>
+                <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเงินสำเร็จ!</h3>
+                <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>เลขออร์เดอร์ของคุณคือ <b style={{ color: '#c084fc' }}>{orderSuccess}</b></p>
+                <button onClick={() => { setShowCheckoutModal(false); setOrderSuccess(null); setSelectedGame(null); }} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>กลับสู่หน้าหลัก</button>
+              </div>
+            )}
           </div>
         </div>
       )}
