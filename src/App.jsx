@@ -308,7 +308,7 @@ export default function GameTopupApp() {
   };
 
   // Checkout Handler
-  const handleCheckout = () => {
+  const handleCheckoutDirect = () => {
     if (!selectedGame || !playerId || !selectedPackage || !selectedPayment) return;
 
     if (selectedPayment.id === 'wallet') {
@@ -808,15 +808,85 @@ export default function GameTopupApp() {
                 </div>
               </div>
 
+              {/* RIGHT SUMMARY & DYNAMIC PAYMENT INPUTS BOX */}
               <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '20px', height: 'fit-content', position: 'sticky', top: '100px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 15px 0', borderBottom: '1px solid #1f2937', paddingBottom: '10px' }}>สรุปคำสั่งซื้อ</h3>
 
-                <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#9ca3af' }}>เกม:</span> <span>{selectedGame.name}</span></div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#9ca3af' }}>ID ผู้เล่น:</span> <span style={{ color: '#c084fc', fontWeight: 'bold' }}>{playerId || '-'}</span></div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#9ca3af' }}>แพ็กเกจ:</span> <span>{selectedPackage ? selectedPackage.name : '-'}</span></div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#9ca3af' }}>ช่องทางชำระ:</span> <span>{selectedPayment ? selectedPayment.name : '-'}</span></div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#9ca3af' }}>ช่องทางชำระ:</span> <span style={{ color: '#38bdf8' }}>{selectedPayment ? selectedPayment.name : '-'}</span></div>
                 </div>
+
+                {/* DYNAMIC INPUTS ACCORDING TO SELECTED PAYMENT */}
+                {selectedPayment?.id === 'true' && (
+                  <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', marginBottom: '15px' }}>
+                    <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>เบอร์มือถือ TrueMoney (10 หลัก)</label>
+                    <input 
+                      type="text"
+                      maxLength={10}
+                      placeholder="0891234567"
+                      value={trueWalletNumber}
+                      onChange={(e) => setTrueWalletNumber(e.target.value.replace(/[^0-9]/g, ''))}
+                      style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #4b5563', borderRadius: '8px', padding: '8px 10px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                )}
+
+                {selectedPayment?.id === 'truemoney' && (
+                  <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', marginBottom: '15px' }}>
+                    <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัสบัตรเงินสด 14 หลัก</label>
+                    <input 
+                      type="text"
+                      maxLength={14}
+                      placeholder="xxxxxxxxxxxxxx"
+                      value={trueCashCardPin}
+                      onChange={(e) => setTrueCashCardPin(e.target.value.replace(/[^0-9]/g, ''))}
+                      style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #4b5563', borderRadius: '8px', padding: '8px 10px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box', letterSpacing: '1px' }}
+                    />
+                  </div>
+                )}
+
+                {selectedPayment?.id === 'card' && (
+                  <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', marginBottom: '15px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>หมายเลขบัตร (16 หลัก)</label>
+                      <input 
+                        type="text"
+                        maxLength={19}
+                        placeholder="4111222233334444"
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(e.target.value.replace(/[^0-9]/g, ''))}
+                        style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #4b5563', borderRadius: '8px', padding: '8px 10px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>MM/YY</label>
+                        <input 
+                          type="text"
+                          maxLength={5}
+                          placeholder="MM/YY"
+                          value={cardExp}
+                          onChange={(e) => setCardExp(e.target.value)}
+                          style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #4b5563', borderRadius: '8px', padding: '8px 6px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '2px' }}>CVV</label>
+                        <input 
+                          type="password"
+                          maxLength={4}
+                          placeholder="123"
+                          value={cardCvv}
+                          onChange={(e) => setCardCvv(e.target.value.replace(/[^0-9]/g, ''))}
+                          style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #4b5563', borderRadius: '8px', padding: '8px 6px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div style={{ borderTop: '1px solid #1f2937', paddingTop: '15px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontWeight: 'bold' }}>ยอดชำระ:</span>
@@ -830,7 +900,7 @@ export default function GameTopupApp() {
                     (selectedPayment.id === 'truemoney' && (!trueCashCardPin || trueCashCardPin.length < 14)) ||
                     (selectedPayment.id === 'card' && (!cardNumber || cardNumber.length < 16 || !cardExp || !cardCvv))
                   }
-                  onClick={() => setShowCheckoutModal(true)}
+                  onClick={handleCheckoutDirect}
                   style={{ 
                     width: '100%', 
                     backgroundColor: (
@@ -853,7 +923,7 @@ export default function GameTopupApp() {
                     ) ? 'not-allowed' : 'pointer' 
                   }}
                 >
-                  ยืนยันการชำระเงิน
+                  {isProcessing ? 'กำลังชำระเงิน...' : 'ยืนยันการชำระเงิน'}
                 </button>
               </div>
             </div>
@@ -988,7 +1058,6 @@ export default function GameTopupApp() {
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#c084fc' }}>💳 เติมเครดิตเข้า Cyber Wallet</h3>
                 <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>ขั้นตอนที่ 1: กรอกจำนวนเงินและเลือกช่องทางชำระเงิน</p>
 
-                {/* NUMBER INPUT WITHOUT SPINNERS */}
                 <input 
                   type="text"
                   inputMode="numeric"
@@ -1097,147 +1166,13 @@ export default function GameTopupApp() {
         </div>
       )}
 
-      {/* MODAL 2: GAME CHECKOUT */}
-      {showCheckoutModal && selectedGame && selectedPackage && selectedPayment && (
+      {/* SUCCESS POPUP MODAL */}
+      {showCheckoutModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-          <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 20px 50px rgba(147,51,234,0.3)' }}>
-            {!orderSuccess ? (
-              <div>
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 15px 0' }}>
-                  {selectedPayment.id === 'wallet' && 'ชำระด้วย Cyber Wallet'}
-                  {selectedPayment.id === 'true' && '🧡 ชำระผ่าน TrueMoney Wallet'}
-                  {selectedPayment.id === 'truemoney' && '🎫 ชำระด้วยบัตรเงินสดทรูมันนี่'}
-                  {selectedPayment.id === 'card' && '💳 บัตรเครดิต / เดบิต'}
-                  {selectedPayment.id === 'qrcode' && '📱 สแกน QR PromptPay'}
-                </h3>
-
-                {selectedPayment.id === 'wallet' ? (
-                  <div style={{ backgroundColor: '#030712', border: '1px solid #34d399', borderRadius: '16px', padding: '20px', marginBottom: '20px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '13px', color: '#9ca3af' }}>ยอดเงินคงเหลือใน Cyber Wallet</div>
-                    <div style={{ fontSize: '24px', fontWeight: '900', color: '#34d399', margin: '4px 0 10px 0' }}>฿{user.balance.toLocaleString()}</div>
-                    <div style={{ fontSize: '12px', color: '#ffffff', borderTop: '1px dashed #374151', paddingTop: '10px' }}>
-                      หักค่าเติมเกม: <b style={{ color: '#fca5a5' }}>-฿{selectedPackage.price}</b>
-                    </div>
-                  </div>
-                ) : selectedPayment.id === 'true' ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', textAlign: 'left' }}>
-                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>กรอกเบอร์โทรศัพท์ TrueMoney Wallet ของคุณเพื่อทำรายการ (ต้องครบ 10 หลัก):</p>
-                    <div>
-                      <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>เบอร์มือถือวอลเล็ต (10 หลัก)</label>
-                      <input 
-                        type="text"
-                        maxLength={10}
-                        placeholder="0891234567"
-                        value={trueWalletNumber}
-                        onChange={(e) => setTrueWalletNumber(e.target.value.replace(/[^0-9]/g, ''))}
-                        style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
-                      />
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#34d399', textAlign: 'center' }}>
-                      ยอดชำระสุทธิ: <b>฿{selectedPackage.price}</b>
-                    </div>
-                  </div>
-                ) : selectedPayment.id === 'truemoney' ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', textAlign: 'left' }}>
-                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 4px 0' }}>กรอกรหัสบัตรเงินสดทรูมันนี่ (ต้องครบ 14 หลัก):</p>
-                    <div>
-                      <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัสบัตรเงินสด 14 หลัก</label>
-                      <input 
-                        type="text"
-                        maxLength={14}
-                        placeholder="xxxxxxxxxxxxxx"
-                        value={trueCashCardPin}
-                        onChange={(e) => setTrueCashCardPin(e.target.value.replace(/[^0-9]/g, ''))}
-                        style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box', letterSpacing: '2px' }}
-                      />
-                    </div>
-                    <div style={{ fontSize: '11px', color: '#34d399', textAlign: 'center' }}>
-                      ยอดชำระแพ็กเกจ: <b>฿{selectedPackage.price}</b>
-                    </div>
-                  </div>
-                ) : selectedPayment.id === 'card' ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', textAlign: 'left' }}>
-                    <div>
-                      <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>หมายเลขบัตร (16 หลัก)</label>
-                      <input 
-                        type="text"
-                        maxLength={19}
-                        placeholder="4111 2222 3333 4444"
-                        value={cardNumber}
-                        onChange={(e) => setCardNumber(e.target.value.replace(/[^0-9]/g, ''))}
-                        style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>วันหมดอายุ (MM/YY)</label>
-                        <input 
-                          type="text"
-                          maxLength={5}
-                          placeholder="MM/YY"
-                          value={cardExp}
-                          onChange={(e) => setCardExp(e.target.value)}
-                          style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
-                        />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัส CVV</label>
-                        <input 
-                          type="password"
-                          maxLength={4}
-                          placeholder="123"
-                          value={cardCvv}
-                          onChange={(e) => setCardCvv(e.target.value.replace(/[^0-9]/g, ''))}
-                          style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 20px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ color: '#000000', fontSize: '13px', fontWeight: 'bold' }}>{selectedPayment.name}<br/>฿{selectedPackage.price}</div>
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setShowCheckoutModal(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
-                  <button 
-                    disabled={
-                      (selectedPayment.id === 'card' && (!cardNumber || cardNumber.length < 16 || !cardExp || !cardCvv)) ||
-                      (selectedPayment.id === 'true' && (!trueWalletNumber || trueWalletNumber.length < 10)) ||
-                      (selectedPayment.id === 'truemoney' && (!trueCashCardPin || trueCashCardPin.length < 14))
-                    }
-                    onClick={handleCheckout} 
-                    style={{ 
-                      flex: 1, 
-                      backgroundColor: (
-                        (selectedPayment.id === 'card' && (!cardNumber || cardNumber.length < 16 || !cardExp || !cardCvv)) ||
-                        (selectedPayment.id === 'true' && (!trueWalletNumber || trueWalletNumber.length < 10)) ||
-                        (selectedPayment.id === 'truemoney' && (!trueCashCardPin || trueCashCardPin.length < 14))
-                      ) ? '#374151' : '#9333ea', 
-                      color: '#ffffff', 
-                      border: 'none', 
-                      padding: '12px', 
-                      borderRadius: '10px', 
-                      fontWeight: 'bold', 
-                      cursor: (
-                        (selectedPayment.id === 'card' && (!cardNumber || cardNumber.length < 16 || !cardExp || !cardCvv)) ||
-                        (selectedPayment.id === 'true' && (!trueWalletNumber || trueWalletNumber.length < 10)) ||
-                        (selectedPayment.id === 'truemoney' && (!trueCashCardPin || trueCashCardPin.length < 14))
-                      ) ? 'not-allowed' : 'pointer' 
-                    }}
-                  >
-                    {isProcessing ? 'กำลังชำระเงิน...' : 'ชำระเงินทันที'}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเงินสำเร็จ!</h3>
-                <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>เลขออร์เดอร์ของคุณคือ <b style={{ color: '#c084fc' }}>{orderSuccess}</b></p>
-                <button onClick={() => { setShowCheckoutModal(false); setOrderSuccess(null); setSelectedGame(null); }} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>กลับสู่หน้าหลัก</button>
-              </div>
-            )}
+          <div style={{ backgroundColor: '#111827', border: '1px solid #9333ea', borderRadius: '24px', maxWidth: '400px', width: '100%', padding: '30px', textAlign: 'center' }}>
+            <h3 style={{ fontSize: '24px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเงินสำเร็จ!</h3>
+            <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>เลขออร์เดอร์ของคุณคือ <b style={{ color: '#c084fc' }}>{orderSuccess}</b></p>
+            <button onClick={() => { setShowCheckoutModal(false); setOrderSuccess(null); setSelectedGame(null); }} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>กลับสู่หน้าหลัก</button>
           </div>
         </div>
       )}
