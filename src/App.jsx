@@ -12,6 +12,7 @@ export default function GameTopupApp() {
   const [usernameInput, setUsernameInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false); // สถานะเปิด/ปิดตา รหัสผ่านหน้า Login
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [otpInput, setOtpInput] = useState('');
@@ -451,6 +452,7 @@ export default function GameTopupApp() {
     setUser(null);
     setUsernameInput('');
     setPasswordInput('');
+    setShowLoginPassword(false);
     setConfirmPasswordInput('');
     setEmailInput('');
     setIsAdminLoggedIn(false);
@@ -803,13 +805,25 @@ export default function GameTopupApp() {
             {authMode !== 'forgot' && (
               <div style={{ textAlign: 'left' }}>
                 <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัสผ่าน (Password)</label>
-                <input 
-                  type="password" 
-                  placeholder="กรอกรหัสผ่าน..."
-                  value={passwordInput}
-                  onChange={(e) => setPasswordInput(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
-                />
+                
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input 
+                    type={showLoginPassword ? 'text' : 'password'}
+                    placeholder="กรอกรหัสผ่าน..."
+                    value={passwordInput}
+                    onChange={(e) => setPasswordInput(e.target.value)}
+                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 40px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '16px' }}
+                    title={showLoginPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+                  >
+                    {showLoginPassword ? '👁️‍🗨️' : '👁️'}
+                  </button>
+                </div>
+
                 {authMode === 'login' && (
                   <div style={{ textAlign: 'right', marginTop: '6px' }}>
                     <span 
