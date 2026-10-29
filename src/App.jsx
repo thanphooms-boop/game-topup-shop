@@ -349,6 +349,7 @@ export default function GameTopupApp() {
       setOrders([newOrder, ...orders]);
       setIsProcessing(false);
       setOrderSuccess(newOrderId);
+      setShowCheckoutModal(true);
       setCardNumber('');
       setCardExp('');
       setCardCvv('');
@@ -825,7 +826,7 @@ export default function GameTopupApp() {
                 </div>
               </div>
 
-              {/* RIGHT SUMMARY & DYNAMIC PAYMENT INPUTS BOX */}
+              {/* RIGHT SUMMARY & DYNAMIC PAYMENT INPUTS / QR CODE BOX */}
               <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '20px', height: 'fit-content', position: 'sticky', top: '100px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 15px 0', borderBottom: '1px solid #1f2937', paddingBottom: '10px' }}>สรุปคำสั่งซื้อ</h3>
 
@@ -835,6 +836,21 @@ export default function GameTopupApp() {
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#9ca3af' }}>แพ็กเกจ:</span> <span>{selectedPackage ? selectedPackage.name : '-'}</span></div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: '#9ca3af' }}>ช่องทางชำระ:</span> <span style={{ color: '#38bdf8' }}>{selectedPayment ? selectedPayment.name : '-'}</span></div>
                 </div>
+
+                {/* SHOW QR CODE WHEN PROMPTPAY IS SELECTED */}
+                {selectedPayment?.id === 'qrcode' && (
+                  <div style={{ backgroundColor: '#030712', border: '1px solid #38bdf8', borderRadius: '16px', padding: '15px', marginBottom: '15px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 'bold', marginBottom: '8px' }}>📱 สแกน QR Code ชำระเงิน</div>
+                    <div style={{ backgroundColor: '#ffffff', padding: '10px', borderRadius: '12px', display: 'inline-block' }}>
+                      <img 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=PromptPay-CyberTopup-${selectedPackage ? selectedPackage.price : 0}`} 
+                        alt="QR PromptPay" 
+                        style={{ width: '150px', height: '150px', display: 'block' }}
+                      />
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '8px' }}>สแกนได้ด้วยแอปธนาคารทุกธนาคาร</div>
+                  </div>
+                )}
 
                 {/* DYNAMIC INPUTS ACCORDING TO SELECTED PAYMENT */}
                 {selectedPayment?.id === 'true' && (
@@ -940,7 +956,7 @@ export default function GameTopupApp() {
                     ) ? 'not-allowed' : 'pointer' 
                   }}
                 >
-                  {isProcessing ? 'กำลังชำระเงิน...' : 'ยืนยันการชำระเงิน'}
+                  {isProcessing ? 'กำลังตรวจสอบการชำระเงิน...' : 'ยืนยันการชำระเงิน'}
                 </button>
               </div>
             </div>
@@ -1152,10 +1168,11 @@ export default function GameTopupApp() {
                 </p>
 
                 <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 15px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ color: '#000000', fontSize: '13px', fontWeight: 'bold' }}>
-                    {walletPaymentMethod === 'qrcode' ? 'QR PromptPay' : 'TrueMoney QR'}<br/>
-                    <span style={{ fontSize: '18px', color: '#9333ea' }}>฿{parseFloat(topupAmount).toLocaleString()}</span>
-                  </div>
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Topup-Wallet-${topupAmount}`} 
+                    alt="Topup QR Code" 
+                    style={{ width: '150px', height: '150px' }}
+                  />
                 </div>
 
                 <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อชำระเงินเสร็จแล้ว กดปุ่ม "ฉันชำระเงินเรียบร้อยแล้ว" ด้านล่าง</p>
