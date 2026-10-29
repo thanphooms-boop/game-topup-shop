@@ -23,18 +23,18 @@ export default function GameTopupApp() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // Topup Wallet State & Background 30s Countdown State
+  // Topup Wallet State & Background 10s Countdown State
   const [showTopupWalletModal, setShowTopupWalletModal] = useState(false);
   const [topupAmount, setTopupAmount] = useState('');
   const [walletPaymentMethod, setWalletPaymentMethod] = useState('qrcode');
   const [walletPhone, setWalletPhone] = useState('');
-  const [walletStep, setWalletStep] = useState(1); // 1: Input Amount, 2: QR Scan & 3-Min Timer, 3: Success Modal
+  const [walletStep, setWalletStep] = useState(1); // 1: Input Amount, 2: QR Scan/Confirm & 3-Min Timer
   const [walletTimeLeft, setWalletTimeLeft] = useState(180);
   const [isWalletQrExpired, setIsWalletQrExpired] = useState(false);
 
-  // Background Wallet Auto-Topup State (Runs even if modal is closed)
+  // Background Wallet Auto-Topup State (10 Seconds)
   const [isWalletAutoRunning, setIsWalletAutoRunning] = useState(false);
-  const [walletAutoSeconds, setWalletAutoSeconds] = useState(30);
+  const [walletAutoSeconds, setWalletAutoSeconds] = useState(10);
   const [pendingWalletAmount, setPendingWalletAmount] = useState(0);
   const [showWalletSuccessPopup, setShowWalletSuccessPopup] = useState(false);
   const [lastAddedAmount, setLastAddedAmount] = useState(0);
@@ -54,7 +54,7 @@ export default function GameTopupApp() {
 
   // Checkout Modal State & Multi-Step Flow
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState(1); // 1: Password & ID Confirm, 2: QR Code / Pay Execution, 4: Success
+  const [checkoutStep, setCheckoutStep] = useState(1); // 1: Password & ID Confirm, 2: QR Code / Pay Execution
   const [checkoutPassword, setCheckoutPassword] = useState('');
   const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
   const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
@@ -65,9 +65,9 @@ export default function GameTopupApp() {
   const [timeLeft, setTimeLeft] = useState(180);
   const [isQrExpired, setIsQrExpired] = useState(false);
 
-  // Background Game Checkout Auto-Topup State (Runs even if modal is closed)
+  // Background Game Checkout Auto-Topup State (10 Seconds)
   const [isGameAutoRunning, setIsGameAutoRunning] = useState(false);
-  const [gameAutoSeconds, setGameAutoSeconds] = useState(30);
+  const [gameAutoSeconds, setGameAutoSeconds] = useState(10);
   const [pendingGameOrderId, setPendingGameOrderId] = useState('');
   const [showGameSuccessPopup, setShowGameSuccessPopup] = useState(false);
   const [lastGameName, setLastGameName] = useState('');
@@ -232,7 +232,7 @@ export default function GameTopupApp() {
   // Countdown Timer Effect for Checkout QR Code (3 Mins)
   useEffect(() => {
     let timer;
-    if (showCheckoutModal && checkoutStep === 2 && !isQrExpired) {
+    if (showCheckoutModal && checkoutStep === 2 && selectedPayment?.id === 'qrcode' && !isQrExpired) {
       timer = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
@@ -245,12 +245,12 @@ export default function GameTopupApp() {
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [showCheckoutModal, checkoutStep, isQrExpired]);
+  }, [showCheckoutModal, checkoutStep, selectedPayment, isQrExpired]);
 
   // Countdown Timer Effect for Wallet QR Code (3 Mins)
   useEffect(() => {
     let timer;
-    if (showTopupWalletModal && walletStep === 2 && !isWalletQrExpired) {
+    if (showTopupWalletModal && walletStep === 2 && walletPaymentMethod === 'qrcode' && !isWalletQrExpired) {
       timer = setInterval(() => {
         setWalletTimeLeft((prev) => {
           if (prev <= 1) {
@@ -263,9 +263,9 @@ export default function GameTopupApp() {
       }, 1000);
     }
     return () => clearInterval(timer);
-  }, [showTopupWalletModal, walletStep, isWalletQrExpired]);
+  }, [showTopupWalletModal, walletStep, walletPaymentMethod, isWalletQrExpired]);
 
-  // BACKGROUND WALLET AUTO-TOPUP TIMER (Runs continuously if isWalletAutoRunning is true)
+  // BACKGROUND WALLET AUTO-TOPUP TIMER (10 SECONDS)
   useEffect(() => {
     let bgWalletTimer;
     if (isWalletAutoRunning) {
@@ -290,7 +290,7 @@ export default function GameTopupApp() {
     return () => clearInterval(bgWalletTimer);
   }, [isWalletAutoRunning, pendingWalletAmount]);
 
-  // BACKGROUND GAME CHECKOUT AUTO-TOPUP TIMER (Runs continuously if isGameAutoRunning is true)
+  // BACKGROUND GAME CHECKOUT AUTO-TOPUP TIMER (10 SECONDS)
   useEffect(() => {
     let bgGameTimer;
     if (isGameAutoRunning) {
@@ -430,16 +430,21 @@ export default function GameTopupApp() {
     }
     setWalletTimeLeft(180);
     setIsWalletQrExpired(false);
-    setWalletStep(2); // Go to QR Code / Payment screen
+    
+    // ถ้าเลือก QR Code ให้ไปหน้าสแกน (Step 2) แต่ถ้าเลือกช่องทางอื่น (เช่น TrueWallet) ให้กดเติมแล้วรัน 10s เบื้องหลังทันที
+    if (walletPaymentMethod === 'qrcode') {
+      setWalletStep(2);
+    } else {
+      handleWalletConfirmPayment();
+    }
   };
 
-  // When user clicks confirm payment for wallet topup -> Start background 30s counter
   const handleWalletConfirmPayment = () => {
     const amt = parseFloat(topupAmount) || 0;
     setPendingWalletAmount(amt);
-    setWalletAutoSeconds(30);
+    setWalletAutoSeconds(10);
     setIsWalletAutoRunning(true);
-    setShowTopupWalletModal(false); // Close modal immediately so user can go anywhere!
+    setShowTopupWalletModal(false);
     setWalletStep(1);
     setTopupAmount('');
     setWalletPhone('');
@@ -454,7 +459,7 @@ export default function GameTopupApp() {
     setIsWalletQrExpired(false);
   };
 
-  // Step 1: Verify Password first before showing payment QR Code
+  // Step 1: Verify Password first before proceeding
   const handleVerifyPasswordStep = (e) => {
     e.preventDefault();
     setCheckoutPasswordError('');
@@ -469,12 +474,17 @@ export default function GameTopupApp() {
       return;
     }
 
-    setTimeLeft(180);
-    setIsQrExpired(false);
-    setCheckoutStep(2);
+    // ถ้าเลือก QR Code ให้ไปหน้าแสดง QR (Step 2) แต่ถ้าเลือกช่องทางอื่น ให้ดำเนินการชำระเงินและนับ 10s เบื้องหลังทันที
+    if (selectedPayment.id === 'qrcode') {
+      setTimeLeft(180);
+      setIsQrExpired(false);
+      setCheckoutStep(2);
+    } else {
+      handleFinalPaymentSubmit();
+    }
   };
 
-  // Step 2: Finalize Game Payment -> Create Pending Order -> Start Background 30s Counter
+  // Finalize Game Payment -> Create Pending Order -> Start Background 10s Counter
   const handleFinalPaymentSubmit = () => {
     if (selectedPayment.id === 'wallet') {
       setUser((prev) => ({ ...prev, balance: prev.balance - selectedPackage.price }));
@@ -497,7 +507,7 @@ export default function GameTopupApp() {
         package: selectedPackage.name,
         price: selectedPackage.price,
         player: playerId,
-        status: 'รอตรวจสอบ (ออโต้ใน 30s)',
+        status: 'รอตรวจสอบ (ออโต้ใน 10s)',
         time: thaiTime,
         timestamp: Date.now(),
       };
@@ -506,9 +516,9 @@ export default function GameTopupApp() {
       setIsProcessing(false);
       setPendingGameOrderId(newOrderId);
       setLastGameName(selectedGame.name);
-      setGameAutoSeconds(30);
+      setGameAutoSeconds(10);
       setIsGameAutoRunning(true);
-      setShowCheckoutModal(false); // Close modal immediately so user can go back to home/anywhere!
+      setShowCheckoutModal(false);
       
       // Reset checkout states
       setCheckoutStep(1);
@@ -1426,13 +1436,13 @@ export default function GameTopupApp() {
                       cursor: (!topupAmount || parseFloat(topupAmount) <= 0 || (walletPaymentMethod === 'true' && walletPhone.length < 10)) ? 'not-allowed' : 'pointer' 
                     }}
                   >
-                    ดำเนินการชำระเงิน →
+                    {walletPaymentMethod === 'qrcode' ? 'ถัดไป (สแกน QR) →' : 'ยืนยันเติมเครดิต →'}
                   </button>
                 </div>
               </div>
             )}
 
-            {walletStep === 2 && (
+            {walletStep === 2 && walletPaymentMethod === 'qrcode' && (
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#38bdf8' }}>📱 สแกน QR Code เติมเครดิต</h3>
 
@@ -1496,6 +1506,7 @@ export default function GameTopupApp() {
                 <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '14px', marginBottom: '20px', textAlign: 'left' }}>
                   <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '2px' }}>เกมที่เติม: <b style={{ color: '#ffffff' }}>{selectedGame.name}</b></div>
                   <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '2px' }}>แพ็กเกจ: <b style={{ color: '#34d399' }}>{selectedPackage.name} (฿{selectedPackage.price})</b></div>
+                  <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '2px' }}>ช่องทางชำระ: <b style={{ color: '#38bdf8' }}>{selectedPayment?.name}</b></div>
                   <div style={{ fontSize: '12px', color: '#c084fc', marginTop: '6px', borderTop: '1px dashed #374151', paddingTop: '6px' }}>
                     Player ID ปลายทาง: <b style={{ fontSize: '14px', color: '#38bdf8' }}>{playerId}</b>
                   </div>
@@ -1536,14 +1547,14 @@ export default function GameTopupApp() {
                     disabled={!checkoutPassword}
                     style={{ flex: 1, backgroundColor: !checkoutPassword ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: !checkoutPassword ? 'not-allowed' : 'pointer' }}
                   >
-                    ถัดไป (สแกน/ชำระ) →
+                    {selectedPayment?.id === 'qrcode' ? 'ถัดไป (สแกน QR) →' : 'ยืนยันการชำระเงิน →'}
                   </button>
                 </div>
               </form>
             )}
 
-            {/* STEP 2: QR CODE SCAN WITH 3 MINUTE TIMER */}
-            {checkoutStep === 2 && (
+            {/* STEP 2: QR CODE SCAN WITH 3 MINUTE TIMER (SHOWS ONLY WHEN QRCODE IS SELECTED) */}
+            {checkoutStep === 2 && selectedPayment?.id === 'qrcode' && (
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#38bdf8' }}>📱 สแกน QR Code ชำระเงิน</h3>
                 
