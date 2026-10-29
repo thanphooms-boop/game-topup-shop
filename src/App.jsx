@@ -51,7 +51,7 @@ export default function GameTopupApp() {
 
   // Order Tracking State
   const [trackQuery, setTrackQuery] = useState('');
-  const [trackResult, setTrackResult] = useState(null);
+  const [trackResultList, setTrackResultList] = useState(null);
 
   // Admin State & Dynamic PIN System
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -298,7 +298,7 @@ export default function GameTopupApp() {
             const ordId = pendingWalletOrderId;
             setOrders((prevOrders) =>
               prevOrders.map((ord) =>
-                ord.id === ordId ? { ...ord, status: '✅ สำเร็จ (เติมออโต้ 10s)' } : ord
+                ord.id === ordId ? { ...ord, status: '✅ สำเร็จ' } : ord
               )
             );
 
@@ -325,7 +325,7 @@ export default function GameTopupApp() {
             const ordId = pendingGameOrderId;
             setOrders((prevOrders) =>
               prevOrders.map((ord) =>
-                ord.id === ordId ? { ...ord, status: '✅ สำเร็จ (เติมออโต้ 10s)' } : ord
+                ord.id === ordId ? { ...ord, status: '✅ สำเร็จ' } : ord
               )
             );
             setIsGameAutoRunning(false);
@@ -612,7 +612,6 @@ export default function GameTopupApp() {
 
   // Admin Manual Order Approval -> Stops timer, instantly credits wallet if wallet order, and marks as Admin Approved
   const handleAdminApproveOrder = (orderId) => {
-    // If approving a wallet order that was currently auto-running, stop the background timer
     if (isWalletAutoRunning && pendingWalletOrderId === orderId) {
       setIsWalletAutoRunning(false);
     }
@@ -1301,23 +1300,33 @@ export default function GameTopupApp() {
           </div>
         )}
 
+        {/* TRACK STATUS TAB - SHOW ALL HISTORY FOR USER */}
         {activeTab === 'track' && (
-          <div style={{ maxWidth: '600px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '30px' }}>
-            <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>เช็คสถานะการเติมเงิน</h2>
-            <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '20px' }}>กรอกเลขออร์เดอร์ (เช่น ORD-98421) หรือชื่อผู้เล่นเพื่อตรวจสอบ</p>
+          <div style={{ maxWidth: '700px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '30px' }}>
+            <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>📋 เช็คประวัติและสถานะการทำรายการ</h2>
+            <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '20px' }}>กรอกชื่อผู้ใช้ (Username) หรือเลขออร์เดอร์เพื่อดูประวัติทั้งหมด</p>
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '25px' }}>
               <input 
                 type="text"
-                placeholder="กรอกเลขออร์เดอร์ หรือ Player ID..."
+                placeholder="กรอกชื่อผู้ใช้ (เช่น 11) หรือเลขออร์เดอร์..."
                 value={trackQuery}
                 onChange={(e) => setTrackQuery(e.target.value)}
                 style={{ flex: 1, backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none' }}
               />
               <button 
                 onClick={() => {
-                  const found = orders.find(o => o.id.toLowerCase().includes(trackQuery.toLowerCase()) || o.player.toLowerCase().includes(trackQuery.toLowerCase()));
-                  setTrackResult(found || { notFound: true });
+                  const query = trackQuery.trim().toLowerCase();
+                  if (!query) {
+                    setTrackResultList(null);
+                    return;
+                  }
+                  // Find all matching orders by player id, username, or order id
+                  const matched = orders.filter(o => 
+                    o.player.toLowerCase().includes(query) || 
+                    o.id.toLowerCase().includes(query)
+                  );
+                  setTrackResultList(matched);
                 }}
                 style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '0 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
               >
@@ -1325,20 +1334,47 @@ export default function GameTopupApp() {
               </button>
             </div>
 
-            {trackResult && !trackResult.notFound && (
-              <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '14px', padding: '18px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #1f2937', paddingBottom: '8px', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '12px', color: '#c084fc', fontWeight: 'bold' }}>{trackResult.id}</span>
-                  <span style={{ fontSize: '12px', color: trackResult.status.includes('สำเร็จ') ? '#34d399' : '#f59e0b', fontWeight: 'bold' }}>
-                    {trackResult.status} ({trackResult.time})
-                  </span>
-                </div>
-                <div style={{ fontSize: '13px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div>รายการ: <b>{trackResult.game}</b></div>
-                  <div>รายละเอียด: <b>{trackResult.package}</b></div>
-                  <div>ผู้เล่น/ยูสเซอร์: <b style={{ color: '#c084fc' }}>{trackResult.player}</b></div>
-                  <div>ยอดเงิน: <b style={{ color: '#34d399' }}>฿{trackResult.price}</b></div>
-                </div>
+            {trackResultList !== null && (
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#c084fc', marginBottom: '15px' }}>
+                  ผลการค้นหา ({trackResultList.length} รายการ)
+                </h3>
+
+                {trackResultList.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {trackResultList.map((ord, idx) => (
+                      <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                        <div>
+                          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
+                            <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff' }}>{ord.game} ({ord.package})</span>
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+                            ผู้ใช้/ผู้เล่น: <span style={{ color: '#c084fc', fontWeight: 'bold' }}>{ord.player}</span> | เวลา: <span style={{ color: '#38bdf8' }}>{ord.time}</span>
+                          </div>
+                        </div>
+
+                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                          <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price}</div>
+                          <span style={{ 
+                            fontSize: '11px', 
+                            backgroundColor: ord.status.includes('สำเร็จ') ? 'rgba(52, 211, 153, 0.2)' : ord.status.includes('รอตรวจสอบ') ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)', 
+                            color: ord.status.includes('สำเร็จ') ? '#34d399' : ord.status.includes('รอตรวจสอบ') ? '#f59e0b' : '#fca5a5', 
+                            padding: '3px 8px', 
+                            borderRadius: '6px', 
+                            fontWeight: 'bold' 
+                          }}>
+                            {ord.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '30px', color: '#9ca3af', fontSize: '14px', backgroundColor: '#030712', borderRadius: '14px', border: '1px solid #374151' }}>
+                    ไม่พบประวัติการทำรายการสำหรับคำค้นหานี้
+                  </div>
+                )}
               </div>
             )}
           </div>
