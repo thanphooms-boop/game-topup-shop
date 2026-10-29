@@ -41,6 +41,7 @@ export default function GameTopupApp() {
   const [isWalletAutoRunning, setIsWalletAutoRunning] = useState(false);
   const [walletAutoSeconds, setWalletAutoSeconds] = useState(10);
   const [pendingWalletAmount, setPendingWalletAmount] = useState(0);
+  const [pendingWalletOrderId, setPendingWalletOrderId] = useState('');
   const [showWalletSuccessPopup, setShowWalletSuccessPopup] = useState(false);
   const [lastAddedAmount, setLastAddedAmount] = useState(0);
 
@@ -288,23 +289,19 @@ export default function GameTopupApp() {
           if (prev <= 1) {
             clearInterval(bgWalletTimer);
             const amt = pendingWalletAmount;
-            const newOrderId = 'ORD-W-' + Math.floor(10000 + Math.random() * 90000);
-            const now = new Date();
-            const thaiTime = now.toLocaleDateString('th-TH', { year: '2-digit', month: '2-digit', day: '2-digit' }) + ' ' + now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+            
+            setUser((prevUser) => ({
+              ...prevUser,
+              balance: prevUser.balance + amt
+            }));
 
-            const newWalletOrder = {
-              id: newOrderId,
-              game: 'เติมเครดิตร้าน (Wallet)',
-              package: `+฿${amt.toLocaleString()}`,
-              price: amt,
-              player: user ? user.username : '11',
-              status: 'รอตรวจสอบ (เติมเครดิต)',
-              type: 'wallet',
-              time: thaiTime,
-              timestamp: Date.now()
-            };
+            const ordId = pendingWalletOrderId;
+            setOrders((prevOrders) =>
+              prevOrders.map((ord) =>
+                ord.id === ordId ? { ...ord, status: '✅ สำเร็จ (เติมออโต้ 10s)' } : ord
+              )
+            );
 
-            setOrders((prev) => [newWalletOrder, ...prev]);
             setIsWalletAutoRunning(false);
             setLastAddedAmount(amt);
             setShowWalletSuccessPopup(true);
@@ -315,7 +312,7 @@ export default function GameTopupApp() {
       }, 1000);
     }
     return () => clearInterval(bgWalletTimer);
-  }, [isWalletAutoRunning, pendingWalletAmount, user]);
+  }, [isWalletAutoRunning, pendingWalletAmount, pendingWalletOrderId]);
 
   // BACKGROUND GAME CHECKOUT AUTO-TOPUP TIMER (10 SECONDS)
   useEffect(() => {
@@ -328,7 +325,7 @@ export default function GameTopupApp() {
             const ordId = pendingGameOrderId;
             setOrders((prevOrders) =>
               prevOrders.map((ord) =>
-                ord.id === ordId ? { ...ord, status: 'สำเร็จ (เติมออโต้)' } : ord
+                ord.id === ordId ? { ...ord, status: '✅ สำเร็จ (เติมออโต้ 10s)' } : ord
               )
             );
             setIsGameAutoRunning(false);
@@ -356,7 +353,7 @@ export default function GameTopupApp() {
             ord.timestamp &&
             now - ord.timestamp > thirtyMins
           ) {
-            return { ...ord, status: 'ยกเลิกอัตโนมัติ (หมดเวลา 30 นาที)' };
+            return { ...ord, status: '❌ ยกเลิกอัตโนมัติ (หมดเวลา 30 นาที)' };
           }
           return ord;
         })
@@ -507,7 +504,25 @@ export default function GameTopupApp() {
 
   const handleWalletConfirmPayment = () => {
     const amt = parseFloat(topupAmount) || 0;
+    const newOrderId = 'ORD-W-' + Math.floor(10000 + Math.random() * 90000);
+    const now = new Date();
+    const thaiTime = now.toLocaleDateString('th-TH', { year: '2-digit', month: '2-digit', day: '2-digit' }) + ' ' + now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+
+    const newWalletOrder = {
+      id: newOrderId,
+      game: 'เติมเครดิตร้าน (Wallet)',
+      package: `+฿${amt.toLocaleString()}`,
+      price: amt,
+      player: user ? user.username : '11',
+      status: 'รอตรวจสอบ [สะดุดใน 10s]',
+      type: 'wallet',
+      time: thaiTime,
+      timestamp: Date.now()
+    };
+
+    setOrders((prev) => [newWalletOrder, ...prev]);
     setPendingWalletAmount(amt);
+    setPendingWalletOrderId(newOrderId);
     setWalletAutoSeconds(10);
     setIsWalletAutoRunning(true);
     setShowTopupWalletModal(false);
@@ -525,7 +540,6 @@ export default function GameTopupApp() {
     setIsWalletQrExpired(false);
   };
 
-  // Step 1: Verify Password first before proceeding
   const handleVerifyPasswordStep = (e) => {
     e.preventDefault();
     setCheckoutPasswordError('');
@@ -549,7 +563,6 @@ export default function GameTopupApp() {
     }
   };
 
-  // Finalize Game Payment -> Create Pending Order -> Start Background 10s Counter
   const handleFinalPaymentSubmit = () => {
     if (selectedPayment.id === 'wallet') {
       setUser((prev) => ({ ...prev, balance: prev.balance - selectedPackage.price }));
@@ -597,13 +610,20 @@ export default function GameTopupApp() {
     }, 1000);
   };
 
-  // Admin Manual Order Approval (Updates status to Approved and instantly adds wallet balance if it's a wallet topup)
+  // Admin Manual Order Approval -> Stops timer, instantly credits wallet if wallet order, and marks as Admin Approved
   const handleAdminApproveOrder = (orderId) => {
+    // If approving a wallet order that was currently auto-running, stop the background timer
+    if (isWalletAutoRunning && pendingWalletOrderId === orderId) {
+      setIsWalletAutoRunning(false);
+    }
+    if (isGameAutoRunning && pendingGameOrderId === orderId) {
+      setIsGameAutoRunning(false);
+    }
+
     setOrders((prevOrders) =>
       prevOrders.map((ord) => {
         if (ord.id === orderId) {
-          // If it's a wallet topup order, instantly credit the user's balance
-          if (ord.type === 'wallet') {
+          if (ord.type === 'wallet' && !ord.status.includes('สำเร็จ')) {
             setUser((prevUser) => ({
               ...prevUser,
               balance: prevUser.balance + ord.price
@@ -617,6 +637,13 @@ export default function GameTopupApp() {
   };
 
   const handleAdminRejectOrder = (orderId) => {
+    if (isWalletAutoRunning && pendingWalletOrderId === orderId) {
+      setIsWalletAutoRunning(false);
+    }
+    if (isGameAutoRunning && pendingGameOrderId === orderId) {
+      setIsGameAutoRunning(false);
+    }
+
     setOrders((prevOrders) =>
       prevOrders.map((ord) => (ord.id === orderId ? { ...ord, status: '❌ ยกเลิก (ไม่พบยอดโอนเงิน)' } : ord))
     );
@@ -632,7 +659,6 @@ export default function GameTopupApp() {
     setIsQrExpired(false);
   };
 
-  // Format seconds to mm:ss
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -653,7 +679,6 @@ export default function GameTopupApp() {
       ord.id.toLowerCase().includes(adminSearchQuery.toLowerCase())
   );
 
-  // 1. LOGIN / REGISTER / FORGOT PASSWORD SCREEN
   if (!user) {
     return (
       <div style={{
@@ -855,7 +880,6 @@ export default function GameTopupApp() {
     );
   }
 
-  // 2. MAIN APPLICATION (LOGGED IN)
   return (
     <div style={{
       backgroundColor: '#070a12',
@@ -870,7 +894,6 @@ export default function GameTopupApp() {
       position: 'relative'
     }}>
       
-      {/* FLOATING BACKGROUND COUNTER BADGES (TOP-LEFT) */}
       <div style={{ position: 'fixed', top: '75px', left: '20px', zIndex: 99, display: 'flex', flexDirection: 'column', gap: '8px' }}>
         
         {isWalletAutoRunning && (
@@ -901,9 +924,9 @@ export default function GameTopupApp() {
             <div style={{ width: '60px', height: '60px', margin: '0 auto 15px auto', borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '2px solid #34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px' }}>
               ✓
             </div>
-            <h3 style={{ fontSize: '22px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>สร้างรายการเติมเครดิตสำเร็จ!</h3>
+            <h3 style={{ fontSize: '22px', fontWeight: 'bold', color: '#34d399', margin: '0 0 10px 0' }}>เติมเครดิตร้านสำเร็จทันที!</h3>
             <p style={{ fontSize: '14px', color: '#ffffff', marginBottom: '20px' }}>
-              รายการเติมเงิน <b>฿{lastAddedAmount.toLocaleString()}</b> เข้าสู่ระบบหลังบ้านเพื่อรอตรวจสอบเรียบร้อยแล้ว
+              ยอดเงิน <b>+฿{lastAddedAmount.toLocaleString()}</b> ถูกเพิ่มเข้าบัญชีของคุณเรียบร้อยแล้ว
             </p>
             <button onClick={() => setShowWalletSuccessPopup(false)} style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ตกลง</button>
           </div>
@@ -1422,7 +1445,7 @@ export default function GameTopupApp() {
                                   onClick={() => handleAdminApproveOrder(ord.id)}
                                   style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                                 >
-                                  ✅ อนุมัติ (เติม)
+                                  ✅ อนุมัติทันที
                                 </button>
                                 <button 
                                   onClick={() => handleAdminRejectOrder(ord.id)}
@@ -1633,7 +1656,7 @@ export default function GameTopupApp() {
                       />
                     </div>
 
-                    <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อโอนแล้ว กดปุ่มด้านล่าง ระบบจะสร้างออร์เดอร์ไปรอแอดมินอนุมัติ</p>
+                    <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อโอนแล้ว กดปุ่มด้านล่าง ระบบจะไปนับถอยหลัง 10 วิ แล้วยอดจะเข้าทันที</p>
 
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button onClick={() => setWalletStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
@@ -1743,7 +1766,7 @@ export default function GameTopupApp() {
                       />
                     </div>
 
-                    <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อโอนแล้ว กดปุ่มด้านล่าง ระบบจะไปนับถอยหลังเบื้องหลังให้ทันที</p>
+                    <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อโอนแล้ว กดปุ่มด้านล่าง ระบบจะไปนับถอยหลัง 10 วิ แล้วยอดจะเข้าทันที</p>
 
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button type="button" onClick={() => setCheckoutStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
