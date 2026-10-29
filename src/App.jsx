@@ -7,6 +7,7 @@ export default function GameTopupApp() {
   const [usernameInput, setUsernameInput] = useState('');
   const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [otpInput, setOtpInput] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
@@ -28,6 +29,10 @@ export default function GameTopupApp() {
   const [walletPaymentMethod, setWalletPaymentMethod] = useState('qrcode');
   const [isWalletProcessing, setIsWalletProcessing] = useState(false);
   const [walletPaymentStep, setWalletPaymentStep] = useState(1); // 1: Input Amount, 2: Pay, 3: Success
+
+  // Payment Input States for Checkout
+  const [trueWalletNumber, setTrueWalletNumber] = useState('');
+  const [trueCashCardPin, setTrueCashCardPin] = useState('');
 
   // Order Tracking State
   const [trackQuery, setTrackQuery] = useState('');
@@ -189,8 +194,8 @@ export default function GameTopupApp() {
   const paymentMethods = [
     { id: 'wallet', name: 'Cyber Wallet (เครดิตร้าน)', desc: 'หักจากยอดเงินในบัญชีของคุณ ชำระได้ทันที' },
     { id: 'qrcode', name: 'QR PromptPay', desc: 'ฟรีค่าธรรมเนียม อัตโนมัติ 24 ชม.' },
-    { id: 'true', name: 'TrueMoney Wallet', desc: 'สะดวกรวดเร็ว ปลอดภัย' },
-    { id: 'truemoney', name: 'บัตรเงินสดทรูมันนี่', desc: 'หักค่าธรรมเนียม 14.5%' },
+    { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนผ่านเบอร์วอลเล็ต' },
+    { id: 'truemoney', name: 'บัตรเงินสดทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก (หัก 14.5%)' },
     { id: 'card', name: 'บัตรเครดิต / เดบิต', desc: 'VISA / Mastercard' }
   ];
 
@@ -217,12 +222,16 @@ export default function GameTopupApp() {
         balance: 1000
       });
     } else if (authMode === 'register') {
-      if (!usernameInput.trim() || !emailInput.trim() || !passwordInput.trim()) {
-        setAuthError('กรุณากรอกข้อมูลให้ครบทุกช่องรวมถึง Email');
+      if (!emailInput.trim() || !usernameInput.trim() || !passwordInput.trim() || !confirmPasswordInput.trim()) {
+        setAuthError('กรุณากรอกข้อมูลให้ครบทุกช่อง');
         return;
       }
       if (!emailInput.includes('@')) {
         setAuthError('รูปแบบ Email ไม่ถูกต้อง');
+        return;
+      }
+      if (passwordInput !== confirmPasswordInput) {
+        setAuthError('รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน');
         return;
       }
       setUser({
@@ -258,6 +267,7 @@ export default function GameTopupApp() {
     setUser(null);
     setUsernameInput('');
     setPasswordInput('');
+    setConfirmPasswordInput('');
     setEmailInput('');
   };
 
@@ -326,6 +336,8 @@ export default function GameTopupApp() {
       setCardNumber('');
       setCardExp('');
       setCardCvv('');
+      setTrueWalletNumber('');
+      setTrueCashCardPin('');
     }, 1200);
   };
 
@@ -354,7 +366,7 @@ export default function GameTopupApp() {
         fontFamily: 'sans-serif',
         display: 'flex',
         alignItems: 'center',
-        justify: 'center',
+        justifyContent: 'center',
         padding: '20px'
       }}>
         <div style={{
@@ -414,21 +426,7 @@ export default function GameTopupApp() {
               </div>
             )}
 
-            {/* REGISTER or LOGIN INPUTS */}
-            {authMode !== 'forgot' && (
-              <div style={{ textAlign: 'left' }}>
-                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ชื่อผู้ใช้งาน (Username)</label>
-                <input 
-                  type="text" 
-                  placeholder="กรอกชื่อผู้ใช้..."
-                  value={usernameInput}
-                  onChange={(e) => setUsernameInput(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
-                />
-              </div>
-            )}
-
-            {/* EMAIL INPUT FOR REGISTER & FORGOT */}
+            {/* EMAIL INPUT FOR REGISTER & FORGOT (MOVED TO TOP FOR REGISTER) */}
             {(authMode === 'register' || authMode === 'forgot') && (
               <div style={{ textAlign: 'left' }}>
                 <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>อีเมล (Email ยืนยันตัวตน)</label>
@@ -437,6 +435,20 @@ export default function GameTopupApp() {
                   placeholder="example@email.com"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+            )}
+
+            {/* USERNAME INPUT FOR LOGIN & REGISTER */}
+            {authMode !== 'forgot' && (
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ชื่อผู้ใช้งาน (Username)</label>
+                <input 
+                  type="text" 
+                  placeholder="กรอกชื่อผู้ใช้..."
+                  value={usernameInput}
+                  onChange={(e) => setUsernameInput(e.target.value)}
                   style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
@@ -461,6 +473,20 @@ export default function GameTopupApp() {
                   placeholder="กรอกรหัสผ่าน..."
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+            )}
+
+            {/* CONFIRM PASSWORD INPUT FOR REGISTER */}
+            {authMode === 'register' && (
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ยืนยันรหัสผ่าน (Confirm Password)</label>
+                <input 
+                  type="password" 
+                  placeholder="กรอกรหัสผ่านให้อีกครั้ง..."
+                  value={confirmPasswordInput}
+                  onChange={(e) => setConfirmPasswordInput(e.target.value)}
                   style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
@@ -969,7 +995,7 @@ export default function GameTopupApp() {
             {walletPaymentStep === 2 && (
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#34d399' }}>ชำระเงินเพื่อเติมเครดิต</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>ขั้นตอนที่ 2: สแกนชำระเงิน <b>฿{parseFloat(topupAmount).toLocaleString()}</b></p>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>ขั้นตอนที่ 2: สแกน/ชำระเงิน <b>฿{parseFloat(topupAmount).toLocaleString()}</b></p>
 
                 <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 15px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <div style={{ color: '#000000', fontSize: '13px', fontWeight: 'bold' }}>
@@ -1010,7 +1036,11 @@ export default function GameTopupApp() {
             {!orderSuccess ? (
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 15px 0' }}>
-                  {selectedPayment.id === 'card' ? '💳 กรอกข้อมูลบัตรเครดิต / เดบิต' : 'ยืนยันการชำระเงิน'}
+                  {selectedPayment.id === 'wallet' && 'ชำระด้วย Cyber Wallet'}
+                  {selectedPayment.id === 'true' && '🧡 ชำระผ่าน TrueMoney Wallet'}
+                  {selectedPayment.id === 'truemoney' && '🎫 ชำระด้วยบัตรเงินสดทรูมันนี่'}
+                  {selectedPayment.id === 'card' && '💳 บัตรเครดิต / เดบิต'}
+                  {selectedPayment.id === 'qrcode' && '📱 สแกน QR PromptPay'}
                 </h3>
 
                 {selectedPayment.id === 'wallet' ? (
@@ -1019,6 +1049,42 @@ export default function GameTopupApp() {
                     <div style={{ fontSize: '24px', fontWeight: '900', color: '#34d399', margin: '4px 0 10px 0' }}>฿{user.balance.toLocaleString()}</div>
                     <div style={{ fontSize: '12px', color: '#ffffff', borderTop: '1px dashed #374151', paddingTop: '10px' }}>
                       หักค่าเติมเกม: <b style={{ color: '#fca5a5' }}>-฿{selectedPackage.price}</b>
+                    </div>
+                  </div>
+                ) : selectedPayment.id === 'true' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', textAlign: 'left' }}>
+                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>กรอกเบอร์โทรศัพท์ TrueMoney Wallet ของคุณเพื่อทำรายการ:</p>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>เบอร์มือถือวอลเล็ต (10 หลัก)</label>
+                      <input 
+                        type="text"
+                        maxLength={10}
+                        placeholder="0891234567"
+                        value={trueWalletNumber}
+                        onChange={(e) => setTrueWalletNumber(e.target.value)}
+                        style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                      />
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#34d399', textAlign: 'center' }}>
+                      ยอดชำระสุทธิ: <b>฿{selectedPackage.price}</b>
+                    </div>
+                  </div>
+                ) : selectedPayment.id === 'truemoney' ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', textAlign: 'left' }}>
+                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 4px 0' }}>กรอกรหัสบัตรเงินสดทรูมันนี่ (14 หลัก) [หักค่าธรรมเนียม 14.5%]:</p>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัสบัตรเงินสด 14 หลัก</label>
+                      <input 
+                        type="text"
+                        maxLength={14}
+                        placeholder="xxxxxxxxxxxxxx"
+                        value={trueCashCardPin}
+                        onChange={(e) => setTrueCashCardPin(e.target.value)}
+                        style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box', letterSpacing: '2px' }}
+                      />
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#34d399', textAlign: 'center' }}>
+                      ยอดชำระแพ็กเกจ: <b>฿{selectedPackage.price}</b>
                     </div>
                   </div>
                 ) : selectedPayment.id === 'card' ? (
@@ -1068,9 +1134,13 @@ export default function GameTopupApp() {
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={() => setShowCheckoutModal(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
                   <button 
-                    disabled={selectedPayment.id === 'card' && (!cardNumber || !cardExp || !cardCvv)}
+                    disabled={
+                      (selectedPayment.id === 'card' && (!cardNumber || !cardExp || !cardCvv)) ||
+                      (selectedPayment.id === 'true' && !trueWalletNumber) ||
+                      (selectedPayment.id === 'truemoney' && !trueCashCardPin)
+                    }
                     onClick={handleCheckout} 
-                    style={{ flex: 1, backgroundColor: (selectedPayment.id === 'card' && (!cardNumber || !cardExp || !cardCvv)) ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                    style={{ flex: 1, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
                   >
                     {isProcessing ? 'กำลังชำระเงิน...' : 'ชำระเงินทันที'}
                   </button>
