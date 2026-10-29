@@ -17,16 +17,13 @@ export default function GameTopupApp() {
     localStorage.setItem('cyber_topup_users', JSON.stringify(registeredUsers));
   }, [registeredUsers]);
 
-  // ตั้งค่าให้ล็อกอินค้างไว้ด้วยบัญชีหลักอัตโนมัติทันที
-  const [user, setUser] = useState(() => {
-    return { username: 'thanphooms@gmail.com', email: 'thanphooms@gmail.com', password: '0638801739Ss_@1', balance: 99999 };
-  });
-
+  // สถานะการล็อกอิน (เริ่มต้นเป็น null และช่องว่างเพื่อให้ผู้ใช้พิมพ์เองทั้งหมด)
+  const [user, setUser] = useState(null);
   const [authMode, setAuthMode] = useState('login');
   const [usernameInput, setUsernameInput] = useState('');
-  const [emailInput, setEmailInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
   const [authError, setAuthError] = useState('');
   const [authSuccessMsg, setAuthSuccessMsg] = useState('');
@@ -256,8 +253,67 @@ export default function GameTopupApp() {
     return () => clearInterval(bgGameTimer);
   }, [isGameAutoRunning, pendingGameOrderId]);
 
+  // Auth Handlers
+  const handleAuthSubmit = (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccessMsg('');
+
+    if (authMode === 'login') {
+      if (!usernameInput.trim() || !passwordInput.trim()) {
+        setAuthError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
+        return;
+      }
+      
+      const foundUser = registeredUsers.find(
+        (u) => (u.username === usernameInput || u.email === usernameInput) && u.password === passwordInput
+      );
+
+      if (foundUser) {
+        setUser(foundUser);
+      } else {
+        setAuthError('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
+      }
+    } else if (authMode === 'register') {
+      if (!emailInput.trim() || !usernameInput.trim() || !passwordInput.trim() || !confirmPasswordInput.trim()) {
+        setAuthError('กรุณากรอกข้อมูลให้ครบทุกช่อง');
+        return;
+      }
+      if (!emailInput.includes('@')) {
+        setAuthError('รูปแบบ Email ไม่ถูกต้อง');
+        return;
+      }
+      if (passwordInput !== confirmPasswordInput) {
+        setAuthError('รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน');
+        return;
+      }
+
+      const isExist = registeredUsers.some((u) => u.username === usernameInput);
+      if (isExist) {
+        setAuthError('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาใช้ชื่ออื่น');
+        return;
+      }
+
+      const newUser = {
+        username: usernameInput,
+        email: emailInput,
+        password: passwordInput,
+        balance: 1800
+      };
+
+      setRegisteredUsers([...registeredUsers, newUser]);
+      setUsernameInput(usernameInput);
+      setPasswordInput(passwordInput);
+      setConfirmPasswordInput('');
+      setEmailInput('');
+      setAuthSuccessMsg('สมัครสมาชิกสำเร็จแล้ว! กรุณากดปุ่มเข้าสู่ระบบ');
+      setAuthMode('login');
+    }
+  };
+
   const handleLogout = () => {
     setUser(null);
+    setUsernameInput('');
     setPasswordInput('');
     setShowLoginPassword(false);
     setConfirmPasswordInput('');
@@ -429,6 +485,73 @@ export default function GameTopupApp() {
   const filteredOrders = orders.filter((ord) => ord.player.toLowerCase().includes(adminSearchQuery.toLowerCase()) || ord.id.toLowerCase().includes(adminSearchQuery.toLowerCase()));
 
   const isUserAdmin = user && (user.username === 'thanphooms@gmail.com' || user.email === 'thanphooms@gmail.com');
+
+  if (!user) {
+    return (
+      <div style={{
+        backgroundColor: '#070a12',
+        backgroundImage: `linear-gradient(to bottom, rgba(7, 10, 18, 0.85), rgba(7, 10, 18, 0.95)), url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1920&q=80')`,
+        backgroundSize: 'cover', backgroundPosition: 'center',
+        color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+      }}>
+        <div style={{
+          backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(168, 85, 247, 0.4)', borderRadius: '24px',
+          padding: '40px 30px', maxWidth: '420px', width: '100%',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(147,51,234,0.3)', textAlign: 'center'
+        }}>
+          <h1 style={{ fontSize: '26px', fontWeight: '900', color: '#c084fc', margin: '0 0 4px 0' }}>CYBER TOPUP</h1>
+          <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 25px 0' }}>
+            {authMode === 'login' && 'เข้าสู่ระบบร้านเติมเกม'}
+            {authMode === 'register' && 'สมัครสมาชิกใหม่'}
+          </p>
+
+          <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {authError && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authError}</div>}
+            {authSuccessMsg && <div style={{ backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '1px solid #34d399', color: '#34d399', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authSuccessMsg}</div>}
+
+            {authMode === 'register' && (
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>อีเมล</label>
+                <input type="email" placeholder="example@email.com" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+            )}
+
+            <div style={{ textAlign: 'left' }}>
+              <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ชื่อผู้ใช้งาน (Username / ID)</label>
+              <input type="text" placeholder="กรอกชื่อผู้ใช้..." value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+
+            <div style={{ textAlign: 'left' }}>
+              <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัสผ่าน (Password)</label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input type={showLoginPassword ? 'text' : 'password'} placeholder="กรอกรหัสผ่าน..." value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 40px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                <button type="button" onClick={() => setShowLoginPassword(!showLoginPassword)} style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '16px' }}>{showLoginPassword ? '👁️‍🗨️' : '👁️'}</button>
+              </div>
+            </div>
+
+            {authMode === 'register' && (
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ยืนยันรหัสผ่าน</label>
+                <input type="password" placeholder="กรอกรหัสผ่านอีกครั้ง..." value={confirmPasswordInput} onChange={(e) => setConfirmPasswordInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+            )}
+
+            <button type="submit" style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px' }}>
+              {authMode === 'login' && 'เข้าสู่ระบบ (Login)'}
+              {authMode === 'register' && 'สมัครสมาชิก'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: '20px', fontSize: '13px', color: '#9ca3af' }}>
+            {authMode === 'login' && <>ยังไม่มีบัญชี? <span onClick={() => { setAuthMode('register'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>สมัครสมาชิก</span></>}
+            {authMode === 'register' && <>มีบัญชีแล้ว? <span onClick={() => { setAuthMode('login'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>เข้าสู่ระบบ</span></>}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
