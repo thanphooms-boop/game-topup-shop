@@ -10,7 +10,7 @@ export default function GameTopupApp() {
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
   const [newPasswordInput, setNewPasswordInput] = useState('');
   const [otpInput, setOtpInput] = useState('');
-  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1: Email/Username, 2: OTP Verification, 3: Reset Password
   const [authError, setAuthError] = useState('');
   const [authSuccessMsg, setAuthSuccessMsg] = useState('');
 
@@ -241,22 +241,32 @@ export default function GameTopupApp() {
         balance: 1000
       });
     } else if (authMode === 'forgot') {
-      if (!isOtpSent) {
-        if (!emailInput.trim() || !emailInput.includes('@')) {
-          setAuthError('กรุณากรอก Email ที่ใช้สมัครสมาชิก');
+      if (forgotStep === 1) {
+        if (!usernameInput.trim() || !emailInput.trim() || !emailInput.includes('@')) {
+          setAuthError('กรุณากรอกชื่อผู้ใช้งานและ Email ให้ถูกต้อง');
           return;
         }
-        setIsOtpSent(true);
+        setForgotStep(2);
         setAuthSuccessMsg(`ส่งรหัสยืนยัน OTP ไปยัง ${emailInput} แล้ว`);
-      } else {
-        if (!otpInput.trim() || !newPasswordInput.trim()) {
-          setAuthError('กรุณากรอกรหัส OTP และรหัสผ่านใหม่');
+      } else if (forgotStep === 2) {
+        if (!otpInput.trim() || otpInput.length < 6) {
+          setAuthError('กรุณากรอกรหัส OTP ให้ครบ 6 หลัก');
           return;
         }
-        setAuthSuccessMsg('เปลี่ยนรหัสผ่านสำเร็จแล้ว! กรุณาเข้าสู่ระบบด้วยรหัสใหม่');
+        setForgotStep(3);
+        setAuthError('');
+        setAuthSuccessMsg('ยืนยันตัวตนสำเร็จ! กรุณาตั้งรหัสผ่านใหม่');
+      } else if (forgotStep === 3) {
+        if (!newPasswordInput.trim()) {
+          setAuthError('กรุณากรอกรหัสผ่านใหม่');
+          return;
+        }
+        setAuthSuccessMsg('เปลี่ยนรหัสผ่านสำเร็จแล้ว! กำลังกลับไปหน้าเข้าสู่ระบบ...');
         setTimeout(() => {
           setAuthMode('login');
-          setIsOtpSent(false);
+          setForgotStep(1);
+          setOtpInput('');
+          setNewPasswordInput('');
           setPasswordInput('');
           setAuthSuccessMsg('');
         }, 1500);
@@ -417,7 +427,9 @@ export default function GameTopupApp() {
           <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 25px 0' }}>
             {authMode === 'login' && 'เข้าสู่ระบบส่วนตัวเพื่อรับโปรโมชันพิเศษ'}
             {authMode === 'register' && 'สมัครสมาชิกใหม่ ยืนยันผ่าน Email'}
-            {authMode === 'forgot' && 'กู้คืนรหัสผ่านด้วย Email สมาชิก'}
+            {authMode === 'forgot' && forgotStep === 1 && 'ระบุ ID และ Email เพื่อยืนยันตัวตน'}
+            {authMode === 'forgot' && forgotStep === 2 && 'กรอกรหัส OTP ยืนยันความเป็นเจ้าของ ID'}
+            {authMode === 'forgot' && forgotStep === 3 && 'ตั้งรหัสผ่านใหม่สำหรับบัญชีของคุณ'}
           </p>
 
           <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -432,8 +444,8 @@ export default function GameTopupApp() {
               </div>
             )}
 
-            {/* EMAIL INPUT FOR REGISTER & FORGOT */}
-            {(authMode === 'register' || authMode === 'forgot') && (
+            {/* EMAIL INPUT FOR REGISTER & FORGOT STEP 1 */}
+            {(authMode === 'register' || (authMode === 'forgot' && forgotStep === 1)) && (
               <div style={{ textAlign: 'left' }}>
                 <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>อีเมล (Email ยืนยันตัวตน)</label>
                 <input 
@@ -446,10 +458,10 @@ export default function GameTopupApp() {
               </div>
             )}
 
-            {/* USERNAME INPUT FOR LOGIN & REGISTER */}
-            {authMode !== 'forgot' && (
+            {/* USERNAME INPUT FOR LOGIN, REGISTER, & FORGOT STEP 1 */}
+            {(authMode !== 'forgot' || (authMode === 'forgot' && forgotStep === 1)) && (
               <div style={{ textAlign: 'left' }}>
-                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ชื่อผู้ใช้งาน (Username)</label>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ชื่อผู้ใช้งาน (Username / ID)</label>
                 <input 
                   type="text" 
                   placeholder="กรอกชื่อผู้ใช้..."
@@ -474,7 +486,7 @@ export default function GameTopupApp() {
                 {authMode === 'login' && (
                   <div style={{ textAlign: 'right', marginTop: '6px' }}>
                     <span 
-                      onClick={() => { setAuthMode('forgot'); setAuthError(''); setAuthSuccessMsg(''); }} 
+                      onClick={() => { setAuthMode('forgot'); setForgotStep(1); setAuthError(''); setAuthSuccessMsg(''); }} 
                       style={{ fontSize: '11px', color: '#38bdf8', cursor: 'pointer' }}
                     >
                       ลืมรหัสผ่าน?
@@ -498,30 +510,33 @@ export default function GameTopupApp() {
               </div>
             )}
 
-            {/* FORGOT PASSWORD EXTRA INPUTS */}
-            {authMode === 'forgot' && isOtpSent && (
-              <>
-                <div style={{ textAlign: 'left' }}>
-                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัส OTP จากอีเมล</label>
-                  <input 
-                    type="text" 
-                    placeholder="กรอกรหัส OTP 6 หลัก..."
-                    value={otpInput}
-                    onChange={(e) => setOtpInput(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
-                  />
-                </div>
-                <div style={{ textAlign: 'left' }}>
-                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ตั้งรหัสผ่านใหม่</label>
-                  <input 
-                    type="password" 
-                    placeholder="กรอกรหัสผ่านใหม่..."
-                    value={newPasswordInput}
-                    onChange={(e) => setNewPasswordInput(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
-                  />
-                </div>
-              </>
+            {/* FORGOT STEP 2: OTP VERIFICATION */}
+            {authMode === 'forgot' && forgotStep === 2 && (
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัส OTP จากอีเมล (6 หลัก)</label>
+                <input 
+                  type="text" 
+                  maxLength={6}
+                  placeholder="กรอกรหัส OTP 6 หลัก..."
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value.replace(/[^0-9]/g, ''))}
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '18px', textAlign: 'center', letterSpacing: '4px', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
+            )}
+
+            {/* FORGOT STEP 3: NEW PASSWORD */}
+            {authMode === 'forgot' && forgotStep === 3 && (
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ตั้งรหัสผ่านใหม่</label>
+                <input 
+                  type="password" 
+                  placeholder="กรอกรหัสผ่านใหม่..."
+                  value={newPasswordInput}
+                  onChange={(e) => setNewPasswordInput(e.target.value)}
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                />
+              </div>
             )}
 
             <button 
@@ -541,7 +556,9 @@ export default function GameTopupApp() {
             >
               {authMode === 'login' && 'เข้าสู่ระบบ (Login)'}
               {authMode === 'register' && 'สมัครสมาชิก (Register)'}
-              {authMode === 'forgot' && (!isOtpSent ? 'ส่งรหัสยืนยันเข้า Email' : 'ยืนยันการเปลี่ยนรหัสผ่าน')}
+              {authMode === 'forgot' && forgotStep === 1 && 'ส่งรหัส OTP ยืนยันตัวตน'}
+              {authMode === 'forgot' && forgotStep === 2 && 'ยืนยันรหัส OTP →'}
+              {authMode === 'forgot' && forgotStep === 3 && 'บันทึกรหัสผ่านใหม่'}
             </button>
           </form>
 
@@ -553,7 +570,7 @@ export default function GameTopupApp() {
               <>มีบัญชีแล้ว? <span onClick={() => { setAuthMode('login'); setAuthError(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>เข้าสู่ระบบ</span></>
             )}
             {authMode === 'forgot' && (
-              <span onClick={() => { setAuthMode('login'); setIsOtpSent(false); setAuthError(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>← กลับไปหน้าเข้าสู่ระบบ</span>
+              <span onClick={() => { setAuthMode('login'); setForgotStep(1); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>← กลับไปหน้าเข้าสู่ระบบ</span>
             )}
           </div>
         </div>
@@ -588,7 +605,7 @@ export default function GameTopupApp() {
             border: '1.5px solid #a855f7',
             display: 'flex',
             alignItems: 'center',
-            justify: 'center',
+            justifyContent: 'center',
             boxShadow: '0 0 15px rgba(168, 85, 247, 0.5)'
           }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
