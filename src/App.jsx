@@ -17,10 +17,14 @@ export default function GameTopupApp() {
     localStorage.setItem('cyber_topup_users', JSON.stringify(registeredUsers));
   }, [registeredUsers]);
 
-  // สถานะการล็อกอิน (เริ่มต้นเป็น null เพื่อให้พิมพ์เองทั้งหมด)
+  // สถานะการล็อกอิน และระบบจดจำ ID (Remember Me)
   const [user, setUser] = useState(null);
   const [authMode, setAuthMode] = useState('login');
-  const [usernameInput, setUsernameInput] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+  
+  const [usernameInput, setUsernameInput] = useState(() => {
+    return localStorage.getItem('cyber_remembered_user') || '';
+  });
   const [passwordInput, setPasswordInput] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [emailInput, setEmailInput] = useState('');
@@ -96,7 +100,7 @@ export default function GameTopupApp() {
   const [showGameSuccessPopup, setShowGameSuccessPopup] = useState(false);
   const [lastGameName, setLastGameName] = useState('');
 
-  // ฐานข้อมูลเกมทั้งหมดที่เราเคยทำร่วมกัน (รวม VALORANT, PUBG, ROV, Free Fire, Genshin Impact, Honkai Star Rail)
+  // ฐานข้อมูลเกมทั้งหมด (รวมครบทุกเกม)
   const [gamesData] = useState([
     {
       id: 'valorant',
@@ -280,7 +284,7 @@ export default function GameTopupApp() {
     return () => clearInterval(bgGameTimer);
   }, [isGameAutoRunning, pendingGameOrderId]);
 
-  // Auth Handlers
+  // Auth Handlers with Remember Me
   const handleAuthSubmit = (e) => {
     e.preventDefault();
     setAuthError('');
@@ -297,6 +301,11 @@ export default function GameTopupApp() {
       );
 
       if (foundUser) {
+        if (rememberMe) {
+          localStorage.setItem('cyber_remembered_user', usernameInput);
+        } else {
+          localStorage.removeItem('cyber_remembered_user');
+        }
         setUser(foundUser);
       } else {
         setAuthError('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
@@ -340,7 +349,6 @@ export default function GameTopupApp() {
 
   const handleLogout = () => {
     setUser(null);
-    setUsernameInput('');
     setPasswordInput('');
     setShowLoginPassword(false);
     setConfirmPasswordInput('');
@@ -528,10 +536,17 @@ export default function GameTopupApp() {
           padding: '40px 30px', maxWidth: '420px', width: '100%',
           boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(147,51,234,0.3)', textAlign: 'center'
         }}>
-          {/* โลโก้ร้านในหน้า Login */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '10px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(147,51,234,0.6), rgba(56,189,248,0.4))', border: '1.5px solid #a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>⚡</div>
-            <h1 style={{ fontSize: '24px', fontWeight: '900', color: '#c084fc', margin: 0 }}>CYBER TOPUP</h1>
+          {/* LOGO ตามรูปที่ส่งมา */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '15px' }}>
+            <img 
+              src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=150&q=80" 
+              alt="Logo" 
+              style={{ width: '50px', height: '50px', borderRadius: '12px', objectFit: 'cover', border: '1.5px solid #a855f7' }} 
+            />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '20px', fontWeight: '900', color: '#c084fc', lineHeight: '1.1' }}>GAMING</div>
+              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#38bdf8', letterSpacing: '1px' }}>TOP-UP STORE</div>
+            </div>
           </div>
           <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 20px 0' }}>
             {authMode === 'login' && 'เข้าสู่ระบบร้านเติมเกมอัตโนมัติ 24 ชม.'}
@@ -562,6 +577,13 @@ export default function GameTopupApp() {
               </div>
             </div>
 
+            {authMode === 'login' && (
+              <div style={{ textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#9ca3af' }}>
+                <input type="checkbox" id="remember" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ cursor: 'pointer' }} />
+                <label htmlFor="remember" style={{ cursor: 'pointer' }}>จดจำไอดีของฉันไว้ (Remember ID)</label>
+              </div>
+            )}
+
             {authMode === 'register' && (
               <div style={{ textAlign: 'left' }}>
                 <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ยืนยันรหัสผ่าน</label>
@@ -574,11 +596,6 @@ export default function GameTopupApp() {
               {authMode === 'register' && 'สมัครสมาชิก'}
             </button>
           </form>
-
-          {/* ช่องทางติดต่อ Line OA ในหน้า Login */}
-          <div style={{ marginTop: '20px', padding: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '10px', fontSize: '12px', color: '#34d399' }}>
-            💬 สนใจติดต่อแอดมิน / แจ้งปัญหา: <b>Line: @cybertopup</b>
-          </div>
 
           <div style={{ marginTop: '15px', fontSize: '13px', color: '#9ca3af' }}>
             {authMode === 'login' && <>ยังไม่มีบัญชี? <span onClick={() => { setAuthMode('register'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>สมัครสมาชิก</span></>}
@@ -619,13 +636,17 @@ export default function GameTopupApp() {
         </div>
       )}
 
-      {/* NAVBAR WITH LOGO & LINE OA */}
-      <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '15px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'linear-gradient(135deg, rgba(147,51,234,0.4), rgba(56,189,248,0.2))', border: '1.5px solid #a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⚡</div>
+      {/* NAVBAR WITH GAMING TOP-UP STORE LOGO */}
+      <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '12px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
+          <img 
+            src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=150&q=80" 
+            alt="Logo" 
+            style={{ width: '42px', height: '42px', borderRadius: '12px', objectFit: 'cover', border: '1.5px solid #a855f7' }} 
+          />
           <div>
-            <div style={{ fontSize: '22px', fontWeight: '900', color: '#c084fc' }}>CYBER TOPUP</div>
-            <div style={{ fontSize: '10px', color: '#34d399', letterSpacing: '1px' }}>🟢 Line Official: @cybertopup</div>
+            <div style={{ fontSize: '18px', fontWeight: '900', color: '#c084fc', lineHeight: '1.1' }}>GAMING</div>
+            <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#38bdf8', letterSpacing: '1px' }}>TOP-UP STORE</div>
           </div>
         </div>
 
@@ -649,6 +670,22 @@ export default function GameTopupApp() {
         </div>
       </header>
 
+      {/* FLOATING LINE OA WIDGET (แสดงเฉพาะหลังจากเข้าสู่ระบบแล้ว) */}
+      <a 
+        href="https://line.me" 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        style={{
+          position: 'fixed', bottom: '25px', right: '25px', zIndex: 99,
+          backgroundColor: '#06c755', color: '#ffffff', padding: '12px 18px',
+          borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '8px',
+          boxShadow: '0 4px 20px rgba(6, 199, 85, 0.4)', textDecoration: 'none',
+          fontWeight: 'bold', fontSize: '14px', transition: 'transform 0.2s'
+        }}
+      >
+        <span style={{ fontSize: '18px' }}>🟢</span> ติดต่อแอดมิน (Line OA)
+      </a>
+
       {/* MAIN CONTAINER */}
       <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px', position: 'relative', zIndex: 1 }}>
         
@@ -657,7 +694,7 @@ export default function GameTopupApp() {
           <div>
             <div style={{ background: 'linear-gradient(135deg, rgba(59, 7, 100, 0.85) 0%, rgba(17, 24, 39, 0.9) 100%)', border: '1px solid rgba(168, 85, 247, 0.4)', borderRadius: '24px', padding: '35px', marginBottom: '35px' }}>
               <h1 style={{ fontSize: '38px', fontWeight: '900', margin: '0 0 15px 0' }}>เติมเกมสะดวกรวดเร็ว <span style={{ color: '#c084fc' }}>24 ชั่วโมง</span></h1>
-              <p style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '20px' }}>บริการเติมเกม VALORANT, PUBG, ROV, Free Fire, Genshin Impact และ Honkai: Star Rail อัตโนมัติ ปลอดภัย 100%</p>
+              <p style={{ fontSize: '14px', color: '#9ca3af', marginBottom: '20px' }}>บริการเติมเกมอัตโนมัติ รวดเร็ว ปลอดภัย 100%</p>
               <input type="text" placeholder="🔍 ค้นหาชื่อเกม..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', maxWidth: '400px', backgroundColor: 'rgba(17, 24, 39, 0.8)', border: '1px solid #374151', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', outline: 'none' }} />
             </div>
 
@@ -755,12 +792,12 @@ export default function GameTopupApp() {
             </p>
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-              <input type="text" placeholder="ค้นหาเลขออร์เดอร์..." value={trackQuery} onChange={(e) => setTrackQuery(e.target.value)} style={{ flex: 1, backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none' }} />
+              <input type="text" placeholder="ค้นหาเลขออร์เดอร์ หรือชื่อผู้ซื้อ..." value={trackQuery} onChange={(e) => setTrackQuery(e.target.value)} style={{ flex: 1, backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none' }} />
               <button onClick={() => {
                 const query = trackQuery.trim().toLowerCase();
                 let matched = orders.filter(o => isUserAdmin || o.player.toLowerCase() === user.username.toLowerCase());
                 if (query) {
-                  matched = matched.filter(o => o.id.toLowerCase().includes(query) || o.player.toLowerCase().includes(query));
+                  matched = matched.filter(o => o.id.toLowerCase().includes(query) || o.player.toLowerCase().includes(query) || o.dateKey?.includes(query));
                 }
                 setTrackResultList(matched.slice(0, 10));
               }} style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '0 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ค้นหา</button>
@@ -774,9 +811,12 @@ export default function GameTopupApp() {
                     {trackResultList.map((ord, idx) => (
                       <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                          <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px' }}>{ord.id}</span>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px' }}>{ord.id}</span>
+                            <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 วันที่: {ord.time}</span>
+                          </div>
                           <div style={{ fontSize: '15px', fontWeight: 'bold', marginTop: '4px' }}>{ord.game} ({ord.package})</div>
-                          <div style={{ fontSize: '12px', color: '#9ca3af' }}>ผู้ซื้อ: <span style={{ color: '#c084fc' }}>{ord.player}</span> | เวลา: {ord.time}</div>
+                          <div style={{ fontSize: '12px', color: '#9ca3af' }}>ผู้ซื้อ: <span style={{ color: '#c084fc' }}>{ord.player}</span></div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price}</div>
@@ -821,9 +861,10 @@ export default function GameTopupApp() {
                       <div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
                           <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px' }}>{ord.id}</span>
+                          <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 {ord.time}</span>
                           <b style={{ fontSize: '15px' }}>{ord.game} ({ord.package})</b>
                         </div>
-                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>ผู้ซื้อ: <span style={{ color: '#c084fc' }}>{ord.player}</span> | ราคา: <span style={{ color: '#34d399' }}>฿{ord.price}</span> | เวลา: {ord.time}</div>
+                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>ผู้ซื้อ: <span style={{ color: '#c084fc' }}>{ord.player}</span> | ราคา: <span style={{ color: '#34d399' }}>฿{ord.price}</span></div>
                         <div style={{ fontSize: '12px', marginTop: '4px', color: ord.status.includes('สำเร็จ') ? '#34d399' : '#f59e0b' }}>สถานะ: {ord.status}</div>
                       </div>
 
@@ -842,10 +883,9 @@ export default function GameTopupApp() {
         )}
       </main>
 
-      {/* FOOTER WITH LINE OA */}
+      {/* FOOTER */}
       <footer style={{ textAlign: 'center', marginTop: '50px', padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', color: '#9ca3af', fontSize: '13px' }}>
-        <p style={{ margin: '0 0 5px 0' }}>⚡ <b>CYBER TOPUP</b> - บริการเติมเกมออนไลน์ตลอด 24 ชั่วโมง</p>
-        <p style={{ margin: 0, color: '#34d399' }}>🟢 ติดต่อสอบถาม / แจ้งปัญหา Line Official: <b>@cybertopup</b></p>
+        <p style={{ margin: '0 0 5px 0' }}>⚡ <b>GAMING TOP-UP STORE</b> - บริการเติมเกมออนไลน์ตลอด 24 ชั่วโมง</p>
       </footer>
 
       {/* MODAL: TOPUP STORE WALLET */}
@@ -884,11 +924,16 @@ export default function GameTopupApp() {
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#38bdf8' }}>📱 สแกน QR Code เติมเครดิต</h3>
 
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '12px' }}>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '8px' }}>
                   ยอดชำระ: <b style={{ color: '#34d399' }}>฿{parseFloat(topupAmount).toLocaleString()}</b>
                 </p>
 
-                <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 15px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {/* ตัวนับเวลาถอยหลัง QR Code */}
+                <div style={{ fontSize: '12px', color: isWalletQrExpired ? '#ef4444' : '#f59e0b', marginBottom: '10px', fontWeight: 'bold' }}>
+                  {isWalletQrExpired ? '❌ QR Code หมดอายุแล้ว' : `⏱️ QR Code จะหมดอายุใน: ${Math.floor(walletTimeLeft / 60)}:${(walletTimeLeft % 60).toString().padStart(2, '0')} นาที`}
+                </div>
+
+                <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 15px auto', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isWalletQrExpired ? 0.4 : 1 }}>
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Topup-Wallet-${topupAmount}`} 
                     alt="Topup QR Code" 
@@ -896,13 +941,14 @@ export default function GameTopupApp() {
                   />
                 </div>
 
-                <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อโอนแล้ว กดปุ่มด้านล่างเพื่อยืนยัน ยอดเงินจะเข้าอัตโนมัติภายใน 10 วินาที</p>
+                <p style={{ fontSize: '11px', color: '#c084fc', marginBottom: '20px' }}>*เมื่อโอนแล้ว กดปุ่มด้านล่าง ยอดจะเข้าอัตโนมัติภายใน 10 วินาที</p>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={() => setWalletStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
                   <button 
+                    disabled={isWalletQrExpired}
                     onClick={handleWalletConfirmPayment} 
-                    style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                    style={{ flex: 1, backgroundColor: isWalletQrExpired ? '#374151' : '#34d399', color: isWalletQrExpired ? '#9ca3af' : '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: isWalletQrExpired ? 'not-allowed' : 'pointer' }}
                   >
                     ฉันโอนเงินเรียบร้อยแล้ว
                   </button>
@@ -941,11 +987,16 @@ export default function GameTopupApp() {
             {checkoutStep === 2 && selectedPayment?.id === 'qrcode' && (
               <div>
                 <h3 style={{ color: '#38bdf8', marginBottom: '6px' }}>📱 สแกน QR Code ชำระเงิน</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '12px' }}>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '8px' }}>
                   ยอดชำระ: <b style={{ color: '#34d399' }}>฿{selectedPackage.price}</b>
                 </p>
 
-                <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 15px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {/* ตัวนับเวลาถอยหลัง Checkout QR */}
+                <div style={{ fontSize: '12px', color: isQrExpired ? '#ef4444' : '#f59e0b', marginBottom: '10px', fontWeight: 'bold' }}>
+                  {isQrExpired ? '❌ QR Code หมดอายุแล้ว' : `⏱️ QR Code จะหมดอายุใน: ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')} นาที`}
+                </div>
+
+                <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '180px', height: '180px', margin: '0 auto 15px auto', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isQrExpired ? 0.4 : 1 }}>
                   <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Checkout-PromptPay-${selectedPackage.price}`} alt="Checkout QR Code" style={{ width: '150px', height: '150px' }} />
                 </div>
 
@@ -953,7 +1004,7 @@ export default function GameTopupApp() {
 
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button type="button" onClick={() => setCheckoutStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
-                  <button type="button" disabled={isProcessing} onClick={handleFinalPaymentSubmit} style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  <button type="button" disabled={isProcessing || isQrExpired} onClick={handleFinalPaymentSubmit} style={{ flex: 1, backgroundColor: isQrExpired ? '#374151' : '#34d399', color: isQrExpired ? '#9ca3af' : '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: isQrExpired ? 'not-allowed' : 'pointer' }}>
                     {isProcessing ? 'กำลังส่งข้อมูล...' : 'ฉันโอนเงินเรียบร้อยแล้ว'}
                   </button>
                 </div>
