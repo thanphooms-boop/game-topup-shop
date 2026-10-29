@@ -47,6 +47,7 @@ export default function GameTopupApp() {
   // Checkout Modal State & Password Confirmation
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [checkoutPassword, setCheckoutPassword] = useState('');
+  const [showCheckoutPassword, setShowCheckoutPassword] = useState(false); // State สำหรับซ่อน/แสดงรหัสผ่านตอนจ่ายเงิน
   const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
@@ -222,7 +223,7 @@ export default function GameTopupApp() {
       setUser({
         username: usernameInput,
         email: 'user@example.com',
-        password: passwordInput, // เก็บ password ไว้จำลองการตรวจสอบตอนชำระเงิน
+        password: passwordInput,
         balance: 1000
       });
     } else if (authMode === 'register') {
@@ -360,6 +361,7 @@ export default function GameTopupApp() {
       setIsProcessing(false);
       setOrderSuccess(newOrderId);
       setCheckoutPassword('');
+      setShowCheckoutPassword(false);
       setCardNumber('');
       setCardExp('');
       setCardCvv('');
@@ -1236,17 +1238,29 @@ export default function GameTopupApp() {
 
                 <div style={{ textAlign: 'left', marginBottom: '20px' }}>
                   <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '6px' }}>รหัสผ่านบัญชีของคุณ ({user.username})</label>
-                  <input 
-                    type="password"
-                    placeholder="กรอกรหัสผ่านเพื่อยืนยัน..."
-                    value={checkoutPassword}
-                    onChange={(e) => setCheckoutPassword(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
-                  />
+                  
+                  {/* Password Input with Toggle Eye Button */}
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input 
+                      type={showCheckoutPassword ? 'text' : 'password'}
+                      placeholder="กรอกรหัสผ่านเพื่อยืนยัน..."
+                      value={checkoutPassword}
+                      onChange={(e) => setCheckoutPassword(e.target.value)}
+                      style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px 40px 12px 12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowCheckoutPassword(!showCheckoutPassword)}
+                      style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '16px' }}
+                      title={showCheckoutPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+                    >
+                      {showCheckoutPassword ? '👁️‍🗨️' : '👁️'}
+                    </button>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={() => { setShowCheckoutModal(false); setCheckoutPassword(''); setCheckoutPasswordError(''); }} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
+                  <button type="button" onClick={() => { setShowCheckoutModal(false); setCheckoutPassword(''); setShowCheckoutPassword(false); setCheckoutPasswordError(''); }} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
                   <button 
                     type="submit"
                     disabled={!checkoutPassword || isProcessing}
