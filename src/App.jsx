@@ -6,33 +6,27 @@ import {
 } from 'lucide-react';
 
 export default function GameTopupApp() {
-  // --- STATE MANAGEMENT ---
-  const [activeTab, setActiveTab] = useState('shop'); // shop, track, admin
+  const [activeTab, setActiveTab] = useState('shop');
   const [selectedGame, setSelectedGame] = useState(null);
   const [playerId, setPlayerId] = useState('');
   const [server, setServer] = useState('');
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
   
-  // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // Tracking state
   const [trackQuery, setTrackQuery] = useState('');
   const [trackResult, setTrackResult] = useState(null);
 
-  // Admin state
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminPin, setAdminPin] = useState('');
   const [adminPinError, setAdminPinError] = useState(false);
 
-  // Checkout Modal
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(null);
 
-  // Simulated Database (สามารถแก้ราคาหรือสถานะได้)
   const [gamesData, setGamesData] = useState([
     {
       id: 'valorant',
@@ -46,8 +40,8 @@ export default function GameTopupApp() {
         { id: 'v2', name: '420 VP', price: 319, bonus: '+15 VP' },
         { id: 'v3', name: '700 VP', price: 529, bonus: '+30 VP' },
         { id: 'v4', name: '1,375 VP', price: 999, bonus: '+80 VP' },
-        { id: 'v5', name: '2,400 VP', price: 1,699, bonus: '+150 VP' },
-        { id: 'v6', name: '4,050 VP', price: 2,790, bonus: '+300 VP' },
+        { id: 'v5', name: '2,400 VP', price: 1699, bonus: '+150 VP' },
+        { id: 'v6', name: '4,050 VP', price: 2790, bonus: '+300 VP' },
       ]
     },
     {
@@ -62,8 +56,8 @@ export default function GameTopupApp() {
         { id: 'p2', name: '325 UC', price: 149, bonus: '+15 UC' },
         { id: 'p3', name: '660 UC', price: 299, bonus: '+50 UC' },
         { id: 'p4', name: '1,800 UC', price: 799, bonus: '+180 UC' },
-        { id: 'p5', name: '3,850 UC', price: 1,590, bonus: '+450 UC' },
-        { id: 'p6', name: '8,100 UC', price: 3,190, bonus: '+1,050 UC' },
+        { id: 'p5', name: '3,850 UC', price: 1590, bonus: '+450 UC' },
+        { id: 'p6', name: '8,100 UC', price: 3190, bonus: '+1,050 UC' },
       ]
     },
     {
@@ -79,7 +73,7 @@ export default function GameTopupApp() {
         { id: 'r3', name: '220 Coupons', price: 175, bonus: '+15 Coupons' },
         { id: 'r4', name: '470 Coupons', price: 350, bonus: '+35 Coupons' },
         { id: 'r5', name: '1,150 Coupons', price: 850, bonus: '+100 Coupons' },
-        { id: 'r6', name: '2,330 Coupons', price: 1,700, bonus: '+250 Coupons' },
+        { id: 'r6', name: '2,330 Coupons', price: 1700, bonus: '+250 Coupons' },
       ]
     },
     {
@@ -94,8 +88,8 @@ export default function GameTopupApp() {
         { id: 'as2', name: '300 StarCash', price: 270, bonus: 'Pre-order Bonus' },
         { id: 'as3', name: '500 StarCash', price: 450, bonus: 'Closed Beta Pack' },
         { id: 'as4', name: '1,000 StarCash', price: 890, bonus: 'VIP Wings + Bonus' },
-        { id: 'as5', name: '2,500 StarCash', price: 2,150, bonus: 'Exclusive Costume' },
-        { id: 'as6', name: '5,000 StarCash', price: 4,200, bonus: 'Founder Edition Set' },
+        { id: 'as5', name: '2,500 StarCash', price: 2150, bonus: 'Exclusive Costume' },
+        { id: 'as6', name: '5,000 StarCash', price: 4200, bonus: 'Founder Edition Set' },
       ]
     },
     {
@@ -123,8 +117,8 @@ export default function GameTopupApp() {
         { id: 'g1', name: '60 Genesis Crystals', price: 35, bonus: '+0' },
         { id: 'g2', name: '300 Genesis Crystals', price: 179, bonus: '+10' },
         { id: 'g3', name: '980 Genesis Crystals', price: 579, bonus: '+40' },
-        { id: 'g4', name: '1,980 Genesis Crystals', price: 1,150, bonus: '+100' },
-        { id: 'g5', name: '3,280 Genesis Crystals', price: 1,900, bonus: '+200' },
+        { id: 'g4', name: '1,980 Genesis Crystals', price: 1150, bonus: '+100' },
+        { id: 'g5', name: '3,280 Genesis Crystals', price: 1900, bonus: '+200' },
       ]
     },
     {
@@ -152,7 +146,7 @@ export default function GameTopupApp() {
         { id: 'h1', name: '60 Oneiric Shards', price: 35, bonus: '+0' },
         { id: 'h2', name: '300 Oneiric Shards', price: 179, bonus: '+15' },
         { id: 'h3', name: '980 Oneiric Shards', price: 579, bonus: '+50' },
-        { id: 'h4', name: '1,980 Oneiric Shards', price: 1,150, bonus: '+120' },
+        { id: 'h4', name: '1,980 Oneiric Shards', price: 1150, bonus: '+120' },
       ]
     },
     {
@@ -166,7 +160,7 @@ export default function GameTopupApp() {
         { id: 'w1', name: '450 Cores', price: 150, bonus: '+20' },
         { id: 'w2', name: '1,000 Cores', price: 325, bonus: '+60' },
         { id: 'w3', name: '2,050 Cores', price: 650, bonus: '+150' },
-        { id: 'w4', name: '3,850 Cores', price: 1,150, bonus: '+300' },
+        { id: 'w4', name: '3,850 Cores', price: 1150, bonus: '+300' },
       ]
     }
   ]);
@@ -183,7 +177,6 @@ export default function GameTopupApp() {
     { id: 'ORD-98420', game: 'ROV', package: '220 Coupons', price: 175, player: 'ProPlayer99', status: 'สำเร็จ', time: '25 นาทีที่แล้ว' }
   ]);
 
-  // Handle Checkout Action
   const handleCheckout = () => {
     if (!selectedGame || !playerId || !selectedPackage || !selectedPayment) return;
     setIsProcessing(true);
@@ -205,7 +198,6 @@ export default function GameTopupApp() {
     }, 1500);
   };
 
-  // Filter games based on search and category
   const filteredGames = gamesData.filter(game => {
     const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           game.publisher.toLowerCase().includes(searchTerm.toLowerCase());
@@ -215,8 +207,6 @@ export default function GameTopupApp() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-purple-500 selection:text-white pb-16">
-      
-      {/* HEADER NAVBAR */}
       <header className="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
@@ -257,13 +247,9 @@ export default function GameTopupApp() {
         </div>
       </header>
 
-      {/* MAIN CONTAINER */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-        
-        {/* TAB 1: SHOP & TOPUP */}
         {activeTab === 'shop' && !selectedGame && (
           <div>
-            {/* HERO BANNER */}
             <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-purple-900/40 via-indigo-900/40 to-slate-900 border border-purple-500/20 p-6 sm:p-10 mb-8 shadow-2xl">
               <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
               <div className="relative z-10 max-w-2xl">
@@ -279,7 +265,6 @@ export default function GameTopupApp() {
                   เลือกเกมโปรดของคุณ เติมไวภายใน 1 นาที รองรับทั้ง VALORANT, PUBG, ROV, Avatar Star ที่กำลังจะเปิดในไทย และเกมดังอื่นๆ อีกมากมาย
                 </p>
 
-                {/* SEARCH & FILTER */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -315,7 +300,6 @@ export default function GameTopupApp() {
               </div>
             </div>
 
-            {/* GAMES GRID */}
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-white flex items-center space-x-2">
                 <span>🔥 เกมยอดนิยมและกำลังเปิดให้บริการ</span>
@@ -359,7 +343,6 @@ export default function GameTopupApp() {
           </div>
         )}
 
-        {/* TAB 1.1: GAME TOPUP FORM (WHEN GAME SELECTED) */}
         {activeTab === 'shop' && selectedGame && (
           <div className="max-w-4xl mx-auto animate-fade-in">
             <button 
@@ -369,7 +352,6 @@ export default function GameTopupApp() {
               <span>← กลับไปเลือกเกมอื่น</span>
             </button>
 
-            {/* GAME BANNER HEADER */}
             <div className="relative rounded-2xl overflow-hidden mb-8 border border-purple-500/30 p-6 sm:p-8 bg-slate-900">
               <div className="absolute inset-0 opacity-20">
                 <img src={selectedGame.image} alt={selectedGame.name} className="w-full h-full object-cover filter blur-sm" />
@@ -389,11 +371,7 @@ export default function GameTopupApp() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              
-              {/* LEFT & CENTER: FORM STEPS */}
               <div className="md:col-span-2 space-y-6">
-                
-                {/* STEP 1: PLAYER ID */}
                 <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
                   <h2 className="text-base font-bold text-white mb-4 flex items-center space-x-2">
                     <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">1</span>
@@ -431,7 +409,6 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                {/* STEP 2: SELECT PACKAGE */}
                 <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
                   <h2 className="text-base font-bold text-white mb-4 flex items-center space-x-2">
                     <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">2</span>
@@ -461,7 +438,6 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                {/* STEP 3: PAYMENT METHOD */}
                 <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
                   <h2 className="text-base font-bold text-white mb-4 flex items-center space-x-2">
                     <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">3</span>
@@ -489,10 +465,8 @@ export default function GameTopupApp() {
                     })}
                   </div>
                 </div>
-
               </div>
 
-              {/* RIGHT: SUMMARY & CHECKOUT */}
               <div className="space-y-6">
                 <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sticky top-24 shadow-2xl">
                   <h3 className="text-lg font-bold text-white mb-4 pb-3 border-b border-slate-800">สรุปคำสั่งซื้อ</h3>
@@ -538,12 +512,10 @@ export default function GameTopupApp() {
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         )}
 
-        {/* TAB 2: TRACKING ORDER */}
         {activeTab === 'track' && (
           <div className="max-w-2xl mx-auto">
             <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
@@ -608,7 +580,6 @@ export default function GameTopupApp() {
                 </div>
               )}
 
-              {/* RECENT ORDERS LIST */}
               <div className="mt-10">
                 <h3 className="text-base font-bold text-white mb-4">รายการเติมเงินล่าสุดในระบบ</h3>
                 <div className="space-y-3">
@@ -629,12 +600,10 @@ export default function GameTopupApp() {
                   ))}
                 </div>
               </div>
-
             </div>
           </div>
         )}
 
-        {/* TAB 3: ADMIN BACKEND PANEL */}
         {activeTab === 'admin' && (
           <div className="max-w-4xl mx-auto">
             {!isAdminLoggedIn ? (
@@ -724,20 +693,16 @@ export default function GameTopupApp() {
             )}
           </div>
         )}
-
       </main>
 
-      {/* CHECKOUT POPUP MODAL */}
       {showCheckoutModal && selectedGame && selectedPackage && selectedPayment && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-purple-500/40 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative animate-scale-up">
-            
             {!orderSuccess ? (
               <div>
                 <h3 className="text-xl font-bold text-white mb-2 text-center">ยืนยันการชำระเงิน</h3>
                 <p className="text-xs text-slate-400 text-center mb-6">สแกน QR Code หรือชำระเงินผ่านช่องทางที่เลือก</p>
 
-                {/* QR CODE SIMULATION */}
                 {selectedPayment.id === 'qrcode' && (
                   <div className="bg-white p-4 rounded-2xl w-48 h-48 mx-auto mb-6 flex flex-col items-center justify-center shadow-lg">
                     <div className="w-36 h-36 border-4 border-slate-900 flex items-center justify-center bg-slate-100 rounded-lg">
@@ -806,11 +771,9 @@ export default function GameTopupApp() {
                 </button>
               </div>
             )}
-
           </div>
         </div>
       )}
-
     </div>
   );
 }
