@@ -15,6 +15,9 @@ export default function GameTopupApp() {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminPin, setAdminPin] = useState('');
   const [adminPinError, setAdminPinError] = useState(false);
+  
+  // เพิ่ม State สำหรับค้นหาในหน้า Admin
+  const [adminSearchQuery, setAdminSearchQuery] = useState('');
 
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -165,8 +168,8 @@ export default function GameTopupApp() {
     { id: 'card', name: 'บัตรเครดิต / เดบิต', desc: 'VISA / Mastercard' }
   ];
 
-  // ระบบออร์เดอร์พร้อมเวลาไทย
   const [orders, setOrders] = useState([
+    { id: 'ORD-23664', game: 'VALORANT', package: '4,050 VP', price: 2790, player: '11', status: 'สำเร็จ', time: '29/10/69 13:54 น.' },
     { id: 'ORD-98421', game: 'VALORANT', package: '420 VP', price: 319, player: 'CyberNinja#1234', status: 'สำเร็จ', time: '29/10/2569 13:10 น.' },
     { id: 'ORD-98420', game: 'ROV', package: '220 Coupons', price: 175, player: 'ProPlayer99', status: 'สำเร็จ', time: '29/10/2569 12:45 น.' }
   ]);
@@ -177,8 +180,6 @@ export default function GameTopupApp() {
     
     setTimeout(() => {
       const newOrderId = 'ORD-' + Math.floor(10000 + Math.random() * 90000);
-      
-      // ดึงเวลาปัจจุบันเป็นรูปแบบไทย
       const now = new Date();
       const thaiTime = now.toLocaleDateString('th-TH', { year: '2-digit', month: '2-digit', day: '2-digit' }) + ' ' + now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
 
@@ -205,6 +206,12 @@ export default function GameTopupApp() {
     return matchesSearch && matchesCategory;
   });
 
+  // กรองรายการคำสั่งซื้อในหน้า Admin ตาม Player ID หรือ Order ID
+  const filteredOrders = orders.filter(ord => 
+    ord.player.toLowerCase().includes(adminSearchQuery.toLowerCase()) || 
+    ord.id.toLowerCase().includes(adminSearchQuery.toLowerCase())
+  );
+
   return (
     <div style={{ backgroundColor: '#090d16', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '60px', position: 'relative' }}>
       
@@ -225,9 +232,9 @@ export default function GameTopupApp() {
         </nav>
       </header>
 
-      {/* FLOATING LINE BUTTON (ปุ่มติดต่อแอดมินผ่าน LINE ด้านล่างขวา) */}
+      {/* FLOATING LINE BUTTON */}
       <a 
-        href="https://line.me" 
+        href="https://lin.ee/XRpYKph" 
         target="_blank" 
         rel="noopener noreferrer"
         style={{ position: 'fixed', bottom: '25px', right: '25px', backgroundColor: '#06c755', color: '#ffffff', padding: '12px 20px', borderRadius: '30px', fontWeight: 'bold', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 99, boxShadow: '0 4px 20px rgba(6,199,85,0.4)', fontSize: '14px' }}
@@ -451,7 +458,7 @@ export default function GameTopupApp() {
           </div>
         )}
 
-        {/* ADMIN TAB - พัฒนาระบบหลังบ้านให้แสดงรายละเอียดครบถ้วน */}
+        {/* ADMIN TAB - พร้อมช่องค้นหา Player ID / Order ID */}
         {activeTab === 'admin' && (
           <div style={{ maxWidth: '800px', margin: '0 auto' }}>
             {!isAdminLoggedIn ? (
@@ -488,24 +495,41 @@ export default function GameTopupApp() {
                   <button onClick={() => setIsAdminLoggedIn(false)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>ออกจากระบบ</button>
                 </div>
 
+                {/* ช่องค้นหา Player ID หรือเลขออร์เดอร์สำหรับแอดมิน */}
+                <div style={{ marginBottom: '20px' }}>
+                  <input 
+                    type="text"
+                    placeholder="🔍 ค้นหาด้วย Player ID หรือเลขออร์เดอร์ (เช่น 11 หรือ ORD-...)..."
+                    value={adminSearchQuery}
+                    onChange={(e) => setAdminSearchQuery(e.target.value)}
+                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                  />
+                </div>
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {orders.map((ord, idx) => (
-                    <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '4px' }}>
-                          <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
-                          <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff' }}>{ord.game} ({ord.package})</span>
+                  {filteredOrders.length > 0 ? (
+                    filteredOrders.map((ord, idx) => (
+                      <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
+                            <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff' }}>{ord.game} ({ord.package})</span>
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#9ca3af' }}>
+                            ผู้เล่น ID: <span style={{ color: '#c084fc', fontWeight: 'bold' }}>{ord.player}</span> | เวลาเติม (ไทย): <span style={{ color: '#38bdf8' }}>{ord.time}</span>
+                          </div>
                         </div>
-                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>
-                          ผู้เล่น ID: <span style={{ color: '#c084fc', fontWeight: 'bold' }}>{ord.player}</span> | เวลาเติม (ไทย): <span style={{ color: '#38bdf8' }}>{ord.time}</span>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price}</div>
+                          <span style={{ fontSize: '10px', backgroundColor: 'rgba(52, 211, 153, 0.2)', color: '#34d399', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>{ord.status}</span>
                         </div>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price}</div>
-                        <span style={{ fontSize: '10px', backgroundColor: 'rgba(52, 211, 153, 0.2)', color: '#34d399', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>{ord.status}</span>
-                      </div>
+                    ))
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '30px', color: '#9ca3af', fontSize: '14px' }}>
+                      ไม่พบรายการที่ค้นหา
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             )}
