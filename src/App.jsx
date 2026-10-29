@@ -207,10 +207,13 @@ export default function GameTopupApp() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-purple-500 selection:text-white pb-16">
-      <header className="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      {/* HEADER NAVBAR (จัดระเบียบใหม่ให้ไม่ซ้อนทับกัน) */}
+      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex flex-col sm:flex-row items-center justify-between py-3 sm:py-0 gap-3">
+          
           <div className="flex items-center space-x-3 cursor-pointer" onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
-            <div className="bg-gradient-to-tr from-purple-600 to-indigo-500 p-2 rounded-xl shadow-lg shadow-purple-500/30">
+            <div className="bg-gradient-to-tr from-purple-600 to-indigo-500 p-2.5 rounded-2xl shadow-lg shadow-purple-500/30">
               <Gamepad2 className="w-6 h-6 text-white" />
             </div>
             <div>
@@ -221,39 +224,43 @@ export default function GameTopupApp() {
             </div>
           </div>
 
-          <nav className="flex items-center space-x-1 sm:space-x-3">
+          <nav className="flex items-center space-x-2">
             <button 
               onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}
-              className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center space-x-2 ${activeTab === 'shop' ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30' : 'text-slate-300 hover:bg-slate-800'}`}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 ${activeTab === 'shop' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800'}`}
             >
               <Sparkles className="w-4 h-4" />
-              <span>หน้าแรกเติมเกม</span>
+              <span>หน้าแรก</span>
             </button>
             <button 
               onClick={() => setActiveTab('track')}
-              className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center space-x-2 ${activeTab === 'track' ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30' : 'text-slate-300 hover:bg-slate-800'}`}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 ${activeTab === 'track' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800'}`}
             >
               <History className="w-4 h-4" />
-              <span>เช็คสถานะการเติม</span>
+              <span>เช็คสถานะ</span>
             </button>
             <button 
               onClick={() => setActiveTab('admin')}
-              className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center space-x-2 ${activeTab === 'admin' ? 'bg-purple-600/20 text-purple-400 border border-purple-500/30' : 'text-slate-300 hover:bg-slate-800'}`}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1.5 ${activeTab === 'admin' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-slate-800/60 text-slate-300 hover:bg-slate-800'}`}
             >
               <Settings className="w-4 h-4" />
-              <span>หลังบ้าน (Admin)</span>
+              <span>หลังบ้าน</span>
             </button>
           </nav>
+
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+      {/* MAIN CONTAINER */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        
         {activeTab === 'shop' && !selectedGame && (
           <div>
+            {/* HERO BANNER */}
             <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-purple-900/40 via-indigo-900/40 to-slate-900 border border-purple-500/20 p-6 sm:p-10 mb-8 shadow-2xl">
               <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
               <div className="relative z-10 max-w-2xl">
-                <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-semibold mb-4">
+                <span className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-semibold mb-4">
                   <TrendingUp className="w-3.5 h-3.5" />
                   <span>ระบบเติมเกมอัตโนมัติ 24 ชั่วโมง ปลอดภัย 100%</span>
                 </span>
@@ -265,33 +272,34 @@ export default function GameTopupApp() {
                   เลือกเกมโปรดของคุณ เติมไวภายใน 1 นาที รองรับทั้ง VALORANT, PUBG, ROV, Avatar Star ที่กำลังจะเปิดในไทย และเกมดังอื่นๆ อีกมากมาย
                 </p>
 
+                {/* SEARCH & FILTER */}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input 
                       type="text"
                       placeholder="ค้นหาชื่อเกม..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full bg-slate-900/90 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 transition-all shadow-inner"
+                      className="w-full bg-slate-900/90 border border-slate-700 rounded-2xl pl-11 pr-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 transition-all shadow-inner"
                     />
                   </div>
                   <div className="flex space-x-2">
                     <button 
                       onClick={() => setSelectedCategory('all')}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${selectedCategory === 'all' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'}`}
+                      className={`px-4 py-3 rounded-2xl text-xs font-semibold transition-all ${selectedCategory === 'all' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'}`}
                     >
                       ทั้งหมด
                     </button>
                     <button 
                       onClick={() => setSelectedCategory('pc')}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${selectedCategory === 'pc' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'}`}
+                      className={`px-4 py-3 rounded-2xl text-xs font-semibold transition-all ${selectedCategory === 'pc' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'}`}
                     >
                       PC Games
                     </button>
                     <button 
                       onClick={() => setSelectedCategory('mobile')}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition-all ${selectedCategory === 'mobile' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'}`}
+                      className={`px-4 py-3 rounded-2xl text-xs font-semibold transition-all ${selectedCategory === 'mobile' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:bg-slate-800'}`}
                     >
                       Mobile Games
                     </button>
@@ -300,6 +308,7 @@ export default function GameTopupApp() {
               </div>
             </div>
 
+            {/* GAMES GRID */}
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-xl font-bold text-white flex items-center space-x-2">
                 <span>🔥 เกมยอดนิยมและกำลังเปิดให้บริการ</span>
@@ -312,27 +321,27 @@ export default function GameTopupApp() {
                 <div 
                   key={game.id}
                   onClick={() => { setSelectedGame(game); setSelectedPackage(null); }}
-                  className="group relative bg-slate-900/60 rounded-2xl overflow-hidden border border-slate-800 hover:border-purple-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10 cursor-pointer flex flex-col"
+                  className="group relative bg-slate-900/60 rounded-3xl overflow-hidden border border-slate-800/80 hover:border-purple-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-purple-500/10 cursor-pointer flex flex-col"
                 >
-                  <div className="relative h-40 sm:h-48 overflow-hidden bg-slate-800">
+                  <div className="relative h-44 sm:h-52 overflow-hidden bg-slate-800">
                     <img 
                       src={game.image} 
                       alt={game.name}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-                    <span className="absolute top-3 right-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-600/90 text-white backdrop-blur-md shadow">
+                    <span className="absolute top-3 right-3 px-3 py-1 rounded-full text-[10px] font-bold bg-purple-600/90 text-white backdrop-blur-md shadow">
                       {game.badge}
                     </span>
                   </div>
                   
-                  <div className="p-4 flex-1 flex flex-col justify-between">
+                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                     <div>
                       <h3 className="font-bold text-sm sm:text-base text-white group-hover:text-purple-400 transition-colors line-clamp-1">{game.name}</h3>
                       <p className="text-xs text-slate-400 mt-0.5">{game.publisher}</p>
                     </div>
                     
-                    <button className="mt-4 w-full bg-slate-800 group-hover:bg-purple-600 text-slate-200 group-hover:text-white py-2 rounded-xl text-xs font-semibold transition-all flex items-center justify-center space-x-1.5">
+                    <button className="mt-4 w-full bg-slate-800/80 group-hover:bg-purple-600 text-slate-200 group-hover:text-white py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center space-x-1.5">
                       <span>เลือกเติมเงิน</span>
                       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                     </button>
@@ -347,12 +356,12 @@ export default function GameTopupApp() {
           <div className="max-w-4xl mx-auto animate-fade-in">
             <button 
               onClick={() => setSelectedGame(null)}
-              className="mb-6 text-sm text-purple-400 hover:text-purple-300 font-medium flex items-center space-x-1.5 bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-800 w-fit"
+              className="mb-6 text-sm text-purple-400 hover:text-purple-300 font-medium flex items-center space-x-1.5 bg-slate-900/80 px-4 py-2.5 rounded-2xl border border-slate-800 w-fit"
             >
               <span>← กลับไปเลือกเกมอื่น</span>
             </button>
 
-            <div className="relative rounded-2xl overflow-hidden mb-8 border border-purple-500/30 p-6 sm:p-8 bg-slate-900">
+            <div className="relative rounded-3xl overflow-hidden mb-8 border border-purple-500/30 p-6 sm:p-8 bg-slate-900 shadow-xl">
               <div className="absolute inset-0 opacity-20">
                 <img src={selectedGame.image} alt={selectedGame.name} className="w-full h-full object-cover filter blur-sm" />
               </div>
@@ -372,7 +381,7 @@ export default function GameTopupApp() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-2 space-y-6">
-                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
                   <h2 className="text-base font-bold text-white mb-4 flex items-center space-x-2">
                     <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">1</span>
                     <span>ระบุข้อมูลไอดีผู้เล่น</span>
@@ -382,13 +391,13 @@ export default function GameTopupApp() {
                     <div>
                       <label className="block text-xs font-semibold text-slate-300 mb-1.5">Player ID / Riot ID / UID</label>
                       <div className="relative">
-                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <input 
                           type="text"
                           placeholder="เช่น PlayerName#1234 หรือ 123456789"
                           value={playerId}
                           onChange={(e) => setPlayerId(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
                         />
                       </div>
                     </div>
@@ -399,7 +408,7 @@ export default function GameTopupApp() {
                         <select 
                           value={server} 
                           onChange={(e) => setServer(e.target.value)}
-                          className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-purple-500"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3.5 text-sm text-white focus:outline-none focus:border-purple-500"
                         >
                           <option value="">-- กรุณาเลือกเซิร์ฟเวอร์ --</option>
                           <option value="th">Thailand</option>
@@ -409,7 +418,7 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
                   <h2 className="text-base font-bold text-white mb-4 flex items-center space-x-2">
                     <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">2</span>
                     <span>เลือกแพ็กเกจเติมเกม</span>
@@ -422,7 +431,7 @@ export default function GameTopupApp() {
                         <div 
                           key={pkg.id}
                           onClick={() => setSelectedPackage(pkg)}
-                          className={`p-4 rounded-xl border cursor-pointer transition-all flex flex-col justify-between ${isSelected ? 'bg-purple-600/20 border-purple-500 shadow-lg shadow-purple-500/20' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}
+                          className={`p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${isSelected ? 'bg-purple-600/20 border-purple-500 shadow-lg shadow-purple-500/20' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}
                         >
                           <div>
                             <span className="text-xs font-bold text-purple-400">{pkg.bonus}</span>
@@ -438,7 +447,7 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
                   <h2 className="text-base font-bold text-white mb-4 flex items-center space-x-2">
                     <span className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-bold">3</span>
                     <span>เลือกช่องทางชำระเงิน</span>
@@ -451,9 +460,9 @@ export default function GameTopupApp() {
                         <div 
                           key={pay.id}
                           onClick={() => setSelectedPayment(pay)}
-                          className={`p-4 rounded-xl border cursor-pointer transition-all flex items-center space-x-3 ${isSelected ? 'bg-purple-600/20 border-purple-500 shadow-lg shadow-purple-500/20' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}
+                          className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center space-x-3 ${isSelected ? 'bg-purple-600/20 border-purple-500 shadow-lg shadow-purple-500/20' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}`}
                         >
-                          <div className={`p-2.5 rounded-lg ${isSelected ? 'bg-purple-600 text-white' : 'bg-slate-900 text-slate-300'}`}>
+                          <div className={`p-2.5 rounded-xl ${isSelected ? 'bg-purple-600 text-white' : 'bg-slate-900 text-slate-300'}`}>
                             <Wallet className="w-5 h-5" />
                           </div>
                           <div>
@@ -468,7 +477,7 @@ export default function GameTopupApp() {
               </div>
 
               <div className="space-y-6">
-                <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 sticky top-24 shadow-2xl">
+                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 sticky top-24 shadow-2xl">
                   <h3 className="text-lg font-bold text-white mb-4 pb-3 border-b border-slate-800">สรุปคำสั่งซื้อ</h3>
 
                   <div className="space-y-3 text-sm mb-6">
@@ -500,7 +509,7 @@ export default function GameTopupApp() {
                   <button 
                     disabled={!playerId || !selectedPackage || !selectedPayment}
                     onClick={() => setShowCheckoutModal(true)}
-                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3.5 rounded-xl font-bold shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center space-x-2"
+                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-2xl font-bold shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center space-x-2"
                   >
                     <span>ยืนยันการชำระเงิน</span>
                     <ArrowRight className="w-4 h-4" />
@@ -524,13 +533,13 @@ export default function GameTopupApp() {
 
               <div className="flex gap-3 mb-8">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input 
                     type="text"
                     placeholder="กรอกเลขออร์เดอร์ หรือ Player ID..."
                     value={trackQuery}
                     onChange={(e) => setTrackQuery(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-2xl pl-11 pr-4 py-3.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500"
                   />
                 </div>
                 <button 
@@ -538,7 +547,7 @@ export default function GameTopupApp() {
                     const found = orders.find(o => o.id.toLowerCase().includes(trackQuery.toLowerCase()) || o.player.toLowerCase().includes(trackQuery.toLowerCase()));
                     setTrackResult(found || { notFound: true });
                   }}
-                  className="bg-purple-600 hover:bg-purple-500 text-white px-6 rounded-xl font-semibold text-sm transition-all shadow-lg shadow-purple-600/20"
+                  className="bg-purple-600 hover:bg-purple-500 text-white px-6 rounded-2xl font-semibold text-sm transition-all shadow-lg shadow-purple-600/20"
                 >
                   ค้นหา
                 </button>
@@ -584,7 +593,7 @@ export default function GameTopupApp() {
                 <h3 className="text-base font-bold text-white mb-4">รายการเติมเงินล่าสุดในระบบ</h3>
                 <div className="space-y-3">
                   {orders.map((ord, idx) => (
-                    <div key={idx} className="bg-slate-950 border border-slate-800 p-4 rounded-xl flex items-center justify-between text-sm">
+                    <div key={idx} className="bg-slate-950 border border-slate-800 p-4 rounded-2xl flex items-center justify-between text-sm">
                       <div>
                         <div className="font-bold text-white flex items-center space-x-2">
                           <span>{ord.game}</span>
@@ -620,7 +629,7 @@ export default function GameTopupApp() {
                   placeholder="PIN 6 หลัก"
                   value={adminPin}
                   onChange={(e) => setAdminPin(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-center text-lg tracking-widest text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 mb-4"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-2xl px-4 py-3.5 text-center text-lg tracking-widest text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 mb-4"
                 />
 
                 {adminPinError && (
@@ -636,14 +645,14 @@ export default function GameTopupApp() {
                       setAdminPinError(true);
                     }
                   }}
-                  className="w-full bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-purple-600/30 transition-all"
+                  className="w-full bg-purple-600 hover:bg-purple-500 text-white py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-purple-600/30 transition-all"
                 >
                   เข้าสู่ระบบ
                 </button>
               </div>
             ) : (
               <div className="space-y-6 animate-fade-in">
-                <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-6 rounded-3xl shadow-xl">
                   <div>
                     <h2 className="text-xl font-bold text-white">ยินดีต้อนรับผู้ดูแลระบบ (Admin)</h2>
                     <p className="text-xs text-slate-400 mt-0.5">จัดการราคาแพ็กเกจเกม และตรวจสอบยอดขายทั้งหมด</p>
@@ -658,25 +667,25 @@ export default function GameTopupApp() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl shadow">
+                  <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl shadow">
                     <span className="text-xs text-slate-400 font-medium">ยอดขายรวมวันนี้</span>
                     <div className="text-2xl font-black text-emerald-400 mt-2">฿12,450</div>
                   </div>
-                  <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl shadow">
+                  <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl shadow">
                     <span className="text-xs text-slate-400 font-medium">รายการเติมสำเร็จ</span>
                     <div className="text-2xl font-black text-purple-400 mt-2">48 รายการ</div>
                   </div>
-                  <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl shadow">
+                  <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl shadow">
                     <span className="text-xs text-slate-400 font-medium">จำนวนเกมในระบบ</span>
                     <div className="text-2xl font-black text-indigo-400 mt-2">{gamesData.length} เกม</div>
                   </div>
                 </div>
 
-                <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl shadow-xl">
+                <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl shadow-xl">
                   <h3 className="text-base font-bold text-white mb-4">รายการคำสั่งซื้อล่าสุด</h3>
                   <div className="space-y-3">
                     {orders.map((ord, idx) => (
-                      <div key={idx} className="bg-slate-950 border border-slate-800 p-4 rounded-xl flex items-center justify-between text-sm">
+                      <div key={idx} className="bg-slate-950 border border-slate-800 p-4 rounded-2xl flex items-center justify-between text-sm">
                         <div>
                           <div className="font-bold text-white">{ord.id} - {ord.game} ({ord.package})</div>
                           <div className="text-xs text-purple-400 mt-0.5">ผู้เล่น: {ord.player} • {ord.time}</div>
@@ -729,14 +738,14 @@ export default function GameTopupApp() {
                 <div className="flex space-x-3">
                   <button 
                     onClick={() => setShowCheckoutModal(false)}
-                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-xl font-semibold text-sm transition-all"
+                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-3 rounded-2xl font-semibold text-sm transition-all"
                   >
                     ยกเลิก
                   </button>
                   <button 
                     disabled={isProcessing}
                     onClick={handleCheckout}
-                    className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center space-x-2"
+                    className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white py-3 rounded-2xl font-bold text-sm shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center space-x-2"
                   >
                     {isProcessing ? (
                       <>
@@ -765,7 +774,7 @@ export default function GameTopupApp() {
                     setPlayerId('');
                     setSelectedPackage(null);
                   }}
-                  className="w-full bg-purple-600 hover:bg-purple-500 text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-purple-600/30 transition-all"
+                  className="w-full bg-purple-600 hover:bg-purple-500 text-white py-3.5 rounded-2xl font-bold text-sm shadow-lg shadow-purple-600/30 transition-all"
                 >
                   กลับสู่หน้าหลัก
                 </button>
@@ -774,6 +783,7 @@ export default function GameTopupApp() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
