@@ -4,8 +4,8 @@ export default function GameTopupApp() {
   // Authentication State
   const [user, setUser] = useState({
     username: '11',
-    email: 'user@example.com',
-    password: '123',
+    email: 'thanphooms@gmail.com',
+    password: '0638801739Ss_@1',
     balance: 1800
   });
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'register' | 'forgot'
@@ -49,8 +49,9 @@ export default function GameTopupApp() {
   const [trueWalletNumber, setTrueWalletNumber] = useState('');
   const [trueCashCardPin, setTrueCashCardPin] = useState('');
 
-  // Order Tracking State
+  // Order Tracking State & Date Filter
   const [trackQuery, setTrackQuery] = useState('');
+  const [trackDateFilter, setTrackDateFilter] = useState('');
   const [trackResultList, setTrackResultList] = useState(null);
 
   // Admin State & Dynamic PIN System
@@ -239,9 +240,9 @@ export default function GameTopupApp() {
   ];
 
   const [orders, setOrders] = useState([
-    { id: 'ORD-14914', game: 'Free Fire', package: '1,166 Diamonds', price: 350, player: '11', status: 'รอตรวจสอบ [สะดุดใน 10s]', type: 'game', time: '29/10/69 22:44 น.', timestamp: Date.now() - 100000 },
-    { id: 'ORD-48751', game: 'Free Fire', package: '1,166 Diamonds', price: 350, player: '11', status: 'สำเร็จ (เพิ่มออโต้)', type: 'game', time: '29/10/69 22:44 น.', timestamp: Date.now() - 200000 },
-    { id: 'ORD-23664', game: 'VALORANT', package: '4,050 VP', price: 2790, player: '11', status: 'สำเร็จ', type: 'game', time: '29/10/69 13:54 น.', timestamp: Date.now() - 500000 }
+    { id: 'ORD-14914', game: 'Free Fire', package: '1,166 Diamonds', price: 350, player: '11', status: 'รอตรวจสอบ [สะดุดใน 10s]', type: 'game', time: '29/10/69 22:44 น.', dateKey: '2029-10-29', timestamp: Date.now() - 100000 },
+    { id: 'ORD-48751', game: 'Free Fire', package: '1,166 Diamonds', price: 350, player: '11', status: 'สำเร็จ (เพิ่มออโต้)', type: 'game', time: '29/10/69 22:44 น.', dateKey: '2029-10-29', timestamp: Date.now() - 200000 },
+    { id: 'ORD-23664', game: 'VALORANT', package: '4,050 VP', price: 2790, player: '11', status: 'สำเร็จ', type: 'game', time: '29/10/69 13:54 น.', dateKey: '2029-10-29', timestamp: Date.now() - 500000 }
   ]);
 
   // Countdown Timer Effect for Checkout QR Code (3 Mins)
@@ -374,12 +375,25 @@ export default function GameTopupApp() {
         setAuthError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
         return;
       }
-      setUser({
-        username: usernameInput,
-        email: 'user@example.com',
-        password: passwordInput,
-        balance: 1800
-      });
+      // Check if Admin Credentials
+      if (
+        (usernameInput === 'thanphooms@gmail.com' || usernameInput === 'thanphoom') &&
+        passwordInput === '0638801739Ss_@1'
+      ) {
+        setUser({
+          username: 'thanphooms@gmail.com',
+          email: 'thanphooms@gmail.com',
+          password: '0638801739Ss_@1',
+          balance: 99999
+        });
+      } else {
+        setUser({
+          username: usernameInput,
+          email: 'user@example.com',
+          password: passwordInput,
+          balance: 1800
+        });
+      }
     } else if (authMode === 'register') {
       if (!emailInput.trim() || !usernameInput.trim() || !passwordInput.trim() || !confirmPasswordInput.trim()) {
         setAuthError('กรุณากรอกข้อมูลให้ครบทุกช่อง');
@@ -439,6 +453,8 @@ export default function GameTopupApp() {
     setPasswordInput('');
     setConfirmPasswordInput('');
     setEmailInput('');
+    setIsAdminLoggedIn(false);
+    setActiveTab('shop');
   };
 
   // Admin PIN Handlers
@@ -507,6 +523,7 @@ export default function GameTopupApp() {
     const newOrderId = 'ORD-W-' + Math.floor(10000 + Math.random() * 90000);
     const now = new Date();
     const thaiTime = now.toLocaleDateString('th-TH', { year: '2-digit', month: '2-digit', day: '2-digit' }) + ' ' + now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+    const dateKey = now.toISOString().split('T')[0];
 
     const newWalletOrder = {
       id: newOrderId,
@@ -517,6 +534,7 @@ export default function GameTopupApp() {
       status: 'รอตรวจสอบ [สะดุดใน 10s]',
       type: 'wallet',
       time: thaiTime,
+      dateKey: dateKey,
       timestamp: Date.now()
     };
 
@@ -578,6 +596,7 @@ export default function GameTopupApp() {
         ' ' +
         now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) +
         ' น.';
+      const dateKey = now.toISOString().split('T')[0];
 
       const newOrder = {
         id: newOrderId,
@@ -588,6 +607,7 @@ export default function GameTopupApp() {
         status: 'รอตรวจสอบ [สะดุดใน 10s]',
         type: 'game',
         time: thaiTime,
+        dateKey: dateKey,
         timestamp: Date.now(),
       };
 
@@ -677,6 +697,9 @@ export default function GameTopupApp() {
       ord.player.toLowerCase().includes(adminSearchQuery.toLowerCase()) ||
       ord.id.toLowerCase().includes(adminSearchQuery.toLowerCase())
   );
+
+  // Check if current user is Admin
+  const isUserAdmin = user && (user.username === 'thanphooms@gmail.com' || user.email === 'thanphooms@gmail.com');
 
   if (!user) {
     return (
@@ -769,7 +792,7 @@ export default function GameTopupApp() {
                 <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ชื่อผู้ใช้งาน (Username / ID)</label>
                 <input 
                   type="text" 
-                  placeholder="กรอกชื่อผู้ใช้..."
+                  placeholder="กรอกชื่อผู้ใช้ หรือ Email แอดมิน..."
                   value={usernameInput}
                   onChange={(e) => setUsernameInput(e.target.value)}
                   style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
@@ -1004,7 +1027,12 @@ export default function GameTopupApp() {
           <nav style={{ display: 'flex', gap: '8px' }}>
             <button onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} style={{ backgroundColor: activeTab === 'shop' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>✨ หน้าแรก</button>
             <button onClick={() => setActiveTab('track')} style={{ backgroundColor: activeTab === 'track' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>📋 เช็คสถานะ</button>
-            <button onClick={() => setActiveTab('admin')} style={{ backgroundColor: activeTab === 'admin' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>⚙️ หลังบ้าน</button>
+            
+            {/* Show Admin Tab ONLY for thanphooms@gmail.com */}
+            {isUserAdmin && (
+              <button onClick={() => setActiveTab('admin')} style={{ backgroundColor: activeTab === 'admin' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>⚙️ หลังบ้าน</button>
+            )}
+
             <button onClick={handleLogout} style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px 12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>🚪 ออกจากระบบ</button>
           </nav>
         </div>
@@ -1300,19 +1328,25 @@ export default function GameTopupApp() {
           </div>
         )}
 
-        {/* TRACK STATUS TAB - SHOW ALL HISTORY FOR USER */}
+        {/* TRACK STATUS TAB - MAX 10 RECORDS + DATE FILTER */}
         {activeTab === 'track' && (
           <div style={{ maxWidth: '700px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '30px' }}>
             <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>📋 เช็คประวัติและสถานะการทำรายการ</h2>
-            <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '20px' }}>กรอกชื่อผู้ใช้ (Username) หรือเลขออร์เดอร์เพื่อดูประวัติทั้งหมด</p>
+            <p style={{ color: '#9ca3af', fontSize: '13px', marginBottom: '20px' }}>กรอกชื่อผู้ใช้ (Username) หรือเลขออร์เดอร์ และเลือกวันที่เพื่อตรวจสอบ (แสดงสูงสุด 10 รายการ)</p>
 
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '25px' }}>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '15px', flexWrap: 'wrap' }}>
               <input 
                 type="text"
                 placeholder="กรอกชื่อผู้ใช้ (เช่น 11) หรือเลขออร์เดอร์..."
                 value={trackQuery}
                 onChange={(e) => setTrackQuery(e.target.value)}
-                style={{ flex: 1, backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none' }}
+                style={{ flex: 1, minWidth: '200px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none' }}
+              />
+              <input 
+                type="date"
+                value={trackDateFilter}
+                onChange={(e) => setTrackDateFilter(e.target.value)}
+                style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', colorScheme: 'dark' }}
               />
               <button 
                 onClick={() => {
@@ -1321,12 +1355,19 @@ export default function GameTopupApp() {
                     setTrackResultList(null);
                     return;
                   }
-                  // Find all matching orders by player id, username, or order id
-                  const matched = orders.filter(o => 
+                  
+                  let matched = orders.filter(o => 
                     o.player.toLowerCase().includes(query) || 
                     o.id.toLowerCase().includes(query)
                   );
-                  setTrackResultList(matched);
+
+                  // Filter by date if selected
+                  if (trackDateFilter) {
+                    matched = matched.filter(o => o.dateKey === trackDateFilter);
+                  }
+
+                  // Limit to max 10 records
+                  setTrackResultList(matched.slice(0, 10));
                 }}
                 style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '0 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
               >
@@ -1334,10 +1375,17 @@ export default function GameTopupApp() {
               </button>
             </div>
 
+            {trackDateFilter && (
+              <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 กรองวันที่: {trackDateFilter}</span>
+                <button onClick={() => setTrackDateFilter('')} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}>[ล้างวันที่]</button>
+              </div>
+            )}
+
             {trackResultList !== null && (
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#c084fc', marginBottom: '15px' }}>
-                  ผลการค้นหา ({trackResultList.length} รายการ)
+                  ผลการค้นหา (แสดงสูงสุด 10 รายการ: {trackResultList.length} รายการ)
                 </h3>
 
                 {trackResultList.length > 0 ? (
@@ -1380,8 +1428,8 @@ export default function GameTopupApp() {
           </div>
         )}
 
-        {/* ADMIN MANAGEMENT TAB */}
-        {activeTab === 'admin' && (
+        {/* ADMIN MANAGEMENT TAB (RESTRICTED TO thanphooms@gmail.com) */}
+        {activeTab === 'admin' && isUserAdmin && (
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             {!isAdminLoggedIn ? (
               <div style={{ maxWidth: '400px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '20px', padding: '30px', textAlign: 'center' }}>
