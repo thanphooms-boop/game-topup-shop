@@ -28,7 +28,7 @@ export default function GameTopupApp() {
   const [passwordInput, setPasswordInput] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   
-  // สถานะเปิด-ปิดตา สำหรับหน้าสมัครสมาชิก
+  // สถานะสำหรับหน้าสมัครสมาชิก (4 ช่อง: อีเมล, Username, รหัสผ่าน, ยืนยันรหัสผ่าน)
   const [emailInput, setEmailInput] = useState('');
   const [regPasswordInput, setRegPasswordInput] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
@@ -62,7 +62,7 @@ export default function GameTopupApp() {
   const [creditCardExp, setCreditCardExp] = useState('');
   const [creditCardCvv, setCreditCardCvv] = useState('');
 
-  // Background Wallet Auto-Topup State (10 Seconds with Floating Left Counter)
+  // Background Wallet Auto-Topup State
   const [isWalletAutoRunning, setIsWalletAutoRunning] = useState(false);
   const [walletAutoSeconds, setWalletAutoSeconds] = useState(10);
   const [pendingWalletAmount, setPendingWalletAmount] = useState(0);
@@ -108,7 +108,7 @@ export default function GameTopupApp() {
   const [timeLeft, setTimeLeft] = useState(180);
   const [isQrExpired, setIsQrExpired] = useState(false);
 
-  // Background Game Checkout Auto-Topup State (10s with Floating Left Counter)
+  // Background Game Checkout Auto-Topup State
   const [isGameAutoRunning, setIsGameAutoRunning] = useState(false);
   const [gameAutoSeconds, setGameAutoSeconds] = useState(10);
   const [pendingGameOrderId, setPendingGameOrderId] = useState('');
@@ -247,6 +247,19 @@ export default function GameTopupApp() {
     { id: 'credit', name: 'บัตรเครดิต / เดบิต', desc: 'ชำระผ่านบัตรปลอดภัย' }
   ];
 
+  // Component SVG รูปตาเปิด-ปิด สไตล์สากล
+  const EyeIcon = ({ show }) => show ? (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c084fc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+  ) : (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+      <line x1="1" y1="1" x2="23" y2="23"></line>
+    </svg>
+  );
+
   // Timers Effect
   useEffect(() => {
     let timer;
@@ -358,7 +371,7 @@ export default function GameTopupApp() {
       }
     } else if (authMode === 'register') {
       if (!emailInput.trim() || !usernameInput.trim() || !regPasswordInput.trim() || !confirmPasswordInput.trim()) {
-        setAuthError('กรุณากรอกข้อมูลให้ครบทุกช่อง');
+        setAuthError('กรุณากรอกข้อมูลให้ครบทั้ง 4 ช่อง');
         return;
       }
       if (!emailInput.includes('@')) {
@@ -380,9 +393,9 @@ export default function GameTopupApp() {
       setRegisteredUsers([...registeredUsers, newUser]);
       setUsernameInput(usernameInput);
       setPasswordInput(regPasswordInput);
-      setConfirmPasswordInput('');
       setEmailInput('');
       setRegPasswordInput('');
+      setConfirmPasswordInput('');
       setAuthSuccessMsg('สมัครสมาชิกสำเร็จแล้ว! กรุณากดปุ่มเข้าสู่ระบบ');
       setAuthMode('login');
     }
@@ -456,7 +469,7 @@ export default function GameTopupApp() {
 
     const newWalletOrder = {
       id: newOrderId,
-      game: `เติมเครดิต (${walletPaymentMethod.toUpperCase()})`,
+      game: `เติมเครดิตร้าน (${walletPaymentMethod.toUpperCase()})`,
       package: `+฿${amt.toLocaleString()}`,
       price: amt,
       player: user ? user.username : '11',
@@ -618,18 +631,18 @@ export default function GameTopupApp() {
     setCreditCardCvv('');
   };
 
-  // กรองเกมตามคำค้นหาและหมวดหมู่ (PC / Mobile)
+  // กรองเกมตามคำค้นหาและหมวดหมู่
   const filteredGames = gamesData.filter((game) => {
     const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = gameCategory === 'all' || game.category === gameCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const filteredOrders = orders.filter((ord) => ord.player.toLowerCase().includes(adminSearchQuery.toLowerCase()) || ord.id.toLowerCase().includes(adminSearchQuery.toLowerCase()));
+  const filteredOrders = orders.filter((ord) => ord.player.toLowerCase().includes(adminSearchQuery.toLowerCase()) || ord.id.toLowerCase().includes(adminSearchQuery.toLowerCase()) || ord.game.toLowerCase().includes(adminSearchQuery.toLowerCase()));
 
   const isUserAdmin = user && (user.username === 'thanphooms@gmail.com' || user.email === 'thanphooms@gmail.com');
 
-  // กรองประวัติคำสั่งซื้อ ผูกกับชื่อผู้ใช้งาน (User ID) + สามารถค้นหาตามชื่อเกม (เช่น VALORANT) หรือวันที่ทำรายการได้
+  // กรองประวัติคำสั่งซื้อ ผูกกับชื่อผู้ใช้งาน
   const userOrders = orders.filter(o => isUserAdmin || (user && o.player.toLowerCase() === user.username.toLowerCase()));
   const searchedOrders = userOrders.filter(o => {
     const q = trackQuery.trim().toLowerCase();
@@ -638,7 +651,6 @@ export default function GameTopupApp() {
     return matchQuery && matchDate;
   });
 
-  // คำนวณยอดเงินรวมที่เติมไปตามเงื่อนไขค้นหา
   const totalSpentInSearch = searchedOrders.reduce((sum, ord) => sum + ord.price, 0);
 
   if (!user) {
@@ -672,28 +684,66 @@ export default function GameTopupApp() {
             {authError && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authError}</div>}
             {authSuccessMsg && <div style={{ backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '1px solid #34d399', color: '#34d399', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authSuccessMsg}</div>}
 
+            {/* ฟอร์มสมัครสมาชิก 4 ช่องเป๊ะๆ: 1.อีเมล, 2.Username/ID, 3.รหัสผ่าน, 4.ยืนยันรหัสผ่าน */}
             {authMode === 'register' && (
               <div style={{ textAlign: 'left' }}>
-                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>อีเมล</label>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. อีเมล (Email)</label>
                 <input type="email" placeholder="example@email.com" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
               </div>
             )}
 
             <div style={{ textAlign: 'left' }}>
-              <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ชื่อผู้ใช้งาน (Username / ID)</label>
+              <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
+                {authMode === 'register' ? '2. ชื่อผู้ใช้งาน (Username / ID)' : 'ชื่อผู้ใช้งาน (Username / ID)'}
+              </label>
               <input type="text" placeholder="กรอกชื่อผู้ใช้..." value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
             </div>
 
-            {/* ช่องรหัสผ่าน หน้าล็อกอิน พร้อมรูปตาเปิด-ปิดสวยงาม */}
+            {/* ช่องรหัสผ่าน พร้อมรูปตา SVG คมชัด */}
             <div style={{ textAlign: 'left' }}>
-              <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัสผ่าน (Password)</label>
+              <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
+                {authMode === 'register' ? '3. รหัสผ่าน (Password)' : 'รหัสผ่าน (Password)'}
+              </label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <input type={showLoginPassword ? 'text' : 'password'} placeholder="กรอกรหัสผ่าน..." value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
-                <button type="button" onClick={() => setShowLoginPassword(!showLoginPassword)} style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', color: '#c084fc', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title={showLoginPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}>
-                  {showLoginPassword ? '👁️‍🗨️' : '👁️'}
+                <input 
+                  type={authMode === 'login' ? (showLoginPassword ? 'text' : 'password') : (showRegPassword ? 'text' : 'password')} 
+                  placeholder="กรอกรหัสผ่าน..." 
+                  value={authMode === 'login' ? passwordInput : regPasswordInput} 
+                  onChange={(e) => authMode === 'login' ? setPasswordInput(e.target.value) : setRegPasswordInput(e.target.value)} 
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => authMode === 'login' ? setShowLoginPassword(!showLoginPassword) : setShowRegPassword(!showRegPassword)} 
+                  style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                >
+                  <EyeIcon show={authMode === 'login' ? showLoginPassword : showRegPassword} />
                 </button>
               </div>
             </div>
+
+            {/* ช่องยืนยันรหัสผ่าน สำหรับหน้าสมัครสมาชิก */}
+            {authMode === 'register' && (
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>4. ยืนยันรหัสผ่าน (Confirm Password)</label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input 
+                    type={showConfirmPassword ? 'text' : 'password'} 
+                    placeholder="กรอกรหัสผ่านอีกครั้ง..." 
+                    value={confirmPasswordInput} 
+                    onChange={(e) => setConfirmPasswordInput(e.target.value)} 
+                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                    style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                  >
+                    <EyeIcon show={showConfirmPassword} />
+                  </button>
+                </div>
+              </div>
+            )}
 
             {authMode === 'login' && (
               <div style={{ textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#9ca3af' }}>
@@ -702,32 +752,12 @@ export default function GameTopupApp() {
               </div>
             )}
 
-            {/* ฟอร์มสมัครสมาชิก พร้อมปุ่มเปิด-ปิดตา ทั้งรหัสผ่านและยืนยันรหัสผ่าน */}
-            {authMode === 'register' && (
-              <>
-                <div style={{ textAlign: 'left' }}>
-                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>รหัสผ่าน</label>
-                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <input type={showRegPassword ? 'text' : 'password'} placeholder="กรอกรหัสผ่าน..." value={regPasswordInput} onChange={(e) => setRegPasswordInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
-                    <button type="button" onClick={() => setShowRegPassword(!showRegPassword)} style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', color: '#c084fc', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {showRegPassword ? '👁️‍🗨️' : '👁️'}
-                    </button>
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'left' }}>
-                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ยืนยันรหัสผ่าน</label>
-                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                    <input type={showConfirmPassword ? 'text' : 'password'} placeholder="กรอกรหัสผ่านอีกครั้ง..." value={confirmPasswordInput} onChange={(e) => setConfirmPasswordInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
-                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', color: '#c084fc', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {showConfirmPassword ? '👁️‍🗨️' : '👁️'}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <button type="submit" style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', boxShadow: '0 0 15px rgba(147,51,234,0.5)' }}>
+            <button 
+              type="submit" 
+              style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', boxShadow: '0 0 15px rgba(147,51,234,0.5)', transition: 'all 0.3s ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#a855f7'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 0 25px rgba(168,85,247,0.8)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#9333ea'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(147,51,234,0.5)'; }}
+            >
               {authMode === 'login' && 'เข้าสู่ระบบ (Login)'}
               {authMode === 'register' && 'สมัครสมาชิก'}
             </button>
@@ -750,7 +780,7 @@ export default function GameTopupApp() {
       color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '60px', position: 'relative'
     }}>
       
-      {/* ตัวนับเวลาถอยหลัง 10 วินาที ลอยอยู่ที่มุมซ้ายบน เฉพาะตอนกำลังโอนเงินหรือเติมเงิน */}
+      {/* ตัวนับเวลาถอยหลัง 10 วินาที ลอยอยู่ที่มุมซ้ายบน */}
       {(isWalletAutoRunning || isGameAutoRunning) && (
         <div style={{
           position: 'fixed', top: '80px', left: '25px', zIndex: 120,
@@ -806,18 +836,54 @@ export default function GameTopupApp() {
           <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ fontSize: '12px' }}><span style={{ color: '#9ca3af' }}>👤 ผู้ใช้: </span><b style={{ color: '#c084fc' }}>{user.username}</b></div>
             <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px' }}><span style={{ color: '#9ca3af' }}>💰 เครดิตร้าน: </span><b style={{ color: '#34d399' }}>฿{user.balance.toLocaleString()}</b></div>
-            <button onClick={() => { setShowTopupWalletModal(true); setWalletStep(1); }} style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 10px rgba(147,51,234,0.5)' }}>+ เติมเครดิต</button>
+            <button 
+              onClick={() => { setShowTopupWalletModal(true); setWalletStep(1); }} 
+              style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '5px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 10px rgba(147,51,234,0.5)', transition: 'all 0.3s ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#a855f7'; e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 0 18px rgba(168,85,247,0.8)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#9333ea'; e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 10px rgba(147,51,234,0.5)'; }}
+            >
+              + เติมเครดิต
+            </button>
           </div>
 
           <nav style={{ display: 'flex', gap: '8px' }}>
-            <button onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} style={{ backgroundColor: activeTab === 'shop' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>✨ หน้าแรก</button>
-            <button onClick={() => setActiveTab('track')} style={{ backgroundColor: activeTab === 'track' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>📋 เช็คสถานะ</button>
+            <button 
+              onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} 
+              style={{ backgroundColor: activeTab === 'shop' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', transition: 'all 0.3s ease' }}
+              onMouseEnter={(e) => { if(activeTab !== 'shop') e.currentTarget.style.backgroundColor = 'rgba(147, 51, 234, 0.4)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { if(activeTab !== 'shop') e.currentTarget.style.backgroundColor = 'rgba(31, 41, 55, 0.8)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              ✨ หน้าแรก
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab('track')} 
+              style={{ backgroundColor: activeTab === 'track' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', transition: 'all 0.3s ease' }}
+              onMouseEnter={(e) => { if(activeTab !== 'track') e.currentTarget.style.backgroundColor = 'rgba(147, 51, 234, 0.4)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { if(activeTab !== 'track') e.currentTarget.style.backgroundColor = 'rgba(31, 41, 55, 0.8)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              📋 เช็คสถานะ
+            </button>
             
             {isUserAdmin && (
-              <button onClick={() => setActiveTab('admin')} style={{ backgroundColor: activeTab === 'admin' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>⚙️ หลังบ้าน</button>
+              <button 
+                onClick={() => setActiveTab('admin')} 
+                style={{ backgroundColor: activeTab === 'admin' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', transition: 'all 0.3s ease' }}
+                onMouseEnter={(e) => { if(activeTab !== 'admin') e.currentTarget.style.backgroundColor = 'rgba(147, 51, 234, 0.4)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                onMouseLeave={(e) => { if(activeTab !== 'admin') e.currentTarget.style.backgroundColor = 'rgba(31, 41, 55, 0.8)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              >
+                ⚙️ หลังบ้าน
+              </button>
             )}
 
-            <button onClick={handleLogout} style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px 12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>🚪 ออกจากระบบ</button>
+            <button 
+              onClick={handleLogout} 
+              style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px 12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', transition: 'all 0.3s ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ef4444'; e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'; e.currentTarget.style.color = '#fca5a5'; e.currentTarget.style.transform = 'translateY(0)'; }}
+            >
+              🚪 ออกจากระบบ
+            </button>
           </nav>
         </div>
       </header>
@@ -832,8 +898,11 @@ export default function GameTopupApp() {
           backgroundColor: '#06c755', color: '#ffffff', padding: '12px 18px',
           borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '8px',
           boxShadow: '0 4px 25px rgba(6, 199, 85, 0.6)', textDecoration: 'none',
-          fontWeight: 'bold', fontSize: '14px', border: '1.5px solid #ffffff'
+          fontWeight: 'bold', fontSize: '14px', border: '1.5px solid #ffffff',
+          transition: 'all 0.3s ease'
         }}
+        onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08) translateY(-4px)'; e.currentTarget.style.boxShadow = '0 8px 30px rgba(6, 199, 85, 0.8)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1) translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 25px rgba(6, 199, 85, 0.6)'; }}
       >
         <span style={{ fontSize: '18px' }}>🟢</span> ติดต่อแอดมิน (LINE)
       </a>
@@ -850,39 +919,89 @@ export default function GameTopupApp() {
               <h1 style={{ fontSize: '38px', fontWeight: '900', margin: '16px 0 10px 0', textShadow: '0 0 20px rgba(168,85,247,0.6)' }}>เติมเกมสะดวกรวดเร็ว <br/><span style={{ color: '#c084fc' }}>ราคาถูกที่สุด คุ้มค่าที่สุด</span></h1>
               <p style={{ fontSize: '14px', color: '#9ca3af', margin: '0 0 25px 0', maxWidth: '650px' }}>เลือกเกมโปรดของคุณ เติมไวภายใน 1 นาที รองรับทั้ง VALORANT, PUBG, ROV, Avatar Star, Genshin Impact และเกมดังอื่นๆ อีกมากมาย</p>
 
-              {/* ช่องค้นหาพร้อมปุ่มแยกหมวดหมู่ (ทั้งหมด / PC / Mobile) */}
+              {/* ช่องค้นหาพร้อมปุ่มแยกหมวดหมู่ */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
                 <div style={{ position: 'relative', flex: 1, minWidth: '280px', maxWidth: '450px' }}>
                   <input type="text" placeholder="🔍 ค้นหาชื่อเกม..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} style={{ width: '100%', backgroundColor: 'rgba(3, 7, 18, 0.8)', border: '1px solid #374151', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px', backgroundColor: 'rgba(3, 7, 18, 0.8)', padding: '4px', borderRadius: '12px', border: '1px solid #374151' }}>
-                  <button onClick={() => setGameCategory('all')} style={{ backgroundColor: gameCategory === 'all' ? '#9333ea' : 'transparent', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>🎮 ทั้งหมด</button>
-                  <button onClick={() => setGameCategory('pc')} style={{ backgroundColor: gameCategory === 'pc' ? '#9333ea' : 'transparent', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>💻 PC</button>
-                  <button onClick={() => setGameCategory('mobile')} style={{ backgroundColor: gameCategory === 'mobile' ? '#9333ea' : 'transparent', color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>📱 Mobile</button>
+                  {['all', 'pc', 'mobile'].map((cat) => (
+                    <button 
+                      key={cat}
+                      onClick={() => setGameCategory(cat)} 
+                      style={{ 
+                        backgroundColor: gameCategory === cat ? '#9333ea' : 'transparent', 
+                        color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '8px', 
+                        fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', transition: 'all 0.3s ease' 
+                      }}
+                      onMouseEnter={(e) => { if(gameCategory !== cat) e.currentTarget.style.backgroundColor = 'rgba(147,51,234,0.3)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                      onMouseLeave={(e) => { if(gameCategory !== cat) e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                    >
+                      {cat === 'all' && '🎮 ทั้งหมด'}
+                      {cat === 'pc' && '💻 PC'}
+                      {cat === 'mobile' && '📱 Mobile'}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* หัวข้อแสดงจำนวนเกม */}
             <div style={{ marginBottom: '20px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 🔥 เลือกเกมที่ต้องการเติมเงิน ({filteredGames.length} เกม)
               </h2>
             </div>
 
-            {/* รายการเกม 9 เกม */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '20px' }}>
+            {/* รายการเกม 9 เกม พร้อมลูกเล่น Hover Effect เลื่อนเมาส์ชี้แล้วปุ่มและภาพมีเอฟเฟกต์ตอบสนอง */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '22px' }}>
               {filteredGames.map((game) => (
-                <div key={game.id} onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPlayerId(user.username); }} style={{ backgroundColor: 'rgba(17, 24, 39, 0.85)', border: '1.5px solid rgba(168, 85, 247, 0.35)', borderRadius: '20px', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.3s', boxShadow: '0 6px 25px rgba(0,0,0,0.6)' }} onMouseEnter={(e) => e.currentTarget.style.borderColor = '#c084fc'} onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)'}>
+                <div 
+                  key={game.id} 
+                  onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPlayerId(user.username); }} 
+                  style={{ 
+                    backgroundColor: 'rgba(17, 24, 39, 0.85)', 
+                    border: '1.5px solid rgba(168, 85, 247, 0.35)', 
+                    borderRadius: '20px', 
+                    overflow: 'hidden', 
+                    cursor: 'pointer', 
+                    transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)', 
+                    boxShadow: '0 6px 25px rgba(0,0,0,0.6)',
+                    position: 'relative'
+                  }} 
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
+                    e.currentTarget.style.borderColor = '#c084fc';
+                    e.currentTarget.style.boxShadow = '0 15px 35px rgba(168, 85, 247, 0.45), 0 0 20px rgba(56, 189, 248, 0.3)';
+                    const img = e.currentTarget.querySelector('img');
+                    if(img) img.style.transform = 'scale(1.08)';
+                    const btn = e.currentTarget.querySelector('button');
+                    if(btn) {
+                      btn.style.backgroundColor = '#a855f7';
+                      btn.style.boxShadow = '0 0 20px rgba(168, 85, 247, 0.8)';
+                    }
+                  }} 
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+                    e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,0,0,0.6)';
+                    const img = e.currentTarget.querySelector('img');
+                    if(img) img.style.transform = 'scale(1)';
+                    const btn = e.currentTarget.querySelector('button');
+                    if(btn) {
+                      btn.style.backgroundColor = '#9333ea';
+                      btn.style.boxShadow = '0 0 12px rgba(147,51,234,0.5)';
+                    }
+                  }}
+                >
                   <div style={{ height: '160px', overflow: 'hidden', position: 'relative' }}>
-                    <img src={game.image} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={game.image} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s ease' }} />
                     <span style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(15, 23, 42, 0.85)', color: '#c084fc', border: '1px solid #c084fc', padding: '3px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold' }}>{game.badge}</span>
                   </div>
                   <div style={{ padding: '16px' }}>
                     <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0' }}>{game.name}</h3>
                     <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 12px 0' }}>{game.publisher}</p>
-                    <button style={{ width: '100%', backgroundColor: '#9333ea', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 12px rgba(147,51,234,0.5)' }}>คลิกเพื่อเติมเงิน →</button>
+                    <button style={{ width: '100%', backgroundColor: '#9333ea', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 0 12px rgba(147,51,234,0.5)' }}>คลิกเพื่อเติมเงิน →</button>
                   </div>
                 </div>
               ))}
@@ -893,7 +1012,14 @@ export default function GameTopupApp() {
         {/* GAME SELECTION DETAILS PAGE */}
         {activeTab === 'shop' && selectedGame && (
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', border: '1px solid #374151', color: '#c084fc', padding: '8px 16px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', marginBottom: '20px' }}>← กลับไปเลือกเกมอื่น</button>
+            <button 
+              onClick={() => setSelectedGame(null)} 
+              style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', border: '1px solid #374151', color: '#c084fc', padding: '8px 16px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', marginBottom: '20px', transition: 'all 0.3s ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#9333ea'; e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.transform = 'translateX(-4px)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(17, 24, 39, 0.9)'; e.currentTarget.style.color = '#c084fc'; e.currentTarget.style.transform = 'translateX(0)'; }}
+            >
+              ← กลับไปเลือกเกมอื่น
+            </button>
             
             <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', border: '1.5px solid #a855f7', borderRadius: '20px', padding: '20px', display: 'flex', gap: '20px', marginBottom: '25px', alignItems: 'center', boxShadow: '0 0 20px rgba(168,85,247,0.3)' }}>
               <img src={selectedGame.image} alt={selectedGame.name} style={{ width: '80px', height: '80px', borderRadius: '14px', objectFit: 'cover' }} />
@@ -915,7 +1041,17 @@ export default function GameTopupApp() {
                   <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>2. เลือกแพ็กเกจเติมเกม</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                     {selectedGame.packages.map((pkg) => (
-                      <div key={pkg.id} onClick={() => setSelectedPackage(pkg)} style={{ backgroundColor: selectedPackage?.id === pkg.id ? 'rgba(147, 51, 234, 0.3)' : '#030712', border: selectedPackage?.id === pkg.id ? '2px solid #9333ea' : '1px solid #1f2937', borderRadius: '12px', padding: '12px', cursor: 'pointer' }}>
+                      <div 
+                        key={pkg.id} 
+                        onClick={() => setSelectedPackage(pkg)} 
+                        style={{ 
+                          backgroundColor: selectedPackage?.id === pkg.id ? 'rgba(147, 51, 234, 0.3)' : '#030712', 
+                          border: selectedPackage?.id === pkg.id ? '2px solid #9333ea' : '1px solid #1f2937', 
+                          borderRadius: '12px', padding: '12px', cursor: 'pointer', transition: 'all 0.3s ease' 
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = '#c084fc'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = selectedPackage?.id === pkg.id ? '#9333ea' : '#1f2937'; }}
+                      >
                         <div style={{ fontSize: '11px', color: '#c084fc', fontWeight: 'bold' }}>{pkg.bonus}</div>
                         <div style={{ fontSize: '14px', fontWeight: '900', color: '#ffffff', margin: '4px 0 6px 0' }}>{pkg.name}</div>
                         <div style={{ fontSize: '13px', color: '#34d399', fontWeight: 'bold' }}>฿{pkg.price}</div>
@@ -928,14 +1064,23 @@ export default function GameTopupApp() {
                   <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '12px' }}>3. เลือกช่องทางชำระเงิน</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
                     {paymentMethods.map((pay) => (
-                      <div key={pay.id} onClick={() => setSelectedPayment(pay)} style={{ backgroundColor: selectedPayment?.id === pay.id ? 'rgba(147, 51, 234, 0.3)' : '#030712', border: selectedPayment?.id === pay.id ? '2px solid #9333ea' : '1px solid #1f2937', borderRadius: '12px', padding: '12px', cursor: 'pointer' }}>
+                      <div 
+                        key={pay.id} 
+                        onClick={() => setSelectedPayment(pay)} 
+                        style={{ 
+                          backgroundColor: selectedPayment?.id === pay.id ? 'rgba(147, 51, 234, 0.3)' : '#030712', 
+                          border: selectedPayment?.id === pay.id ? '2px solid #9333ea' : '1px solid #1f2937', 
+                          borderRadius: '12px', padding: '12px', cursor: 'pointer', transition: 'all 0.3s ease' 
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.borderColor = '#c084fc'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = selectedPayment?.id === pay.id ? '#9333ea' : '#1f2937'; }}
+                      >
                         <div style={{ fontSize: '13px', fontWeight: 'bold', color: pay.id === 'wallet' ? '#34d399' : '#ffffff' }}>{pay.name}</div>
                         <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>{pay.desc}</div>
                       </div>
                     ))}
                   </div>
 
-                  {/* ฟอร์มข้อมูล TrueMoney Wallet (เบอร์ 10 หลัก) */}
                   {selectedPayment?.id === 'true' && (
                     <div style={{ marginTop: '15px', backgroundColor: '#030712', padding: '15px', borderRadius: '12px', border: '1px solid #374151' }}>
                       <h4 style={{ fontSize: '13px', color: '#34d399', margin: '0 0 10px 0' }}>📱 ข้อมูล TrueMoney Wallet</h4>
@@ -943,7 +1088,6 @@ export default function GameTopupApp() {
                     </div>
                   )}
 
-                  {/* ฟอร์มข้อมูล บัตรเติมเงินทรูมันนี่ (14 หลัก) */}
                   {selectedPayment?.id === 'truemoneycard' && (
                     <div style={{ marginTop: '15px', backgroundColor: '#030712', padding: '15px', borderRadius: '12px', border: '1px solid #374151' }}>
                       <h4 style={{ fontSize: '13px', color: '#f59e0b', margin: '0 0 10px 0' }}>🎟️ ข้อมูลบัตรเติมเงินทรูมันนี่</h4>
@@ -951,7 +1095,6 @@ export default function GameTopupApp() {
                     </div>
                   )}
 
-                  {/* ฟอร์มข้อมูล บัตรเครดิต */}
                   {selectedPayment?.id === 'credit' && (
                     <div style={{ marginTop: '15px', backgroundColor: '#030712', padding: '15px', borderRadius: '12px', border: '1px solid #374151' }}>
                       <h4 style={{ fontSize: '13px', color: '#38bdf8', margin: '0 0 10px 0' }}>💳 ข้อมูลบัตรเครดิต / เดบิต</h4>
@@ -981,13 +1124,40 @@ export default function GameTopupApp() {
                   <span style={{ fontSize: '22px', color: '#34d399', fontWeight: 'bold' }}>฿{selectedPackage ? selectedPackage.price : '0'}</span>
                 </div>
                 
-                <button disabled={!playerId || !selectedPackage || !selectedPayment} onClick={() => { setCheckoutStep(1); setShowCheckoutModal(true); }} style={{ width: '100%', backgroundColor: (!playerId || !selectedPackage || !selectedPayment) ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', cursor: (!playerId || !selectedPackage || !selectedPayment) ? 'not-allowed' : 'pointer', boxShadow: (!playerId || !selectedPackage || !selectedPayment) ? 'none' : '0 0 15px rgba(147,51,234,0.5)' }}>ยืนยันการชำระเงิน</button>
+                <button 
+                  disabled={!playerId || !selectedPackage || !selectedPayment} 
+                  onClick={() => { setCheckoutStep(1); setShowCheckoutModal(true); }} 
+                  style={{ 
+                    width: '100%', 
+                    backgroundColor: (!playerId || !selectedPackage || !selectedPayment) ? '#374151' : '#9333ea', 
+                    color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', 
+                    cursor: (!playerId || !selectedPackage || !selectedPayment) ? 'not-allowed' : 'pointer', 
+                    boxShadow: (!playerId || !selectedPackage || !selectedPayment) ? 'none' : '0 0 15px rgba(147,51,234,0.5)',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (playerId && selectedPackage && selectedPayment) {
+                      e.currentTarget.style.backgroundColor = '#a855f7';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 0 25px rgba(168,85,247,0.8)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (playerId && selectedPackage && selectedPayment) {
+                      e.currentTarget.style.backgroundColor = '#9333ea';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 0 15px rgba(147,51,234,0.5)';
+                    }
+                  }}
+                >
+                  ยืนยันการชำระเงิน
+                </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* TRACK STATUS & HISTORY TAB (หน้าเช็คสถานะที่ผูกกับชื่อผู้ใช้ + ค้นหาชื่อเกมได้ เช่น VALORANT) */}
+        {/* TRACK STATUS TAB */}
         {activeTab === 'track' && (
           <div style={{ maxWidth: '800px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 0 30px rgba(0,0,0,0.6)' }}>
             <div style={{ borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '20px' }}>
@@ -995,12 +1165,12 @@ export default function GameTopupApp() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#c084fc' }}>
                 <span>👤 บัญชีผู้ใช้งาน:</span>
                 <b style={{ color: '#ffffff', backgroundColor: 'rgba(147,51,234,0.3)', padding: '2px 10px', borderRadius: '6px', border: '1px solid #9333ea' }}>{user.username}</b>
-                {isUserAdmin && <span style={{ color: '#34d399', fontSize: '11px' }}>(มุมมองแอดมิน: เห็นออร์เดอร์ทั้งหมด)</span>}
+                {isUserAdmin && <span style={{ color: '#34d399', fontSize: '11px' }}>(มุมมองแอดมิน: เห็นออร์เดอร์ทุกคน)</span>}
               </div>
             </div>
 
-            {/* ช่องค้นหา และ เลือกวันที่ */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+            {/* ช่องค้นหา และ เลือกวันที่จากปฏิทิน */}
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <input 
                 type="text" 
                 placeholder="🔍 ค้นหาชื่อเกม (เช่น VALORANT), เลขออร์เดอร์..." 
@@ -1010,15 +1180,20 @@ export default function GameTopupApp() {
               />
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '0 12px' }}>
-                <span style={{ fontSize: '12px', color: '#9ca3af' }}>📅 เลือกวันที่:</span>
-                <input type="date" value={selectedDateFilter} onChange={(e) => setSelectedDateFilter(e.target.value)} style={{ backgroundColor: 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', outline: 'none', padding: '10px 0', cursor: 'pointer' }} />
+                <span style={{ fontSize: '13px', color: '#9ca3af' }}>📅 เลือกปฏิทิน:</span>
+                <input 
+                  type="date" 
+                  value={selectedDateFilter} 
+                  onChange={(e) => setSelectedDateFilter(e.target.value)} 
+                  style={{ backgroundColor: 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', outline: 'none', padding: '10px 0', cursor: 'pointer', colorScheme: 'dark' }} 
+                />
                 {selectedDateFilter && (
                   <button onClick={() => setSelectedDateFilter('')} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}>ล้าง</button>
                 )}
               </div>
             </div>
 
-            {/* สรุปยอดรวมที่ค้นหา */}
+            {/* สรุปยอดรวมเงินที่เติมไปทั้งหมด */}
             <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '12px', padding: '12px 18px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '13px', color: '#9ca3af' }}>
                 ผลการค้นหา: <b style={{ color: '#ffffff' }}>{searchedOrders.length}</b> รายการ {trackQuery && `(ค้นหา: "${trackQuery}")`}
@@ -1036,10 +1211,10 @@ export default function GameTopupApp() {
                       <div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
                           <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
-                          <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 วันที่เติม: {ord.time}</span>
+                          <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 {ord.time}</span>
                         </div>
                         <div style={{ fontSize: '16px', fontWeight: 'bold', marginTop: '4px', color: '#ffffff' }}>🎮 {ord.game} <span style={{ color: '#c084fc', fontSize: '13px' }}>({ord.package})</span></div>
-                        <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>ผูกบัญชีผู้ใช้: <span style={{ color: '#38bdf8' }}>{ord.player}</span></div>
+                        <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>ผู้ทำรายการ: <span style={{ color: '#38bdf8' }}>{ord.player}</span></div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>฿{ord.price.toLocaleString()}</div>
@@ -1050,7 +1225,7 @@ export default function GameTopupApp() {
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af', backgroundColor: '#030712', borderRadius: '14px', border: '1px dashed #374151' }}>
-                  ไม่พบรายการออร์เดอร์ที่ตรงกับคำค้นหาหรือวันที่เลือก
+                  ไม่พบรายการออร์เดอร์ที่ตรงกับคำค้นหาหรือวันที่เลือกในปฏิทิน
                 </div>
               )}
             </div>
@@ -1059,7 +1234,7 @@ export default function GameTopupApp() {
 
         {/* ADMIN TAB */}
         {activeTab === 'admin' && isUserAdmin && (
-          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+          <div style={{ maxWidth: '950px', margin: '0 auto' }}>
             {!isAdminLoggedIn ? (
               <div style={{ maxWidth: '400px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', textAlign: 'center', border: '1.5px solid #9333ea', boxShadow: '0 0 25px rgba(147,51,234,0.4)' }}>
                 <h2>ระบบหลังบ้าน Admin</h2>
@@ -1073,29 +1248,44 @@ export default function GameTopupApp() {
             ) : (
               <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #9333ea', boxShadow: '0 0 25px rgba(147,51,234,0.3)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 จัดการคำสั่งซื้อทั้งหมด (Admin Panel)</h2>
+                  <div>
+                    <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 ศูนย์จัดการรายการทำรายการของลูกค้าทุกคน (Real-time Live)</h2>
+                    <p style={{ fontSize: '12px', color: '#34d399', margin: '4px 0 0 0' }}>อนุมัติการเติมเกม หรือ อนุมัติเติมเครดิตร้าน ได้จากที่นี่ทันที</p>
+                  </div>
                   <button onClick={() => setIsAdminLoggedIn(false)} style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>ล็อกอิน PIN ใหม่</button>
                 </div>
 
-                <input type="text" placeholder="ค้นหาเลขออร์เดอร์ หรือชื่อผู้ซื้อ..." value={adminSearchQuery} onChange={(e) => setAdminSearchQuery(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', marginBottom: '20px', outline: 'none', boxSizing: 'border-box' }} />
+                <input type="text" placeholder="🔍 ค้นหาเลขออร์เดอร์, ชื่อผู้ซื้อ, หรือรายการเกม..." value={adminSearchQuery} onChange={(e) => setAdminSearchQuery(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', marginBottom: '20px', outline: 'none', boxSizing: 'border-box' }} />
                 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   {filteredOrders.map((ord, idx) => (
-                    <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={idx} style={{ backgroundColor: '#030712', border: ord.type === 'wallet' ? '1px solid #38bdf8' : '1px solid #374151', borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-                          <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px' }}>{ord.id}</span>
-                          <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 {ord.time}</span>
-                          <b style={{ fontSize: '15px' }}>{ord.game} ({ord.package})</b>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
+                          <span style={{ backgroundColor: ord.type === 'wallet' ? '#0284c7' : '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
+                          <span style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#38bdf8', padding: '2px 8px', borderRadius: '6px', fontSize: '11px' }}>{ord.type === 'wallet' ? '💳 เติมเครดิตร้าน' : '🎮 เติมเกม'}</span>
+                          <span style={{ fontSize: '12px', color: '#9ca3af' }}>📅 {ord.time}</span>
                         </div>
-                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>ผู้ซื้อ: <span style={{ color: '#c084fc' }}>{ord.player}</span> | ราคา: <span style={{ color: '#34d399' }}>฿{ord.price}</span></div>
-                        <div style={{ fontSize: '12px', marginTop: '4px', color: ord.status.includes('สำเร็จ') ? '#34d399' : '#f59e0b' }}>สถานะ: {ord.status}</div>
+                        <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>
+                          {ord.game} <span style={{ color: '#c084fc', fontSize: '14px' }}>({ord.package})</span>
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                          ชื่อลูกค้าผู้ทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> | ยอดเงิน: <b style={{ color: '#34d399' }}>฿{ord.price.toLocaleString()}</b>
+                        </div>
+                        <div style={{ fontSize: '12px', marginTop: '4px', color: ord.status.includes('สำเร็จ') ? '#34d399' : '#f59e0b', fontWeight: 'bold' }}>
+                          สถานะปัจจุบัน: {ord.status}
+                        </div>
                       </div>
 
+                      {/* ปุ่มกดอนุมัติสำหรับแอดมิน */}
                       {ord.status.includes('รอตรวจสอบ') && (
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button onClick={() => handleAdminApproveOrder(ord.id)} style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>อนุมัติ (เงินเข้าทันที)</button>
-                          <button onClick={() => handleAdminRejectOrder(ord.id)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>ยกเลิก</button>
+                        <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+                          <button onClick={() => handleAdminApproveOrder(ord.id)} style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', boxShadow: '0 0 10px rgba(16,185,129,0.4)' }}>
+                            {ord.type === 'wallet' ? '✅ อนุมัติเติมเครดิตร้าน (เงินเข้าทันที)' : '✅ อนุมัติการเติมเกม'}
+                          </button>
+                          <button onClick={() => handleAdminRejectOrder(ord.id)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}>
+                            ❌ ยกเลิกทำรายการ
+                          </button>
                         </div>
                       )}
                     </div>
@@ -1227,8 +1417,8 @@ export default function GameTopupApp() {
                 
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginBottom: '15px' }}>
                   <input type={showCheckoutPassword ? 'text' : 'password'} placeholder="กรอกรหัสผ่านของคุณ..." value={checkoutPassword} onChange={(e) => setCheckoutPassword(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px 42px 12px 12px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
-                  <button type="button" onClick={() => setShowCheckoutPassword(!showCheckoutPassword)} style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', color: '#c084fc', cursor: 'pointer', fontSize: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {showCheckoutPassword ? '👁️‍🗨️' : '👁️'}
+                  <button type="button" onClick={() => setShowCheckoutPassword(!showCheckoutPassword)} style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}>
+                    <EyeIcon show={showCheckoutPassword} />
                   </button>
                 </div>
 
