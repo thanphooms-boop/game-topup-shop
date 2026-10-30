@@ -37,7 +37,7 @@ export default function GameTopupApp() {
   const [authSuccessMsg, setAuthSuccessMsg] = useState('');
 
   const [activeTab, setActiveTab] = useState('shop');
-  const [gameCategory, setGameCategory] = useState('all'); // all, pc, mobile
+  const [gameCategory, setGameCategory] = useState('all');
   const [selectedGame, setSelectedGame] = useState(null);
   const [playerId, setPlayerId] = useState('');
   const [selectedPackage, setSelectedPackage] = useState(null);
@@ -62,13 +62,11 @@ export default function GameTopupApp() {
   const [pendingWalletAmount, setPendingWalletAmount] = useState(0);
   const [pendingWalletOrderId, setPendingWalletOrderId] = useState('');
 
-  // เพิ่ม State สำหรับค้นหาเลขออร์เดอร์ของลูกค้า
   const [customerOrderSearch, setCustomerOrderSearch] = useState('');
   const [exactSearchQuery, setExactSearchQuery] = useState('');
   const [selectedGameFilter, setSelectedGameFilter] = useState('all');
   const [selectedDateFilter, setSelectedDateFilter] = useState('');
 
-  // คำนวณกำไรโดยเฉลี่ย 15% จากยอดขายสำหรับแอดมิน
   const [orders, setOrders] = useState(() => {
     const savedOrders = localStorage.getItem('cyber_topup_orders');
     if (savedOrders) {
@@ -503,7 +501,7 @@ export default function GameTopupApp() {
       game: `เติมเครดิตร้าน (${walletPaymentMethod.toUpperCase()})`,
       package: `+฿${amt.toLocaleString()}`,
       price: amt,
-      profit: 0, // เติมเครดิตไม่มีกำไร
+      profit: 0,
       player: user ? user.username : '11',
       status: 'รอตรวจสอบ [สะดุดใน 10s]',
       type: 'wallet',
@@ -660,7 +658,6 @@ export default function GameTopupApp() {
 
   const isUserAdmin = user && (user.username === 'thanphooms@gmail.com' || user.email === 'thanphooms@gmail.com');
 
-  // กรองสำหรับหน้าลูกค้า
   const searchedOrders = orders.filter(o => {
     let matchUser = false;
     if (!isUserAdmin) {
@@ -681,7 +678,6 @@ export default function GameTopupApp() {
 
   const totalSpentInSearch = searchedOrders.reduce((sum, ord) => sum + ord.price, 0);
 
-  // คำนวณยอดขายรวมและกำไรรวมสำหรับแอดมิน
   const totalAdminSales = orders.reduce((sum, ord) => sum + (ord.type === 'game' ? ord.price : 0), 0);
   const totalAdminProfits = orders.reduce((sum, ord) => sum + (ord.profit || 0), 0);
 
@@ -701,14 +697,18 @@ export default function GameTopupApp() {
           boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 35px rgba(147,51,234,0.4)', textAlign: 'center'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+            {/* ใช้โลโก้โล่สายฟ้าใหม่ที่หน้า Login ด้วย */}
             <div style={{ 
               position: 'relative', width: '80px', height: '80px', borderRadius: '22px', 
-              background: 'linear-gradient(135deg, #a855f7 0%, #38bdf8 50%, #34d399 100%)', 
-              border: '2px solid #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-              fontSize: '38px', boxShadow: '0 0 35px rgba(168,85,247,0.9), 0 0 20px rgba(56,189,248,0.7)', 
-              marginBottom: '12px', transform: 'rotate(-5deg)'
+              background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #1d4ed8 100%)', 
+              border: '2px solid #c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+              boxShadow: '0 0 35px rgba(168,85,247,0.9), 0 0 20px rgba(56,189,248,0.7)', 
+              marginBottom: '12px'
             }}>
-              ⚡
+              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#38bdf8" stroke="#ffffff" strokeWidth="1"></polygon>
+              </svg>
             </div>
             <div style={{ fontSize: '24px', fontWeight: '900', color: '#ffffff', letterSpacing: '3px', textShadow: '0 0 15px rgba(168,85,247,0.8)' }}>CYBER TOPUP</div>
             <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#38bdf8', letterSpacing: '2px', marginTop: '2px' }}>FAST & SECURE GAMING</div>
@@ -823,15 +823,20 @@ export default function GameTopupApp() {
       {/* NAVBAR */}
       <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '12px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
+          
+          {/* เปลี่ยนโลโก้ร้านเป็นโล่สายฟ้าตามภาพที่คุณส่งมา */}
           <div style={{ 
             width: '45px', height: '45px', borderRadius: '14px', 
-            background: 'linear-gradient(135deg, #c084fc 0%, #3b82f6 50%, #10b981 100%)', 
-            border: '2px solid #ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-            fontSize: '24px', boxShadow: '0 0 25px rgba(168,85,247,0.9), 0 0 10px rgba(56,189,248,0.7)',
-            transform: 'rotate(-3deg)'
+            background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #1d4ed8 100%)', 
+            border: '2px solid #c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+            boxShadow: '0 0 25px rgba(168,85,247,0.9), 0 0 10px rgba(56,189,248,0.7)'
           }}>
-            ⚡
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#38bdf8" stroke="#ffffff" strokeWidth="1"></polygon>
+            </svg>
           </div>
+
           <div>
             <div style={{ fontSize: '19px', fontWeight: '900', color: '#ffffff', lineHeight: '1', textShadow: '0 0 12px rgba(168,85,247,0.8), 0 0 5px rgba(56,189,248,0.5)' }}>CYBER TOPUP</div>
             <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#38bdf8', letterSpacing: '1.5px' }}>FAST & SECURE GAMING</div>
@@ -1097,7 +1102,7 @@ export default function GameTopupApp() {
           </div>
         )}
 
-        {/* TRACK STATUS TAB (เพิ่มช่องค้นหาออร์เดอร์ของลูกค้า) */}
+        {/* TRACK STATUS TAB */}
         {activeTab === 'track' && (
           <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 0 35px rgba(0,0,0,0.7)' }}>
             <div style={{ borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '20px' }}>
@@ -1108,7 +1113,6 @@ export default function GameTopupApp() {
               </div>
             </div>
 
-            {/* ช่องกรอกค้นหา: ช่องแรกเป็นชื่อผู้ใช้ (Disabled) + ช่องใหม่เป็นเลขออร์เดอร์ */}
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <input 
                 type="text" 
@@ -1199,7 +1203,7 @@ export default function GameTopupApp() {
           </div>
         )}
 
-        {/* ADMIN TAB (แสดงรายละเอียดแพ็กเกจและกำไรสุทธิ) */}
+        {/* ADMIN TAB */}
         {activeTab === 'admin' && isUserAdmin && (
           <div style={{ maxWidth: '950px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '25px' }}>
             {!isAdminLoggedIn ? (
@@ -1215,7 +1219,6 @@ export default function GameTopupApp() {
               </div>
             ) : (
               <>
-                {/* สรุปยอดขายและกำไรรวม */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' }}>
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '20px', textAlign: 'center' }}>
                     <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>💵 ยอดขายรวมทั้งหมด (Sales)</div>
