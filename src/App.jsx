@@ -50,6 +50,19 @@ export default function GameTopupApp() {
   const [eventGiftCode, setEventGiftCode] = useState('');
   const [eventMsg, setEventMsg] = useState({ text: '', type: '' });
 
+  // รายชื่อบัญชีผู้ใช้ที่เคยใช้โค้ดไปแล้ว (แชร์กันทุกโค้ด: 1 ไอดีใช้ได้แค่ 1 ครั้งรวมทั้งหมดจนกว่าจะรีเซ็ต)
+  const [globalRedeemedUsers, setGlobalRedeemedUsers] = useState(() => {
+    const saved = localStorage.getItem('cyber_global_redeemed');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return ['22']; // ตัวอย่างไอดี 22 เคยใช้ไปแล้ว
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cyber_global_redeemed', JSON.stringify(globalRedeemedUsers));
+  }, [globalRedeemedUsers]);
+
   // รายการเกมและแพ็กเกจในร้าน
   const [gamesData] = useState([
     {
@@ -205,7 +218,7 @@ export default function GameTopupApp() {
     }
     return [
       { id: '1', code: 'GIFT2026', game: 'VALORANT', reward: '125 VP', maxUses: 50, usedCount: 2 },
-      { id: '2', code: 'FREE500', game: 'Avatar Star', reward: '1,000 Diamonds', maxUses: 20, usedCount: 5 }
+      { id: '2', code: 'FREE500', game: 'Avatar Star', reward: '1,000 Diamonds', maxUses: 20, usedCount: 1 }
     ];
   });
 
@@ -528,6 +541,15 @@ export default function GameTopupApp() {
     setGiftCodes(giftCodes.filter(c => c.id !== id));
   };
 
+  // ฟังก์ชันรีเซ็ตสิทธิ์โค้ดทั้งหมด (ล้างรายชื่อไอดีที่เคยกรอก เพื่อให้ทุกคนกรอกใหม่ได้อีกครั้ง)
+  const handleResetAllRedeemRights = () => {
+    if (window.confirm('คุณต้องการรีเซ็ตสิทธิ์โค้ดของขวัญทั้งหมดใช่หรือไม่? (ทุกบัญชีจะสามารถกลับมากรอกโค้ดได้ใหม่อีกครั้งคนละ 1 ครั้ง)')) {
+      setGlobalRedeemedUsers([]);
+      alert('🔄 รีเซ็ตสิทธิ์สำเร็จ! ทุกบัญชีสามารถกลับมากรอกโค้ดได้ใหม่อีกครั้งแล้ว');
+    }
+  };
+
+  // ตรวจสอบและจำกัด 1 ไอดีกรอกโค้ดได้แค่ 1 ครั้งรวมทั้งหมด (ถ้ากรอกแล้ว จะกรอกโค้ดอื่นหรือซ้ำไม่ได้อีกเลยจนกว่าแอดมินจะกดรีเซ็ต)
   const handleRedeemEventCode = (e) => {
     e.preventDefault();
     setEventMsg({ text: '', type: '' });
@@ -537,6 +559,7 @@ export default function GameTopupApp() {
       return;
     }
 
+    const currentUsername = user ? user.username : '11';
     const targetCode = eventGiftCode.trim().toUpperCase();
     const foundCode = giftCodes.find(c => c.code === targetCode && c.game === eventGame);
 
@@ -545,10 +568,19 @@ export default function GameTopupApp() {
       return;
     }
 
+    // ตรวจสอบว่าบัญชีนี้เคยใช้สิทธิ์โค้ดไปแล้วหรือยัง (เช็คจาก globalRedeemedUsers)
+    if (globalRedeemedUsers.includes(currentUsername)) {
+      setEventMsg({ text: `❌ บัญชีของคุณ (${currentUsername}) เคยใช้สิทธิ์กรอกโค้ดไปแล้ว (จำกัด 1 บัญชีต่อ 1 สิทธิ์ จนกว่าแอดมินจะรีเซ็ตกิจกรรม)`, type: 'error' });
+      return;
+    }
+
     if (foundCode.usedCount >= foundCode.maxUses) {
       setEventMsg({ text: `โค้ด "${targetCode}" ถูกใช้งานครบจำนวนสิทธิ์เต็มแล้ว`, type: 'error' });
       return;
     }
+
+    // บันทึกสิทธิ์ว่าบัญชีนี้ใช้ไปแล้ว
+    setGlobalRedeemedUsers([...globalRedeemedUsers, currentUsername]);
 
     setGiftCodes(giftCodes.map(c => c.id === foundCode.id ? { ...c, usedCount: c.usedCount + 1 } : c));
 
@@ -566,7 +598,7 @@ export default function GameTopupApp() {
       package: `โค้ด: ${foundCode.code} (${foundCode.reward})`,
       price: 0,
       profit: 0,
-      player: user ? user.username : '11',
+      player: currentUsername,
       status: `รอแอดมินตรวจ [ID: ${eventPlayerId}]`,
       type: 'event',
       time: thaiTime,
@@ -1158,7 +1190,7 @@ export default function GameTopupApp() {
               ))}
             </div>
 
-            {/* ช่องกรอกโค้ดของขวัญ / โค้ดกิจกรรมจากแอดมิน (วางไว้ล่างสุด) */}
+            {/* ช่องกรอกโค้ดของขวัญ / โค้ดกิจกรรมจากแอดมิน */}
             <div style={{ 
               backgroundColor: 'rgba(17, 24, 39, 0.95)', 
               border: '1.5px solid rgba(56, 189, 248, 0.6)', 
@@ -1170,7 +1202,7 @@ export default function GameTopupApp() {
                 <span style={{ fontSize: '24px' }}>🎁</span>
                 <div>
                   <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>กรอกโค้ดของขวัญ / โค้ดกิจกรรมจากแอดมิน</h3>
-                  <p style={{ fontSize: '12px', color: '#9ca3af', margin: '2px 0 0 0' }}>เลือกเกม ระบุไอดี และใส่โค้ดกิจกรรมเพื่อรับของรางวัลฟรี</p>
+                  <p style={{ fontSize: '12px', color: '#9ca3af', margin: '2px 0 0 0' }}>จำกัดสิทธิ์ 1 บัญชีผู้ใช้ กรอกโค้ดรับรางวัลได้เพียง 1 ครั้งเท่านั้น</p>
                 </div>
               </div>
 
@@ -1436,7 +1468,7 @@ export default function GameTopupApp() {
               </div>
             ) : (
               <>
-                {/* 1. ย้ายเปลี่ยน PIN มาไว้บนสุด พร้อมเอฟเฟคปุ่ม */}
+                {/* 1. ส่วนเปลี่ยน PIN */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🔑 เปลี่ยนรหัส PIN 6 หลัก (แอดมิน)</h3>
@@ -1474,7 +1506,7 @@ export default function GameTopupApp() {
                   </form>
                 </div>
 
-                {/* 2. สรุปยอดขาย กำไร และภาษี (เพิ่มการเสียภาษีและขยับมาไว้บนหัวข้อรายการ) */}
+                {/* 2. สรุปยอดขาย กำไร และภาษี */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '20px', textAlign: 'center', transition: 'all 0.3s ease' }}
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(168,85,247,0.3)'; }}
@@ -1499,7 +1531,7 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                {/* 3. รายการคำสั่งซื้อหลังบ้าน พร้อมเอฟเฟคปุ่มอนุมัติ/ยกเลิก */}
+                {/* 3. รายการคำสั่งซื้อหลังบ้าน */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #9333ea' }}>
                   <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 15px 0' }}>📊 รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ</h2>
 
@@ -1553,11 +1585,23 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                {/* 4. ส่วนสร้างโค้ดกิจกรรม (วางไว้ล่างสุดของหลังบ้าน พร้อมเอฟเฟคปุ่มและปุ่มลบ) */}
+                {/* 4. ส่วนสร้างโค้ดกิจกรรม + ปุ่มรีเซ็ตสิทธิ์ทุกบัญชีสำหรับกิจกรรมประจำปี */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)' }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 15px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    🎁 สร้างและจัดการโค้ดของขวัญ / โค้ดกิจกรรม
-                  </h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      🎁 สร้างและจัดการโค้ดของขวัญ / โค้ดกิจกรรม
+                    </h3>
+                    
+                    {/* ปุ่มรีเซ็ตสิทธิ์โค้ดทุกบัญชีสำหรับช่วงกิจกรรมประจำปี */}
+                    <button 
+                      onClick={handleResetAllRedeemRights} 
+                      style={{ backgroundColor: '#f59e0b', color: '#000000', border: 'none', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', boxShadow: '0 0 15px rgba(245,158,11,0.5)', transition: 'all 0.25s ease' }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fbbf24'; e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(245,158,11,0.8)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f59e0b'; e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(245,158,11,0.5)'; }}
+                    >
+                      🔄 รีเซ็ตสิทธิ์โค้ดทุกบัญชี (กิจกรรมประจำปี)
+                    </button>
+                  </div>
 
                   {adminCodeMsg.text && (
                     <div style={{ backgroundColor: adminCodeMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: adminCodeMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px' }}>
