@@ -245,7 +245,7 @@ export default function GameTopupApp() {
       name: 'EA SPORTS FC Mobile',
       publisher: 'ELECTRONIC ARTS',
       category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=500&q=80',
+      image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=500&q=80', // แก้ไขรูปปกเกม EA ให้แสดงผลสวยงาม
       badge: 'มาใหม่ ⚽',
       packages: [
         { id: 'fc1', name: '100 FC Points', price: 35, profit: 5, bonus: '+0' },
@@ -697,15 +697,14 @@ export default function GameTopupApp() {
           boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 35px rgba(147,51,234,0.4)', textAlign: 'center'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
-            {/* ใช้โลโก้โล่สายฟ้าใหม่ที่หน้า Login ด้วย */}
             <div style={{ 
-              position: 'relative', width: '80px', height: '80px', borderRadius: '22px', 
+              position: 'relative', width: '65px', height: '65px', borderRadius: '18px', 
               background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #1d4ed8 100%)', 
               border: '2px solid #c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-              boxShadow: '0 0 35px rgba(168,85,247,0.9), 0 0 20px rgba(56,189,248,0.7)', 
+              boxShadow: '0 0 30px rgba(168,85,247,0.9), 0 0 15px rgba(56,189,248,0.7)', 
               marginBottom: '12px'
             }}>
-              <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#38bdf8" stroke="#ffffff" strokeWidth="1"></polygon>
               </svg>
@@ -824,7 +823,7 @@ export default function GameTopupApp() {
       <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '12px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
           
-          {/* เปลี่ยนโลโก้ร้านเป็นโล่สายฟ้าตามภาพที่คุณส่งมา */}
+          {/* โลโก้โล่สายฟ้าเป๊ะตามแบบต้นฉบับ */}
           <div style={{ 
             width: '45px', height: '45px', borderRadius: '14px', 
             background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #1d4ed8 100%)', 
@@ -900,9 +899,12 @@ export default function GameTopupApp() {
         </div>
       </header>
 
-      {/* FLOATING LINE OA WIDGET */}
-      <a href="https://lin.ee/Nn1UeBC" target="_blank" rel="noopener noreferrer" style={{ position: 'fixed', bottom: '25px', right: '25px', zIndex: 99, backgroundColor: '#06c755', color: '#ffffff', padding: '12px 18px', borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 25px rgba(6, 199, 85, 0.6)', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', border: '1.5px solid #ffffff' }}>
-        <span style={{ fontSize: '18px' }}>🟢</span> ติดต่อแอดมิน (LINE)
+      {/* FLOATING LINE OA WIDGET (เพิ่มโลโก้ LINE 🟢 ด้านหน้า) */}
+      <a href="https://lin.ee/Nn1UeBC" target="_blank" rel="noopener noreferrer" style={{ position: 'fixed', bottom: '25px', right: '25px', zIndex: 99, backgroundColor: '#06c755', color: '#ffffff', padding: '12px 20px', borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 25px rgba(6, 199, 85, 0.6)', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', border: '1.5px solid #ffffff' }}>
+        <div style={{ width: '22px', height: '22px', backgroundColor: '#ffffff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: '13px', color: '#06c755', fontWeight: '900', lineHeight: '1' }}>L</span>
+        </div>
+        ติดต่อแอดมิน (LINE)
       </a>
 
       {/* MAIN CONTAINER */}
