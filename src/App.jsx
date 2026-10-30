@@ -50,95 +50,7 @@ export default function GameTopupApp() {
   const [eventGiftCode, setEventGiftCode] = useState('');
   const [eventMsg, setEventMsg] = useState({ text: '', type: '' });
 
-  // State สำหรับจัดการโค้ดกิจกรรมฝั่งแอดมิน
-  const [giftCodes, setGiftCodes] = useState(() => {
-    const savedCodes = localStorage.getItem('cyber_gift_codes');
-    if (savedCodes) {
-      try { return JSON.parse(savedCodes); } catch (e) {}
-    }
-    return [
-      { id: '1', code: 'GIFT2026', game: 'VALORANT', reward: '100 VP', maxUses: 50, usedCount: 2 },
-      { id: '2', code: 'FREE500', game: 'Avatar Star', reward: '500 Diamonds', maxUses: 20, usedCount: 5 }
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('cyber_gift_codes', JSON.stringify(giftCodes));
-  }, [giftCodes]);
-
-  const [newCodeName, setNewCodeName] = useState('');
-  const [newCodeGame, setNewCodeGame] = useState('VALORANT');
-  const [newCodeReward, setNewCodeReward] = useState('');
-  const [newCodeMaxUses, setNewCodeMaxUses] = useState(10);
-  const [adminCodeMsg, setAdminCodeMsg] = useState({ text: '', type: '' });
-
-  const [showTopupWalletModal, setShowTopupWalletModal] = useState(false);
-  const [topupAmount, setTopupAmount] = useState('');
-  const [walletPaymentMethod, setWalletPaymentMethod] = useState('qrcode');
-  const [walletStep, setWalletStep] = useState(1);
-  const [walletTimeLeft, setWalletTimeLeft] = useState(180);
-  const [isWalletQrExpired, setIsWalletQrExpired] = useState(false);
-
-  const [truemoneyPhone, setTruemoneyPhone] = useState('');
-  const [truemoneyCard14, setTruemoneyCard14] = useState('');
-  const [creditCardNum, setCreditCardNum] = useState('');
-  const [creditCardExp, setCreditCardExp] = useState('');
-  const [creditCardCvv, setCreditCardCvv] = useState('');
-
-  const [isWalletAutoRunning, setIsWalletAutoRunning] = useState(false);
-  const [walletAutoSeconds, setWalletAutoSeconds] = useState(10);
-  const [pendingWalletAmount, setPendingWalletAmount] = useState(0);
-  const [pendingWalletOrderId, setPendingWalletOrderId] = useState('');
-
-  const [customerOrderSearch, setCustomerOrderSearch] = useState('');
-  const [exactSearchQuery, setExactSearchQuery] = useState('');
-  const [selectedGameFilter, setSelectedGameFilter] = useState('all');
-  const [selectedDateFilter, setSelectedDateFilter] = useState('');
-
-  const [orders, setOrders] = useState(() => {
-    const savedOrders = localStorage.getItem('cyber_topup_orders');
-    if (savedOrders) {
-      try { return JSON.parse(savedOrders); } catch (e) {}
-    }
-    return [
-      { id: 'ORD-14969', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 11:01 น.', dateKey: '2026-10-30', timestamp: Date.now() - 50000 },
-      { id: 'ORD-98214', game: 'VALORANT', package: '700 VP', price: 529, profit: 80, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '28/10/2026 14:20 น.', dateKey: '2026-10-28', timestamp: Date.now() - 100000 },
-      { id: 'ORD-82250', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: 'thanphooms@gmail.com', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 10:08 น.', dateKey: '2026-10-30', timestamp: Date.now() - 200000 },
-      { id: 'ORD-14914', game: 'Avatar Star', package: '1,000 Diamonds', price: 300, profit: 45, player: '11', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '25/04/2026 22:44 น.', dateKey: '2026-04-25', timestamp: Date.now() - 300000 }
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('cyber_topup_orders', JSON.stringify(orders));
-  }, [orders]);
-
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [adminPin, setAdminPin] = useState(() => {
-    return localStorage.getItem('cyber_admin_pin') || '123456';
-  });
-  const [inputAdminPin, setInputAdminPin] = useState('');
-  const [adminPinError, setAdminPinError] = useState('');
-  const [adminSearchQuery, setAdminSearchQuery] = useState('');
-
-  const [oldPinInput, setOldPinInput] = useState('');
-  const [newPinInput, setNewPinInput] = useState('');
-  const [confirmNewPinInput, setConfirmNewPinInput] = useState('');
-  const [changePinMessage, setChangePinMessage] = useState({ text: '', type: '' });
-
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState(1);
-  const [checkoutPassword, setCheckoutPassword] = useState('');
-  const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
-  const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(180);
-  const [isQrExpired, setIsQrExpired] = useState(false);
-
-  const [isGameAutoRunning, setIsGameAutoRunning] = useState(false);
-  const [gameAutoSeconds, setGameAutoSeconds] = useState(10);
-  const [pendingGameOrderId, setPendingGameOrderId] = useState('');
-
+  // รายการเกมและแพ็กเกจในร้าน
   const [gamesData] = useState([
     {
       id: 'valorant',
@@ -284,6 +196,103 @@ export default function GameTopupApp() {
       ]
     }
   ]);
+
+  // State สำหรับจัดการโค้ดกิจกรรมฝั่งแอดมิน
+  const [giftCodes, setGiftCodes] = useState(() => {
+    const savedCodes = localStorage.getItem('cyber_gift_codes');
+    if (savedCodes) {
+      try { return JSON.parse(savedCodes); } catch (e) {}
+    }
+    return [
+      { id: '1', code: 'GIFT2026', game: 'VALORANT', reward: '125 VP', maxUses: 50, usedCount: 2 },
+      { id: '2', code: 'FREE500', game: 'Avatar Star', reward: '1,000 Diamonds', maxUses: 20, usedCount: 5 }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cyber_gift_codes', JSON.stringify(giftCodes));
+  }, [giftCodes]);
+
+  const [newCodeName, setNewCodeName] = useState('');
+  const [newCodeGame, setNewCodeGame] = useState('VALORANT');
+  const [newCodeReward, setNewCodeReward] = useState('125 VP');
+  const [newCodeMaxUses, setNewCodeMaxUses] = useState(10);
+  const [adminCodeMsg, setAdminCodeMsg] = useState({ text: '', type: '' });
+
+  // อัปเดตแพ็กเกจแรกให้อัตโนมัติเมื่อเลือกเปลี่ยนเกมฝั่งแอดมิน
+  useEffect(() => {
+    const found = gamesData.find(g => g.name === newCodeGame);
+    if (found && found.packages.length > 0) {
+      setNewCodeReward(found.packages[0].name);
+    }
+  }, [newCodeGame, gamesData]);
+
+  const [showTopupWalletModal, setShowTopupWalletModal] = useState(false);
+  const [topupAmount, setTopupAmount] = useState('');
+  const [walletPaymentMethod, setWalletPaymentMethod] = useState('qrcode');
+  const [walletStep, setWalletStep] = useState(1);
+  const [walletTimeLeft, setWalletTimeLeft] = useState(180);
+  const [isWalletQrExpired, setIsWalletQrExpired] = useState(false);
+
+  const [truemoneyPhone, setTruemoneyPhone] = useState('');
+  const [truemoneyCard14, setTruemoneyCard14] = useState('');
+  const [creditCardNum, setCreditCardNum] = useState('');
+  const [creditCardExp, setCreditCardExp] = useState('');
+  const [creditCardCvv, setCreditCardCvv] = useState('');
+
+  const [isWalletAutoRunning, setIsWalletAutoRunning] = useState(false);
+  const [walletAutoSeconds, setWalletAutoSeconds] = useState(10);
+  const [pendingWalletAmount, setPendingWalletAmount] = useState(0);
+  const [pendingWalletOrderId, setPendingWalletOrderId] = useState('');
+
+  const [customerOrderSearch, setCustomerOrderSearch] = useState('');
+  const [exactSearchQuery, setExactSearchQuery] = useState('');
+  const [selectedGameFilter, setSelectedGameFilter] = useState('all');
+  const [selectedDateFilter, setSelectedDateFilter] = useState('');
+
+  const [orders, setOrders] = useState(() => {
+    const savedOrders = localStorage.getItem('cyber_topup_orders');
+    if (savedOrders) {
+      try { return JSON.parse(savedOrders); } catch (e) {}
+    }
+    return [
+      { id: 'ORD-14969', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 11:01 น.', dateKey: '2026-10-30', timestamp: Date.now() - 50000 },
+      { id: 'ORD-98214', game: 'VALORANT', package: '700 VP', price: 529, profit: 80, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '28/10/2026 14:20 น.', dateKey: '2026-10-28', timestamp: Date.now() - 100000 },
+      { id: 'ORD-82250', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: 'thanphooms@gmail.com', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 10:08 น.', dateKey: '2026-10-30', timestamp: Date.now() - 200000 },
+      { id: 'ORD-14914', game: 'Avatar Star', package: '1,000 Diamonds', price: 300, profit: 45, player: '11', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '25/04/2026 22:44 น.', dateKey: '2026-04-25', timestamp: Date.now() - 300000 }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cyber_topup_orders', JSON.stringify(orders));
+  }, [orders]);
+
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [adminPin, setAdminPin] = useState(() => {
+    return localStorage.getItem('cyber_admin_pin') || '123456';
+  });
+  const [inputAdminPin, setInputAdminPin] = useState('');
+  const [adminPinError, setAdminPinError] = useState('');
+  const [adminSearchQuery, setAdminSearchQuery] = useState('');
+
+  const [oldPinInput, setOldPinInput] = useState('');
+  const [newPinInput, setNewPinInput] = useState('');
+  const [confirmNewPinInput, setConfirmNewPinInput] = useState('');
+  const [changePinMessage, setChangePinMessage] = useState({ text: '', type: '' });
+
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState(1);
+  const [checkoutPassword, setCheckoutPassword] = useState('');
+  const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
+  const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(180);
+  const [isQrExpired, setIsQrExpired] = useState(false);
+
+  const [isGameAutoRunning, setIsGameAutoRunning] = useState(false);
+  const [gameAutoSeconds, setGameAutoSeconds] = useState(10);
+  const [pendingGameOrderId, setPendingGameOrderId] = useState('');
 
   const paymentMethods = [
     { id: 'wallet', name: 'Cyber Wallet (เครดิตร้าน)', desc: 'หักจากยอดเงินในบัญชีทันที' },
@@ -486,13 +495,13 @@ export default function GameTopupApp() {
     setConfirmNewPinInput('');
   };
 
-  // แอดมินสร้างโค้ดกิจกรรมใหม่
+  // แอดมินสร้างโค้ดกิจกรรมใหม่ (เลือกแพ็กเกจของรางวัลจากดรอปดาวน์)
   const handleCreateGiftCode = (e) => {
     e.preventDefault();
     setAdminCodeMsg({ text: '', type: '' });
 
     if (!newCodeName.trim() || !newCodeReward.trim() || newCodeMaxUses <= 0) {
-      setAdminCodeMsg({ text: 'กรุณากรอกข้อมูลโค้ด ของรางวัล และจำนวนสิทธิ์ให้ครบถ้วน', type: 'error' });
+      setAdminCodeMsg({ text: 'กรุณากรอกข้อมูลโค้ดและจำนวนสิทธิ์ให้ถูกต้อง', type: 'error' });
       return;
     }
 
@@ -514,7 +523,6 @@ export default function GameTopupApp() {
     setGiftCodes([newCodeObj, ...giftCodes]);
     setAdminCodeMsg({ text: `สร้างโค้ด ${cleanCode} สำเร็จแล้ว!`, type: 'success' });
     setNewCodeName('');
-    setNewCodeReward('');
     setNewCodeMaxUses(10);
   };
 
@@ -799,6 +807,9 @@ export default function GameTopupApp() {
 
   const totalAdminSales = orders.reduce((sum, ord) => sum + (ord.type === 'game' ? ord.price : 0), 0);
   const totalAdminProfits = orders.reduce((sum, ord) => sum + (ord.profit || 0), 0);
+
+  // ดึงแพ็กเกจของเกมที่แอดมินเลือกอยู่
+  const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);
 
   if (!user) {
     return (
@@ -1428,8 +1439,12 @@ export default function GameTopupApp() {
                     </div>
 
                     <div>
-                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>3. ของรางวัล (Reward)</label>
-                      <input type="text" placeholder="เช่น 100 VP / 500 Diamonds" value={newCodeReward} onChange={(e) => setNewCodeReward(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>3. เลือกแพ็กเกจของรางวัล</label>
+                      <select value={newCodeReward} onChange={(e) => setNewCodeReward(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#38bdf8', fontWeight: 'bold', outline: 'none', boxSizing: 'border-box' }}>
+                        {selectedGameForAdminCode?.packages.map((pkg) => (
+                          <option key={pkg.id} value={pkg.name}>{pkg.name} (฿{pkg.price})</option>
+                        ))}
+                      </select>
                     </div>
 
                     <div>
