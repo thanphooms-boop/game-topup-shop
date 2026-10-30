@@ -219,7 +219,6 @@ export default function GameTopupApp() {
   const [newCodeMaxUses, setNewCodeMaxUses] = useState(10);
   const [adminCodeMsg, setAdminCodeMsg] = useState({ text: '', type: '' });
 
-  // อัปเดตแพ็กเกจแรกให้อัตโนมัติเมื่อเลือกเปลี่ยนเกมฝั่งแอดมิน
   useEffect(() => {
     const found = gamesData.find(g => g.name === newCodeGame);
     if (found && found.packages.length > 0) {
@@ -495,7 +494,6 @@ export default function GameTopupApp() {
     setConfirmNewPinInput('');
   };
 
-  // แอดมินสร้างโค้ดกิจกรรมใหม่ (เลือกแพ็กเกจของรางวัลจากดรอปดาวน์)
   const handleCreateGiftCode = (e) => {
     e.preventDefault();
     setAdminCodeMsg({ text: '', type: '' });
@@ -526,12 +524,10 @@ export default function GameTopupApp() {
     setNewCodeMaxUses(10);
   };
 
-  // แอดมินลบโค้ดกิจกรรม
   const handleDeleteGiftCode = (id) => {
     setGiftCodes(giftCodes.filter(c => c.id !== id));
   };
 
-  // ฟังก์ชันลูกค้ากรอกโค้ดของขวัญ
   const handleRedeemEventCode = (e) => {
     e.preventDefault();
     setEventMsg({ text: '', type: '' });
@@ -554,7 +550,6 @@ export default function GameTopupApp() {
       return;
     }
 
-    // ตัดสิทธิ์การใช้โค้ด
     setGiftCodes(giftCodes.map(c => c.id === foundCode.id ? { ...c, usedCount: c.usedCount + 1 } : c));
 
     const newOrderId = 'ORD-EVT-' + Math.floor(10000 + Math.random() * 90000);
@@ -807,8 +802,8 @@ export default function GameTopupApp() {
 
   const totalAdminSales = orders.reduce((sum, ord) => sum + (ord.type === 'game' ? ord.price : 0), 0);
   const totalAdminProfits = orders.reduce((sum, ord) => sum + (ord.profit || 0), 0);
+  const totalAdminTax = Math.round(totalAdminProfits * 0.07); // คำนวณภาษี 7% จากกำไรสุทธิ
 
-  // ดึงแพ็กเกจของเกมที่แอดมินเลือกอยู่
   const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);
 
   if (!user) {
@@ -1093,13 +1088,61 @@ export default function GameTopupApp() {
               </div>
             </div>
 
-            {/* ช่องกรอกโค้ดของขวัญ / โค้ดกิจกรรมจากแอดมิน */}
+            <div style={{ marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                🔥 เลือกเกมที่ต้องการเติมเงิน ({filteredGames.length} เกม)
+              </h2>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '22px', marginBottom: '35px' }}>
+              {filteredGames.map((game) => (
+                <div 
+                  key={game.id} 
+                  onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPlayerId(user.username); }} 
+                  style={{ 
+                    backgroundColor: 'rgba(17, 24, 39, 0.85)', 
+                    border: '1.5px solid rgba(168, 85, 247, 0.35)', 
+                    borderRadius: '20px', 
+                    overflow: 'hidden', 
+                    cursor: 'pointer', 
+                    transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)', 
+                    boxShadow: '0 6px 25px rgba(0,0,0,0.6)',
+                    position: 'relative'
+                  }} 
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
+                    e.currentTarget.style.borderColor = '#38bdf8';
+                    e.currentTarget.style.boxShadow = '0 15px 35px rgba(56, 189, 248, 0.45), 0 0 25px rgba(168,85,247,0.5)';
+                    const img = e.currentTarget.querySelector('img');
+                    if(img) img.style.transform = 'scale(1.08)';
+                  }} 
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+                    e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,0,0,0.6)';
+                    const img = e.currentTarget.querySelector('img');
+                    if(img) img.style.transform = 'scale(1)';
+                  }}
+                >
+                  <div style={{ height: '160px', overflow: 'hidden', position: 'relative' }}>
+                    <img src={game.image} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s ease' }} />
+                    <span style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(15, 23, 42, 0.85)', color: '#c084fc', border: '1px solid #c084fc', padding: '3px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold' }}>{game.badge}</span>
+                  </div>
+                  <div style={{ padding: '16px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0' }}>{game.name}</h3>
+                    <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 12px 0' }}>{game.publisher}</p>
+                    <button style={{ width: '100%', backgroundColor: '#9333ea', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 0 12px rgba(147,51,234,0.5)' }}>คลิกเพื่อเติมเงิน →</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* ช่องกรอกโค้ดของขวัญ / โค้ดกิจกรรมจากแอดมิน (ย้ายมาไว้ล่างสุด) */}
             <div style={{ 
               backgroundColor: 'rgba(17, 24, 39, 0.95)', 
               border: '1.5px solid rgba(56, 189, 248, 0.6)', 
               borderRadius: '20px', 
               padding: '25px 30px', 
-              marginBottom: '35px',
               boxShadow: '0 0 30px rgba(56, 189, 248, 0.25)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
@@ -1142,55 +1185,6 @@ export default function GameTopupApp() {
                   </button>
                 </div>
               </form>
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                🔥 เลือกเกมที่ต้องการเติมเงิน ({filteredGames.length} เกม)
-              </h2>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '22px' }}>
-              {filteredGames.map((game) => (
-                <div 
-                  key={game.id} 
-                  onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPlayerId(user.username); }} 
-                  style={{ 
-                    backgroundColor: 'rgba(17, 24, 39, 0.85)', 
-                    border: '1.5px solid rgba(168, 85, 247, 0.35)', 
-                    borderRadius: '20px', 
-                    overflow: 'hidden', 
-                    cursor: 'pointer', 
-                    transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)', 
-                    boxShadow: '0 6px 25px rgba(0,0,0,0.6)',
-                    position: 'relative'
-                  }} 
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-8px) scale(1.02)';
-                    e.currentTarget.style.borderColor = '#38bdf8';
-                    e.currentTarget.style.boxShadow = '0 15px 35px rgba(56, 189, 248, 0.45), 0 0 25px rgba(168,85,247,0.5)';
-                    const img = e.currentTarget.querySelector('img');
-                    if(img) img.style.transform = 'scale(1.08)';
-                  }} 
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
-                    e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)';
-                    e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,0,0,0.6)';
-                    const img = e.currentTarget.querySelector('img');
-                    if(img) img.style.transform = 'scale(1)';
-                  }}
-                >
-                  <div style={{ height: '160px', overflow: 'hidden', position: 'relative' }}>
-                    <img src={game.image} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s ease' }} />
-                    <span style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(15, 23, 42, 0.85)', color: '#c084fc', border: '1px solid #c084fc', padding: '3px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold' }}>{game.badge}</span>
-                  </div>
-                  <div style={{ padding: '16px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0' }}>{game.name}</h3>
-                    <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 12px 0' }}>{game.publisher}</p>
-                    <button style={{ width: '100%', backgroundColor: '#9333ea', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.3s ease', boxShadow: '0 0 12px rgba(147,51,234,0.5)' }}>คลิกเพื่อเติมเงิน →</button>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         )}
@@ -1400,18 +1394,97 @@ export default function GameTopupApp() {
               </div>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' }}>
+                {/* 1. ย้ายเปลี่ยน PIN มาไว้บนสุด */}
+                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🔑 เปลี่ยนรหัส PIN 6 หลัก (แอดมิน)</h3>
+                    <button onClick={() => setIsAdminLoggedIn(false)} style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>ล็อกเอาท์ PIN</button>
+                  </div>
+                  {changePinMessage.text && (
+                    <div style={{ backgroundColor: changePinMessage.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: changePinMessage.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px' }}>
+                      {changePinMessage.text}
+                    </div>
+                  )}
+                  <form onSubmit={handleChangePinSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. รหัส PIN เดิม</label>
+                      <input type="password" maxLength={6} placeholder="PIN เดิม" value={oldPinInput} onChange={(e) => setOldPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. รหัส PIN ใหม่</label>
+                      <input type="password" maxLength={6} placeholder="PIN ใหม่" value={newPinInput} onChange={(e) => setNewPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>3. ยืนยันรหัส PIN</label>
+                      <input type="password" maxLength={6} placeholder="ยืนยัน PIN" value={confirmNewPinInput} onChange={(e) => setConfirmNewPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+                    <button type="submit" style={{ gridColumn: 'span 3', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', marginTop: '6px', transition: 'all 0.3s ease' }}>
+                      บันทึกการเปลี่ยน PIN
+                    </button>
+                  </form>
+                </div>
+
+                {/* 2. สรุปยอดขาย กำไร และภาษี (เพิ่มการเสียภาษีและขยับมาไว้บนหัวข้อรายการ) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '20px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>💵 ยอดขายรวมทั้งหมด (Sales)</div>
-                    <div style={{ fontSize: '26px', fontWeight: '900', color: '#38bdf8' }}>฿{totalAdminSales.toLocaleString()}</div>
+                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>💵 ยอดขายรวมทั้งหมด</div>
+                    <div style={{ fontSize: '22px', fontWeight: '900', color: '#38bdf8' }}>฿{totalAdminSales.toLocaleString()}</div>
                   </div>
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #34d399', borderRadius: '16px', padding: '20px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>📈 กำไรสุทธิรวมทั้งหมด (Net Profit)</div>
-                    <div style={{ fontSize: '26px', fontWeight: '900', color: '#34d399' }}>+฿{totalAdminProfits.toLocaleString()}</div>
+                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>📈 กำไรสุทธิรวม</div>
+                    <div style={{ fontSize: '22px', fontWeight: '900', color: '#34d399' }}>+฿{totalAdminProfits.toLocaleString()}</div>
+                  </div>
+                  <div style={{ backgroundColor: '#030712', border: '1.5px solid #f59e0b', borderRadius: '16px', padding: '20px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>🏛️ เสียภาษี (7% จากกำไร)</div>
+                    <div style={{ fontSize: '22px', fontWeight: '900', color: '#f59e0b' }}>-฿{totalAdminTax.toLocaleString()}</div>
                   </div>
                 </div>
 
-                {/* ส่วนการจัดการสร้างโค้ดกิจกรรม (Admin Gift Code Generator) */}
+                {/* 3. รายการคำสั่งซื้อหลังบ้าน */}
+                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #9333ea' }}>
+                  <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 15px 0' }}>📊 รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ</h2>
+
+                  <input type="text" placeholder="🔍 ค้นหาเลขออร์เดอร์ หรือชื่อลูกค้า..." value={adminSearchQuery} onChange={(e) => setAdminSearchQuery(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', marginBottom: '20px', outline: 'none', boxSizing: 'border-box' }} />
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {filteredOrders.map((ord, idx) => (
+                      <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
+                            <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
+                            <span style={{ fontSize: '12px', color: '#9ca3af' }}>📅 {ord.time}</span>
+                          </div>
+                          <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>{ord.game} <span style={{ color: '#c084fc', fontSize: '14px' }}>({ord.package})</span></div>
+                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                            ลูกค้าผู้ทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> | ยอดขาย: <b style={{ color: '#ffffff' }}>฿{ord.price.toLocaleString()}</b>
+                          </div>
+                        </div>
+
+                        <div style={{ textAlign: 'right' }}>
+                          {ord.type === 'game' ? (
+                            <div style={{ backgroundColor: 'rgba(52, 211, 153, 0.15)', border: '1px solid #34d399', borderRadius: '10px', padding: '6px 12px', marginBottom: '6px', display: 'inline-block' }}>
+                              <span style={{ fontSize: '11px', color: '#9ca3af' }}>📈 กำไรสุทธิ: </span>
+                              <b style={{ color: '#34d399', fontSize: '14px' }}>+฿{(ord.profit || 0).toLocaleString()}</b>
+                            </div>
+                          ) : ord.type === 'event' ? (
+                            <div style={{ fontSize: '11px', color: '#38bdf8', marginBottom: '6px', fontWeight: 'bold' }}>🎁 โค้ดกิจกรรมแจกฟรี</div>
+                          ) : (
+                            <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '6px' }}>💳 เติมเครดิตร้าน</div>
+                          )}
+
+                          {ord.status.includes('รอ') && (
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                              <button onClick={() => handleAdminApproveOrder(ord.id)} style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>✅ อนุมัติ</button>
+                              <button onClick={() => handleAdminRejectOrder(ord.id)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}>❌ ยกเลิก</button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. ส่วนสร้างโค้ดกิจกรรม (ย้ายมาไว้ล่างสุดของหลังบ้าน) */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)' }}>
                   <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 15px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     🎁 สร้างและจัดการโค้ดของขวัญ / โค้ดกิจกรรม
@@ -1471,78 +1544,6 @@ export default function GameTopupApp() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                           <span style={{ fontSize: '12px', color: '#9ca3af' }}>ใช้ไปแล้ว: <b style={{ color: '#ffffff' }}>{c.usedCount}</b> / {c.maxUses} สิทธิ์</span>
                           <button onClick={() => handleDeleteGiftCode(c.id)} style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}>ลบ</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)' }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 15px 0' }}>🔑 เปลี่ยนรหัส PIN 6 หลัก (แอดมิน)</h3>
-                  {changePinMessage.text && (
-                    <div style={{ backgroundColor: changePinMessage.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: changePinMessage.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px' }}>
-                      {changePinMessage.text}
-                    </div>
-                  )}
-                  <form onSubmit={handleChangePinSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                    <div>
-                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. รหัส PIN เดิม</label>
-                      <input type="password" maxLength={6} placeholder="PIN เดิม" value={oldPinInput} onChange={(e) => setOldPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. รหัส PIN ใหม่</label>
-                      <input type="password" maxLength={6} placeholder="PIN ใหม่" value={newPinInput} onChange={(e) => setNewPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>3. ยืนยันรหัส PIN</label>
-                      <input type="password" maxLength={6} placeholder="ยืนยัน PIN" value={confirmNewPinInput} onChange={(e) => setConfirmNewPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
-                    </div>
-                    <button type="submit" style={{ gridColumn: 'span 3', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', marginTop: '6px', transition: 'all 0.3s ease' }}>
-                      บันทึกการเปลี่ยน PIN
-                    </button>
-                  </form>
-                </div>
-
-                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #9333ea' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ</h2>
-                    <button onClick={() => setIsAdminLoggedIn(false)} style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>ล็อกเอาท์ PIN</button>
-                  </div>
-
-                  <input type="text" placeholder="🔍 ค้นหาเลขออร์เดอร์ หรือชื่อลูกค้า..." value={adminSearchQuery} onChange={(e) => setAdminSearchQuery(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', marginBottom: '20px', outline: 'none', boxSizing: 'border-box' }} />
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    {filteredOrders.map((ord, idx) => (
-                      <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
-                            <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
-                            <span style={{ fontSize: '12px', color: '#9ca3af' }}>📅 {ord.time}</span>
-                          </div>
-                          <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>{ord.game} <span style={{ color: '#c084fc', fontSize: '14px' }}>({ord.package})</span></div>
-                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
-                            ลูกค้าผู้ทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> | ยอดขาย: <b style={{ color: '#ffffff' }}>฿{ord.price.toLocaleString()}</b>
-                          </div>
-                        </div>
-
-                        <div style={{ textAlign: 'right' }}>
-                          {ord.type === 'game' ? (
-                            <div style={{ backgroundColor: 'rgba(52, 211, 153, 0.15)', border: '1px solid #34d399', borderRadius: '10px', padding: '6px 12px', marginBottom: '6px', display: 'inline-block' }}>
-                              <span style={{ fontSize: '11px', color: '#9ca3af' }}>📈 กำไรสุทธิ: </span>
-                              <b style={{ color: '#34d399', fontSize: '14px' }}>+฿{(ord.profit || 0).toLocaleString()}</b>
-                            </div>
-                          ) : ord.type === 'event' ? (
-                            <div style={{ fontSize: '11px', color: '#38bdf8', marginBottom: '6px', fontWeight: 'bold' }}>🎁 โค้ดกิจกรรมแจกฟรี</div>
-                          ) : (
-                            <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '6px' }}>💳 เติมเครดิตร้าน</div>
-                          )}
-
-                          {ord.status.includes('รอ') && (
-                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                              <button onClick={() => handleAdminApproveOrder(ord.id)} style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>✅ อนุมัติ</button>
-                              <button onClick={() => handleAdminRejectOrder(ord.id)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}>❌ ยกเลิก</button>
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}
