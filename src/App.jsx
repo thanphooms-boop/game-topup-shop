@@ -44,11 +44,33 @@ export default function GameTopupApp() {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // State สำหรับช่องกรอกโค้ดของขวัญกิจกรรมหน้าแรก
+  // State สำหรับโค้ดกิจกรรมฝั่งลูกค้า
   const [eventGame, setEventGame] = useState('VALORANT');
   const [eventPlayerId, setEventPlayerId] = useState('');
   const [eventGiftCode, setEventGiftCode] = useState('');
   const [eventMsg, setEventMsg] = useState({ text: '', type: '' });
+
+  // State สำหรับจัดการโค้ดกิจกรรมฝั่งแอดมิน
+  const [giftCodes, setGiftCodes] = useState(() => {
+    const savedCodes = localStorage.getItem('cyber_gift_codes');
+    if (savedCodes) {
+      try { return JSON.parse(savedCodes); } catch (e) {}
+    }
+    return [
+      { id: '1', code: 'GIFT2026', game: 'VALORANT', reward: '100 VP', maxUses: 50, usedCount: 2 },
+      { id: '2', code: 'FREE500', game: 'Avatar Star', reward: '500 Diamonds', maxUses: 20, usedCount: 5 }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cyber_gift_codes', JSON.stringify(giftCodes));
+  }, [giftCodes]);
+
+  const [newCodeName, setNewCodeName] = useState('');
+  const [newCodeGame, setNewCodeGame] = useState('VALORANT');
+  const [newCodeReward, setNewCodeReward] = useState('');
+  const [newCodeMaxUses, setNewCodeMaxUses] = useState(10);
+  const [adminCodeMsg, setAdminCodeMsg] = useState({ text: '', type: '' });
 
   const [showTopupWalletModal, setShowTopupWalletModal] = useState(false);
   const [topupAmount, setTopupAmount] = useState('');
@@ -464,7 +486,44 @@ export default function GameTopupApp() {
     setConfirmNewPinInput('');
   };
 
-  // ฟังก์ชันส่งโค้ดกิจกรรม
+  // แอดมินสร้างโค้ดกิจกรรมใหม่
+  const handleCreateGiftCode = (e) => {
+    e.preventDefault();
+    setAdminCodeMsg({ text: '', type: '' });
+
+    if (!newCodeName.trim() || !newCodeReward.trim() || newCodeMaxUses <= 0) {
+      setAdminCodeMsg({ text: 'กรุณากรอกข้อมูลโค้ด ของรางวัล และจำนวนสิทธิ์ให้ครบถ้วน', type: 'error' });
+      return;
+    }
+
+    const cleanCode = newCodeName.trim().toUpperCase();
+    if (giftCodes.some(c => c.code === cleanCode)) {
+      setAdminCodeMsg({ text: 'โค้ดนี้มีอยู่ในระบบแล้ว กรุณาใช้ชื่อโค้ดอื่น', type: 'error' });
+      return;
+    }
+
+    const newCodeObj = {
+      id: Date.now().toString(),
+      code: cleanCode,
+      game: newCodeGame,
+      reward: newCodeReward,
+      maxUses: parseInt(newCodeMaxUses),
+      usedCount: 0
+    };
+
+    setGiftCodes([newCodeObj, ...giftCodes]);
+    setAdminCodeMsg({ text: `สร้างโค้ด ${cleanCode} สำเร็จแล้ว!`, type: 'success' });
+    setNewCodeName('');
+    setNewCodeReward('');
+    setNewCodeMaxUses(10);
+  };
+
+  // แอดมินลบโค้ดกิจกรรม
+  const handleDeleteGiftCode = (id) => {
+    setGiftCodes(giftCodes.filter(c => c.id !== id));
+  };
+
+  // ฟังก์ชันลูกค้ากรอกโค้ดของขวัญ
   const handleRedeemEventCode = (e) => {
     e.preventDefault();
     setEventMsg({ text: '', type: '' });
@@ -473,6 +532,22 @@ export default function GameTopupApp() {
       setEventMsg({ text: 'กรุณากรอก ID/ชื่อในเกม และโค้ดกิจกรรมให้ครบถ้วน', type: 'error' });
       return;
     }
+
+    const targetCode = eventGiftCode.trim().toUpperCase();
+    const foundCode = giftCodes.find(c => c.code === targetCode && c.game === eventGame);
+
+    if (!foundCode) {
+      setEventMsg({ text: `ไม่พบโค้ด "${targetCode}" สำหรับเกม ${eventGame}`, type: 'error' });
+      return;
+    }
+
+    if (foundCode.usedCount >= foundCode.maxUses) {
+      setEventMsg({ text: `โค้ด "${targetCode}" ถูกใช้งานครบจำนวนสิทธิ์เต็มแล้ว`, type: 'error' });
+      return;
+    }
+
+    // ตัดสิทธิ์การใช้โค้ด
+    setGiftCodes(giftCodes.map(c => c.id === foundCode.id ? { ...c, usedCount: c.usedCount + 1 } : c));
 
     const newOrderId = 'ORD-EVT-' + Math.floor(10000 + Math.random() * 90000);
     const now = new Date();
@@ -485,7 +560,7 @@ export default function GameTopupApp() {
     const newEventOrder = {
       id: newOrderId,
       game: `กิจกรรม (${eventGame})`,
-      package: `โค้ด: ${eventGiftCode}`,
+      package: `โค้ด: ${foundCode.code} (${foundCode.reward})`,
       price: 0,
       profit: 0,
       player: user ? user.username : '11',
@@ -497,7 +572,7 @@ export default function GameTopupApp() {
     };
 
     setOrders([newEventOrder, ...orders]);
-    setEventMsg({ text: `ส่งโค้ดกิจกรรมสำเร็จ! (เลขออร์เดอร์: ${newOrderId}) รอแอดมินตรวจสอบ`, type: 'success' });
+    setEventMsg({ text: `🎉 ใช้โค้ด ${foundCode.code} สำเร็จ! ได้รับ: ${foundCode.reward} (เลขออร์เดอร์: ${newOrderId})`, type: 'success' });
     setEventGiftCode('');
     setEventPlayerId('');
   };
@@ -1322,6 +1397,68 @@ export default function GameTopupApp() {
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #34d399', borderRadius: '16px', padding: '20px', textAlign: 'center' }}>
                     <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>📈 กำไรสุทธิรวมทั้งหมด (Net Profit)</div>
                     <div style={{ fontSize: '26px', fontWeight: '900', color: '#34d399' }}>+฿{totalAdminProfits.toLocaleString()}</div>
+                  </div>
+                </div>
+
+                {/* ส่วนการจัดการสร้างโค้ดกิจกรรม (Admin Gift Code Generator) */}
+                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 15px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    🎁 สร้างและจัดการโค้ดของขวัญ / โค้ดกิจกรรม
+                  </h3>
+
+                  {adminCodeMsg.text && (
+                    <div style={{ backgroundColor: adminCodeMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: adminCodeMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px' }}>
+                      {adminCodeMsg.text}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleCreateGiftCode} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. ชื่อโค้ด (Code Name)</label>
+                      <input type="text" placeholder="เช่น GIFT2026" value={newCodeName} onChange={(e) => setNewCodeName(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. เลือกเกม</label>
+                      <select value={newCodeGame} onChange={(e) => setNewCodeGame(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }}>
+                        {gamesData.map((g) => (
+                          <option key={g.id} value={g.name}>{g.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>3. ของรางวัล (Reward)</label>
+                      <input type="text" placeholder="เช่น 100 VP / 500 Diamonds" value={newCodeReward} onChange={(e) => setNewCodeReward(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>4. จำนวนสิทธิ์ทั้งหมด</label>
+                      <input type="number" min="1" placeholder="เช่น 10" value={newCodeMaxUses} onChange={(e) => setNewCodeMaxUses(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+
+                    <div style={{ gridColumn: '1 / -1' }}>
+                      <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
+                        + สร้างโค้ดกิจกรรมใหม่
+                      </button>
+                    </div>
+                  </form>
+
+                  <h4 style={{ fontSize: '14px', color: '#ffffff', margin: '0 0 10px 0' }}>📋 รายการโค้ดที่มีในระบบปัจจุบัน ({giftCodes.length} โค้ด)</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {giftCodes.map((c) => (
+                      <div key={c.id} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', marginRight: '8px' }}>{c.code}</span>
+                          <span style={{ color: '#38bdf8', fontSize: '13px', fontWeight: 'bold' }}>[{c.game}]</span>
+                          <span style={{ color: '#34d399', fontSize: '13px', marginLeft: '10px' }}>🎁 {c.reward}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                          <span style={{ fontSize: '12px', color: '#9ca3af' }}>ใช้ไปแล้ว: <b style={{ color: '#ffffff' }}>{c.usedCount}</b> / {c.maxUses} สิทธิ์</span>
+                          <button onClick={() => handleDeleteGiftCode(c.id)} style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}>ลบ</button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
