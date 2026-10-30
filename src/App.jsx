@@ -44,6 +44,12 @@ export default function GameTopupApp() {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // State สำหรับช่องกรอกโค้ดของขวัญกิจกรรมหน้าแรก
+  const [eventGame, setEventGame] = useState('VALORANT');
+  const [eventPlayerId, setEventPlayerId] = useState('');
+  const [eventGiftCode, setEventGiftCode] = useState('');
+  const [eventMsg, setEventMsg] = useState({ text: '', type: '' });
+
   const [showTopupWalletModal, setShowTopupWalletModal] = useState(false);
   const [topupAmount, setTopupAmount] = useState('');
   const [walletPaymentMethod, setWalletPaymentMethod] = useState('qrcode');
@@ -245,7 +251,7 @@ export default function GameTopupApp() {
       name: 'EA SPORTS FC Mobile',
       publisher: 'ELECTRONIC ARTS',
       category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=500&q=80', // แก้ไขรูปปกเกม EA ให้แสดงผลสวยงาม
+      image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=500&q=80',
       badge: 'มาใหม่ ⚽',
       packages: [
         { id: 'fc1', name: '100 FC Points', price: 35, profit: 5, bonus: '+0' },
@@ -456,6 +462,44 @@ export default function GameTopupApp() {
     setOldPinInput('');
     setNewPinInput('');
     setConfirmNewPinInput('');
+  };
+
+  // ฟังก์ชันส่งโค้ดกิจกรรม
+  const handleRedeemEventCode = (e) => {
+    e.preventDefault();
+    setEventMsg({ text: '', type: '' });
+
+    if (!eventPlayerId.trim() || !eventGiftCode.trim()) {
+      setEventMsg({ text: 'กรุณากรอก ID/ชื่อในเกม และโค้ดกิจกรรมให้ครบถ้วน', type: 'error' });
+      return;
+    }
+
+    const newOrderId = 'ORD-EVT-' + Math.floor(10000 + Math.random() * 90000);
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+    const dateKey = `${year}-${month}-${day}`;
+
+    const newEventOrder = {
+      id: newOrderId,
+      game: `กิจกรรม (${eventGame})`,
+      package: `โค้ด: ${eventGiftCode}`,
+      price: 0,
+      profit: 0,
+      player: user ? user.username : '11',
+      status: `รอแอดมินตรวจ [ID: ${eventPlayerId}]`,
+      type: 'event',
+      time: thaiTime,
+      dateKey: dateKey,
+      timestamp: Date.now()
+    };
+
+    setOrders([newEventOrder, ...orders]);
+    setEventMsg({ text: `ส่งโค้ดกิจกรรมสำเร็จ! (เลขออร์เดอร์: ${newOrderId}) รอแอดมินตรวจสอบ`, type: 'success' });
+    setEventGiftCode('');
+    setEventPlayerId('');
   };
 
   const handleWalletNextStep = () => {
@@ -822,8 +866,6 @@ export default function GameTopupApp() {
       {/* NAVBAR */}
       <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '12px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
-          
-          {/* โลโก้โล่สายฟ้าเป๊ะตามแบบต้นฉบับ */}
           <div style={{ 
             width: '45px', height: '45px', borderRadius: '14px', 
             background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #1d4ed8 100%)', 
@@ -899,7 +941,7 @@ export default function GameTopupApp() {
         </div>
       </header>
 
-      {/* FLOATING LINE OA WIDGET (เพิ่มโลโก้ LINE 🟢 ด้านหน้า) */}
+      {/* FLOATING LINE OA WIDGET */}
       <a href="https://lin.ee/Nn1UeBC" target="_blank" rel="noopener noreferrer" style={{ position: 'fixed', bottom: '25px', right: '25px', zIndex: 99, backgroundColor: '#06c755', color: '#ffffff', padding: '12px 20px', borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 25px rgba(6, 199, 85, 0.6)', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', border: '1.5px solid #ffffff' }}>
         <div style={{ width: '22px', height: '22px', backgroundColor: '#ffffff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ fontSize: '13px', color: '#06c755', fontWeight: '900', lineHeight: '1' }}>L</span>
@@ -963,6 +1005,57 @@ export default function GameTopupApp() {
                   ))}
                 </div>
               </div>
+            </div>
+
+            {/* ช่องกรอกโค้ดของขวัญ / โค้ดกิจกรรมจากแอดมิน */}
+            <div style={{ 
+              backgroundColor: 'rgba(17, 24, 39, 0.95)', 
+              border: '1.5px solid rgba(56, 189, 248, 0.6)', 
+              borderRadius: '20px', 
+              padding: '25px 30px', 
+              marginBottom: '35px',
+              boxShadow: '0 0 30px rgba(56, 189, 248, 0.25)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
+                <span style={{ fontSize: '24px' }}>🎁</span>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>กรอกโค้ดของขวัญ / โค้ดกิจกรรมจากแอดมิน</h3>
+                  <p style={{ fontSize: '12px', color: '#9ca3af', margin: '2px 0 0 0' }}>เลือกเกม ระบุไอดี และใส่โค้ดกิจกรรมเพื่อรับของรางวัลฟรี</p>
+                </div>
+              </div>
+
+              {eventMsg.text && (
+                <div style={{ backgroundColor: eventMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${eventMsg.type === 'success' ? '#34d399' : '#ef4444'}`, color: eventMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '15px' }}>
+                  {eventMsg.text}
+                </div>
+              )}
+
+              <form onSubmit={handleRedeemEventCode} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', alignItems: 'end' }}>
+                <div>
+                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>1. เลือกเกม</label>
+                  <select value={eventGame} onChange={(e) => setEventGame(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '13px', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
+                    {gamesData.map((g) => (
+                      <option key={g.id} value={g.name}>{g.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>2. ID เกม หรือ ชื่อในเกม</label>
+                  <input type="text" placeholder="ระบุไอดีหรือชื่อในเกม..." value={eventPlayerId} onChange={(e) => setEventPlayerId(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>3. โค้ดของขวัญ (Gift Code)</label>
+                  <input type="text" placeholder="กรอกโค้ดกิจกรรม เช่น GIFT2026..." value={eventGiftCode} onChange={(e) => setEventGiftCode(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+
+                <div>
+                  <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', boxShadow: '0 0 15px rgba(2, 132, 199, 0.5)', transition: 'all 0.3s ease' }}>
+                    ✨ ยืนยันรับสิทธิ์โค้ด
+                  </button>
+                </div>
+              </form>
             </div>
 
             <div style={{ marginBottom: '20px' }}>
@@ -1286,11 +1379,13 @@ export default function GameTopupApp() {
                               <span style={{ fontSize: '11px', color: '#9ca3af' }}>📈 กำไรสุทธิ: </span>
                               <b style={{ color: '#34d399', fontSize: '14px' }}>+฿{(ord.profit || 0).toLocaleString()}</b>
                             </div>
+                          ) : ord.type === 'event' ? (
+                            <div style={{ fontSize: '11px', color: '#38bdf8', marginBottom: '6px', fontWeight: 'bold' }}>🎁 โค้ดกิจกรรมแจกฟรี</div>
                           ) : (
                             <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '6px' }}>💳 เติมเครดิตร้าน</div>
                           )}
 
-                          {ord.status.includes('รอตรวจสอบ') && (
+                          {ord.status.includes('รอ') && (
                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                               <button onClick={() => handleAdminApproveOrder(ord.id)} style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>✅ อนุมัติ</button>
                               <button onClick={() => handleAdminRejectOrder(ord.id)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}>❌ ยกเลิก</button>
@@ -1463,7 +1558,7 @@ export default function GameTopupApp() {
                   <button 
                     disabled={isWalletQrExpired}
                     onClick={handleWalletConfirmPayment} 
-                    style={{ flex: 1, backgroundColor: isWalletQrExpired ? '#374151' : '#34d399', color: isWalletQrExpired ? '#9ca3af' : '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: isWalletQrExpired ? 'not-allowed' : 'pointer' }}
+                    style={{ flex: 1, backgroundColor: isWalletQrExpired ? '#374151' : '#34d399', color: isWalletQrExpired ? '#9ca3af' : '#000000', border: '1px solid #374151', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: isWalletQrExpired ? 'not-allowed' : 'pointer' }}
                   >
                     ฉันโอนเงินเรียบร้อยแล้ว
                   </button>
