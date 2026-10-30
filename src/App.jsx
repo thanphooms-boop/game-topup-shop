@@ -62,20 +62,23 @@ export default function GameTopupApp() {
   const [pendingWalletAmount, setPendingWalletAmount] = useState(0);
   const [pendingWalletOrderId, setPendingWalletOrderId] = useState('');
 
+  // เพิ่ม State สำหรับค้นหาเลขออร์เดอร์ของลูกค้า
+  const [customerOrderSearch, setCustomerOrderSearch] = useState('');
   const [exactSearchQuery, setExactSearchQuery] = useState('');
   const [selectedGameFilter, setSelectedGameFilter] = useState('all');
   const [selectedDateFilter, setSelectedDateFilter] = useState('');
 
+  // คำนวณกำไรโดยเฉลี่ย 15% จากยอดขายสำหรับแอดมิน
   const [orders, setOrders] = useState(() => {
     const savedOrders = localStorage.getItem('cyber_topup_orders');
     if (savedOrders) {
       try { return JSON.parse(savedOrders); } catch (e) {}
     }
     return [
-      { id: 'ORD-82250', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, player: 'thanphooms@gmail.com', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 10:08 น.', dateKey: '2026-10-30', timestamp: Date.now() - 50000 },
-      { id: 'ORD-14914', game: 'Avatar Star', package: '1,000 Diamonds', price: 300, player: '11', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '25/04/2026 22:44 น.', dateKey: '2026-04-25', timestamp: Date.now() - 100000 },
-      { id: 'ORD-48751', game: 'Genshin Impact', package: '300 Genesis Crystals', price: 179, player: '11', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '25/04/2026 22:44 น.', dateKey: '2026-04-25', timestamp: Date.now() - 200000 },
-      { id: 'ORD-98214', game: 'VALORANT', package: '700 VP', price: 529, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '28/10/2026 14:20 น.', dateKey: '2026-10-28', timestamp: Date.now() - 500000 }
+      { id: 'ORD-14969', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 11:01 น.', dateKey: '2026-10-30', timestamp: Date.now() - 50000 },
+      { id: 'ORD-98214', game: 'VALORANT', package: '700 VP', price: 529, profit: 80, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '28/10/2026 14:20 น.', dateKey: '2026-10-28', timestamp: Date.now() - 100000 },
+      { id: 'ORD-82250', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: 'thanphooms@gmail.com', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 10:08 น.', dateKey: '2026-10-30', timestamp: Date.now() - 200000 },
+      { id: 'ORD-14914', game: 'Avatar Star', package: '1,000 Diamonds', price: 300, profit: 45, player: '11', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '25/04/2026 22:44 น.', dateKey: '2026-04-25', timestamp: Date.now() - 300000 }
     ];
   });
 
@@ -119,13 +122,13 @@ export default function GameTopupApp() {
       image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิตอันดับ 1 🔥',
       packages: [
-        { id: 'v1', name: '125 VP', price: 99, bonus: '+0 VP' },
-        { id: 'v2', name: '420 VP', price: 319, bonus: '+15 VP' },
-        { id: 'v3', name: '700 VP', price: 529, bonus: '+30 VP' },
-        { id: 'v4', name: '1,375 VP', price: 999, bonus: '+80 VP' },
-        { id: 'v5', name: '2,400 VP', price: 1750, bonus: '+150 VP 🔥' },
-        { id: 'v6', name: '4,000 VP (Big Pack)', price: 2850, bonus: '+300 VP VIP ⭐' },
-        { id: 'v7', name: '8,500 VP (Whale Pack)', price: 5900, bonus: '+700 VP VIP 👑' }
+        { id: 'v1', name: '125 VP', price: 99, profit: 15, bonus: '+0 VP' },
+        { id: 'v2', name: '420 VP', price: 319, profit: 48, bonus: '+15 VP' },
+        { id: 'v3', name: '700 VP', price: 529, profit: 80, bonus: '+30 VP' },
+        { id: 'v4', name: '1,375 VP', price: 999, profit: 150, bonus: '+80 VP' },
+        { id: 'v5', name: '2,400 VP', price: 1750, profit: 260, bonus: '+150 VP 🔥' },
+        { id: 'v6', name: '4,000 VP (Big Pack)', price: 2850, profit: 420, bonus: '+300 VP VIP ⭐' },
+        { id: 'v7', name: '8,500 VP (Whale Pack)', price: 5900, profit: 900, bonus: '+700 VP VIP 👑' }
       ]
     },
     {
@@ -136,12 +139,12 @@ export default function GameTopupApp() {
       image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิต ✨',
       packages: [
-        { id: 'g1', name: '60 Genesis Crystals', price: 35, bonus: '+0' },
-        { id: 'g2', name: '300 Genesis Crystals', price: 179, bonus: '+10' },
-        { id: 'g3', name: '980 Genesis Crystals', price: 549, bonus: '+40' },
-        { id: 'g4', name: '1,980 Genesis Crystals', price: 1050, bonus: '+110' },
-        { id: 'g5', name: '3,280 Genesis Crystals', price: 1750, bonus: '+260 🔥' },
-        { id: 'g6', name: '6,480 Genesis Crystals', price: 3390, bonus: '+1,600 VIP 👑' }
+        { id: 'g1', name: '60 Genesis Crystals', price: 35, profit: 5, bonus: '+0' },
+        { id: 'g2', name: '300 Genesis Crystals', price: 179, profit: 27, bonus: '+10' },
+        { id: 'g3', name: '980 Genesis Crystals', price: 549, profit: 82, bonus: '+40' },
+        { id: 'g4', name: '1,980 Genesis Crystals', price: 1050, profit: 158, bonus: '+110' },
+        { id: 'g5', name: '3,280 Genesis Crystals', price: 1750, profit: 260, bonus: '+260 🔥' },
+        { id: 'g6', name: '6,480 Genesis Crystals', price: 3390, profit: 500, bonus: '+1,600 VIP 👑' }
       ]
     },
     {
@@ -152,12 +155,12 @@ export default function GameTopupApp() {
       image: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดนิยม ⚡',
       packages: [
-        { id: 'as1', name: '300 Diamonds', price: 90, bonus: '+0' },
-        { id: 'as2', name: '1,000 Diamonds', price: 300, bonus: '+50' },
-        { id: 'as3', name: '2,100 Diamonds', price: 600, bonus: '+150' },
-        { id: 'as4', name: '3,600 Diamonds', price: 1000, bonus: '+300' },
-        { id: 'as5', name: '7,500 Diamonds', price: 2000, bonus: '+800 🔥' },
-        { id: 'as6', name: '16,000 Diamonds (Super VIP)', price: 4000, bonus: '+2,000 👑' }
+        { id: 'as1', name: '300 Diamonds', price: 90, profit: 14, bonus: '+0' },
+        { id: 'as2', name: '1,000 Diamonds', price: 300, profit: 45, bonus: '+50' },
+        { id: 'as3', name: '2,100 Diamonds', price: 600, profit: 90, bonus: '+150' },
+        { id: 'as4', name: '3,600 Diamonds', price: 1000, profit: 150, bonus: '+300' },
+        { id: 'as5', name: '7,500 Diamonds', price: 2000, profit: 300, bonus: '+800 🔥' },
+        { id: 'as6', name: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, bonus: '+2,000 👑' }
       ]
     },
     {
@@ -168,11 +171,11 @@ export default function GameTopupApp() {
       image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=500&q=80',
       badge: 'แนะนำ 🏆',
       packages: [
-        { id: 'l1', name: '575 RP', price: 150, bonus: '+0 RP' },
-        { id: 'l2', name: '1,380 RP', price: 350, bonus: '+30 RP' },
-        { id: 'l3', name: '2,800 RP', price: 700, bonus: '+100 RP' },
-        { id: 'l4', name: '5,000 RP', price: 1250, bonus: '+250 RP 🔥' },
-        { id: 'l5', name: '11,000 RP (Ultra Pack)', price: 2600, bonus: '+700 RP 👑' }
+        { id: 'l1', name: '575 RP', price: 150, profit: 22, bonus: '+0 RP' },
+        { id: 'l2', name: '1,380 RP', price: 350, profit: 52, bonus: '+30 RP' },
+        { id: 'l3', name: '2,800 RP', price: 700, profit: 105, bonus: '+100 RP' },
+        { id: 'l4', name: '5,000 RP', price: 1250, profit: 188, bonus: '+250 RP 🔥' },
+        { id: 'l5', name: '11,000 RP (Ultra Pack)', price: 2600, profit: 390, bonus: '+700 RP 👑' }
       ]
     },
     {
@@ -183,12 +186,12 @@ export default function GameTopupApp() {
       image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิต 🔫',
       packages: [
-        { id: 'p1', name: '60 UC', price: 29, bonus: '+0 UC' },
-        { id: 'p2', name: '325 UC', price: 149, bonus: '+15 UC' },
-        { id: 'p3', name: '660 UC', price: 299, bonus: '+50 UC' },
-        { id: 'p4', name: '1,800 UC', price: 799, bonus: '+150 UC 🔥' },
-        { id: 'p5', name: '3,850 UC', price: 1600, bonus: '+350 UC ⭐' },
-        { id: 'p6', name: '8,100 UC (Whale Pack)', price: 3200, bonus: '+900 UC 👑' }
+        { id: 'p1', name: '60 UC', price: 29, profit: 4, bonus: '+0 UC' },
+        { id: 'p2', name: '325 UC', price: 149, profit: 22, bonus: '+15 UC' },
+        { id: 'p3', name: '660 UC', price: 299, profit: 45, bonus: '+50 UC' },
+        { id: 'p4', name: '1,800 UC', price: 799, profit: 120, bonus: '+150 UC 🔥' },
+        { id: 'p5', name: '3,850 UC', price: 1600, profit: 240, bonus: '+350 UC ⭐' },
+        { id: 'p6', name: '8,100 UC (Whale Pack)', price: 3200, profit: 480, bonus: '+900 UC 👑' }
       ]
     },
     {
@@ -199,12 +202,12 @@ export default function GameTopupApp() {
       image: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิต ⚔️',
       packages: [
-        { id: 'r1', name: '40 Coupons', price: 35, bonus: '+2 Coupons' },
-        { id: 'r2', name: '90 Coupons', price: 75, bonus: '+5 Coupons' },
-        { id: 'r3', name: '220 Coupons', price: 175, bonus: '+15 Coupons' },
-        { id: 'r4', name: '470 Coupons', price: 350, bonus: '+30 Coupons' },
-        { id: 'r5', name: '950 Coupons', price: 700, bonus: '+80 Coupons 🔥' },
-        { id: 'r6', name: '2,700 Coupons (Big Pack)', price: 1800, bonus: '+250 Coupons 👑' }
+        { id: 'r1', name: '40 Coupons', price: 35, profit: 5, bonus: '+2 Coupons' },
+        { id: 'r2', name: '90 Coupons', price: 75, profit: 11, bonus: '+5 Coupons' },
+        { id: 'r3', name: '220 Coupons', price: 175, profit: 26, bonus: '+15 Coupons' },
+        { id: 'r4', name: '470 Coupons', price: 350, profit: 52, bonus: '+30 Coupons' },
+        { id: 'r5', name: '950 Coupons', price: 700, profit: 105, bonus: '+80 Coupons 🔥' },
+        { id: 'r6', name: '2,700 Coupons (Big Pack)', price: 1800, profit: 270, bonus: '+250 Coupons 👑' }
       ]
     },
     {
@@ -215,12 +218,12 @@ export default function GameTopupApp() {
       image: 'https://images.unsplash.com/photo-1560253023-3ec5d502959f?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิต 💎',
       packages: [
-        { id: 'ff1', name: '110 Diamonds', price: 35, bonus: '+5' },
-        { id: 'ff2', name: '341 Diamonds', price: 105, bonus: '+20' },
-        { id: 'ff3', name: '572 Diamonds', price: 175, bonus: '+40' },
-        { id: 'ff4', name: '1,160 Diamonds', price: 350, bonus: '+90 🔥' },
-        { id: 'ff5', name: '2,390 Diamonds', price: 700, bonus: '+200 ⭐' },
-        { id: 'ff6', name: '6,000 Diamonds (VIP Mega)', price: 1700, bonus: '+600 👑' }
+        { id: 'ff1', name: '110 Diamonds', price: 35, profit: 5, bonus: '+5' },
+        { id: 'ff2', name: '341 Diamonds', price: 105, profit: 15, bonus: '+20' },
+        { id: 'ff3', name: '572 Diamonds', price: 175, profit: 26, bonus: '+40' },
+        { id: 'ff4', name: '1,160 Diamonds', price: 350, profit: 52, bonus: '+90 🔥' },
+        { id: 'ff5', name: '2,390 Diamonds', price: 700, profit: 105, bonus: '+200 ⭐' },
+        { id: 'ff6', name: '6,000 Diamonds (VIP Mega)', price: 1700, profit: 255, bonus: '+600 👑' }
       ]
     },
     {
@@ -231,12 +234,12 @@ export default function GameTopupApp() {
       image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=80',
       badge: 'แนะนำ 🚀',
       packages: [
-        { id: 'h1', name: '60 Oneiric Shard', price: 35, bonus: '+0' },
-        { id: 'h2', name: '300 Oneiric Shard', price: 179, bonus: '+30' },
-        { id: 'h3', name: '980 Oneiric Shard', price: 549, bonus: '+110' },
-        { id: 'h4', name: '1,980 Oneiric Shard', price: 1050, bonus: '+260 🔥' },
-        { id: 'h5', name: '3,280 Oneiric Shard', price: 1750, bonus: '+600 ⭐' },
-        { id: 'h6', name: '6,480 Oneiric Shard', price: 3390, bonus: '+1,600 👑' }
+        { id: 'h1', name: '60 Oneiric Shard', price: 35, profit: 5, bonus: '+0' },
+        { id: 'h2', name: '300 Oneiric Shard', price: 179, profit: 27, bonus: '+30' },
+        { id: 'h3', name: '980 Oneiric Shard', price: 549, profit: 82, bonus: '+110' },
+        { id: 'h4', name: '1,980 Oneiric Shard', price: 1050, profit: 158, bonus: '+260 🔥' },
+        { id: 'h5', name: '3,280 Oneiric Shard', price: 1750, profit: 260, bonus: '+600 ⭐' },
+        { id: 'h6', name: '6,480 Oneiric Shard', price: 3390, profit: 500, bonus: '+1,600 👑' }
       ]
     },
     {
@@ -247,11 +250,11 @@ export default function GameTopupApp() {
       image: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=500&q=80',
       badge: 'มาใหม่ ⚽',
       packages: [
-        { id: 'fc1', name: '100 FC Points', price: 35, bonus: '+0' },
-        { id: 'fc2', name: '520 FC Points', price: 179, bonus: '+20' },
-        { id: 'fc3', name: '1,070 FC Points', price: 350, bonus: '+70' },
-        { id: 'fc4', name: '2,200 FC Points', price: 700, bonus: '+180 🔥' },
-        { id: 'fc5', name: '5,750 FC Points (Pro Pack)', price: 1750, bonus: '+550 👑' }
+        { id: 'fc1', name: '100 FC Points', price: 35, profit: 5, bonus: '+0' },
+        { id: 'fc2', name: '520 FC Points', price: 179, profit: 27, bonus: '+20' },
+        { id: 'fc3', name: '1,070 FC Points', price: 350, profit: 52, bonus: '+70' },
+        { id: 'fc4', name: '2,200 FC Points', price: 700, profit: 105, bonus: '+180 🔥' },
+        { id: 'fc5', name: '5,750 FC Points (Pro Pack)', price: 1750, profit: 260, bonus: '+550 👑' }
       ]
     }
   ]);
@@ -500,6 +503,7 @@ export default function GameTopupApp() {
       game: `เติมเครดิตร้าน (${walletPaymentMethod.toUpperCase()})`,
       package: `+฿${amt.toLocaleString()}`,
       price: amt,
+      profit: 0, // เติมเครดิตไม่มีกำไร
       player: user ? user.username : '11',
       status: 'รอตรวจสอบ [สะดุดใน 10s]',
       type: 'wallet',
@@ -580,6 +584,7 @@ export default function GameTopupApp() {
         game: selectedGame.name,
         package: selectedPackage.name,
         price: selectedPackage.price,
+        profit: selectedPackage.profit || Math.round(selectedPackage.price * 0.15),
         player: user.username,
         status: 'รอตรวจสอบ [สะดุดใน 10s]',
         type: 'game',
@@ -655,26 +660,30 @@ export default function GameTopupApp() {
 
   const isUserAdmin = user && (user.username === 'thanphooms@gmail.com' || user.email === 'thanphooms@gmail.com');
 
+  // กรองสำหรับหน้าลูกค้า
   const searchedOrders = orders.filter(o => {
-    const q = exactSearchQuery.trim().toLowerCase();
-    let matchQuery = false;
+    let matchUser = false;
     if (!isUserAdmin) {
-      matchQuery = user && o.player.toLowerCase() === user.username.toLowerCase();
+      matchUser = user && o.player.toLowerCase() === user.username.toLowerCase();
     } else {
-      if (!q) {
-        matchQuery = true;
-      } else {
-        matchQuery = (o.player.toLowerCase() === q) || (o.id.toLowerCase() === q);
-      }
+      const q = exactSearchQuery.trim().toLowerCase();
+      matchUser = !q || (o.player.toLowerCase() === q) || (o.id.toLowerCase() === q);
     }
+
+    const orderQuery = customerOrderSearch.trim().toLowerCase();
+    const matchOrder = !orderQuery || o.id.toLowerCase().includes(orderQuery);
 
     const matchGame = selectedGameFilter === 'all' || o.game.toLowerCase() === selectedGameFilter.toLowerCase();
     const matchDate = !selectedDateFilter || o.dateKey === selectedDateFilter;
 
-    return matchQuery && matchGame && matchDate;
+    return matchUser && matchOrder && matchGame && matchDate;
   });
 
   const totalSpentInSearch = searchedOrders.reduce((sum, ord) => sum + ord.price, 0);
+
+  // คำนวณยอดขายรวมและกำไรรวมสำหรับแอดมิน
+  const totalAdminSales = orders.reduce((sum, ord) => sum + (ord.type === 'game' ? ord.price : 0), 0);
+  const totalAdminProfits = orders.reduce((sum, ord) => sum + (ord.profit || 0), 0);
 
   if (!user) {
     return (
@@ -1000,7 +1009,7 @@ export default function GameTopupApp() {
           </div>
         )}
 
-        {/* GAME DETAIL & CHECKOUT MODAL / VIEW */}
+        {/* GAME DETAIL & PACKAGES */}
         {activeTab === 'shop' && selectedGame && (
           <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '24px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.5)', boxShadow: '0 0 40px rgba(0,0,0,0.8)' }}>
             <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: 'transparent', border: '1px solid #374151', color: '#9ca3af', padding: '8px 16px', borderRadius: '10px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold' }}>← กลับไปหน้าเลือกเกม</button>
@@ -1088,7 +1097,7 @@ export default function GameTopupApp() {
           </div>
         )}
 
-        {/* TRACK STATUS TAB */}
+        {/* TRACK STATUS TAB (เพิ่มช่องค้นหาออร์เดอร์ของลูกค้า) */}
         {activeTab === 'track' && (
           <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 0 35px rgba(0,0,0,0.7)' }}>
             <div style={{ borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '20px' }}>
@@ -1099,19 +1108,33 @@ export default function GameTopupApp() {
               </div>
             </div>
 
+            {/* ช่องกรอกค้นหา: ช่องแรกเป็นชื่อผู้ใช้ (Disabled) + ช่องใหม่เป็นเลขออร์เดอร์ */}
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <input 
                 type="text" 
-                placeholder={isUserAdmin ? "🔍 ค้นหาชื่อผู้ใช้ลูกค้า หรือ เลขออร์เดอร์..." : `🔒 ล็อกชื่อผู้ใช้: ${user.username}`}
                 value={isUserAdmin ? exactSearchQuery : user.username} 
                 disabled={!isUserAdmin}
                 onChange={(e) => isUserAdmin && setExactSearchQuery(e.target.value)} 
                 style={{ 
-                  flex: 2, minWidth: '260px', 
-                  backgroundColor: isUserAdmin ? '#030712' : '#1f2937', 
+                  flex: 1, minWidth: '150px', 
+                  backgroundColor: '#1f2937', 
                   border: '1.5px solid #a855f7', borderRadius: '10px', padding: '12px', 
-                  color: isUserAdmin ? '#ffffff' : '#9ca3af', outline: 'none', 
-                  cursor: isUserAdmin ? 'text' : 'not-allowed',
+                  color: '#9ca3af', outline: 'none', 
+                  cursor: 'not-allowed', fontWeight: 'bold',
+                  boxSizing: 'border-box' 
+                }} 
+              />
+
+              <input 
+                type="text" 
+                placeholder="🔍 กรอกเลขออร์เดอร์ เช่น ORD-14969..." 
+                value={customerOrderSearch} 
+                onChange={(e) => setCustomerOrderSearch(e.target.value)} 
+                style={{ 
+                  flex: 1.5, minWidth: '220px', 
+                  backgroundColor: '#030712', 
+                  border: '1.5px solid #a855f7', borderRadius: '10px', padding: '12px', 
+                  color: '#ffffff', outline: 'none', 
                   boxSizing: 'border-box' 
                 }} 
               />
@@ -1119,7 +1142,7 @@ export default function GameTopupApp() {
               <select 
                 value={selectedGameFilter} 
                 onChange={(e) => setSelectedGameFilter(e.target.value)} 
-                style={{ flex: 1, minWidth: '160px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', cursor: 'pointer' }}
+                style={{ flex: 1, minWidth: '150px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', cursor: 'pointer' }}
               >
                 <option value="all">🎮 เลือกดูเกม (ทั้งหมด)</option>
                 {gamesData.map((g) => (
@@ -1169,14 +1192,14 @@ export default function GameTopupApp() {
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af', backgroundColor: '#030712', borderRadius: '14px', border: '1px dashed #374151' }}>
-                  ไม่พบประวัติคำสั่งซื้อสำหรับบัญชีนี้
+                  ไม่พบประวัติคำสั่งซื้อที่ค้นหา
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* ADMIN TAB */}
+        {/* ADMIN TAB (แสดงรายละเอียดแพ็กเกจและกำไรสุทธิ) */}
         {activeTab === 'admin' && isUserAdmin && (
           <div style={{ maxWidth: '950px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '25px' }}>
             {!isAdminLoggedIn ? (
@@ -1192,6 +1215,18 @@ export default function GameTopupApp() {
               </div>
             ) : (
               <>
+                {/* สรุปยอดขายและกำไรรวม */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '15px' }}>
+                  <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '20px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>💵 ยอดขายรวมทั้งหมด (Sales)</div>
+                    <div style={{ fontSize: '26px', fontWeight: '900', color: '#38bdf8' }}>฿{totalAdminSales.toLocaleString()}</div>
+                  </div>
+                  <div style={{ backgroundColor: '#030712', border: '1.5px solid #34d399', borderRadius: '16px', padding: '20px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>📈 กำไรสุทธิรวมทั้งหมด (Net Profit)</div>
+                    <div style={{ fontSize: '26px', fontWeight: '900', color: '#34d399' }}>+฿{totalAdminProfits.toLocaleString()}</div>
+                  </div>
+                </div>
+
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)' }}>
                   <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 15px 0' }}>🔑 เปลี่ยนรหัส PIN 6 หลัก (แอดมิน)</h3>
                   {changePinMessage.text && (
@@ -1220,7 +1255,7 @@ export default function GameTopupApp() {
 
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #9333ea' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 ศูนย์จัดการรายการทำรายการหลังบ้าน (Real-time Live)</h2>
+                    <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ</h2>
                     <button onClick={() => setIsAdminLoggedIn(false)} style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>ล็อกเอาท์ PIN</button>
                   </div>
 
@@ -1235,15 +1270,28 @@ export default function GameTopupApp() {
                             <span style={{ fontSize: '12px', color: '#9ca3af' }}>📅 {ord.time}</span>
                           </div>
                           <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>{ord.game} <span style={{ color: '#c084fc', fontSize: '14px' }}>({ord.package})</span></div>
-                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>ลูกค้าผู้ทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> | ยอดเงิน: <b style={{ color: '#34d399' }}>฿{ord.price.toLocaleString()}</b></div>
+                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                            ลูกค้าผู้ทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> | ยอดขาย: <b style={{ color: '#ffffff' }}>฿{ord.price.toLocaleString()}</b>
+                          </div>
                         </div>
 
-                        {ord.status.includes('รอตรวจสอบ') && (
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button onClick={() => handleAdminApproveOrder(ord.id)} style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>✅ อนุมัติ</button>
-                            <button onClick={() => handleAdminRejectOrder(ord.id)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}>❌ ยกเลิก</button>
-                          </div>
-                        )}
+                        <div style={{ textAlign: 'right' }}>
+                          {ord.type === 'game' ? (
+                            <div style={{ backgroundColor: 'rgba(52, 211, 153, 0.15)', border: '1px solid #34d399', borderRadius: '10px', padding: '6px 12px', marginBottom: '6px', display: 'inline-block' }}>
+                              <span style={{ fontSize: '11px', color: '#9ca3af' }}>📈 กำไรสุทธิ: </span>
+                              <b style={{ color: '#34d399', fontSize: '14px' }}>+฿{(ord.profit || 0).toLocaleString()}</b>
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '6px' }}>💳 เติมเครดิตร้าน</div>
+                          )}
+
+                          {ord.status.includes('รอตรวจสอบ') && (
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                              <button onClick={() => handleAdminApproveOrder(ord.id)} style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>✅ อนุมัติ</button>
+                              <button onClick={() => handleAdminRejectOrder(ord.id)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}>❌ ยกเลิก</button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
