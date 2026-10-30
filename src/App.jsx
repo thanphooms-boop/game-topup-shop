@@ -1,844 +1,4 @@
-import React, { useState, useEffect } from 'react';
-
-export default function GameTopupApp() {
-  const [registeredUsers, setRegisteredUsers] = useState(() => {
-    const saved = localStorage.getItem('cyber_topup_users');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return [
-      { username: 'thanphooms@gmail.com', email: 'thanphooms@gmail.com', password: '0638801739Ss_@1', balance: 99999 },
-      { username: '11', email: 'user11@example.com', password: '11', balance: 1800 },
-      { username: '22', email: 'user22@example.com', password: '22', balance: 1500 }
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('cyber_topup_users', JSON.stringify(registeredUsers));
-  }, [registeredUsers]);
-
-  const [user, setUser] = useState(null);
-  const [authMode, setAuthMode] = useState('login');
-  const [rememberMe, setRememberMe] = useState(false);
-  
-  const [usernameInput, setUsernameInput] = useState(() => {
-    return localStorage.getItem('cyber_remembered_user') || '';
-  });
-  const [passwordInput, setPasswordInput] = useState('');
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-  
-  const [emailInput, setEmailInput] = useState('');
-  const [regPasswordInput, setRegPasswordInput] = useState('');
-  const [showRegPassword, setShowRegPassword] = useState(false);
-  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const [authError, setAuthError] = useState('');
-  const [authSuccessMsg, setAuthSuccessMsg] = useState('');
-
-  const [activeTab, setActiveTab] = useState('shop');
-  const [gameCategory, setGameCategory] = useState('all');
-  const [selectedGame, setSelectedGame] = useState(null);
-  const [playerId, setPlayerId] = useState('');
-  const [selectedPackage, setSelectedPackage] = useState(null);
-  const [selectedPayment, setSelectedPayment] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // State สำหรับโค้ดกิจกรรมฝั่งลูกค้า
-  const [eventGame, setEventGame] = useState('VALORANT');
-  const [eventPlayerId, setEventPlayerId] = useState('');
-  const [eventGiftCode, setEventGiftCode] = useState('');
-  const [eventMsg, setEventMsg] = useState({ text: '', type: '' });
-
-  // รายชื่อบัญชีผู้ใช้ที่เคยใช้โค้ดไปแล้ว (แชร์กันทุกโค้ด: 1 ไอดีใช้ได้แค่ 1 ครั้งรวมทั้งหมดจนกว่าจะรีเซ็ต)
-  const [globalRedeemedUsers, setGlobalRedeemedUsers] = useState(() => {
-    const saved = localStorage.getItem('cyber_global_redeemed');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
-    }
-    return ['22']; // ตัวอย่างไอดี 22 เคยใช้ไปแล้ว
-  });
-
-  useEffect(() => {
-    localStorage.setItem('cyber_global_redeemed', JSON.stringify(globalRedeemedUsers));
-  }, [globalRedeemedUsers]);
-
-  // รายการเกมและแพ็กเกจในร้าน
-  const [gamesData] = useState([
-    {
-      id: 'valorant',
-      name: 'VALORANT',
-      publisher: 'Riot Games',
-      category: 'pc',
-      image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดฮิตอันดับ 1 🔥',
-      packages: [
-        { id: 'v1', name: '125 VP', price: 99, profit: 15, bonus: '+0 VP' },
-        { id: 'v2', name: '420 VP', price: 319, profit: 48, bonus: '+15 VP' },
-        { id: 'v3', name: '700 VP', price: 529, profit: 80, bonus: '+30 VP' },
-        { id: 'v4', name: '1,375 VP', price: 999, profit: 150, bonus: '+80 VP' },
-        { id: 'v5', name: '2,400 VP', price: 1750, profit: 260, bonus: '+150 VP 🔥' },
-        { id: 'v6', name: '4,000 VP (Big Pack)', price: 2850, profit: 420, bonus: '+300 VP VIP ⭐' },
-        { id: 'v7', name: '8,500 VP (Whale Pack)', price: 5900, profit: 900, bonus: '+700 VP VIP 👑' }
-      ]
-    },
-    {
-      id: 'genshin',
-      name: 'Genshin Impact',
-      publisher: 'HoYoverse',
-      category: 'pc',
-      image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดฮิต ✨',
-      packages: [
-        { id: 'g1', name: '60 Genesis Crystals', price: 35, profit: 5, bonus: '+0' },
-        { id: 'g2', name: '300 Genesis Crystals', price: 179, profit: 27, bonus: '+10' },
-        { id: 'g3', name: '980 Genesis Crystals', price: 549, profit: 82, bonus: '+40' },
-        { id: 'g4', name: '1,980 Genesis Crystals', price: 1050, profit: 158, bonus: '+110' },
-        { id: 'g5', name: '3,280 Genesis Crystals', price: 1750, profit: 260, bonus: '+260 🔥' },
-        { id: 'g6', name: '6,480 Genesis Crystals', price: 3390, profit: 500, bonus: '+1,600 VIP 👑' }
-      ]
-    },
-    {
-      id: 'avatarstar',
-      name: 'Avatar Star',
-      publisher: 'Cubinet / AS Global',
-      category: 'pc',
-      image: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดนิยม ⚡',
-      packages: [
-        { id: 'as1', name: '300 Diamonds', price: 90, profit: 14, bonus: '+0' },
-        { id: 'as2', name: '1,000 Diamonds', price: 300, profit: 45, bonus: '+50' },
-        { id: 'as3', name: '2,100 Diamonds', price: 600, profit: 90, bonus: '+150' },
-        { id: 'as4', name: '3,600 Diamonds', price: 1000, profit: 150, bonus: '+300' },
-        { id: 'as5', name: '7,500 Diamonds', price: 2000, profit: 300, bonus: '+800 🔥' },
-        { id: 'as6', name: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, bonus: '+2,000 👑' }
-      ]
-    },
-    {
-      id: 'lol',
-      name: 'League of Legends',
-      publisher: 'Riot Games',
-      category: 'pc',
-      image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=500&q=80',
-      badge: 'แนะนำ 🏆',
-      packages: [
-        { id: 'l1', name: '575 RP', price: 150, profit: 22, bonus: '+0 RP' },
-        { id: 'l2', name: '1,380 RP', price: 350, profit: 52, bonus: '+30 RP' },
-        { id: 'l3', name: '2,800 RP', price: 700, profit: 105, bonus: '+100 RP' },
-        { id: 'l4', name: '5,000 RP', price: 1250, profit: 188, bonus: '+250 RP 🔥' },
-        { id: 'l5', name: '11,000 RP (Ultra Pack)', price: 2600, profit: 390, bonus: '+700 RP 👑' }
-      ]
-    },
-    {
-      id: 'pubg',
-      name: 'PUBG Mobile',
-      publisher: 'Level Infinite',
-      category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดฮิต 🔫',
-      packages: [
-        { id: 'p1', name: '60 UC', price: 29, profit: 4, bonus: '+0 UC' },
-        { id: 'p2', name: '325 UC', price: 149, profit: 22, bonus: '+15 UC' },
-        { id: 'p3', name: '660 UC', price: 299, profit: 45, bonus: '+50 UC' },
-        { id: 'p4', name: '1,800 UC', price: 799, profit: 120, bonus: '+150 UC 🔥' },
-        { id: 'p5', name: '3,850 UC', price: 1600, profit: 240, bonus: '+350 UC ⭐' },
-        { id: 'p6', name: '8,100 UC (Whale Pack)', price: 3200, profit: 480, bonus: '+900 UC 👑' }
-      ]
-    },
-    {
-      id: 'rov',
-      name: 'ROV (Arena of Valor)',
-      publisher: 'Garena',
-      category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดฮิต ⚔️',
-      packages: [
-        { id: 'r1', name: '40 Coupons', price: 35, profit: 5, bonus: '+2 Coupons' },
-        { id: 'r2', name: '90 Coupons', price: 75, profit: 11, bonus: '+5 Coupons' },
-        { id: 'r3', name: '220 Coupons', price: 175, profit: 26, bonus: '+15 Coupons' },
-        { id: 'r4', name: '470 Coupons', price: 350, profit: 52, bonus: '+30 Coupons' },
-        { id: 'r5', name: '950 Coupons', price: 700, profit: 105, bonus: '+80 Coupons 🔥' },
-        { id: 'r6', name: '2,700 Coupons (Big Pack)', price: 1800, profit: 270, bonus: '+250 Coupons 👑' }
-      ]
-    },
-    {
-      id: 'freefire',
-      name: 'Free Fire',
-      publisher: 'Garena',
-      category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1560253023-3ec5d502959f?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดฮิต 💎',
-      packages: [
-        { id: 'ff1', name: '110 Diamonds', price: 35, profit: 5, bonus: '+5' },
-        { id: 'ff2', name: '341 Diamonds', price: 105, profit: 15, bonus: '+20' },
-        { id: 'ff3', name: '572 Diamonds', price: 175, profit: 26, bonus: '+40' },
-        { id: 'ff4', name: '1,160 Diamonds', price: 350, profit: 52, bonus: '+90 🔥' },
-        { id: 'ff5', name: '2,390 Diamonds', price: 700, profit: 105, bonus: '+200 ⭐' },
-        { id: 'ff6', name: '6,000 Diamonds (VIP Mega)', price: 1700, profit: 255, bonus: '+600 👑' }
-      ]
-    },
-    {
-      id: 'hsr',
-      name: 'Honkai: Star Rail',
-      publisher: 'HoYoverse',
-      category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=80',
-      badge: 'แนะนำ 🚀',
-      packages: [
-        { id: 'h1', name: '60 Oneiric Shard', price: 35, profit: 5, bonus: '+0' },
-        { id: 'h2', name: '300 Oneiric Shard', price: 179, profit: 27, bonus: '+30' },
-        { id: 'h3', name: '980 Oneiric Shard', price: 549, profit: 82, bonus: '+110' },
-        { id: 'h4', name: '1,980 Oneiric Shard', price: 1050, profit: 158, bonus: '+260 🔥' },
-        { id: 'h5', name: '3,280 Oneiric Shard', price: 1750, profit: 260, bonus: '+600 ⭐' },
-        { id: 'h6', name: '6,480 Oneiric Shard', price: 3390, profit: 500, bonus: '+1,600 👑' }
-      ]
-    },
-    {
-      id: 'fcmobile',
-      name: 'EA SPORTS FC Mobile',
-      publisher: 'ELECTRONIC ARTS',
-      category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=500&q=80',
-      badge: 'มาใหม่ ⚽',
-      packages: [
-        { id: 'fc1', name: '100 FC Points', price: 35, profit: 5, bonus: '+0' },
-        { id: 'fc2', name: '520 FC Points', price: 179, profit: 27, bonus: '+20' },
-        { id: 'fc3', name: '1,070 FC Points', price: 350, profit: 52, bonus: '+70' },
-        { id: 'fc4', name: '2,200 FC Points', price: 700, profit: 105, bonus: '+180 🔥' },
-        { id: 'fc5', name: '5,750 FC Points (Pro Pack)', price: 1750, profit: 260, bonus: '+550 👑' }
-      ]
-    }
-  ]);
-
-  // State สำหรับจัดการโค้ดกิจกรรมฝั่งแอดมิน
-  const [giftCodes, setGiftCodes] = useState(() => {
-    const savedCodes = localStorage.getItem('cyber_gift_codes');
-    if (savedCodes) {
-      try { return JSON.parse(savedCodes); } catch (e) {}
-    }
-    return [
-      { id: '1', code: 'GIFT2026', game: 'VALORANT', reward: '125 VP', maxUses: 50, usedCount: 2 },
-      { id: '2', code: 'FREE500', game: 'Avatar Star', reward: '1,000 Diamonds', maxUses: 20, usedCount: 1 }
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('cyber_gift_codes', JSON.stringify(giftCodes));
-  }, [giftCodes]);
-
-  const [newCodeName, setNewCodeName] = useState('');
-  const [newCodeGame, setNewCodeGame] = useState('VALORANT');
-  const [newCodeReward, setNewCodeReward] = useState('125 VP');
-  const [newCodeMaxUses, setNewCodeMaxUses] = useState(10);
-  const [adminCodeMsg, setAdminCodeMsg] = useState({ text: '', type: '' });
-
-  useEffect(() => {
-    const found = gamesData.find(g => g.name === newCodeGame);
-    if (found && found.packages.length > 0) {
-      setNewCodeReward(found.packages[0].name);
-    }
-  }, [newCodeGame, gamesData]);
-
-  const [showTopupWalletModal, setShowTopupWalletModal] = useState(false);
-  const [topupAmount, setTopupAmount] = useState('');
-  const [walletPaymentMethod, setWalletPaymentMethod] = useState('qrcode');
-  const [walletStep, setWalletStep] = useState(1);
-  const [walletTimeLeft, setWalletTimeLeft] = useState(180);
-  const [isWalletQrExpired, setIsWalletQrExpired] = useState(false);
-
-  const [truemoneyPhone, setTruemoneyPhone] = useState('');
-  const [truemoneyCard14, setTruemoneyCard14] = useState('');
-  const [creditCardNum, setCreditCardNum] = useState('');
-  const [creditCardExp, setCreditCardExp] = useState('');
-  const [creditCardCvv, setCreditCardCvv] = useState('');
-
-  const [isWalletAutoRunning, setIsWalletAutoRunning] = useState(false);
-  const [walletAutoSeconds, setWalletAutoSeconds] = useState(10);
-  const [pendingWalletAmount, setPendingWalletAmount] = useState(0);
-  const [pendingWalletOrderId, setPendingWalletOrderId] = useState('');
-
-  const [customerOrderSearch, setCustomerOrderSearch] = useState('');
-  const [exactSearchQuery, setExactSearchQuery] = useState('');
-  const [selectedGameFilter, setSelectedGameFilter] = useState('all');
-  const [selectedDateFilter, setSelectedDateFilter] = useState('');
-
-  const [orders, setOrders] = useState(() => {
-    const savedOrders = localStorage.getItem('cyber_topup_orders');
-    if (savedOrders) {
-      try { return JSON.parse(savedOrders); } catch (e) {}
-    }
-    return [
-      { id: 'ORD-14969', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 11:01 น.', dateKey: '2026-10-30', timestamp: Date.now() - 50000 },
-      { id: 'ORD-98214', game: 'VALORANT', package: '700 VP', price: 529, profit: 80, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '28/10/2026 14:20 น.', dateKey: '2026-10-28', timestamp: Date.now() - 100000 },
-      { id: 'ORD-82250', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: 'thanphooms@gmail.com', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 10:08 น.', dateKey: '2026-10-30', timestamp: Date.now() - 200000 },
-      { id: 'ORD-14914', game: 'Avatar Star', package: '1,000 Diamonds', price: 300, profit: 45, player: '11', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '25/04/2026 22:44 น.', dateKey: '2026-04-25', timestamp: Date.now() - 300000 }
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem('cyber_topup_orders', JSON.stringify(orders));
-  }, [orders]);
-
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
-  const [adminPin, setAdminPin] = useState(() => {
-    return localStorage.getItem('cyber_admin_pin') || '123456';
-  });
-  const [inputAdminPin, setInputAdminPin] = useState('');
-  const [adminPinError, setAdminPinError] = useState('');
-  const [adminSearchQuery, setAdminSearchQuery] = useState('');
-
-  const [oldPinInput, setOldPinInput] = useState('');
-  const [newPinInput, setNewPinInput] = useState('');
-  const [confirmNewPinInput, setConfirmNewPinInput] = useState('');
-  const [changePinMessage, setChangePinMessage] = useState({ text: '', type: '' });
-
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState(1);
-  const [checkoutPassword, setCheckoutPassword] = useState('');
-  const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
-  const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(180);
-  const [isQrExpired, setIsQrExpired] = useState(false);
-
-  const [isGameAutoRunning, setIsGameAutoRunning] = useState(false);
-  const [gameAutoSeconds, setGameAutoSeconds] = useState(10);
-  const [pendingGameOrderId, setPendingGameOrderId] = useState('');
-
-  const paymentMethods = [
-    { id: 'wallet', name: 'Cyber Wallet (เครดิตร้าน)', desc: 'หักจากยอดเงินในบัญชีทันที' },
-    { id: 'qrcode', name: 'QR PromptPay', desc: 'ฟรีค่าธรรมเนียม อัตโนมัติ 24 ชม.' },
-    { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนผ่านเบอร์วอลเล็ต 10 หลัก' },
-    { id: 'truemoneycard', name: 'บัตรเติมเงินทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก' },
-    { id: 'credit', name: 'บัตรเครดิต / เดบิต', desc: 'ชำระผ่านบัตรปลอดภัย' }
-  ];
-
-  const EyeIcon = ({ show }) => show ? (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c084fc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-      <circle cx="12" cy="12" r="3"></circle>
-    </svg>
-  ) : (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-      <line x1="1" y1="1" x2="23" y2="23"></line>
-    </svg>
-  );
-
-  useEffect(() => {
-    let timer;
-    if (showCheckoutModal && checkoutStep === 2 && selectedPayment?.id === 'qrcode' && !isQrExpired) {
-      timer = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) { clearInterval(timer); setIsQrExpired(true); return 0; }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [showCheckoutModal, checkoutStep, selectedPayment, isQrExpired]);
-
-  useEffect(() => {
-    let timer;
-    if (showTopupWalletModal && walletStep === 2 && walletPaymentMethod === 'qrcode' && !isWalletQrExpired) {
-      timer = setInterval(() => {
-        setWalletTimeLeft((prev) => {
-          if (prev <= 1) { clearInterval(timer); setIsWalletQrExpired(true); return 0; }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [showTopupWalletModal, walletStep, walletPaymentMethod, isWalletQrExpired]);
-
-  useEffect(() => {
-    let bgWalletTimer;
-    if (isWalletAutoRunning) {
-      bgWalletTimer = setInterval(() => {
-        setWalletAutoSeconds((prev) => {
-          if (prev <= 1) {
-            clearInterval(bgWalletTimer);
-            const amt = pendingWalletAmount;
-            
-            setUser((prevUser) => ({ ...prevUser, balance: prevUser.balance + amt }));
-            setRegisteredUsers((prevList) =>
-              prevList.map((u) => u.username === user.username ? { ...u, balance: u.balance + amt } : u)
-            );
-
-            const ordId = pendingWalletOrderId;
-            setOrders((prevOrders) =>
-              prevOrders.map((ord) => ord.id === ordId ? { ...ord, status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)' } : ord)
-            );
-
-            setIsWalletAutoRunning(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(bgWalletTimer);
-  }, [isWalletAutoRunning, pendingWalletAmount, pendingWalletOrderId]);
-
-  useEffect(() => {
-    let bgGameTimer;
-    if (isGameAutoRunning) {
-      bgGameTimer = setInterval(() => {
-        setGameAutoSeconds((prev) => {
-          if (prev <= 1) {
-            clearInterval(bgGameTimer);
-            const ordId = pendingGameOrderId;
-            setOrders((prevOrders) =>
-              prevOrders.map((ord) => ord.id === ordId ? { ...ord, status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)' } : ord)
-            );
-            setIsGameAutoRunning(false);
-            setOrderSuccess(ordId);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(bgGameTimer);
-  }, [isGameAutoRunning, pendingGameOrderId]);
-
-  const handleAuthSubmit = (e) => {
-    e.preventDefault();
-    setAuthError('');
-    setAuthSuccessMsg('');
-
-    if (authMode === 'login') {
-      if (!usernameInput.trim() || !passwordInput.trim()) {
-        setAuthError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
-        return;
-      }
-      
-      const foundUser = registeredUsers.find(
-        (u) => (u.username === usernameInput || u.email === usernameInput) && u.password === passwordInput
-      );
-
-      if (foundUser) {
-        if (rememberMe) {
-          localStorage.setItem('cyber_remembered_user', usernameInput);
-        } else {
-          localStorage.removeItem('cyber_remembered_user');
-        }
-        setUser(foundUser);
-      } else {
-        setAuthError('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
-      }
-    } else if (authMode === 'register') {
-      if (!emailInput.trim() || !usernameInput.trim() || !regPasswordInput.trim() || !confirmPasswordInput.trim()) {
-        setAuthError('กรุณากรอกข้อมูลให้ครบทั้ง 4 ช่อง');
-        return;
-      }
-      if (!emailInput.includes('@')) {
-        setAuthError('รูปแบบ Email ไม่ถูกต้อง');
-        return;
-      }
-      if (regPasswordInput !== confirmPasswordInput) {
-        setAuthError('รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน');
-        return;
-      }
-
-      const isExist = registeredUsers.some((u) => u.username === usernameInput);
-      if (isExist) {
-        setAuthError('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาใช้ชื่ออื่น');
-        return;
-      }
-
-      const newUser = { username: usernameInput, email: emailInput, password: regPasswordInput, balance: 1800 };
-      setRegisteredUsers([...registeredUsers, newUser]);
-      setUsernameInput(usernameInput);
-      setPasswordInput(regPasswordInput);
-      setEmailInput('');
-      setRegPasswordInput('');
-      setConfirmPasswordInput('');
-      setAuthSuccessMsg('สมัครสมาชิกสำเร็จแล้ว! กรุณากดปุ่มเข้าสู่ระบบ');
-      setAuthMode('login');
-    }
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    setPasswordInput('');
-    setShowLoginPassword(false);
-    setRegPasswordInput('');
-    setConfirmPasswordInput('');
-    setEmailInput('');
-    setIsAdminLoggedIn(false);
-    setActiveTab('shop');
-  };
-
-  const handleAdminLogin = (e) => {
-    e.preventDefault();
-    setAdminPinError('');
-    if (inputAdminPin === adminPin) {
-      setIsAdminLoggedIn(true);
-      setInputAdminPin('');
-    } else {
-      setAdminPinError('รหัส PIN ไม่ถูกต้อง');
-    }
-  };
-
-  const handleChangePinSubmit = (e) => {
-    e.preventDefault();
-    setChangePinMessage({ text: '', type: '' });
-
-    if (oldPinInput !== adminPin) {
-      setChangePinMessage({ text: 'รหัส PIN เดิมไม่ถูกต้อง', type: 'error' });
-      return;
-    }
-    if (newPinInput.length !== 6) {
-      setChangePinMessage({ text: 'รหัส PIN ใหม่ต้องมี 6 หลัก', type: 'error' });
-      return;
-    }
-    if (newPinInput !== confirmNewPinInput) {
-      setChangePinMessage({ text: 'รหัส PIN ใหม่และยืนยันรหัส PIN ไม่ตรงกัน', type: 'error' });
-      return;
-    }
-
-    setAdminPin(newPinInput);
-    localStorage.setItem('cyber_admin_pin', newPinInput);
-    setChangePinMessage({ text: 'เปลี่ยนรหัส PIN สำเร็จเรียบร้อย!', type: 'success' });
-    setOldPinInput('');
-    setNewPinInput('');
-    setConfirmNewPinInput('');
-  };
-
-  const handleCreateGiftCode = (e) => {
-    e.preventDefault();
-    setAdminCodeMsg({ text: '', type: '' });
-
-    if (!newCodeName.trim() || !newCodeReward.trim() || newCodeMaxUses <= 0) {
-      setAdminCodeMsg({ text: 'กรุณากรอกข้อมูลโค้ดและจำนวนสิทธิ์ให้ถูกต้อง', type: 'error' });
-      return;
-    }
-
-    const cleanCode = newCodeName.trim().toUpperCase();
-    if (giftCodes.some(c => c.code === cleanCode)) {
-      setAdminCodeMsg({ text: 'โค้ดนี้มีอยู่ในระบบแล้ว กรุณาใช้ชื่อโค้ดอื่น', type: 'error' });
-      return;
-    }
-
-    const newCodeObj = {
-      id: Date.now().toString(),
-      code: cleanCode,
-      game: newCodeGame,
-      reward: newCodeReward,
-      maxUses: parseInt(newCodeMaxUses),
-      usedCount: 0
-    };
-
-    setGiftCodes([newCodeObj, ...giftCodes]);
-    setAdminCodeMsg({ text: `สร้างโค้ด ${cleanCode} สำเร็จแล้ว!`, type: 'success' });
-    setNewCodeName('');
-    setNewCodeMaxUses(10);
-  };
-
-  const handleDeleteGiftCode = (id) => {
-    setGiftCodes(giftCodes.filter(c => c.id !== id));
-  };
-
-  // ฟังก์ชันรีเซ็ตสิทธิ์โค้ดทั้งหมด (ล้างรายชื่อไอดีที่เคยกรอก เพื่อให้ทุกคนกรอกใหม่ได้อีกครั้ง)
-  const handleResetAllRedeemRights = () => {
-    if (window.confirm('คุณต้องการรีเซ็ตสิทธิ์โค้ดของขวัญทั้งหมดใช่หรือไม่? (ทุกบัญชีจะสามารถกลับมากรอกโค้ดได้ใหม่อีกครั้งคนละ 1 ครั้ง)')) {
-      setGlobalRedeemedUsers([]);
-      alert('🔄 รีเซ็ตสิทธิ์สำเร็จ! ทุกบัญชีสามารถกลับมากรอกโค้ดได้ใหม่อีกครั้งแล้ว');
-    }
-  };
-
-  // ตรวจสอบและจำกัด 1 ไอดีกรอกโค้ดได้แค่ 1 ครั้งรวมทั้งหมด (ถ้ากรอกแล้ว จะกรอกโค้ดอื่นหรือซ้ำไม่ได้อีกเลยจนกว่าแอดมินจะกดรีเซ็ต)
-  const handleRedeemEventCode = (e) => {
-    e.preventDefault();
-    setEventMsg({ text: '', type: '' });
-
-    if (!eventPlayerId.trim() || !eventGiftCode.trim()) {
-      setEventMsg({ text: 'กรุณากรอก ID/ชื่อในเกม และโค้ดกิจกรรมให้ครบถ้วน', type: 'error' });
-      return;
-    }
-
-    const currentUsername = user ? user.username : '11';
-    const targetCode = eventGiftCode.trim().toUpperCase();
-    const foundCode = giftCodes.find(c => c.code === targetCode && c.game === eventGame);
-
-    if (!foundCode) {
-      setEventMsg({ text: `ไม่พบโค้ด "${targetCode}" สำหรับเกม ${eventGame}`, type: 'error' });
-      return;
-    }
-
-    // ตรวจสอบว่าบัญชีนี้เคยใช้สิทธิ์โค้ดไปแล้วหรือยัง (เช็คจาก globalRedeemedUsers)
-    if (globalRedeemedUsers.includes(currentUsername)) {
-      setEventMsg({ text: `❌ บัญชีของคุณ (${currentUsername}) เคยใช้สิทธิ์กรอกโค้ดไปแล้ว (จำกัด 1 บัญชีต่อ 1 สิทธิ์ จนกว่าแอดมินจะรีเซ็ตกิจกรรม)`, type: 'error' });
-      return;
-    }
-
-    if (foundCode.usedCount >= foundCode.maxUses) {
-      setEventMsg({ text: `โค้ด "${targetCode}" ถูกใช้งานครบจำนวนสิทธิ์เต็มแล้ว`, type: 'error' });
-      return;
-    }
-
-    // บันทึกสิทธิ์ว่าบัญชีนี้ใช้ไปแล้ว
-    setGlobalRedeemedUsers([...globalRedeemedUsers, currentUsername]);
-
-    setGiftCodes(giftCodes.map(c => c.id === foundCode.id ? { ...c, usedCount: c.usedCount + 1 } : c));
-
-    const newOrderId = 'ORD-EVT-' + Math.floor(10000 + Math.random() * 90000);
-    const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
-    const dateKey = `${year}-${month}-${day}`;
-
-    const newEventOrder = {
-      id: newOrderId,
-      game: `กิจกรรม (${eventGame})`,
-      package: `โค้ด: ${foundCode.code} (${foundCode.reward})`,
-      price: 0,
-      profit: 0,
-      player: currentUsername,
-      status: `รอแอดมินตรวจ [ID: ${eventPlayerId}]`,
-      type: 'event',
-      time: thaiTime,
-      dateKey: dateKey,
-      timestamp: Date.now()
-    };
-
-    setOrders([newEventOrder, ...orders]);
-    setEventMsg({ text: `🎉 ใช้โค้ด ${foundCode.code} สำเร็จ! ได้รับ: ${foundCode.reward} (เลขออร์เดอร์: ${newOrderId})`, type: 'success' });
-    setEventGiftCode('');
-    setEventPlayerId('');
-  };
-
-  const handleWalletNextStep = () => {
-    const amt = parseFloat(topupAmount);
-    if (isNaN(amt) || amt <= 0) {
-      alert('กรุณากรอกจำนวนเงินให้ถูกต้อง');
-      return;
-    }
-
-    if (walletPaymentMethod === 'true' && (!truemoneyPhone || truemoneyPhone.length < 10)) {
-      alert('กรุณากรอกเบอร์ TrueMoney Wallet 10 หลัก');
-      return;
-    } else if (walletPaymentMethod === 'truemoneycard' && (!truemoneyCard14 || truemoneyCard14.length < 14)) {
-      alert('กรุณากรอกรหัสบัตรเติมเงิน TrueMoney 14 หลัก');
-      return;
-    } else if (walletPaymentMethod === 'credit' && (!creditCardNum || creditCardNum.length < 16 || !creditCardExp || !creditCardCvv)) {
-      alert('กรุณากรอกข้อมูลบัตรเครดิตให้ครบถ้วน');
-      return;
-    }
-
-    setWalletTimeLeft(180);
-    setIsWalletQrExpired(false);
-    
-    if (walletPaymentMethod === 'qrcode') {
-      setWalletStep(2);
-    } else {
-      handleWalletConfirmPayment();
-    }
-  };
-
-  const handleWalletConfirmPayment = () => {
-    const amt = parseFloat(topupAmount) || 0;
-    const newOrderId = 'ORD-W-' + Math.floor(10000 + Math.random() * 90000);
-    const now = new Date();
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
-    const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
-    const dateKey = `${year}-${month}-${day}`;
-
-    const newWalletOrder = {
-      id: newOrderId,
-      game: `เติมเครดิตร้าน (${walletPaymentMethod.toUpperCase()})`,
-      package: `+฿${amt.toLocaleString()}`,
-      price: amt,
-      profit: 0,
-      player: user ? user.username : '11',
-      status: 'รอตรวจสอบ [สะดุดใน 10s]',
-      type: 'wallet',
-      time: thaiTime,
-      dateKey: dateKey,
-      timestamp: Date.now()
-    };
-
-    setOrders((prev) => [newWalletOrder, ...prev]);
-    setPendingWalletAmount(amt);
-    setPendingWalletOrderId(newOrderId);
-    setWalletAutoSeconds(10);
-    setIsWalletAutoRunning(true);
-    setShowTopupWalletModal(false);
-    setWalletStep(1);
-    setTopupAmount('');
-    setTruemoneyPhone('');
-    setTruemoneyCard14('');
-    setCreditCardNum('');
-    setCreditCardExp('');
-    setCreditCardCvv('');
-  };
-
-  const resetWalletModal = () => {
-    setShowTopupWalletModal(false);
-    setWalletStep(1);
-    setTopupAmount('');
-    setWalletTimeLeft(180);
-    setIsWalletQrExpired(false);
-    setTruemoneyPhone('');
-    setTruemoneyCard14('');
-    setCreditCardNum('');
-    setCreditCardExp('');
-    setCreditCardCvv('');
-  };
-
-  const handleVerifyPasswordStep = (e) => {
-    e.preventDefault();
-    setCheckoutPasswordError('');
-
-    if (checkoutPassword !== user.password) {
-      setCheckoutPasswordError('รหัสผ่านบัญชีไม่ถูกต้อง');
-      return;
-    }
-
-    if (selectedPayment.id === 'wallet' && user.balance < selectedPackage.price) {
-      setCheckoutPasswordError('ยอดเงินใน Cyber Wallet ของคุณไม่พอ');
-      return;
-    }
-
-    if (selectedPayment.id === 'qrcode') {
-      setTimeLeft(180);
-      setIsQrExpired(false);
-      setCheckoutStep(2);
-    } else {
-      handleFinalPaymentSubmit();
-    }
-  };
-
-  const handleFinalPaymentSubmit = () => {
-    if (selectedPayment.id === 'wallet') {
-      setUser((prev) => ({ ...prev, balance: prev.balance - selectedPackage.price }));
-    }
-
-    setIsProcessing(true);
-
-    setTimeout(() => {
-      const newOrderId = 'ORD-' + Math.floor(10000 + Math.random() * 90000);
-      const now = new Date();
-      const day = String(now.getDate()).padStart(2, '0');
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const year = now.getFullYear();
-      const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
-      const dateKey = `${year}-${month}-${day}`;
-
-      const newOrder = {
-        id: newOrderId,
-        game: selectedGame.name,
-        package: selectedPackage.name,
-        price: selectedPackage.price,
-        profit: selectedPackage.profit || Math.round(selectedPackage.price * 0.15),
-        player: user.username,
-        status: 'รอตรวจสอบ [สะดุดใน 10s]',
-        type: 'game',
-        time: thaiTime,
-        dateKey: dateKey,
-        timestamp: Date.now(),
-      };
-
-      setOrders([newOrder, ...orders]);
-      setIsProcessing(false);
-      setPendingGameOrderId(newOrderId);
-      setGameAutoSeconds(10);
-      setIsGameAutoRunning(true);
-      setShowCheckoutModal(false);
-      setCheckoutStep(1);
-      setCheckoutPassword('');
-      setTruemoneyPhone('');
-      setTruemoneyCard14('');
-      setCreditCardNum('');
-      setCreditCardExp('');
-      setCreditCardCvv('');
-    }, 1000);
-  };
-
-  const handleAdminApproveOrder = (orderId) => {
-    if (isWalletAutoRunning && pendingWalletOrderId === orderId) setIsWalletAutoRunning(false);
-    if (isGameAutoRunning && pendingGameOrderId === orderId) setIsGameAutoRunning(false);
-
-    setOrders((prevOrders) =>
-      prevOrders.map((ord) => {
-        if (ord.id === orderId) {
-          if (ord.type === 'wallet' && !ord.status.includes('สำเร็จ')) {
-            setUser((prevUser) => ({ ...prevUser, balance: prevUser.balance + ord.price }));
-            setRegisteredUsers((prevList) =>
-              prevList.map((u) => u.username === ord.player ? { ...u, balance: u.balance + ord.price } : u)
-            );
-          }
-          return { ...ord, status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)' };
-        }
-        return ord;
-      })
-    );
-  };
-
-  const handleAdminRejectOrder = (orderId) => {
-    if (isWalletAutoRunning && pendingWalletOrderId === orderId) setIsWalletAutoRunning(false);
-    if (isGameAutoRunning && pendingGameOrderId === orderId) setIsGameAutoRunning(false);
-    setOrders((prevOrders) => prevOrders.map((ord) => ord.id === orderId ? { ...ord, status: '❌ ยกเลิก (ไม่พบยอดโอนเงิน)' } : ord));
-  };
-
-  const resetCheckoutModal = () => {
-    setShowCheckoutModal(false);
-    setCheckoutStep(1);
-    setCheckoutPassword('');
-    setShowCheckoutPassword(false);
-    setCheckoutPasswordError('');
-    setTimeLeft(180);
-    setIsQrExpired(false);
-    setTruemoneyPhone('');
-    setTruemoneyCard14('');
-    setCreditCardNum('');
-    setCreditCardExp('');
-    setCreditCardCvv('');
-  };
-
-  const filteredGames = gamesData.filter((game) => {
-    const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = gameCategory === 'all' || game.category === gameCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const filteredOrders = orders.filter((ord) => ord.player.toLowerCase().includes(adminSearchQuery.toLowerCase()) || ord.id.toLowerCase().includes(adminSearchQuery.toLowerCase()) || ord.game.toLowerCase().includes(adminSearchQuery.toLowerCase()));
-
-  const isUserAdmin = user && (user.username === 'thanphooms@gmail.com' || user.email === 'thanphooms@gmail.com');
-
-  const searchedOrders = orders.filter(o => {
-    let matchUser = false;
-    if (!isUserAdmin) {
-      matchUser = user && o.player.toLowerCase() === user.username.toLowerCase();
-    } else {
-      const q = exactSearchQuery.trim().toLowerCase();
-      matchUser = !q || (o.player.toLowerCase() === q) || (o.id.toLowerCase() === q);
-    }
-
-    const orderQuery = customerOrderSearch.trim().toLowerCase();
-    const matchOrder = !orderQuery || o.id.toLowerCase().includes(orderQuery);
-
-    const matchGame = selectedGameFilter === 'all' || o.game.toLowerCase() === selectedGameFilter.toLowerCase();
-    const matchDate = !selectedDateFilter || o.dateKey === selectedDateFilter;
-
-    return matchUser && matchOrder && matchGame && matchDate;
-  });
-
-  const totalSpentInSearch = searchedOrders.reduce((sum, ord) => sum + ord.price, 0);
-
-  const totalAdminSales = orders.reduce((sum, ord) => sum + (ord.type === 'game' ? ord.price : 0), 0);
-  const totalAdminProfits = orders.reduce((sum, ord) => sum + (ord.profit || 0), 0);
-  const totalAdminTax = Math.round(totalAdminProfits * 0.07);
-
-  const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);
-
-  if (!user) {
+if (!user) {
     return (
       <div style={{
         backgroundColor: '#070a12',
@@ -1341,7 +501,7 @@ export default function GameTopupApp() {
               onMouseDown={(e) => { if(playerId.trim() && selectedPackage && selectedPayment) e.currentTarget.style.transform = 'scale(0.98)'; }}
               onMouseUp={(e) => { if(playerId.trim() && selectedPackage && selectedPayment) e.currentTarget.style.transform = 'scale(1.01)'; }}
             >
-              {!playerId.trim() ? 'กรุณากรอกชื่อผู้ใช้ / ID เกม' : !selectedPackage ? 'กรุณาเลือกแพ็กเกจเติมเงิน' : !selectedPayment ? 'กรุณาเลือกช่องทางชำระเงิน' : `ยืนยันชำระเงิน ฿{selectedPackage.price.toLocaleString()}`}
+              {!playerId.trim() ? 'กรุณากรอกชื่อผู้ใช้ / ID เกม' : !selectedPackage ? 'กรุณาเลือกแพ็กเกจเติมเงิน' : !selectedPayment ? 'กรุณาเลือกช่องทางชำระเงิน' : `ยืนยันชำระเงิน ฿${selectedPackage.price.toLocaleString()}`}
             </button>
           </div>
         )}
@@ -1360,15 +520,16 @@ export default function GameTopupApp() {
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <input 
                 type="text" 
+                placeholder={isUserAdmin ? "🔍 ค้นหาชื่อบัญชีลูกค้า..." : user.username}
                 value={isUserAdmin ? exactSearchQuery : user.username} 
                 disabled={!isUserAdmin}
                 onChange={(e) => isUserAdmin && setExactSearchQuery(e.target.value)} 
                 style={{ 
-                  flex: 1, minWidth: '150px', 
-                  backgroundColor: '#1f2937', 
+                  flex: 1, minWidth: '180px', 
+                  backgroundColor: isUserAdmin ? '#030712' : '#1f2937', 
                   border: '1.5px solid #a855f7', borderRadius: '10px', padding: '12px', 
-                  color: '#9ca3af', outline: 'none', 
-                  cursor: 'not-allowed', fontWeight: 'bold',
+                  color: '#ffffff', outline: 'none', 
+                  cursor: isUserAdmin ? 'text' : 'not-allowed', fontWeight: 'bold',
                   boxSizing: 'border-box' 
                 }} 
               />
@@ -1506,7 +667,7 @@ export default function GameTopupApp() {
                   </form>
                 </div>
 
-                {/* 2. สรุปยอดขาย กำไร และภาษี */}
+                {/* สรุปยอดขาย กำไร และภาษีประจำปี */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '20px', textAlign: 'center', transition: 'all 0.3s ease' }}
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(168,85,247,0.3)'; }}
@@ -1526,12 +687,12 @@ export default function GameTopupApp() {
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(245,158,11,0.3)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
-                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>🏛️ เสียภาษี (7% จากกำไร)</div>
+                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>🏛️ เสียภาษีประจำปี (7% จากกำไร)</div>
                     <div style={{ fontSize: '22px', fontWeight: '900', color: '#f59e0b' }}>-฿{totalAdminTax.toLocaleString()}</div>
                   </div>
                 </div>
 
-                {/* 3. รายการคำสั่งซื้อหลังบ้าน */}
+                {/* รายการคำสั่งซื้อหลังบ้าน */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #9333ea' }}>
                   <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 15px 0' }}>📊 รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ</h2>
 
@@ -1585,14 +746,13 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                {/* 4. ส่วนสร้างโค้ดกิจกรรม + ปุ่มรีเซ็ตสิทธิ์ทุกบัญชีสำหรับกิจกรรมประจำปี */}
+                {/* ส่วนสร้างโค้ดกิจกรรม + ปุ่มปรับสิทธิ์แบบใหม่ */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                       🎁 สร้างและจัดการโค้ดของขวัญ / โค้ดกิจกรรม
                     </h3>
                     
-                    {/* ปุ่มรีเซ็ตสิทธิ์โค้ดทุกบัญชีสำหรับช่วงกิจกรรมประจำปี */}
                     <button 
                       onClick={handleResetAllRedeemRights} 
                       style={{ backgroundColor: '#f59e0b', color: '#000000', border: 'none', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', boxShadow: '0 0 15px rgba(245,158,11,0.5)', transition: 'all 0.25s ease' }}
@@ -1635,7 +795,28 @@ export default function GameTopupApp() {
 
                     <div>
                       <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>4. จำนวนสิทธิ์ทั้งหมด</label>
-                      <input type="number" min="1" placeholder="เช่น 10" value={newCodeMaxUses} onChange={(e) => setNewCodeMaxUses(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
+                      <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', overflow: 'hidden' }}>
+                        <button 
+                          type="button" 
+                          onClick={() => setNewCodeMaxUses(Math.max(1, newCodeMaxUses - 1))}
+                          style={{ backgroundColor: 'rgba(147,51,234,0.3)', color: '#a855f7', border: 'none', padding: '8px 14px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9333ea'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(147,51,234,0.3)'}
+                        >-</button>
+                        <input 
+                          type="text" 
+                          readOnly
+                          value={newCodeMaxUses} 
+                          style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', outline: 'none' }} 
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => setNewCodeMaxUses(newCodeMaxUses + 1)}
+                          style={{ backgroundColor: 'rgba(147,51,234,0.3)', color: '#a855f7', border: 'none', padding: '8px 14px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#9333ea'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(147,51,234,0.3)'}
+                        >+</button>
+                      </div>
                     </div>
 
                     <div style={{ gridColumn: '1 / -1' }}>
@@ -1866,7 +1047,7 @@ export default function GameTopupApp() {
       )}
 
       {/* FOOTER */}
-      <footer style={{ textAlign: 'center', marginTop: '50px', padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', color: '#9ca3af', fontSize: '13px' }}>
+      <footer style={{ textAlign: 'center', marginTop: '50px', padding: '20px', border: 'top 1px solid rgba(255,255,255,0.05)', color: '#9ca3af', fontSize: '13px' }}>
         <p style={{ margin: 0 }}>⚡ <b>CYBER TOPUP</b> - บริการเติมเกมออนไลน์ตลอด 24 ชั่วโมง</p>
       </footer>
     </div>
