@@ -287,8 +287,8 @@ export default function GameTopupApp() {
       try { return JSON.parse(savedOrders); } catch (e) {}
     }
     return [
-      { id: 'ORD-14969', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 11:01 น.', dateKey: '2026-10-30', timestamp: Date.now() - 50000 },
-      { id: 'ORD-98214', game: 'VALORANT', package: '700 VP', price: 529, profit: 80, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '28/10/2026 14:20 น.', dateKey: '2026-10-28', timestamp: Date.now() - 100000 }
+      { id: 'ORD-14969', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: 'thanphooms@gmail.com', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 11:01 น.', dateKey: '2026-10-30', timestamp: Date.now() - 50000 },
+      { id: 'ORD-98214', game: 'VALORANT', package: '700 VP', price: 529, profit: 80, player: 'thanphooms@gmail.com', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '28/10/2026 14:20 น.', dateKey: '2026-10-28', timestamp: Date.now() - 100000 }
     ];
   });
 
@@ -973,6 +973,46 @@ export default function GameTopupApp() {
 
   const totalSpentInSearch = searchedOrders.reduce((sum, ord) => sum + ord.price, 0);
   const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);
+
+  // -------------------------------------------------------------
+  // LOGIC จัดกลุ่มประวัติย้อนหลังตามวันที่ & PAGINATION (5 รายการ/หน้า)
+  // -------------------------------------------------------------
+  const [selectedHistoryDate, setSelectedHistoryDate] = useState('all');
+  const [historyPage, setHistoryPage] = useState(1);
+
+  const groupedPastOrders = React.useMemo(() => {
+    const groups = {};
+    pastOrders.forEach((ord) => {
+      const dateStr = ord.time ? ord.time.split(' ')[0] : (ord.dateKey || 'อื่นๆ');
+      if (!groups[dateStr]) {
+        groups[dateStr] = [];
+      }
+      groups[dateStr].push(ord);
+    });
+    return groups;
+  }, [pastOrders]);
+
+  const availableHistoryDates = Object.keys(groupedPastOrders);
+
+  const filteredPastOrdersByDate = React.useMemo(() => {
+    if (selectedHistoryDate === 'all') {
+      return pastOrders;
+    }
+    return groupedPastOrders[selectedHistoryDate] || [];
+  }, [pastOrders, groupedPastOrders, selectedHistoryDate]);
+
+  const historyItemsPerPage = 5;
+  const totalHistoryPages = Math.ceil(filteredPastOrdersByDate.length / historyItemsPerPage) || 1;
+
+  const paginatedPastOrders = React.useMemo(() => {
+    const startIndex = (historyPage - 1) * historyItemsPerPage;
+    return filteredPastOrdersByDate.slice(startIndex, startIndex + historyItemsPerPage);
+  }, [filteredPastOrdersByDate, historyPage]);
+
+  const handleHistoryDateChange = (e) => {
+    setSelectedHistoryDate(e.target.value);
+    setHistoryPage(1);
+  };
 
   if (!user) {
     return (
@@ -1728,7 +1768,7 @@ export default function GameTopupApp() {
               </span>
             </div>
 
-            {/* ส่วนแสดงรายการของวันนี้ (จำกัดหน้าละ 10 รายการ พร้อมเลือกหน้าได้) */}
+            {/* รายการประจำวัน (วันนี้) */}
             <div style={{ marginBottom: '25px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '12px' }}>📅 รายการประจำวัน (วันนี้ {currentDayStr})</h3>
               {paginatedTodayOrders.length > 0 ? (
@@ -1785,27 +1825,89 @@ export default function GameTopupApp() {
               )}
             </div>
 
-            {/* ส่วนแสดงประวัติย้อนหลัง (ข้ามวันไปแล้ว) */}
+            {/* ประวัติย้อนหลัง (เลือกวันที่ตาม Dropdown & แบ่ง 5 รายการ/หน้า) */}
             {pastOrders.length > 0 && (
               <div>
-                <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#9ca3af', marginBottom: '12px', borderTop: '1px solid #374151', paddingTop: '20px' }}>📂 ประวัติย้อนหลัง (รายการจากวันก่อนหน้า)</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', opacity: 0.85 }}>
-                  {pastOrders.map((ord, idx) => (
-                    <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #1f2937', borderRadius: '12px', padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-                          <span style={{ backgroundColor: '#374151', color: '#d1d5db', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
-                          <span style={{ fontSize: '12px', color: '#9ca3af' }}>📅 {ord.time}</span>
-                        </div>
-                        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d1d5db' }}>🎮 {ord.game} <span style={{ color: '#a855f7', fontSize: '12px' }}>({ord.package})</span></div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price.toLocaleString()}</div>
-                        <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold' }}>{ord.status}</span>
-                      </div>
-                    </div>
-                  ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #374151', paddingTop: '20px', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+                  <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#9ca3af', margin: 0 }}>📂 ประวัติย้อนหลัง (รายการจากวันก่อนหน้า)</h3>
+                  
+                  {/* Dropdown เลือกวันที่ */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '12px', color: '#c084fc', fontWeight: 'bold' }}>📅 เลือกวันที่ประวัติ:</span>
+                    <select
+                      value={selectedHistoryDate}
+                      onChange={handleHistoryDateChange}
+                      style={{
+                        backgroundColor: '#030712',
+                        border: '1.5px solid #a855f7',
+                        borderRadius: '10px',
+                        padding: '8px 14px',
+                        color: '#38bdf8',
+                        fontWeight: 'bold',
+                        fontSize: '12px',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="all">🌐 แสดงประวัติย้อนหลังทั้งหมด ({pastOrders.length} รายการ)</option>
+                      {availableHistoryDates.map((dateStr) => (
+                        <option key={dateStr} value={dateStr}>
+                          📅 วันที่ {dateStr} ({groupedPastOrders[dateStr].length} รายการ)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', opacity: 0.95 }}>
+                  {paginatedPastOrders.map((ord, idx) => {
+                    const globalIdx = (historyPage - 1) * historyItemsPerPage + idx + 1;
+                    return (
+                      <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #1f2937', borderRadius: '12px', padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ color: '#9ca3af', fontSize: '11px', fontWeight: 'bold' }}>#{globalIdx}</span>
+                            <span style={{ backgroundColor: '#374151', color: '#d1d5db', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
+                            <span style={{ fontSize: '12px', color: '#9ca3af' }}>📅 {ord.time}</span>
+                          </div>
+                          <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d1d5db' }}>🎮 {ord.game} <span style={{ color: '#a855f7', fontSize: '12px' }}>({ord.package})</span></div>
+                          <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>ผู้ทำรายการ: {ord.player}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price.toLocaleString()}</div>
+                          <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold' }}>{ord.status}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* ปุ่ม Pagination หากรายการเกิน 5 รายการ */}
+                {totalHistoryPages > 1 && (
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '18px' }}>
+                    <span style={{ fontSize: '12px', color: '#9ca3af', marginRight: '6px' }}>หน้า {historyPage} จาก {totalHistoryPages}:</span>
+                    {Array.from({ length: totalHistoryPages }, (_, i) => i + 1).map((pageNum) => (
+                      <button
+                        key={pageNum}
+                        onClick={() => setHistoryPage(pageNum)}
+                        style={{
+                          backgroundColor: historyPage === pageNum ? '#9333ea' : '#030712',
+                          color: '#ffffff',
+                          border: '1px solid ' + (historyPage === pageNum ? '#a855f7' : '#374151'),
+                          borderRadius: '8px',
+                          padding: '6px 12px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          transition: 'all 0.2s ease',
+                          boxShadow: historyPage === pageNum ? '0 0 10px rgba(147,51,234,0.6)' : 'none'
+                        }}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1832,10 +1934,7 @@ export default function GameTopupApp() {
               </div>
             ) : (
               <>
-                {/* กล่องเปลี่ยน PIN (ปรับช่องกรอก 3 ช่องให้เต็ม และปุ่มด้านล่างให้พอดีกรอบสีฟ้า) และ กล่องจัดการการโปรโมทเว็บ */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px' }}>
-                  
-                  {/* ฝั่งซ้าย: เปลี่ยนรหัส PIN (ดีไซน์เต็มกรอบและปุ่มด้านล่างพอดีกรอบฟ้า) */}
                   <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
@@ -1874,7 +1973,6 @@ export default function GameTopupApp() {
                     </form>
                   </div>
 
-                  {/* ฝั่งขวา: จัดการโปรโมทเว็บ / ค่าโฆษณา (แสดง 5 บรรทัดต่อหน้า) */}
                   <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #ec4899', boxShadow: '0 0 25px rgba(236,72,153,0.2)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                       <span style={{ fontSize: '20px' }}>📢</span>
@@ -1965,10 +2063,8 @@ export default function GameTopupApp() {
                       )}
                     </div>
                   </div>
-
                 </div>
 
-                {/* การ์ดสรุปการเงิน 5 ช่อง */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '18px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>💵 ยอดขายรวมทั้งหมด</div>
@@ -2000,7 +2096,6 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                {/* รายการทำรายการหลังบ้าน พร้อมปุ่มกดอนุมัติภายใน 10 วินาที */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #9333ea' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                     <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ (Auto 10s)</h2>
