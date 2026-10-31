@@ -253,7 +253,6 @@ export default function GameTopupApp() {
   const [creditCardExp, setCreditCardExp] = useState('');
   const [creditCardCvv, setCreditCardCvv] = useState('');
 
-  // ฟังก์ชันจัดรูปแบบเลขบัตรเครดิต auto spacing
   const handleCreditCardNumChange = (e) => {
     let raw = e.target.value.replace(/[^0-9]/g, '');
     if (raw.length > 16) raw = raw.slice(0, 16);
@@ -261,7 +260,6 @@ export default function GameTopupApp() {
     setCreditCardNum(formatted);
   };
 
-  // ฟังก์ชันจัดรูปแบบวันหมดอายุ auto slash /
   const handleCreditCardExpChange = (e) => {
     let raw = e.target.value.replace(/[^0-9]/g, '');
     if (raw.length > 4) raw = raw.slice(0, 4);
@@ -272,11 +270,6 @@ export default function GameTopupApp() {
     }
   };
 
-  const [isWalletAutoRunning, setIsWalletAutoRunning] = useState(false);
-  const [walletAutoSeconds, setWalletAutoSeconds] = useState(10);
-  const [pendingWalletAmount, setPendingWalletAmount] = useState(0);
-  const [pendingWalletOrderId, setPendingWalletOrderId] = useState('');
-
   const [floatingTimer, setFloatingTimer] = useState(0);
 
   const [customerOrderSearch, setCustomerOrderSearch] = useState('');
@@ -286,6 +279,7 @@ export default function GameTopupApp() {
 
   const [adminOrdersPage, setAdminOrdersPage] = useState(1);
 
+  // ระบบออร์เดอร์ พร้อมระบบนับถอยหลัง 10 วินาที Auto-Approve
   const [orders, setOrders] = useState(() => {
     const savedOrders = localStorage.getItem('cyber_topup_orders');
     if (savedOrders) {
@@ -293,15 +287,40 @@ export default function GameTopupApp() {
     }
     return [
       { id: 'ORD-14969', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 11:01 น.', dateKey: '2026-10-30', timestamp: Date.now() - 50000 },
-      { id: 'ORD-98214', game: 'VALORANT', package: '700 VP', price: 529, profit: 80, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '28/10/2026 14:20 น.', dateKey: '2026-10-28', timestamp: Date.now() - 100000 },
-      { id: 'ORD-82250', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: 'thanphooms@gmail.com', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 10:08 น.', dateKey: '2026-10-30', timestamp: Date.now() - 200000 },
-      { id: 'ORD-14914', game: 'Avatar Star', package: '1,000 Diamonds', price: 300, profit: 45, player: '11', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '25/04/2026 22:44 น.', dateKey: '2026-04-25', timestamp: Date.now() - 300000 }
+      { id: 'ORD-98214', game: 'VALORANT', package: '700 VP', price: 529, profit: 80, player: '22', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '28/10/2026 14:20 น.', dateKey: '2026-10-28', timestamp: Date.now() - 100000 }
     ];
   });
 
   useEffect(() => {
     localStorage.setItem('cyber_topup_orders', JSON.stringify(orders));
   }, [orders]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setOrders(prevOrders => {
+        let hasChanges = false;
+        const updated = prevOrders.map(ord => {
+          if (ord.status && ord.status.startsWith('รอตรวจสอบ') && ord.timestamp) {
+            const elapsed = Math.floor((now - ord.timestamp) / 1000);
+            if (elapsed >= 10) {
+              hasChanges = true;
+              if (ord.type === 'wallet') {
+                setUser(prevU => prevU ? { ...prevU, balance: prevU.balance + ord.price } : prevU);
+                setRegisteredUsers(prevList =>
+                  prevList.map(u => u.username === ord.player ? { ...u, balance: u.balance + ord.price } : u)
+                );
+              }
+              return { ...ord, status: '✅ สำเร็จ (ระบบอนุมัติอัตโนมัติ 10s)' };
+            }
+          }
+          return ord;
+        });
+        return hasChanges ? updated : prevOrders;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [adminPin, setAdminPin] = useState(() => {
@@ -322,17 +341,13 @@ export default function GameTopupApp() {
   const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
   const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(null);
   const [timeLeft, setTimeLeft] = useState(180);
   const [isQrExpired, setIsQrExpired] = useState(false);
 
-  const [isGameAutoRunning, setIsGameAutoRunning] = useState(false);
-  const [gameAutoSeconds, setGameAutoSeconds] = useState(10);
-  const [pendingGameOrderId, setPendingGameOrderId] = useState('');
-
-  // ระบบการโฆษณา/โปรโมทเว็บ ของแอดมิน
+  // ระบบการโฆษณา/โปรโมทเว็บ ของแอดมิน (แสดง 5 รายการต่อหน้า)
   const [adPlatform, setAdPlatform] = useState('Facebook Ads');
   const [adAmountInput, setAdAmountInput] = useState('');
+  const [adPage, setAdPage] = useState(1);
   const [adPromotions, setAdPromotions] = useState(() => {
     const savedPromos = localStorage.getItem('cyber_ad_promotions_list');
     if (savedPromos) {
@@ -357,10 +372,6 @@ export default function GameTopupApp() {
       alert('กรุณากรอกจำนวนเงินโฆษณาให้ถูกต้อง');
       return;
     }
-    if (adPromotions.length >= 10) {
-      alert('จำกัดรายการโฆษณาสูงสุด 10 บรรทัด กรุณาลบรายการเก่าออกก่อนเพิ่มใหม่');
-      return;
-    }
 
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
@@ -377,11 +388,16 @@ export default function GameTopupApp() {
 
     setAdPromotions([newItem, ...adPromotions]);
     setAdAmountInput('');
+    setAdPage(1);
   };
 
   const handleDeleteAdPromotion = (id) => {
     setAdPromotions(adPromotions.filter(item => item.id !== id));
   };
+
+  const adItemsPerPage = 5;
+  const totalAdPages = Math.ceil(adPromotions.length / adItemsPerPage) || 1;
+  const paginatedAdPromotions = adPromotions.slice((adPage - 1) * adItemsPerPage, adPage * adItemsPerPage);
 
   const totalAdminSales = orders.reduce((sum, ord) => sum + (ord.type === 'game' ? ord.price : 0), 0);
   const totalAdminProfits = orders.reduce((sum, ord) => sum + (ord.profit || 0), 0);
@@ -461,57 +477,6 @@ export default function GameTopupApp() {
     }
     return () => clearInterval(fTimer);
   }, [floatingTimer]);
-
-  useEffect(() => {
-    let bgWalletTimer;
-    if (isWalletAutoRunning) {
-      bgWalletTimer = setInterval(() => {
-        setWalletAutoSeconds((prev) => {
-          if (prev <= 1) {
-            clearInterval(bgWalletTimer);
-            const amt = pendingWalletAmount;
-            
-            setUser((prevUser) => ({ ...prevUser, balance: prevUser.balance + amt }));
-            setRegisteredUsers((prevList) =>
-              prevList.map((u) => u.username === user.username ? { ...u, balance: u.balance + amt } : u)
-            );
-
-            const ordId = pendingWalletOrderId;
-            setOrders((prevOrders) =>
-              prevOrders.map((ord) => ord.id === ordId ? { ...ord, status: '✅ สำเร็จ (ระบบยืนยันอัตโนมัติ)' } : ord)
-            );
-
-            setIsWalletAutoRunning(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(bgWalletTimer);
-  }, [isWalletAutoRunning, pendingWalletAmount, pendingWalletOrderId]);
-
-  useEffect(() => {
-    let bgGameTimer;
-    if (isGameAutoRunning) {
-      bgGameTimer = setInterval(() => {
-        setGameAutoSeconds((prev) => {
-          if (prev <= 1) {
-            clearInterval(bgGameTimer);
-            const ordId = pendingGameOrderId;
-            setOrders((prevOrders) =>
-              prevOrders.map((ord) => ord.id === ordId ? { ...ord, status: '✅ สำเร็จ (ระบบยืนยันอัตโนมัติ)' } : ord)
-            );
-            setIsGameAutoRunning(false);
-            setOrderSuccess(ordId);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(bgGameTimer);
-  }, [isGameAutoRunning, pendingGameOrderId]);
 
   const handleAuthSubmit = (e) => {
     e.preventDefault();
@@ -704,7 +669,7 @@ export default function GameTopupApp() {
       price: 0,
       profit: 0,
       player: eventPlayerId.trim(),
-      status: `รอแอดมินตรวจ [ID: ${eventPlayerId.trim()}]`,
+      status: 'รอตรวจสอบ [10s]',
       type: 'event',
       time: thaiTime,
       dateKey: dateKey,
@@ -794,11 +759,6 @@ export default function GameTopupApp() {
     };
 
     setOrders((prev) => [newWalletOrder, ...prev]);
-    setPendingWalletAmount(amt);
-    setPendingWalletOrderId(newOrderId);
-    setWalletAutoSeconds(10);
-    setIsWalletAutoRunning(true);
-    
     setFloatingTimer(10);
 
     setShowTopupWalletModal(false);
@@ -829,7 +789,6 @@ export default function GameTopupApp() {
     setCreditCardCvv('');
   };
 
-  // ปุ่มกดเริ่มต้นชำระเงินเติมเกม
   const handleStartGamePayment = () => {
     setCheckoutPasswordError('');
     
@@ -839,7 +798,6 @@ export default function GameTopupApp() {
       return;
     }
 
-    // กรณีเลือก TrueMoney Wallet ให้เด้งหน้าต่าง OTP ก่อน
     if (selectedPayment.id === 'true') {
       if (!truemoneyPhone || truemoneyPhone.length < 10) {
         alert('กรุณากรอกเบอร์ TrueMoney Wallet ให้ครบ 10 หลัก');
@@ -850,13 +808,11 @@ export default function GameTopupApp() {
       setTrueMoneyOtpError('');
       return;
     } else if (selectedPayment.id === 'qrcode' || selectedPayment.id === 'wallet') {
-      // กรณี QR Code หรือ Wallet ให้เปิดหน้ากดยืนยันรหัสผ่านเพื่อความปลอดภัย
       setTimeLeft(180);
       setIsQrExpired(false);
       setCheckoutStep(1);
       setShowCheckoutModal(true);
     } else {
-      // ช่องทางอื่น ชำระเงินได้ทันที
       handleFinalPaymentSubmit();
     }
   };
@@ -919,10 +875,6 @@ export default function GameTopupApp() {
 
       setOrders([newOrder, ...orders]);
       setIsProcessing(false);
-      setPendingGameOrderId(newOrderId);
-      setGameAutoSeconds(10);
-      setIsGameAutoRunning(true);
-      
       setFloatingTimer(10);
 
       setShowCheckoutModal(false);
@@ -938,9 +890,6 @@ export default function GameTopupApp() {
   };
 
   const handleAdminApproveOrder = (orderId) => {
-    if (isWalletAutoRunning && pendingWalletOrderId === orderId) setIsWalletAutoRunning(false);
-    if (isGameAutoRunning && pendingGameOrderId === orderId) setIsGameAutoRunning(false);
-
     setOrders((prevOrders) =>
       prevOrders.map((ord) => {
         if (ord.id === orderId) {
@@ -958,8 +907,6 @@ export default function GameTopupApp() {
   };
 
   const handleAdminRejectOrder = (orderId) => {
-    if (isWalletAutoRunning && pendingWalletOrderId === orderId) setIsWalletAutoRunning(false);
-    if (isGameAutoRunning && pendingGameOrderId === orderId) setIsGameAutoRunning(false);
     setOrders((prevOrders) => prevOrders.map((ord) => ord.id === orderId ? { ...ord, status: '❌ ยกเลิก (ไม่พบยอดโอนเงิน)' } : ord));
   };
 
@@ -1164,8 +1111,8 @@ export default function GameTopupApp() {
         }}>
           <div style={{ fontSize: '22px' }}>⏳</div>
           <div>
-            <div style={{ fontSize: '12px', color: '#9ca3af' }}>รอระบบยืนยันการเติมเงิน</div>
-            <div style={{ fontSize: '15px', fontWeight: '900', color: '#34d399' }}>เหลืออีก {floatingTimer} วินาที...</div>
+            <div style={{ fontSize: '12px', color: '#9ca3af' }}>รอระบบยืนยันการทำรายการ</div>
+            <div style={{ fontSize: '15px', fontWeight: '900', color: '#34d399' }}>เหลืออีก {floatingTimer} วินาที (Auto 10s)...</div>
           </div>
         </div>
       )}
@@ -1820,10 +1767,12 @@ export default function GameTopupApp() {
                 {/* กล่องเปลี่ยน PIN และ กล่องจัดการการโปรโมทเว็บ / ค่าโฆษณา */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px' }}>
                   
-                  {/* ฝั่งซ้าย: เปลี่ยนรหัส PIN */}
+                  {/* ฝั่งซ้าย: เปลี่ยนรหัส PIN (ปรับดีไซน์ใหม่ให้สวยงาม) */}
                   <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🔑 เปลี่ยนรหัส PIN 6 หลัก</h3>
+                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>🔐</span> เปลี่ยนรหัส PIN 6 หลัก
+                      </h3>
                       <button onClick={() => setIsAdminLoggedIn(false)} style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}>
                         ล็อกเอาท์ PIN
                       </button>
@@ -1833,33 +1782,35 @@ export default function GameTopupApp() {
                         {changePinMessage.text}
                       </div>
                     )}
-                    <form onSubmit={handleChangePinSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                      <div>
-                        <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. รหัส PIN เดิม</label>
-                        <input type="password" maxLength={6} placeholder="PIN เดิม" value={oldPinInput} onChange={(e) => setOldPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
+                    <form onSubmit={handleChangePinSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                        <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '10px', textAlign: 'center' }}>
+                          <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>1. PIN เดิม</label>
+                          <input type="password" maxLength={6} placeholder="------" value={oldPinInput} onChange={(e) => setOldPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', letterSpacing: '4px', outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+                        <div style={{ backgroundColor: '#030712', border: '1px solid #38bdf8', borderRadius: '12px', padding: '10px', textAlign: 'center' }}>
+                          <label style={{ fontSize: '10px', color: '#38bdf8', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>2. PIN ใหม่</label>
+                          <input type="password" maxLength={6} placeholder="------" value={newPinInput} onChange={(e) => setNewPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', letterSpacing: '4px', outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+                        <div style={{ backgroundColor: '#030712', border: '1px solid #34d399', borderRadius: '12px', padding: '10px', textAlign: 'center' }}>
+                          <label style={{ fontSize: '10px', color: '#34d399', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>3. ยืนยัน PIN</label>
+                          <input type="password" maxLength={6} placeholder="------" value={confirmNewPinInput} onChange={(e) => setConfirmNewPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', letterSpacing: '4px', outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
                       </div>
-                      <div>
-                        <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. รหัส PIN ใหม่</label>
-                        <input type="password" maxLength={6} placeholder="PIN ใหม่" value={newPinInput} onChange={(e) => setNewPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>3. ยืนยันรหัส PIN</label>
-                        <input type="password" maxLength={6} placeholder="ยืนยัน PIN" value={confirmNewPinInput} onChange={(e) => setConfirmNewPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
-                      </div>
-                      <button type="submit" style={{ gridColumn: 'span 3', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', marginTop: '6px', transition: 'all 0.25s ease' }}>
-                        บันทึกการเปลี่ยน PIN
+                      <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.25s ease', boxShadow: '0 0 15px rgba(2,132,199,0.4)' }}>
+                        ✨ บันทึกเปลี่ยนรหัส PIN ใหม่
                       </button>
                     </form>
                   </div>
 
-                  {/* ฝั่งขวา: จัดการโปรโมทเว็บ / ค่าโฆษณา */}
+                  {/* ฝั่งขวา: จัดการโปรโมทเว็บ / ค่าโฆษณา (แสดง 5 บรรทัดต่อหน้า) */}
                   <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #ec4899', boxShadow: '0 0 25px rgba(236,72,153,0.2)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                       <span style={{ fontSize: '20px' }}>📢</span>
                       <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#f472b6', margin: 0 }}>บันทึกรายการโปรโมทเว็บ / ค่าโฆษณา</h3>
                     </div>
                     <p style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '14px' }}>
-                      เลือกช่องทางโฆษณา บันทึกยอดจ่ายเพื่อหักกำไรสุทธิ และแสดงประวัติสูงสุด 10 รายการ
+                      เลือกช่องทางโฆษณา บันทึกยอดจ่ายเพื่อหักกำไรสุทธิ (แสดง 5 รายการต่อหน้า)
                     </p>
 
                     <form onSubmit={handleAddAdPromotion} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr auto', gap: '8px', marginBottom: '15px' }}>
@@ -1891,27 +1842,54 @@ export default function GameTopupApp() {
                       </button>
                     </form>
 
-                    {/* รายการโปรโมทสะสม สูงสุด 10 รายการ */}
-                    <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '10px', maxHeight: '185px', overflowY: 'auto' }}>
+                    <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '10px', minHeight: '165px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       {adPromotions.length > 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                          {adPromotions.slice(0, 10).map((item, index) => (
-                            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111827', padding: '6px 10px', borderRadius: '8px', fontSize: '11px' }}>
-                              <div>
-                                <span style={{ color: '#f472b6', fontWeight: 'bold', marginRight: '6px' }}>{index + 1}.</span>
-                                <span style={{ color: '#ffffff', fontWeight: 'bold' }}>{item.platform}</span>
-                                <span style={{ color: '#9ca3af', marginLeft: '8px', fontSize: '10px' }}>({item.time})</span>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ color: '#f472b6', fontWeight: 'bold' }}>-฿{parseFloat(item.amount).toLocaleString()}</span>
-                                <button type="button" onClick={() => handleDeleteAdPromotion(item.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', padding: '0 2px' }}>✕</button>
-                              </div>
-                            </div>
-                          ))}
+                        <div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {paginatedAdPromotions.map((item, index) => {
+                              const globalIndex = (adPage - 1) * adItemsPerPage + index + 1;
+                              return (
+                                <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111827', padding: '6px 10px', borderRadius: '8px', fontSize: '11px' }}>
+                                  <div>
+                                    <span style={{ color: '#f472b6', fontWeight: 'bold', marginRight: '6px' }}>{globalIndex}.</span>
+                                    <span style={{ color: '#ffffff', fontWeight: 'bold' }}>{item.platform}</span>
+                                    <span style={{ color: '#9ca3af', marginLeft: '8px', fontSize: '10px' }}>({item.time})</span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ color: '#f472b6', fontWeight: 'bold' }}>-฿{parseFloat(item.amount).toLocaleString()}</span>
+                                    <button type="button" onClick={() => handleDeleteAdPromotion(item.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', padding: '0 2px' }}>✕</button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       ) : (
-                        <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '11px', padding: '10px 0' }}>
+                        <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '11px', padding: '20px 0' }}>
                           ยังไม่มีรายการโปรโมทเว็บ
+                        </div>
+                      )}
+
+                      {totalAdPages > 1 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', alignItems: 'center', marginTop: '10px', borderTop: '1px solid #1f2937', paddingTop: '8px' }}>
+                          {Array.from({ length: totalAdPages }, (_, i) => i + 1).map((pageNum) => (
+                            <button
+                              key={pageNum}
+                              onClick={() => setAdPage(pageNum)}
+                              style={{
+                                backgroundColor: adPage === pageNum ? '#ec4899' : '#111827',
+                                color: '#ffffff',
+                                border: '1px solid ' + (adPage === pageNum ? '#f472b6' : '#374151'),
+                                borderRadius: '6px',
+                                padding: '3px 8px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                fontSize: '11px'
+                              }}
+                            >
+                              {pageNum}
+                            </button>
+                          ))}
                         </div>
                       )}
                     </div>
@@ -1951,10 +1929,10 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                {/* รายการทำรายการหลังบ้าน */}
+                {/* รายการทำรายการหลังบ้าน พร้อมปุ่มกดอนุมัติภายใน 10 วินาที */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #9333ea' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ</h2>
+                    <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ (Auto 10s)</h2>
                     <span style={{ fontSize: '12px', color: '#9ca3af' }}>แสดงหน้าละ 10 บรรทัด (หน้า {adminOrdersPage} / {totalAdminPages})</span>
                   </div>
 
@@ -1966,7 +1944,7 @@ export default function GameTopupApp() {
                         <div>
                           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
                             <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
-                            <span style={{ fontSize: '12px', color: '#9ca3af' }}>📅 {ord.time}</span>
+                            <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 {ord.time}</span>
                           </div>
                           <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>{ord.game} <span style={{ color: '#c084fc', fontSize: '14px' }}>({ord.package})</span></div>
                           <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
@@ -1986,11 +1964,14 @@ export default function GameTopupApp() {
                             <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '6px' }}>💳 เติมเครดิตร้าน</div>
                           )}
 
-                          {ord.status.includes('รอ') && (
-                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          {ord.status.includes('รอตรวจสอบ') ? (
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                              <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 'bold' }}>⏳ รอ 10s (Auto)</span>
                               <button onClick={() => handleAdminApproveOrder(ord.id)} style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}>✅ อนุมัติ</button>
                               <button onClick={() => handleAdminRejectOrder(ord.id)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px', transition: 'all 0.2s ease' }}>❌ ยกเลิก</button>
                             </div>
+                          ) : (
+                            <div style={{ fontSize: '12px', color: '#34d399', fontWeight: 'bold' }}>{ord.status}</div>
                           )}
                         </div>
                       </div>
@@ -2118,7 +2099,7 @@ export default function GameTopupApp() {
         )}
       </main>
 
-      {/* CHECKOUT MODAL: QR Code และ Wallet ที่ต้องยืนยันรหัสผ่าน */}
+      {/* CHECKOUT MODAL */}
       {showCheckoutModal && selectedGame && selectedPackage && selectedPayment && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
@@ -2203,7 +2184,6 @@ export default function GameTopupApp() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
             
-            {/* หน้าต่างกรอกรหัส OTP สำหรับ TrueMoney Wallet */}
             {trueMoneyOtpStep ? (
               <form onSubmit={handleTrueMoneyOtpSubmit}>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#38bdf8' }}>🔐 กรอกรหัส OTP</h3>
