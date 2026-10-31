@@ -280,15 +280,15 @@ export default function GameTopupApp() {
 
   const [adminOrdersPage, setAdminOrdersPage] = useState(1);
 
-  // ระบบออร์เดอร์ พร้อมระบบนับถอยหลัง 10 วินาที Auto-Approve
+  // ระบบออร์เดอร์ พร้อมบันทึก paymentMethod และนับถอยหลัง 10 วินาที Auto-Approve
   const [orders, setOrders] = useState(() => {
     const savedOrders = localStorage.getItem('cyber_topup_orders');
     if (savedOrders) {
       try { return JSON.parse(savedOrders); } catch (e) {}
     }
     return [
-      { id: 'ORD-14969', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: 'thanphooms@gmail.com', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 11:01 น.', dateKey: '2026-10-30', timestamp: Date.now() - 50000 },
-      { id: 'ORD-98214', game: 'VALORANT', package: '700 VP', price: 529, profit: 80, player: 'thanphooms@gmail.com', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '28/10/2026 14:20 น.', dateKey: '2026-10-28', timestamp: Date.now() - 100000 }
+      { id: 'ORD-14969', game: 'Avatar Star', package: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, player: 'thanphooms@gmail.com', paymentMethod: 'QR PromptPay', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '30/10/2026 11:01 น.', dateKey: '2026-10-30', timestamp: Date.now() - 50000 },
+      { id: 'ORD-98214', game: 'VALORANT', package: '700 VP', price: 529, profit: 80, player: 'thanphooms@gmail.com', paymentMethod: 'Cyber Wallet (เครดิตร้าน)', status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)', type: 'game', time: '28/10/2026 14:20 น.', dateKey: '2026-10-28', timestamp: Date.now() - 100000 }
     ];
   });
 
@@ -670,6 +670,7 @@ export default function GameTopupApp() {
       price: 0,
       profit: 0,
       player: eventPlayerId.trim(),
+      paymentMethod: '🎁 โค้ดกิจกรรมฟรี',
       status: 'รอตรวจสอบ [10s]',
       type: 'event',
       time: thaiTime,
@@ -745,13 +746,21 @@ export default function GameTopupApp() {
     const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
     const dateKey = `${year}-${month}-${day}`;
 
+    const paymentLabelMap = {
+      qrcode: 'QR PromptPay (เติมเครดิต)',
+      true: 'TrueMoney Wallet (เติมเครดิต)',
+      truemoneycard: 'บัตรทรูมันนี่ (เติมเครดิต)',
+      credit: 'บัตรเครดิต/เดบิต (เติมเครดิต)'
+    };
+
     const newWalletOrder = {
       id: newOrderId,
-      game: `เติมเครดิตร้าน (${walletPaymentMethod.toUpperCase()})`,
+      game: `เติมเครดิตร้าน`,
       package: `+฿${amt.toLocaleString()}`,
       price: amt,
       profit: 0,
       player: user ? user.username : '11',
+      paymentMethod: paymentLabelMap[walletPaymentMethod] || walletPaymentMethod.toUpperCase(),
       status: 'รอตรวจสอบ [10s]',
       type: 'wallet',
       time: thaiTime,
@@ -867,6 +876,7 @@ export default function GameTopupApp() {
         price: totalPrice,
         profit: totalProfit,
         player: playerId.trim() || user.username,
+        paymentMethod: selectedPayment.name,
         status: 'รอตรวจสอบ [10s]',
         type: 'game',
         time: thaiTime,
@@ -941,7 +951,6 @@ export default function GameTopupApp() {
 
   const isUserAdmin = user && (user.username === 'thanphooms@gmail.com' || user.email === 'thanphooms@gmail.com');
 
-  // ตรวจสอบวันที่ปัจจุบันสำหรับแบ่งวันใหม่
   const nowObj = new Date();
   const currentDayStr = `${nowObj.getFullYear()}-${String(nowObj.getMonth() + 1).padStart(2, '0')}-${String(nowObj.getDate()).padStart(2, '0')}`;
 
@@ -963,7 +972,6 @@ export default function GameTopupApp() {
     return matchUser && matchOrder && matchGame && matchDate;
   });
 
-  // แบ่งออร์เดอร์เป็นของ "วันนี้" และ "ประวัติย้อนหลัง (ข้ามวันไปแล้ว)"
   const todayOrders = searchedOrders.filter(o => o.dateKey === currentDayStr);
   const pastOrders = searchedOrders.filter(o => o.dateKey !== currentDayStr);
 
@@ -974,9 +982,7 @@ export default function GameTopupApp() {
   const totalSpentInSearch = searchedOrders.reduce((sum, ord) => sum + ord.price, 0);
   const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);
 
-  // -------------------------------------------------------------
   // LOGIC จัดกลุ่มประวัติย้อนหลังตามวันที่ & PAGINATION (5 รายการ/หน้า)
-  // -------------------------------------------------------------
   const [selectedHistoryDate, setSelectedHistoryDate] = useState('all');
   const [historyPage, setHistoryPage] = useState(1);
 
@@ -1768,7 +1774,7 @@ export default function GameTopupApp() {
               </span>
             </div>
 
-            {/* รายการประจำวัน (วันนี้) */}
+            {/* รายการประจำวัน (วันนี้) พร้อมแสดงช่องทางชำระเงิน */}
             <div style={{ marginBottom: '25px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '12px' }}>📅 รายการประจำวัน (วันนี้ {currentDayStr})</h3>
               {paginatedTodayOrders.length > 0 ? (
@@ -1784,7 +1790,9 @@ export default function GameTopupApp() {
                             <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 {ord.time}</span>
                           </div>
                           <div style={{ fontSize: '16px', fontWeight: 'bold', marginTop: '4px', color: '#ffffff' }}>🎮 {ord.game} <span style={{ color: '#c084fc', fontSize: '13px' }}>({ord.package})</span></div>
-                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>ชื่อผู้ทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b></div>
+                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
+                            ชื่อผู้ทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> | ช่องทางจ่าย: <span style={{ color: '#f472b6', fontWeight: 'bold' }}>{ord.paymentMethod || 'Cyber Wallet'}</span>
+                          </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>฿{ord.price.toLocaleString()}</div>
@@ -1825,7 +1833,7 @@ export default function GameTopupApp() {
               )}
             </div>
 
-            {/* ประวัติย้อนหลัง (เลือกวันที่ตาม Dropdown & แบ่ง 5 รายการ/หน้า) */}
+            {/* ประวัติย้อนหลัง (Dropdown + Pagination 5 รายการ/หน้า พร้อมช่องทางจ่าย) */}
             {pastOrders.length > 0 && (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #374151', paddingTop: '20px', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
@@ -1871,7 +1879,9 @@ export default function GameTopupApp() {
                             <span style={{ fontSize: '12px', color: '#9ca3af' }}>📅 {ord.time}</span>
                           </div>
                           <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d1d5db' }}>🎮 {ord.game} <span style={{ color: '#a855f7', fontSize: '12px' }}>({ord.package})</span></div>
-                          <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>ผู้ทำรายการ: {ord.player}</div>
+                          <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+                            ผู้ทำรายการ: {ord.player} | ช่องทางจ่าย: <span style={{ color: '#f472b6', fontWeight: 'bold' }}>{ord.paymentMethod || 'Cyber Wallet'}</span>
+                          </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price.toLocaleString()}</div>
@@ -1882,7 +1892,6 @@ export default function GameTopupApp() {
                   })}
                 </div>
 
-                {/* ปุ่ม Pagination หากรายการเกิน 5 รายการ */}
                 {totalHistoryPages > 1 && (
                   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '18px' }}>
                     <span style={{ fontSize: '12px', color: '#9ca3af', marginRight: '6px' }}>หน้า {historyPage} จาก {totalHistoryPages}:</span>
@@ -2096,9 +2105,10 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
+                {/* รายการหลังบ้านแอดมิน พร้อมแสดงช่องทางที่ลูกค้าจ่ายเงิน */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #9333ea' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ (Auto 10s)</h2>
+                    <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการทำรายการหลังบ้าน + ช่องทางที่ลูกค้าชำระเงิน (Auto 10s)</h2>
                     <span style={{ fontSize: '12px', color: '#9ca3af' }}>แสดงหน้าละ 10 บรรทัด (หน้า {adminOrdersPage} / {totalAdminPages})</span>
                   </div>
 
@@ -2115,6 +2125,10 @@ export default function GameTopupApp() {
                           <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>{ord.game} <span style={{ color: '#c084fc', fontSize: '14px' }}>({ord.package})</span></div>
                           <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
                             ลูกค้าผู้ทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> | ยอดขาย: <b style={{ color: '#ffffff' }}>฿{ord.price.toLocaleString()}</b>
+                          </div>
+                          {/* แสดงช่องทางที่ลูกค้าจ่ายเงินในหน้าหลังบ้าน */}
+                          <div style={{ fontSize: '12px', color: '#f472b6', marginTop: '4px', fontWeight: 'bold' }}>
+                            💳 ช่องทางชำระเงิน: {ord.paymentMethod || 'Cyber Wallet (เครดิตร้าน)'}
                           </div>
                         </div>
 
