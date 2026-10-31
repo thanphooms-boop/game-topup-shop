@@ -17,7 +17,23 @@ export default function GameTopupApp() {
     localStorage.setItem('cyber_topup_users', JSON.stringify(registeredUsers));
   }, [registeredUsers]);
 
-  const [user, setUser] = useState(null);
+  // ปรับปรุง: โหลดสถานะ User จาก localStorage เพื่อไม่ให้หลุดตอนกด F5
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('cyber_current_logged_user');
+    if (savedUser) {
+      try { return JSON.parse(savedUser); } catch (e) {}
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('cyber_current_logged_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('cyber_current_logged_user');
+    }
+  }, [user]);
+
   const [authMode, setAuthMode] = useState('login');
   const [rememberMe, setRememberMe] = useState(false);
   
@@ -280,7 +296,6 @@ export default function GameTopupApp() {
 
   const [adminOrdersPage, setAdminOrdersPage] = useState(1);
 
-  // ระบบออร์เดอร์ พร้อมบันทึก paymentMethod และนับถอยหลัง 10 วินาที Auto-Approve
   const [orders, setOrders] = useState(() => {
     const savedOrders = localStorage.getItem('cyber_topup_orders');
     if (savedOrders) {
@@ -323,7 +338,15 @@ export default function GameTopupApp() {
     return () => clearInterval(interval);
   }, []);
 
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  // ปรับปรุง: โหลดสถานะ isAdminLoggedIn จาก localStorage
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
+    return localStorage.getItem('cyber_is_admin_logged') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cyber_is_admin_logged', isAdminLoggedIn ? 'true' : 'false');
+  }, [isAdminLoggedIn]);
+
   const [adminPin, setAdminPin] = useState(() => {
     return localStorage.getItem('cyber_admin_pin') || '123456';
   });
@@ -345,7 +368,6 @@ export default function GameTopupApp() {
   const [timeLeft, setTimeLeft] = useState(180);
   const [isQrExpired, setIsQrExpired] = useState(false);
 
-  // ระบบการโฆษณา/โปรโมทเว็บ ของแอดมิน (แสดง 5 รายการต่อหน้า)
   const [adPlatform, setAdPlatform] = useState('Facebook Ads');
   const [adAmountInput, setAdAmountInput] = useState('');
   const [adPage, setAdPage] = useState(1);
@@ -538,12 +560,14 @@ export default function GameTopupApp() {
 
   const handleLogout = () => {
     setUser(null);
+    localStorage.removeItem('cyber_current_logged_user');
+    setIsAdminLoggedIn(false);
+    localStorage.removeItem('cyber_is_admin_logged');
     setPasswordInput('');
     setShowLoginPassword(false);
     setRegPasswordInput('');
     setConfirmPasswordInput('');
     setEmailInput('');
-    setIsAdminLoggedIn(false);
     setActiveTab('shop');
   };
 
@@ -982,7 +1006,6 @@ export default function GameTopupApp() {
   const totalSpentInSearch = searchedOrders.reduce((sum, ord) => sum + ord.price, 0);
   const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);
 
-  // LOGIC จัดกลุ่มประวัติย้อนหลังตามวันที่ & PAGINATION (5 รายการ/หน้า)
   const [selectedHistoryDate, setSelectedHistoryDate] = useState('all');
   const [historyPage, setHistoryPage] = useState(1);
 
@@ -1160,7 +1183,6 @@ export default function GameTopupApp() {
       color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '60px', position: 'relative'
     }}>
       
-      {/* FLOATING TIMER BADGE */}
       {floatingTimer > 0 && (
         <div style={{
           position: 'fixed', bottom: '90px', right: '25px', zIndex: 98,
@@ -1176,7 +1198,6 @@ export default function GameTopupApp() {
         </div>
       )}
 
-      {/* NAVBAR */}
       <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '12px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
           <div style={{ 
@@ -1264,7 +1285,6 @@ export default function GameTopupApp() {
         </div>
       </header>
 
-      {/* FLOATING LINE OA WIDGET */}
       <a href="https://lin.ee/Nn1UeBC" target="_blank" rel="noopener noreferrer" style={{ position: 'fixed', bottom: '25px', right: '25px', zIndex: 99, backgroundColor: '#06c755', color: '#ffffff', padding: '12px 20px', borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 25px rgba(6, 199, 85, 0.6)', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', border: '1.5px solid #ffffff', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
         onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px) scale(1.06)'; e.currentTarget.style.boxShadow = '0 8px 35px rgba(6, 199, 85, 0.9)'; }}
         onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0) scale(1)'; e.currentTarget.style.boxShadow = '0 4px 25px rgba(6, 199, 85, 0.6)'; }}
@@ -1275,10 +1295,8 @@ export default function GameTopupApp() {
         ติดต่อแอดมิน (LINE)
       </a>
 
-      {/* MAIN CONTAINER */}
       <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px', position: 'relative', zIndex: 1 }}>
         
-        {/* SHOP MAIN PAGE */}
         {activeTab === 'shop' && !selectedGame && (
           <div>
             <div style={{ 
@@ -1477,7 +1495,6 @@ export default function GameTopupApp() {
           </div>
         )}
 
-        {/* GAME DETAIL & PACKAGES */}
         {activeTab === 'shop' && selectedGame && (
           <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '24px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.5)', boxShadow: '0 0 40px rgba(0,0,0,0.8)' }}>
             <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: 'transparent', border: '1px solid #374151', color: '#9ca3af', padding: '8px 16px', borderRadius: '10px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold', transition: 'all 0.2s ease' }}
@@ -1700,7 +1717,6 @@ export default function GameTopupApp() {
           </div>
         )}
 
-        {/* TRACK STATUS TAB */}
         {activeTab === 'track' && (
           <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 0 35px rgba(0,0,0,0.7)' }}>
             <div style={{ borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '20px' }}>
@@ -1774,7 +1790,6 @@ export default function GameTopupApp() {
               </span>
             </div>
 
-            {/* รายการประจำวัน (วันนี้) พร้อมแสดงช่องทางชำระเงิน */}
             <div style={{ marginBottom: '25px' }}>
               <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '12px' }}>📅 รายการประจำวัน (วันนี้ {currentDayStr})</h3>
               {paginatedTodayOrders.length > 0 ? (
@@ -1833,13 +1848,11 @@ export default function GameTopupApp() {
               )}
             </div>
 
-            {/* ประวัติย้อนหลัง (Dropdown + Pagination 5 รายการ/หน้า พร้อมช่องทางจ่าย) */}
             {pastOrders.length > 0 && (
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #374151', paddingTop: '20px', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
                   <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#9ca3af', margin: 0 }}>📂 ประวัติย้อนหลัง (รายการจากวันก่อนหน้า)</h3>
                   
-                  {/* Dropdown เลือกวันที่ */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '12px', color: '#c084fc', fontWeight: 'bold' }}>📅 เลือกวันที่ประวัติ:</span>
                     <select
@@ -1922,7 +1935,6 @@ export default function GameTopupApp() {
           </div>
         )}
 
-        {/* ADMIN TAB */}
         {activeTab === 'admin' && isUserAdmin && (
           <div style={{ maxWidth: '950px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '25px' }}>
             {!isAdminLoggedIn ? (
@@ -1950,7 +1962,7 @@ export default function GameTopupApp() {
                         <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span>🔐</span> เปลี่ยนรหัส PIN 6 หลัก
                         </h3>
-                        <button onClick={() => setIsAdminLoggedIn(false)} style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}>
+                        <button onClick={() => { setIsAdminLoggedIn(false); localStorage.removeItem('cyber_is_admin_logged'); }} style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}>
                           ล็อกเอาท์ PIN
                         </button>
                       </div>
@@ -2105,7 +2117,6 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                {/* รายการหลังบ้านแอดมิน พร้อมแสดงช่องทางที่ลูกค้าจ่ายเงิน */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #9333ea' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                     <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการทำรายการหลังบ้าน + ช่องทางที่ลูกค้าชำระเงิน (Auto 10s)</h2>
@@ -2126,7 +2137,6 @@ export default function GameTopupApp() {
                           <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
                             ลูกค้าผู้ทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> | ยอดขาย: <b style={{ color: '#ffffff' }}>฿{ord.price.toLocaleString()}</b>
                           </div>
-                          {/* แสดงช่องทางที่ลูกค้าจ่ายเงินในหน้าหลังบ้าน */}
                           <div style={{ fontSize: '12px', color: '#f472b6', marginTop: '4px', fontWeight: 'bold' }}>
                             💳 ช่องทางชำระเงิน: {ord.paymentMethod || 'Cyber Wallet (เครดิตร้าน)'}
                           </div>
@@ -2279,7 +2289,6 @@ export default function GameTopupApp() {
         )}
       </main>
 
-      {/* CHECKOUT MODAL */}
       {showCheckoutModal && selectedGame && selectedPackage && selectedPayment && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
@@ -2359,7 +2368,6 @@ export default function GameTopupApp() {
         </div>
       )}
 
-      {/* MODAL: TOPUP STORE WALLET & OTP STEP */}
       {(showTopupWalletModal || trueMoneyOtpStep) && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
@@ -2478,7 +2486,6 @@ export default function GameTopupApp() {
         </div>
       )}
 
-      {/* FOOTER */}
       <footer style={{ textAlign: 'center', marginTop: '50px', padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', color: '#9ca3af', fontSize: '13px' }}>
         <p style={{ margin: 0 }}>⚡ <b>CYBER TOPUP</b> - บริการเติมเกมออนไลน์ตลอด 24 ชั่วโมง</p>
       </footer>
