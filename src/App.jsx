@@ -276,6 +276,7 @@ export default function GameTopupApp() {
   const [exactSearchQuery, setExactSearchQuery] = useState('');
   const [selectedGameFilter, setSelectedGameFilter] = useState('all');
   const [selectedDateFilter, setSelectedDateFilter] = useState('');
+  const [customerOrdersPage, setCustomerOrdersPage] = useState(1);
 
   const [adminOrdersPage, setAdminOrdersPage] = useState(1);
 
@@ -896,7 +897,7 @@ export default function GameTopupApp() {
           if (ord.type === 'wallet' && !ord.status.includes('สำเร็จ')) {
             setUser((prevUser) => ({ ...prevUser, balance: prevUser.balance + ord.price }));
             setRegisteredUsers((prevList) =>
-              prevList.map((u) => u.username === ord.player ? { ...u, balance: u.balance + ord.price } : u)
+              prevList.map((u) => u.username === ord.player ? { ...u, balance: ord.balance + ord.price } : u)
             );
           }
           return { ...ord, status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)' };
@@ -940,6 +941,10 @@ export default function GameTopupApp() {
 
   const isUserAdmin = user && (user.username === 'thanphooms@gmail.com' || user.email === 'thanphooms@gmail.com');
 
+  // ตรวจสอบวันที่ปัจจุบันสำหรับแบ่งวันใหม่
+  const nowObj = new Date();
+  const currentDayStr = `${nowObj.getFullYear()}-${String(nowObj.getMonth() + 1).padStart(2, '0')}-${String(nowObj.getDate()).padStart(2, '0')}`;
+
   const searchedOrders = orders.filter(o => {
     let matchUser = false;
     if (!isUserAdmin) {
@@ -957,6 +962,14 @@ export default function GameTopupApp() {
 
     return matchUser && matchOrder && matchGame && matchDate;
   });
+
+  // แบ่งออร์เดอร์เป็นของ "วันนี้" และ "ประวัติย้อนหลัง (ข้ามวันไปแล้ว)"
+  const todayOrders = searchedOrders.filter(o => o.dateKey === currentDayStr);
+  const pastOrders = searchedOrders.filter(o => o.dateKey !== currentDayStr);
+
+  const customerItemsPerPage = 10;
+  const totalCustomerTodayPages = Math.ceil(todayOrders.length / customerItemsPerPage) || 1;
+  const paginatedTodayOrders = todayOrders.slice((customerOrdersPage - 1) * customerItemsPerPage, customerOrdersPage * customerItemsPerPage);
 
   const totalSpentInSearch = searchedOrders.reduce((sum, ord) => sum + ord.price, 0);
   const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);
@@ -1649,6 +1662,7 @@ export default function GameTopupApp() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#c084fc' }}>
                 <span>👤 บัญชีผู้ใช้งาน:</span>
                 <b style={{ color: '#ffffff', backgroundColor: 'rgba(147,51,234,0.3)', padding: '2px 10px', borderRadius: '6px', border: '1px solid #9333ea' }}>{user.username}</b>
+                {!isUserAdmin && <span style={{ fontSize: '11px', color: '#38bdf8', marginLeft: '6px' }}>(แสดงเฉพาะประวัติคำสั่งซื้อของคุณเอง)</span>}
               </div>
             </div>
 
@@ -1707,39 +1721,93 @@ export default function GameTopupApp() {
 
             <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '12px', padding: '12px 18px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '13px', color: '#9ca3af' }}>
-                ผลการค้นหา: <b style={{ color: '#ffffff' }}>{searchedOrders.length}</b> รายการ
+                ผลการค้นหา: <b style={{ color: '#ffffff' }}>{searchedOrders.length}</b> รายการ (วันนี้: {todayOrders.length} | ประวัติย้อนหลัง: {pastOrders.length})
               </span>
               <span style={{ fontSize: '14px', color: '#9ca3af' }}>
                 ยอดรวมเงินที่เติม {selectedGameFilter !== 'all' && `(${selectedGameFilter})`}: <b style={{ color: '#34d399', fontSize: '18px' }}>฿{totalSpentInSearch.toLocaleString()}</b>
               </span>
             </div>
 
-            <div>
-              {searchedOrders.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {searchedOrders.map((ord, idx) => (
-                    <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* ส่วนแสดงรายการของวันนี้ (จำกัดหน้าละ 10 รายการ พร้อมเลือกหน้าได้) */}
+            <div style={{ marginBottom: '25px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '12px' }}>📅 รายการประจำวัน (วันนี้ {currentDayStr})</h3>
+              {paginatedTodayOrders.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '15px' }}>
+                  {paginatedTodayOrders.map((ord, idx) => {
+                    const globalIdx = (customerOrdersPage - 1) * customerItemsPerPage + idx + 1;
+                    return (
+                      <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ color: '#9333ea', fontWeight: 'bold', fontSize: '12px', marginRight: '4px' }}>#{globalIdx}</span>
+                            <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
+                            <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 {ord.time}</span>
+                          </div>
+                          <div style={{ fontSize: '16px', fontWeight: 'bold', marginTop: '4px', color: '#ffffff' }}>🎮 {ord.game} <span style={{ color: '#c084fc', fontSize: '13px' }}>({ord.package})</span></div>
+                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>ชื่อผู้ทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b></div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>฿{ord.price.toLocaleString()}</div>
+                          <span style={{ fontSize: '11px', color: ord.status.includes('สำเร็จ') ? '#34d399' : '#f59e0b', fontWeight: 'bold' }}>{ord.status}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '30px', color: '#9ca3af', backgroundColor: '#030712', borderRadius: '14px', border: '1px dashed #374151', marginBottom: '15px' }}>
+                  ไม่มีรายการคำสั่งซื้อใหม่ในวันนี้
+                </div>
+              )}
+
+              {totalCustomerTodayPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', marginBottom: '20px' }}>
+                  {Array.from({ length: totalCustomerTodayPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCustomerOrdersPage(pageNum)}
+                      style={{
+                        backgroundColor: customerOrdersPage === pageNum ? '#9333ea' : '#030712',
+                        color: '#ffffff',
+                        border: '1px solid ' + (customerOrdersPage === pageNum ? '#a855f7' : '#374151'),
+                        borderRadius: '8px',
+                        padding: '6px 12px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ส่วนแสดงประวัติย้อนหลัง (ข้ามวันไปแล้ว) */}
+            {pastOrders.length > 0 && (
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#9ca3af', marginBottom: '12px', borderTop: '1px solid #374151', paddingTop: '20px' }}>📂 ประวัติย้อนหลัง (รายการจากวันก่อนหน้า)</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', opacity: 0.85 }}>
+                  {pastOrders.map((ord, idx) => (
+                    <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #1f2937', borderRadius: '12px', padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-                          <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
-                          <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 {ord.time}</span>
+                          <span style={{ backgroundColor: '#374151', color: '#d1d5db', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
+                          <span style={{ fontSize: '12px', color: '#9ca3af' }}>📅 {ord.time}</span>
                         </div>
-                        <div style={{ fontSize: '16px', fontWeight: 'bold', marginTop: '4px', color: '#ffffff' }}>🎮 {ord.game} <span style={{ color: '#c084fc', fontSize: '13px' }}>({ord.package})</span></div>
-                        <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>ชื่อผู้ทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b></div>
+                        <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d1d5db' }}>🎮 {ord.game} <span style={{ color: '#a855f7', fontSize: '12px' }}>({ord.package})</span></div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>฿{ord.price.toLocaleString()}</div>
-                        <span style={{ fontSize: '11px', color: ord.status.includes('สำเร็จ') ? '#34d399' : '#f59e0b', fontWeight: 'bold' }}>{ord.status}</span>
+                        <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price.toLocaleString()}</div>
+                        <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold' }}>{ord.status}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af', backgroundColor: '#030712', borderRadius: '14px', border: '1px dashed #374151' }}>
-                  ไม่พบประวัติคำสั่งซื้อที่ค้นหา
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1764,40 +1832,43 @@ export default function GameTopupApp() {
               </div>
             ) : (
               <>
-                {/* กล่องเปลี่ยน PIN และ กล่องจัดการการโปรโมทเว็บ / ค่าโฆษณา */}
+                {/* กล่องเปลี่ยน PIN (ปรับช่องกรอก 3 ช่องให้เต็ม และปุ่มด้านล่างให้พอดีกรอบสีฟ้า) และ กล่องจัดการการโปรโมทเว็บ */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px' }}>
                   
-                  {/* ฝั่งซ้าย: เปลี่ยนรหัส PIN (ปรับดีไซน์ใหม่ให้สวยงาม) */}
-                  <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>🔐</span> เปลี่ยนรหัส PIN 6 หลัก
-                      </h3>
-                      <button onClick={() => setIsAdminLoggedIn(false)} style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}>
-                        ล็อกเอาท์ PIN
-                      </button>
+                  {/* ฝั่งซ้าย: เปลี่ยนรหัส PIN (ดีไซน์เต็มกรอบและปุ่มด้านล่างพอดีกรอบฟ้า) */}
+                  <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                        <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>🔐</span> เปลี่ยนรหัส PIN 6 หลัก
+                        </h3>
+                        <button onClick={() => setIsAdminLoggedIn(false)} style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s ease' }}>
+                          ล็อกเอาท์ PIN
+                        </button>
+                      </div>
+                      {changePinMessage.text && (
+                        <div style={{ backgroundColor: changePinMessage.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: changePinMessage.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px' }}>
+                          {changePinMessage.text}
+                        </div>
+                      )}
                     </div>
-                    {changePinMessage.text && (
-                      <div style={{ backgroundColor: changePinMessage.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: changePinMessage.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px' }}>
-                        {changePinMessage.text}
-                      </div>
-                    )}
-                    <form onSubmit={handleChangePinSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                        <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '10px', textAlign: 'center' }}>
-                          <label style={{ fontSize: '10px', color: '#9ca3af', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>1. PIN เดิม</label>
-                          <input type="password" maxLength={6} placeholder="------" value={oldPinInput} onChange={(e) => setOldPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', letterSpacing: '4px', outline: 'none', boxSizing: 'border-box' }} />
+
+                    <form onSubmit={handleChangePinSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                        <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', width: '100%', boxSizing: 'border-box' }}>
+                          <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>1. PIN เดิม</label>
+                          <input type="password" maxLength={6} placeholder="------" value={oldPinInput} onChange={(e) => setOldPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontSize: '18px', fontWeight: 'bold', letterSpacing: '6px', outline: 'none', boxSizing: 'border-box' }} />
                         </div>
-                        <div style={{ backgroundColor: '#030712', border: '1px solid #38bdf8', borderRadius: '12px', padding: '10px', textAlign: 'center' }}>
-                          <label style={{ fontSize: '10px', color: '#38bdf8', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>2. PIN ใหม่</label>
-                          <input type="password" maxLength={6} placeholder="------" value={newPinInput} onChange={(e) => setNewPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', letterSpacing: '4px', outline: 'none', boxSizing: 'border-box' }} />
+                        <div style={{ backgroundColor: '#030712', border: '1px solid #38bdf8', borderRadius: '12px', padding: '12px', width: '100%', boxSizing: 'border-box' }}>
+                          <label style={{ fontSize: '11px', color: '#38bdf8', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>2. PIN ใหม่</label>
+                          <input type="password" maxLength={6} placeholder="------" value={newPinInput} onChange={(e) => setNewPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontSize: '18px', fontWeight: 'bold', letterSpacing: '6px', outline: 'none', boxSizing: 'border-box' }} />
                         </div>
-                        <div style={{ backgroundColor: '#030712', border: '1px solid #34d399', borderRadius: '12px', padding: '10px', textAlign: 'center' }}>
-                          <label style={{ fontSize: '10px', color: '#34d399', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>3. ยืนยัน PIN</label>
-                          <input type="password" maxLength={6} placeholder="------" value={confirmNewPinInput} onChange={(e) => setConfirmNewPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontSize: '16px', fontWeight: 'bold', letterSpacing: '4px', outline: 'none', boxSizing: 'border-box' }} />
+                        <div style={{ backgroundColor: '#030712', border: '1px solid #34d399', borderRadius: '12px', padding: '12px', width: '100%', boxSizing: 'border-box' }}>
+                          <label style={{ fontSize: '11px', color: '#34d399', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>3. ยืนยัน PIN</label>
+                          <input type="password" maxLength={6} placeholder="------" value={confirmNewPinInput} onChange={(e) => setConfirmNewPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontSize: '18px', fontWeight: 'bold', letterSpacing: '6px', outline: 'none', boxSizing: 'border-box' }} />
                         </div>
                       </div>
-                      <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.25s ease', boxShadow: '0 0 15px rgba(2,132,199,0.4)' }}>
+                      <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.25s ease', boxShadow: '0 0 15px rgba(2,132,199,0.4)', boxSizing: 'border-box' }}>
                         ✨ บันทึกเปลี่ยนรหัส PIN ใหม่
                       </button>
                     </form>
