@@ -831,9 +831,10 @@ export default function GameTopupApp() {
   const isVatThresholdReached = totalAdminSales >= 1800000;
   const totalAdminVat = isVatThresholdReached ? Math.round(totalAdminProfits * 0.07) : 0;
   
-  // คำนวณภาษีเงินได้ประจำปี (อัตราประมาณการ 15% จากกำไรสุทธิ)
+  // คำนวณภาษีเงินได้ประจำปีตามเกณฑ์บุคคลธรรมดา (0% สำหรับ 150,000 บาทแรก)
   const profitForTaxCalculation = totalAdminProfits - totalAdminVat;
-  const totalAdminTax = Math.round(profitForTaxCalculation * 0.15);
+  const taxableIncome = Math.max(0, profitForTaxCalculation - 150000); // หักยกเว้น 150,000 แรก
+  const totalAdminTax = Math.round(taxableIncome * 0.10); // อัตราเริ่มต้นขั้นบันไดช่วงแรก 10%
 
   const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);if (!user) {
     return (
@@ -1504,7 +1505,7 @@ export default function GameTopupApp() {
                   </form>
                 </div>
 
-                {/* 2. สรุปยอดขาย กำไร VAT และภาษีประจำปี (แสดง 4 กล่อง พร้อมเช็คเกณฑ์ 1.8M) */}
+                {/* 2. สรุปยอดขาย กำไร VAT และภาษีประจำปี (แสดง 4 กล่อง พร้อมเช็คเกณฑ์ 1.8M และยกเว้น 150k แรก) */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '18px 12px', textAlign: 'center', transition: 'all 0.3s ease' }}
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(168,85,247,0.3)'; }}
@@ -1536,8 +1537,10 @@ export default function GameTopupApp() {
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(245,158,11,0.3)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
-                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>📋 เสียภาษีประจำปี (15%)</div>
-                    <div style={{ fontSize: '18px', fontWeight: '900', color: '#f59e0b' }}>-฿{totalAdminTax.toLocaleString()}</div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>📋 เสียภาษีประจำปี</div>
+                    <div style={{ fontSize: totalAdminTax > 0 ? '18px' : '12px', fontWeight: '900', color: '#f59e0b', marginTop: totalAdminTax > 0 ? '0' : '4px' }}>
+                      {totalAdminTax > 0 ? `-฿${totalAdminTax.toLocaleString()}` : '฿0 (ยกเว้น 150k แรก)'}
+                    </div>
                   </div>
                 </div>
 
