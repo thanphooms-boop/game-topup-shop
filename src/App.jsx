@@ -41,6 +41,7 @@ export default function GameTopupApp() {
   const [selectedGame, setSelectedGame] = useState(null);
   const [playerId, setPlayerId] = useState('');
   const [selectedPackage, setSelectedPackage] = useState(null);
+  const [packageQuantity, setPackageQuantity] = useState(1);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -692,7 +693,8 @@ export default function GameTopupApp() {
       return;
     }
 
-    if (selectedPayment.id === 'wallet' && user.balance < selectedPackage.price) {
+    const totalPrice = selectedPackage.price * packageQuantity;
+    if (selectedPayment.id === 'wallet' && user.balance < totalPrice) {
       setCheckoutPasswordError('ยอดเงินใน Cyber Wallet ของคุณไม่พอ');
       return;
     }
@@ -707,8 +709,11 @@ export default function GameTopupApp() {
   };
 
   const handleFinalPaymentSubmit = () => {
+    const totalPrice = selectedPackage.price * packageQuantity;
+    const totalProfit = (selectedPackage.profit || Math.round(selectedPackage.price * 0.15)) * packageQuantity;
+
     if (selectedPayment.id === 'wallet') {
-      setUser((prev) => ({ ...prev, balance: prev.balance - selectedPackage.price }));
+      setUser((prev) => ({ ...prev, balance: prev.balance - totalPrice }));
     }
 
     setIsProcessing(true);
@@ -725,9 +730,9 @@ export default function GameTopupApp() {
       const newOrder = {
         id: newOrderId,
         game: selectedGame.name,
-        package: selectedPackage.name,
-        price: selectedPackage.price,
-        profit: selectedPackage.profit || Math.round(selectedPackage.price * 0.15),
+        package: `${selectedPackage.name} (x${packageQuantity} แพ็ก)`,
+        price: totalPrice,
+        profit: totalProfit,
         player: user.username,
         status: 'รอตรวจสอบ [สะดุดใน 10s]',
         type: 'game',
@@ -744,6 +749,7 @@ export default function GameTopupApp() {
       setShowCheckoutModal(false);
       setCheckoutStep(1);
       setCheckoutPassword('');
+      setPackageQuantity(1);
       setTruemoneyPhone('');
       setTruemoneyCard14('');
       setCreditCardNum('');
@@ -786,6 +792,7 @@ export default function GameTopupApp() {
     setCheckoutPasswordError('');
     setTimeLeft(180);
     setIsQrExpired(false);
+    setPackageQuantity(1);
     setTruemoneyPhone('');
     setTruemoneyCard14('');
     setCreditCardNum('');
@@ -846,9 +853,7 @@ export default function GameTopupApp() {
   } else if (taxableIncome > 600000) {
     calculatedTax = 65000 + (taxableIncome - 600000) * 0.20; // 20% ขึ้นไป
   }
-  const totalAdminTax = Math.round(calculatedTax);
-
-  const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);if (!user) {
+  const totalAdminTax = Math.round(calculatedTax);if (!user) {
     return (
       <div style={{
         backgroundColor: '#070a12',
@@ -1157,7 +1162,7 @@ export default function GameTopupApp() {
               {filteredGames.map((game) => (
                 <div 
                   key={game.id} 
-                  onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPlayerId(user.username); }} 
+                  onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPackageQuantity(1); setPlayerId(user.username); }} 
                   style={{ 
                     backgroundColor: 'rgba(17, 24, 39, 0.85)', 
                     border: '1.5px solid rgba(168, 85, 247, 0.35)', 
@@ -1318,7 +1323,7 @@ export default function GameTopupApp() {
                 {selectedGame.packages.map((pkg) => (
                   <div 
                     key={pkg.id} 
-                    onClick={() => setSelectedPackage(pkg)} 
+                    onClick={() => { setSelectedPackage(pkg); setPackageQuantity(1); }} 
                     style={{ 
                       backgroundColor: selectedPackage?.id === pkg.id ? 'rgba(147, 51, 234, 0.3)' : '#030712', 
                       border: selectedPackage?.id === pkg.id ? '2px solid #a855f7' : '1px solid #374151', 
@@ -1338,6 +1343,41 @@ export default function GameTopupApp() {
                 ))}
               </div>
             </div>
+
+            {/* เพิ่มส่วนเลือกจำนวนแพ็กเกจที่ต้องการเติม (เพื่อให้ลูกค้าเลือกกี่แพ็คก็ได้ตามต้องการ) */}
+            {selectedPackage && (
+              <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '20px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                <div>
+                  <div style={{ fontSize: '14px', color: '#ffffff', fontWeight: 'bold' }}>📦 แพ็กเกจที่เลือก: <span style={{ color: '#c084fc' }}>{selectedPackage.name}</span></div>
+                  <div style={{ fontSize: '12px', color: '#38bdf8', marginTop: '2px' }}>ราคาต่อ 1 แพ็ก: ฿{selectedPackage.price.toLocaleString()}</div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                  <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 'bold' }}>จำนวนแพ็กเกจ:</span>
+                  <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', overflow: 'hidden' }}>
+                    <button 
+                      type="button" 
+                      onClick={() => setPackageQuantity(Math.max(1, packageQuantity - 1))}
+                      style={{ backgroundColor: 'rgba(147,51,234,0.3)', color: '#a855f7', border: 'none', padding: '8px 14px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                    >-</button>
+                    <input 
+                      type="text" 
+                      readOnly
+                      value={packageQuantity} 
+                      style={{ width: '45px', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontWeight: 'bold', fontSize: '15px', outline: 'none' }} 
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setPackageQuantity(packageQuantity + 1)}
+                      style={{ backgroundColor: 'rgba(147,51,234,0.3)', color: '#a855f7', border: 'none', padding: '8px 14px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                    >+</button>
+                  </div>
+                  <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399', minWidth: '100px', textAlign: 'right' }}>
+                    รวม ฿{(selectedPackage.price * packageQuantity).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div style={{ marginBottom: '30px' }}>
               <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '12px', fontWeight: 'bold' }}>3. เลือกช่องทางชำระเงิน</label>
@@ -1385,7 +1425,7 @@ export default function GameTopupApp() {
               onMouseDown={(e) => { if(playerId.trim() && selectedPackage && selectedPayment) e.currentTarget.style.transform = 'scale(0.98)'; }}
               onMouseUp={(e) => { if(playerId.trim() && selectedPackage && selectedPayment) e.currentTarget.style.transform = 'scale(1.01)'; }}
             >
-              {!playerId.trim() ? 'กรุณากรอกชื่อผู้ใช้ / ID เกม' : !selectedPackage ? 'กรุณาเลือกแพ็กเกจเติมเงิน' : !selectedPayment ? 'กรุณาเลือกช่องทางชำระเงิน' : `ยืนยันชำระเงิน ฿${selectedPackage.price.toLocaleString()}`}
+              {!playerId.trim() ? 'กรุณากรอกชื่อผู้ใช้ / ID เกม' : !selectedPackage ? 'กรุณาเลือกแพ็กเกจเติมเกม' : !selectedPayment ? 'กรุณาเลือกช่องทางชำระเงิน' : `ยืนยันชำระเงิน ฿${(selectedPackage.price * packageQuantity).toLocaleString()} (${packageQuantity} แพ็ก)`}
             </button>
           </div>
         )}
@@ -1767,8 +1807,8 @@ export default function GameTopupApp() {
 
                 <div style={{ backgroundColor: '#030712', borderRadius: '12px', padding: '14px', marginBottom: '20px', textAlign: 'left', border: '1px solid #374151' }}>
                   <div style={{ fontSize: '13px', color: '#ffffff', marginBottom: '4px' }}>🎮 เกม: <b>{selectedGame.name}</b></div>
-                  <div style={{ fontSize: '13px', color: '#38bdf8', marginBottom: '4px' }}>📦 แพ็กเกจ: <b>{selectedPackage.name}</b></div>
-                  <div style={{ fontSize: '13px', color: '#34d399', marginBottom: '4px' }}>💰 ยอดชำระ: <b>฿{selectedPackage.price.toLocaleString()}</b></div>
+                  <div style={{ fontSize: '13px', color: '#38bdf8', marginBottom: '4px' }}>📦 แพ็กเกจ: <b>{selectedPackage.name} (x{packageQuantity} แพ็ก)</b></div>
+                  <div style={{ fontSize: '13px', color: '#34d399', marginBottom: '4px' }}>💰 ยอดชำระ: <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b></div>
                   <div style={{ fontSize: '13px', color: '#c084fc' }}>👤 ไอดีเกม: <b>{playerId}</b></div>
                 </div>
 
@@ -1803,13 +1843,13 @@ export default function GameTopupApp() {
             {checkoutStep === 2 && selectedPayment?.id === 'qrcode' && (
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#38bdf8' }}>📱 สแกน QR Code ชำระเงิน</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>ยอดชำระ: <b style={{ color: '#34d399' }}>฿{selectedPackage.price.toLocaleString()}</b></p>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>ยอดชำระ: <b style={{ color: '#34d399' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b></p>
                 <div style={{ fontSize: '12px', color: isQrExpired ? '#ef4444' : '#f59e0b', marginBottom: '12px', fontWeight: 'bold' }}>
                   {isQrExpired ? '❌ QR Code หมดอายุแล้ว' : `⏱️ QR Code จะหมดอายุใน: ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, '0')} นาที`}
                 </div>
 
                 <div style={{ backgroundColor: '#ffffff', padding: '15px', borderRadius: '16px', width: '160px', height: '160px', margin: '0 auto 15px auto', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isQrExpired ? 0.4 : 1 }}>
-                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Game-${selectedGame.name}-${selectedPackage.price}`} alt="QR Code" style={{ width: '140px', height: '140px' }} />
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=Game-${selectedGame.name}-${selectedPackage.price * packageQuantity}`} alt="QR Code" style={{ width: '140px', height: '140px' }} />
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
