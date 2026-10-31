@@ -49,13 +49,12 @@ export default function GameTopupApp() {
   const [eventGiftCode, setEventGiftCode] = useState('');
   const [eventMsg, setEventMsg] = useState({ text: '', type: '' });
 
-  // เปลี่ยนมาเก็บเป็นรายชื่อ ID เกมที่เคยใช้สิทธิ์แล้ว (แยกตามเกม)
   const [globalRedeemedPlayers, setGlobalRedeemedPlayers] = useState(() => {
     const saved = localStorage.getItem('cyber_global_redeemed_players');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
-    return ['22']; // ตัวอย่าง ID ที่เคยใช้ไปแล้ว
+    return ['22'];
   });
 
   useEffect(() => {
@@ -824,9 +823,17 @@ export default function GameTopupApp() {
 
   const totalSpentInSearch = searchedOrders.reduce((sum, ord) => sum + ord.price, 0);
 
+  // คำนวณสรุปยอดการเงินหลังบ้าน + เช็คเกณฑ์ VAT 1,800,000 บาท
   const totalAdminSales = orders.reduce((sum, ord) => sum + (ord.type === 'game' ? ord.price : 0), 0);
   const totalAdminProfits = orders.reduce((sum, ord) => sum + (ord.profit || 0), 0);
-  const totalAdminTax = Math.round(totalAdminProfits * 0.07);
+  
+  // เช็คเงื่อนไขเกณฑ์ VAT 1.8 ล้านบาท
+  const isVatThresholdReached = totalAdminSales >= 1800000;
+  const totalAdminVat = isVatThresholdReached ? Math.round(totalAdminProfits * 0.07) : 0;
+  
+  // คำนวณภาษีเงินได้ประจำปี (อัตราประมาณการ 15% จากกำไรสุทธิ)
+  const profitForTaxCalculation = totalAdminProfits - totalAdminVat;
+  const totalAdminTax = Math.round(profitForTaxCalculation * 0.15);
 
   const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);if (!user) {
     return (
@@ -1497,28 +1504,40 @@ export default function GameTopupApp() {
                   </form>
                 </div>
 
-                {/* สรุปยอดขาย กำไร และภาษีประจำปี */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
-                  <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '20px', textAlign: 'center', transition: 'all 0.3s ease' }}
+                {/* 2. สรุปยอดขาย กำไร VAT และภาษีประจำปี (แสดง 4 กล่อง พร้อมเช็คเกณฑ์ 1.8M) */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
+                  <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '18px 12px', textAlign: 'center', transition: 'all 0.3s ease' }}
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(168,85,247,0.3)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
-                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>💵 ยอดขายรวมทั้งหมด</div>
-                    <div style={{ fontSize: '22px', fontWeight: '900', color: '#38bdf8' }}>฿{totalAdminSales.toLocaleString()}</div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>💵 ยอดขายรวมทั้งหมด</div>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: '#38bdf8' }}>฿{totalAdminSales.toLocaleString()}</div>
                   </div>
-                  <div style={{ backgroundColor: '#030712', border: '1.5px solid #34d399', borderRadius: '16px', padding: '20px', textAlign: 'center', transition: 'all 0.3s ease' }}
+
+                  <div style={{ backgroundColor: '#030712', border: '1.5px solid #34d399', borderRadius: '16px', padding: '18px 12px', textAlign: 'center', transition: 'all 0.3s ease' }}
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(52,211,153,0.3)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
-                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>📈 กำไรสุทธิรวม</div>
-                    <div style={{ fontSize: '22px', fontWeight: '900', color: '#34d399' }}>+฿{totalAdminProfits.toLocaleString()}</div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>📈 กำไรสุทธิรวม</div>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>+฿{totalAdminProfits.toLocaleString()}</div>
                   </div>
-                  <div style={{ backgroundColor: '#030712', border: '1.5px solid #f59e0b', borderRadius: '16px', padding: '20px', textAlign: 'center', transition: 'all 0.3s ease' }}
+
+                  <div style={{ backgroundColor: '#030712', border: isVatThresholdReached ? '1.5px solid #c084fc' : '1.5px dashed #4b5563', borderRadius: '16px', padding: '18px 12px', textAlign: 'center', transition: 'all 0.3s ease' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(192,132,252,0.3)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>🏛️ VAT 7% จากกำไร</div>
+                    <div style={{ fontSize: isVatThresholdReached ? '18px' : '12px', fontWeight: '900', color: isVatThresholdReached ? '#c084fc' : '#9ca3af', marginTop: isVatThresholdReached ? '0' : '4px' }}>
+                      {isVatThresholdReached ? `-฿${totalAdminVat.toLocaleString()}` : '฿0 (ยังไม่ถึงเกณฑ์ 1.8M)'}
+                    </div>
+                  </div>
+
+                  <div style={{ backgroundColor: '#030712', border: '1.5px solid #f59e0b', borderRadius: '16px', padding: '18px 12px', textAlign: 'center', transition: 'all 0.3s ease' }}
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(245,158,11,0.3)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
                   >
-                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>🏛️ เสียภาษีประจำปี (7% จากกำไร)</div>
-                    <div style={{ fontSize: '22px', fontWeight: '900', color: '#f59e0b' }}>-฿{totalAdminTax.toLocaleString()}</div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>📋 เสียภาษีประจำปี (15%)</div>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: '#f59e0b' }}>-฿{totalAdminTax.toLocaleString()}</div>
                   </div>
                 </div>
 
