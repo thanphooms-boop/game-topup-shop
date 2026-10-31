@@ -831,10 +831,22 @@ export default function GameTopupApp() {
   const isVatThresholdReached = totalAdminSales >= 1800000;
   const totalAdminVat = isVatThresholdReached ? Math.round(totalAdminProfits * 0.07) : 0;
   
-  // คำนวณภาษีเงินได้ประจำปีตามเกณฑ์บุคคลธรรมดา (0% สำหรับ 150,000 บาทแรก)
+  // คำนวณภาษีเงินได้ประจำปีตามเกณฑ์บุคคลธรรมดา (ขั้นบันได 0% ถึง 35%)
   const profitForTaxCalculation = totalAdminProfits - totalAdminVat;
   const taxableIncome = Math.max(0, profitForTaxCalculation - 150000); // หักยกเว้น 150,000 แรก
-  const totalAdminTax = Math.round(taxableIncome * 0.10); // อัตราเริ่มต้นขั้นบันไดช่วงแรก 10%
+  
+  // คำนวณภาษีตามขั้นบันไดจริง
+  let calculatedTax = 0;
+  if (taxableIncome > 0 && taxableIncome <= 150000) {
+    calculatedTax = taxableIncome * 0.05; // 150,000 ถัดไป 5%
+  } else if (taxableIncome > 150000 && taxableIncome <= 350000) {
+    calculatedTax = 7500 + (taxableIncome - 150000) * 0.10; // 10%
+  } else if (taxableIncome > 350000 && taxableIncome <= 600000) {
+    calculatedTax = 27500 + (taxableIncome - 350000) * 0.15; // 15%
+  } else if (taxableIncome > 600000) {
+    calculatedTax = 65000 + (taxableIncome - 600000) * 0.20; // 20% ขึ้นไป
+  }
+  const totalAdminTax = Math.round(calculatedTax);
 
   const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);if (!user) {
     return (
@@ -1188,6 +1200,40 @@ export default function GameTopupApp() {
               ))}
             </div>
 
+            {/* ช่องแสดงสถานะจำนวนโค้ดคงเหลือแต่ละเกมตามตำแหน่งที่คุณทำกรอบสีแดง */}
+            <div style={{ 
+              backgroundColor: 'rgba(17, 24, 39, 0.95)', 
+              border: '1.5px solid rgba(56, 189, 248, 0.6)', 
+              borderRadius: '20px', 
+              padding: '25px 30px', 
+              boxShadow: '0 0 30px rgba(56, 189, 248, 0.25)',
+              marginBottom: '35px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
+                <span style={{ fontSize: '24px' }}>📊</span>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>สถานะโค้ดกิจกรรมคงเหลือแยกตามเกม</h3>
+                  <p style={{ fontSize: '12px', color: '#9ca3af', margin: '2px 0 0 0' }}>สรุปจำนวนโค้ดที่ยังสามารถใช้งานได้ของแต่ละเกมในระบบปัจจุบัน</p>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                {gamesData.map((g) => {
+                  const codesForGame = giftCodes.filter(c => c.game === g.name);
+                  const totalRemainingForGame = codesForGame.reduce((sum, c) => sum + Math.max(0, c.maxUses - c.usedCount), 0);
+                  
+                  return (
+                    <div key={g.id} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>{g.name}</span>
+                      <span style={{ backgroundColor: totalRemainingForGame > 0 ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)', color: totalRemainingForGame > 0 ? '#34d399' : '#fca5a5', border: `1px solid ${totalRemainingForGame > 0 ? '#34d399' : '#ef4444'}`, padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
+                        {totalRemainingForGame > 0 ? `เหลือ ${totalRemainingForGame} โค้ด` : 'หมดแล้ว'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* ช่องกรอกโค้ดของขวัญ / โค้ดกิจกรรมจากแอดมิน */}
             <div style={{ 
               backgroundColor: 'rgba(17, 24, 39, 0.95)', 
@@ -1505,7 +1551,7 @@ export default function GameTopupApp() {
                   </form>
                 </div>
 
-                {/* 2. สรุปยอดขาย กำไร VAT และภาษีประจำปี (แสดง 4 กล่อง พร้อมเช็คเกณฑ์ 1.8M และยกเว้น 150k แรก) */}
+                {/* 2. สรุปยอดขาย กำไร VAT และภาษีประจำปี (แสดง 4 กล่อง ตามที่ต้องการในหน้าหลังบ้าน) */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '18px 12px', textAlign: 'center', transition: 'all 0.3s ease' }}
                     onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 10px 25px rgba(168,85,247,0.3)'; }}
@@ -1598,7 +1644,7 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
-                {/* ส่วนสร้างโค้ดกิจกรรม + ปุ่มปรับสิทธิ์แบบใหม่ */}
+                {/* ส่วนสร้างโค้ดกิจกรรม + ปุ่มรีเซ็ตสิทธิ์ */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
