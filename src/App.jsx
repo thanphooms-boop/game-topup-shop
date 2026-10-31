@@ -243,8 +243,12 @@ export default function GameTopupApp() {
   const [walletTimeLeft, setWalletTimeLeft] = useState(180);
   const [isWalletQrExpired, setIsWalletQrExpired] = useState(false);
 
-  // States สำหรับข้อมูลช่องทางชำระเงินจริง
+  // States สำหรับ TrueMoney Wallet OTP และข้อมูลชำระเงินจริง
   const [truemoneyPhone, setTruemoneyPhone] = useState('');
+  const [trueMoneyOtpStep, setTrueMoneyOtpStep] = useState(false);
+  const [trueMoneyOtpCode, setTrueMoneyOtpCode] = useState('');
+  const [trueMoneyOtpError, setTrueMoneyOtpError] = useState('');
+
   const [truemoneyCard14, setTruemoneyCard14] = useState('');
   const [creditCardNum, setCreditCardNum] = useState('');
   const [creditCardExp, setCreditCardExp] = useState('');
@@ -255,10 +259,16 @@ export default function GameTopupApp() {
   const [pendingWalletAmount, setPendingWalletAmount] = useState(0);
   const [pendingWalletOrderId, setPendingWalletOrderId] = useState('');
 
+  // Floating timer state สำหรับตัวเลขลอย 10 วิ
+  const [floatingTimer, setFloatingTimer] = useState(0);
+
   const [customerOrderSearch, setCustomerOrderSearch] = useState('');
   const [exactSearchQuery, setExactSearchQuery] = useState('');
   const [selectedGameFilter, setSelectedGameFilter] = useState('all');
   const [selectedDateFilter, setSelectedDateFilter] = useState('');
+
+  // Pagination state สำหรับหน้าหลังบ้าน
+  const [adminOrdersPage, setAdminOrdersPage] = useState(1);
 
   const [orders, setOrders] = useState(() => {
     const savedOrders = localStorage.getItem('cyber_topup_orders');
@@ -307,7 +317,7 @@ export default function GameTopupApp() {
   const paymentMethods = [
     { id: 'wallet', name: 'Cyber Wallet (เครดิตร้าน)', desc: 'หักจากยอดเงินในบัญชีทันที' },
     { id: 'qrcode', name: 'QR PromptPay', desc: 'ฟรีค่าธรรมเนียม อัตโนมัติ 24 ชม.' },
-    { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนผ่านเบอร์วอลเล็ต 10 หลัก' },
+    { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนผ่านเบอร์วอลเล็ต 10 หลัก พร้อม OTP' },
     { id: 'truemoneycard', name: 'บัตรเติมเงินทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก' },
     { id: 'credit', name: 'บัตรเครดิต / เดบิต', desc: 'ชำระผ่านบัตรปลอดภัย' }
   ];
@@ -350,6 +360,17 @@ export default function GameTopupApp() {
     return () => clearInterval(timer);
   }, [showTopupWalletModal, walletStep, walletPaymentMethod, isWalletQrExpired]);
 
+  // Floating timer สำหรับตัวเลขลอย 10 วิ
+  useEffect(() => {
+    let fTimer;
+    if (floatingTimer > 0) {
+      fTimer = setInterval(() => {
+        setFloatingTimer((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(fTimer);
+  }, [floatingTimer]);
+
   useEffect(() => {
     let bgWalletTimer;
     if (isWalletAutoRunning) {
@@ -366,7 +387,7 @@ export default function GameTopupApp() {
 
             const ordId = pendingWalletOrderId;
             setOrders((prevOrders) =>
-              prevOrders.map((ord) => ord.id === ordId ? { ...ord, status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)' } : ord)
+              prevOrders.map((ord) => ord.id === ordId ? { ...ord, status: '✅ สำเร็จ (ระบบยืนยันอัตโนมัติ)' } : ord)
             );
 
             setIsWalletAutoRunning(false);
@@ -388,7 +409,7 @@ export default function GameTopupApp() {
             clearInterval(bgGameTimer);
             const ordId = pendingGameOrderId;
             setOrders((prevOrders) =>
-              prevOrders.map((ord) => ord.id === ordId ? { ...ord, status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)' } : ord)
+              prevOrders.map((ord) => ord.id === ordId ? { ...ord, status: '✅ สำเร็จ (ระบบยืนยันอัตโนมัติ)' } : ord)
             );
             setIsGameAutoRunning(false);
             setOrderSuccess(ordId);
@@ -612,9 +633,15 @@ export default function GameTopupApp() {
       return;
     }
 
-    // ตรวจสอบข้อมูลชำระเงินของ TrueMoney / Credit Card ในส่วนเติมเครดิต
-    if (walletPaymentMethod === 'true' && (!truemoneyPhone || truemoneyPhone.length < 10)) {
-      alert('กรุณากรอกเบอร์ TrueMoney Wallet ให้ครบ 10 หลัก');
+    if (walletPaymentMethod === 'true') {
+      if (!truemoneyPhone || truemoneyPhone.length < 10) {
+        alert('กรุณากรอกเบอร์ TrueMoney Wallet ให้ครบ 10 หลัก');
+        return;
+      }
+      // เปิดขั้นตอนกรอก OTP สำหรับ TrueMoney Wallet
+      setTrueMoneyOtpStep(true);
+      setTrueMoneyOtpCode('');
+      setTrueMoneyOtpError('');
       return;
     } else if (walletPaymentMethod === 'truemoneycard' && (!truemoneyCard14 || truemoneyCard14.length < 14)) {
       alert('กรุณากรอกรหัสบัตรเติมเงิน TrueMoney ให้ครบ 14 หลัก');
@@ -634,6 +661,20 @@ export default function GameTopupApp() {
     }
   };
 
+  const handleTrueMoneyOtpSubmit = (e) => {
+    e.preventDefault();
+    setTrueMoneyOtpError('');
+
+    if (!trueMoneyOtpCode || trueMoneyOtpCode.length !== 6) {
+      setTrueMoneyOtpError('กรุณากรอกรหัส OTP 6 หลักให้ถูกต้อง');
+      return;
+    }
+
+    // ผ่าน OTP สำเร็จ ดำเนินการเติมเงินต่อ
+    setTrueMoneyOtpStep(false);
+    handleWalletConfirmPayment();
+  };
+
   const handleWalletConfirmPayment = () => {
     const amt = parseFloat(topupAmount) || 0;
     const newOrderId = 'ORD-W-' + Math.floor(10000 + Math.random() * 90000);
@@ -651,7 +692,7 @@ export default function GameTopupApp() {
       price: amt,
       profit: 0,
       player: user ? user.username : '11',
-      status: 'รอตรวจสอบ [สะดุดใน 10s]',
+      status: 'รอตรวจสอบ [10s]',
       type: 'wallet',
       time: thaiTime,
       dateKey: dateKey,
@@ -663,10 +704,16 @@ export default function GameTopupApp() {
     setPendingWalletOrderId(newOrderId);
     setWalletAutoSeconds(10);
     setIsWalletAutoRunning(true);
+    
+    // ตั้งค่าตัวเลขลอย 10 วินาที
+    setFloatingTimer(10);
+
     setShowTopupWalletModal(false);
     setWalletStep(1);
     setTopupAmount('');
     setTruemoneyPhone('');
+    setTrueMoneyOtpStep(false);
+    setTrueMoneyOtpCode('');
     setTruemoneyCard14('');
     setCreditCardNum('');
     setCreditCardExp('');
@@ -680,6 +727,9 @@ export default function GameTopupApp() {
     setWalletTimeLeft(180);
     setIsWalletQrExpired(false);
     setTruemoneyPhone('');
+    setTrueMoneyOtpStep(false);
+    setTrueMoneyOtpCode('');
+    setTrueMoneyOtpError('');
     setTruemoneyCard14('');
     setCreditCardNum('');
     setCreditCardExp('');
@@ -701,7 +751,6 @@ export default function GameTopupApp() {
       return;
     }
 
-    // ตรวจสอบข้อมูลการชำระเงินตามจริงของเติมเกม
     if (selectedPayment.id === 'true' && (!truemoneyPhone || truemoneyPhone.length < 10)) {
       setCheckoutPasswordError('กรุณากรอกเบอร์ TrueMoney Wallet ให้ครบ 10 หลัก');
       return;
@@ -726,8 +775,17 @@ export default function GameTopupApp() {
     const totalPrice = selectedPackage.price * packageQuantity;
     const totalProfit = (selectedPackage.profit || Math.round(selectedPackage.price * 0.15)) * packageQuantity;
 
+    // ถ้าเลือกชำระผ่านเครดิตร้าน ให้หักจากยอดเงินในบัญชีทันทีตามที่ขอ
     if (selectedPayment.id === 'wallet') {
-      setUser((prev) => ({ ...prev, balance: prev.balance - totalPrice }));
+      setUser((prev) => {
+        const updatedBalance = prev.balance - totalPrice;
+        const updatedUserObj = { ...prev, balance: updatedBalance };
+        // อัปเดตข้อมูลใน registeredUsers ด้วย
+        setRegisteredUsers((list) =>
+          list.map((u) => u.username === updatedUserObj.username ? { ...u, balance: updatedBalance } : u)
+        );
+        return updatedUserObj;
+      });
     }
 
     setIsProcessing(true);
@@ -748,7 +806,7 @@ export default function GameTopupApp() {
         price: totalPrice,
         profit: totalProfit,
         player: user.username,
-        status: 'รอตรวจสอบ [สะดุดใน 10s]',
+        status: 'รอตรวจสอบ [10s]',
         type: 'game',
         time: thaiTime,
         dateKey: dateKey,
@@ -760,6 +818,10 @@ export default function GameTopupApp() {
       setPendingGameOrderId(newOrderId);
       setGameAutoSeconds(10);
       setIsGameAutoRunning(true);
+      
+      // เปิดตัวเลขลอย 10 วินาที
+      setFloatingTimer(10);
+
       setShowCheckoutModal(false);
       setCheckoutStep(1);
       setCheckoutPassword('');
@@ -822,6 +884,11 @@ export default function GameTopupApp() {
 
   const filteredOrders = orders.filter((ord) => ord.player.toLowerCase().includes(adminSearchQuery.toLowerCase()) || ord.id.toLowerCase().includes(adminSearchQuery.toLowerCase()) || ord.game.toLowerCase().includes(adminSearchQuery.toLowerCase()));
 
+  // แบ่งหน้า (Pagination) หน้าหลังบ้าน 10 บรรทัดต่อหน้า
+  const adminItemsPerPage = 10;
+  const totalAdminPages = Math.ceil(filteredOrders.length / adminItemsPerPage) || 1;
+  const paginatedAdminOrders = filteredOrders.slice((adminOrdersPage - 1) * adminItemsPerPage, adminOrdersPage * adminItemsPerPage);
+
   const isUserAdmin = user && (user.username === 'thanphooms@gmail.com' || user.email === 'thanphooms@gmail.com');
 
   const searchedOrders = orders.filter(o => {
@@ -865,7 +932,9 @@ export default function GameTopupApp() {
   }
   const totalAdminTax = Math.round(calculatedTax);
 
-  const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);if (!user) {
+  const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);
+
+  if (!user) {
     return (
       <div style={{
         backgroundColor: '#070a12',
@@ -1005,6 +1074,22 @@ export default function GameTopupApp() {
       color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '60px', position: 'relative'
     }}>
       
+      {/* FLOATING TIMER BADGE (ตัวเลขลอย 10 วินาทีข้างๆ ตอนเด้งกลับมาหน้าแรก) */}
+      {floatingTimer > 0 && (
+        <div style={{
+          position: 'fixed', bottom: '90px', right: '25px', zIndex: 98,
+          backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '2px solid #34d399',
+          borderRadius: '16px', padding: '12px 18px', boxShadow: '0 0 25px rgba(52, 211, 153, 0.6)',
+          display: 'flex', alignItems: 'center', gap: '12px', animation: 'pulse 1s infinite'
+        }}>
+          <div style={{ fontSize: '22px' }}>⏳</div>
+          <div>
+            <div style={{ fontSize: '12px', color: '#9ca3af' }}>รอระบบยืนยันการเติมเงิน</div>
+            <div style={{ fontSize: '15px', fontWeight: '900', color: '#34d399' }}>เหลืออีก {floatingTimer} วินาที...</div>
+          </div>
+        </div>
+      )}
+
       {/* NAVBAR */}
       <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '12px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
@@ -1304,7 +1389,9 @@ export default function GameTopupApp() {
               </form>
             </div>
           </div>
-        )}{/* GAME DETAIL & PACKAGES */}
+        )}
+
+        {/* GAME DETAIL & PACKAGES */}
         {activeTab === 'shop' && selectedGame && (
           <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '24px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.5)', boxShadow: '0 0 40px rgba(0,0,0,0.8)' }}>
             <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: 'transparent', border: '1px solid #374151', color: '#9ca3af', padding: '8px 16px', borderRadius: '10px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold', transition: 'all 0.2s ease' }}
@@ -1411,7 +1498,6 @@ export default function GameTopupApp() {
               </div>
             </div>
 
-            {/* ช่องกรอกข้อมูลชำระเงินตามจริงเหมือนเว็บเติมเกมเป๊ะๆ */}
             {selectedPayment && (
               <div style={{ backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '16px', padding: '20px', marginBottom: '30px' }}>
                 <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '12px' }}>
@@ -1728,13 +1814,17 @@ export default function GameTopupApp() {
                   </div>
                 </div>
 
+                {/* รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ (แสดงหน้าละ 10 บรรทัด มีปุ่มเปลี่ยนหน้า 2,3,4) */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #9333ea' }}>
-                  <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 15px 0' }}>📊 รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ</h2>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ</h2>
+                    <span style={{ fontSize: '12px', color: '#9ca3af' }}>แสดงหน้าละ 10 บรรทัด (หน้า {adminOrdersPage} / {totalAdminPages})</span>
+                  </div>
 
-                  <input type="text" placeholder="🔍 ค้นหาเลขออร์เดอร์ หรือชื่อลูกค้า..." value={adminSearchQuery} onChange={(e) => setAdminSearchQuery(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', marginBottom: '20px', outline: 'none', boxSizing: 'border-box' }} />
+                  <input type="text" placeholder="🔍 ค้นหาเลขออร์เดอร์ หรือชื่อลูกค้า..." value={adminSearchQuery} onChange={(e) => { setAdminSearchQuery(e.target.value); setAdminOrdersPage(1); }} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', marginBottom: '20px', outline: 'none', boxSizing: 'border-box' }} />
                   
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    {filteredOrders.map((ord, idx) => (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
+                    {paginatedAdminOrders.map((ord, idx) => (
                       <div key={idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px' }}>
@@ -1779,6 +1869,31 @@ export default function GameTopupApp() {
                       </div>
                     ))}
                   </div>
+
+                  {/* PAGINATION CONTROLS (หน้า 2, 3, 4 ...) */}
+                  {totalAdminPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center' }}>
+                      {Array.from({ length: totalAdminPages }, (_, i) => i + 1).map((pageNum) => (
+                        <button
+                          key={pageNum}
+                          onClick={() => setAdminOrdersPage(pageNum)}
+                          style={{
+                            backgroundColor: adminOrdersPage === pageNum ? '#9333ea' : '#030712',
+                            color: '#ffffff',
+                            border: '1px solid ' + (adminOrdersPage === pageNum ? '#a855f7' : '#374151'),
+                            borderRadius: '8px',
+                            padding: '8px 14px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)' }}>
@@ -1974,12 +2089,12 @@ export default function GameTopupApp() {
         </div>
       )}
 
-      {/* MODAL: TOPUP STORE WALLET */}
+      {/* MODAL: TOPUP STORE WALLET (รวม TrueMoney Wallet + OTP) */}
       {showTopupWalletModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
             
-            {walletStep === 1 && (
+            {walletStep === 1 && !trueMoneyOtpStep && (
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#c084fc' }}>💳 เติมเครดิตเข้า Cyber Wallet</h3>
                 <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>กรอกจำนวนเงินและเลือกช่องทางชำระเงิน</p>
@@ -1997,7 +2112,7 @@ export default function GameTopupApp() {
                   <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>เลือกช่องทางชำระเงิน</label>
                   <select value={walletPaymentMethod} onChange={(e) => setWalletPaymentMethod(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '13px', outline: 'none' }}>
                     <option value="qrcode">QR PromptPay</option>
-                    <option value="true">TrueMoney Wallet (เบอร์ 10 หลัก)</option>
+                    <option value="true">TrueMoney Wallet (เบอร์ 10 หลัก + OTP)</option>
                     <option value="truemoneycard">บัตรเติมเงินทรูมันนี่ (14 หลัก)</option>
                     <option value="credit">บัตรเครดิต / เดบิต</option>
                   </select>
@@ -2037,10 +2152,47 @@ export default function GameTopupApp() {
                     onMouseEnter={(e) => { if(topupAmount && parseFloat(topupAmount) > 0) { e.currentTarget.style.backgroundColor = '#a855f7'; e.currentTarget.style.boxShadow = '0 0 20px rgba(168,85,247,0.8)'; } }}
                     onMouseLeave={(e) => { if(topupAmount && parseFloat(topupAmount) > 0) { e.currentTarget.style.backgroundColor = '#9333ea'; e.currentTarget.style.boxShadow = 'none'; } }}
                   >
-                    {walletPaymentMethod === 'qrcode' ? 'ถัดไป (สแกน QR) →' : 'ยืนยันการเติมเครดิต'}
+                    {walletPaymentMethod === 'qrcode' ? 'ถัดไป (สแกน QR) →' : walletPaymentMethod === 'true' ? 'ส่งรหัส OTP →' : 'ยืนยันการเติมเครดิต'}
                   </button>
                 </div>
               </div>
+            )}
+
+            {/* หน้าต่างกรอกรหัส OTP สำหรับ TrueMoney Wallet */}
+            {trueMoneyOtpStep && (
+              <form onSubmit={handleTrueMoneyOtpSubmit}>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#38bdf8' }}>🔐 กรอกรหัส OTP</h3>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>
+                  ระบบได้ส่งรหัส OTP ไปยังเบอร์ <b style={{ color: '#ffffff' }}>{truemoneyPhone}</b> แล้ว (ลองกรอกตัวเลขอะไรก็ได้ 6 หลัก)
+                </p>
+
+                {trueMoneyOtpError && (
+                  <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px', borderRadius: '8px', fontSize: '12px', marginBottom: '15px' }}>
+                    {trueMoneyOtpError}
+                  </div>
+                )}
+
+                <input 
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="------"
+                  value={trueMoneyOtpCode}
+                  onChange={(e) => setTrueMoneyOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '12px', padding: '14px', color: '#ffffff', fontSize: '24px', textAlign: 'center', fontWeight: 'bold', letterSpacing: '8px', outline: 'none', marginBottom: '20px', boxSizing: 'border-box' }}
+                />
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="button" onClick={() => setTrueMoneyOtpStep(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4b5563'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#374151'}
+                  >← ย้อนกลับ</button>
+                  <button type="submit" style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(52,211,153,0.5)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#6ee7b7'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#34d399'}
+                  >ยืนยัน OTP</button>
+                </div>
+              </form>
             )}
 
             {walletStep === 2 && walletPaymentMethod === 'qrcode' && (
@@ -2078,7 +2230,7 @@ export default function GameTopupApp() {
       )}
 
       {/* FOOTER */}
-      <footer style={{ textAlign: 'center', marginTop: '50px', padding: '20px', border: 'top 1px solid rgba(255,255,255,0.05)', color: '#9ca3af', fontSize: '13px' }}>
+      <footer style={{ textAlign: 'center', marginTop: '50px', padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', color: '#9ca3af', fontSize: '13px' }}>
         <p style={{ margin: 0 }}>⚡ <b>CYBER TOPUP</b> - บริการเติมเกมออนไลน์ตลอด 24 ชั่วโมง</p>
       </footer>
     </div>
