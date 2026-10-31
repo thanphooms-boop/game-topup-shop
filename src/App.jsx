@@ -253,6 +253,25 @@ export default function GameTopupApp() {
   const [creditCardExp, setCreditCardExp] = useState('');
   const [creditCardCvv, setCreditCardCvv] = useState('');
 
+  // ฟังก์ชันจัดรูปแบบเลขบัตรเครดิต auto spacing
+  const handleCreditCardNumChange = (e) => {
+    let raw = e.target.value.replace(/[^0-9]/g, '');
+    if (raw.length > 16) raw = raw.slice(0, 16);
+    const formatted = raw.match(/.{1,4}/g)?.join(' ') || '';
+    setCreditCardNum(formatted);
+  };
+
+  // ฟังก์ชันจัดรูปแบบวันหมดอายุ auto slash /
+  const handleCreditCardExpChange = (e) => {
+    let raw = e.target.value.replace(/[^0-9]/g, '');
+    if (raw.length > 4) raw = raw.slice(0, 4);
+    if (raw.length >= 3) {
+      setCreditCardExp(`${raw.slice(0, 2)}/${raw.slice(2)}`);
+    } else {
+      setCreditCardExp(raw);
+    }
+  };
+
   const [isWalletAutoRunning, setIsWalletAutoRunning] = useState(false);
   const [walletAutoSeconds, setWalletAutoSeconds] = useState(10);
   const [pendingWalletAmount, setPendingWalletAmount] = useState(0);
@@ -311,14 +330,58 @@ export default function GameTopupApp() {
   const [gameAutoSeconds, setGameAutoSeconds] = useState(10);
   const [pendingGameOrderId, setPendingGameOrderId] = useState('');
 
-  const [adExpense, setAdExpense] = useState(() => {
-    const savedAd = localStorage.getItem('cyber_ad_expense');
-    return savedAd ? parseFloat(savedAd) || 0 : 0;
+  // ระบบการโฆษณา/โปรโมทเว็บ ของแอดมิน
+  const [adPlatform, setAdPlatform] = useState('Facebook Ads');
+  const [adAmountInput, setAdAmountInput] = useState('');
+  const [adPromotions, setAdPromotions] = useState(() => {
+    const savedPromos = localStorage.getItem('cyber_ad_promotions_list');
+    if (savedPromos) {
+      try { return JSON.parse(savedPromos); } catch (e) {}
+    }
+    return [
+      { id: '1', platform: 'Facebook Ads', amount: 1500, time: '30/10/2026 14:00 น.' },
+      { id: '2', platform: 'TikTok Ads', amount: 1000, time: '29/10/2026 10:30 น.' }
+    ];
   });
 
   useEffect(() => {
-    localStorage.setItem('cyber_ad_expense', adExpense.toString());
-  }, [adExpense]);
+    localStorage.setItem('cyber_ad_promotions_list', JSON.stringify(adPromotions));
+  }, [adPromotions]);
+
+  const adExpense = adPromotions.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+
+  const handleAddAdPromotion = (e) => {
+    e.preventDefault();
+    const amt = parseFloat(adAmountInput);
+    if (isNaN(amt) || amt <= 0) {
+      alert('กรุณากรอกจำนวนเงินโฆษณาให้ถูกต้อง');
+      return;
+    }
+    if (adPromotions.length >= 10) {
+      alert('จำกัดรายการโฆษณาสูงสุด 10 บรรทัด กรุณาลบรายการเก่าออกก่อนเพิ่มใหม่');
+      return;
+    }
+
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+
+    const newItem = {
+      id: Date.now().toString(),
+      platform: adPlatform,
+      amount: amt,
+      time: thaiTime
+    };
+
+    setAdPromotions([newItem, ...adPromotions]);
+    setAdAmountInput('');
+  };
+
+  const handleDeleteAdPromotion = (id) => {
+    setAdPromotions(adPromotions.filter(item => item.id !== id));
+  };
 
   const totalAdminSales = orders.reduce((sum, ord) => sum + (ord.type === 'game' ? ord.price : 0), 0);
   const totalAdminProfits = orders.reduce((sum, ord) => sum + (ord.profit || 0), 0);
@@ -673,7 +736,7 @@ export default function GameTopupApp() {
     } else if (walletPaymentMethod === 'truemoneycard' && (!truemoneyCard14 || truemoneyCard14.length < 14)) {
       alert('กรุณากรอกรหัสบัตรเติมเงิน TrueMoney ให้ครบ 14 หลัก');
       return;
-    } else if (walletPaymentMethod === 'credit' && (!creditCardNum || creditCardNum.length < 16 || !creditCardExp || !creditCardCvv)) {
+    } else if (walletPaymentMethod === 'credit' && (creditCardNum.replace(/\s/g, '').length < 16 || !creditCardExp || !creditCardCvv)) {
       alert('กรุณากรอกข้อมูลบัตรเครดิต/เดบิตให้ครบถ้วน');
       return;
     }
@@ -699,11 +762,9 @@ export default function GameTopupApp() {
 
     setTrueMoneyOtpStep(false);
 
-    // ถ้าเปิดหน้าต่างซื้อแพ็กเกจเติมเกมอยู่ ดำเนินการชำระเงินค่าเกมต่อ
     if (showCheckoutModal) {
       handleFinalPaymentSubmit();
     } else {
-      // ถ้าเปิดเติมเครดิตร้านอยู่ ดำเนินการเติมเครดิตต่อ
       handleWalletConfirmPayment();
     }
   };
@@ -772,10 +833,9 @@ export default function GameTopupApp() {
   const handleStartGamePayment = () => {
     setCheckoutPasswordError('');
     
-    // ตรวจสอบยอดเงินเครดิตร้านถ้าระบุช่องทาง wallet
     const totalPrice = selectedPackage.price * packageQuantity;
     if (selectedPayment.id === 'wallet' && user.balance < totalPrice) {
-      alert('ยอดเงินใน Cyber Wallet ของคุณไม่พอ');
+      alert('ยอดเงินใน Cyber Wallet ของคุณไม่พอ กรุณาเติมเครดิตก่อนทำรายการ');
       return;
     }
 
@@ -789,14 +849,14 @@ export default function GameTopupApp() {
       setTrueMoneyOtpCode('');
       setTrueMoneyOtpError('');
       return;
-    } else if (selectedPayment.id === 'qrcode') {
-      // กรณี QR Code ให้เปิดหน้าสแกน QR พร้อมกรอกรหัสผ่านบัญชี
+    } else if (selectedPayment.id === 'qrcode' || selectedPayment.id === 'wallet') {
+      // กรณี QR Code หรือ Wallet ให้เปิดหน้ากดยืนยันรหัสผ่านเพื่อความปลอดภัย
       setTimeLeft(180);
       setIsQrExpired(false);
       setCheckoutStep(1);
       setShowCheckoutModal(true);
     } else {
-      // ช่องทางอื่น ชำระเงินได้ทันทีโดยไม่ต้องใส่รหัสผ่าน
+      // ช่องทางอื่น ชำระเงินได้ทันที
       handleFinalPaymentSubmit();
     }
   };
@@ -810,7 +870,11 @@ export default function GameTopupApp() {
       return;
     }
 
-    setCheckoutStep(2);
+    if (selectedPayment.id === 'qrcode') {
+      setCheckoutStep(2);
+    } else {
+      handleFinalPaymentSubmit();
+    }
   };
 
   const handleFinalPaymentSubmit = () => {
@@ -1557,11 +1621,10 @@ export default function GameTopupApp() {
                       <input 
                         type="text" 
                         inputMode="numeric"
-                        maxLength={16} 
                         placeholder="4111 2222 3333 4444" 
                         value={creditCardNum} 
-                        onChange={(e) => setCreditCardNum(e.target.value.replace(/[^0-9]/g, ''))} 
-                        style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                        onChange={handleCreditCardNumChange} 
+                        style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box', letterSpacing: '1.5px' }} 
                       />
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
@@ -1569,11 +1632,10 @@ export default function GameTopupApp() {
                         <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>วันหมดอายุ (MM/YY)</label>
                         <input 
                           type="text" 
-                          maxLength={5} 
                           placeholder="MM/YY" 
                           value={creditCardExp} 
-                          onChange={(e) => setCreditCardExp(e.target.value)} 
-                          style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                          onChange={handleCreditCardExpChange} 
+                          style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box', letterSpacing: '1px' }} 
                         />
                       </div>
                       <div style={{ flex: 1 }}>
@@ -1585,7 +1647,7 @@ export default function GameTopupApp() {
                           placeholder="123" 
                           value={creditCardCvv} 
                           onChange={(e) => setCreditCardCvv(e.target.value.replace(/[^0-9]/g, ''))} 
-                          style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                          style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box', letterSpacing: '2px' }} 
                         />
                       </div>
                     </div>
@@ -1600,7 +1662,7 @@ export default function GameTopupApp() {
 
                 {selectedPayment.id === 'wallet' && (
                   <div style={{ fontSize: '13px', color: '#34d399' }}>
-                    ✅ ระบบจะหักยอดเงินจาก Cyber Wallet ของคุณทันที (ยอดคงเหลือปัจจุบัน: ฿{user.balance.toLocaleString()})
+                    🔒 เพื่อความปลอดภัยและป้องกันการกดพลาด ระบบจะให้ท่านยืนยันรหัสผ่านบัญชีก่อนหักเงินจากเครดิตร้าน (ยอดคงเหลือ: ฿{user.balance.toLocaleString()})
                   </div>
                 )}
               </div>
@@ -1755,7 +1817,7 @@ export default function GameTopupApp() {
               </div>
             ) : (
               <>
-                {/* กล่องเปลี่ยน PIN และ กล่องกรอกค่าโฆษณา */}
+                {/* กล่องเปลี่ยน PIN และ กล่องจัดการการโปรโมทเว็บ / ค่าโฆษณา */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px' }}>
                   
                   {/* ฝั่งซ้าย: เปลี่ยนรหัส PIN */}
@@ -1790,32 +1852,68 @@ export default function GameTopupApp() {
                     </form>
                   </div>
 
-                  {/* ฝั่งขวา: กรอกค่าโฆษณา / โปรโมทเว็บ */}
+                  {/* ฝั่งขวา: จัดการโปรโมทเว็บ / ค่าโฆษณา */}
                   <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #ec4899', boxShadow: '0 0 25px rgba(236,72,153,0.2)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                       <span style={{ fontSize: '20px' }}>📢</span>
-                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#f472b6', margin: 0 }}>กรอกค่าโปรโมทเว็บ / ค่าโฆษณา</h3>
+                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#f472b6', margin: 0 }}>บันทึกรายการโปรโมทเว็บ / ค่าโฆษณา</h3>
                     </div>
-                    <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>
-                      ระบุค่าใช้จ่ายในการโฆษณา ระบบจะนำยอดนี้ไปลบกับกำไรสุทธิอัตโนมัติก่อนนำไปคิดภาษี
+                    <p style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '14px' }}>
+                      เลือกช่องทางโฆษณา บันทึกยอดจ่ายเพื่อหักกำไรสุทธิ และแสดงประวัติสูงสุด 10 รายการ
                     </p>
 
-                    <div style={{ marginBottom: '15px' }}>
-                      <label style={{ fontSize: '12px', color: '#f472b6', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>
-                        จำนวนเงินค่าโฆษณา/โปรโมทเว็บ (บาท)
-                      </label>
+                    <form onSubmit={handleAddAdPromotion} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr auto', gap: '8px', marginBottom: '15px' }}>
+                      <select 
+                        value={adPlatform} 
+                        onChange={(e) => setAdPlatform(e.target.value)} 
+                        style={{ backgroundColor: '#030712', border: '1px solid #ec4899', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '12px', outline: 'none' }}
+                      >
+                        <option value="Facebook Ads">Facebook Ads</option>
+                        <option value="TikTok Ads">TikTok Ads</option>
+                        <option value="Google / YouTube Ads">Google / YouTube Ads</option>
+                        <option value="Instagram Ads">Instagram Ads</option>
+                        <option value="LINE Official Account">LINE Official Account</option>
+                        <option value="Twitter (X) Ads">Twitter (X) Ads</option>
+                        <option value="Influencer / Creator">Influencer / Gaming Creator</option>
+                        <option value="อื่นๆ (Custom)">อื่นๆ (Custom)</option>
+                      </select>
+
                       <input 
                         type="number" 
-                        placeholder="กรอกจำนวนเงิน เช่น 5000..." 
-                        value={adExpense || ''} 
-                        onChange={(e) => setAdExpense(e.target.value === '' ? 0 : parseFloat(e.target.value))} 
-                        style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #ec4899', borderRadius: '12px', padding: '12px', color: '#ffffff', fontSize: '18px', fontWeight: 'bold', outline: 'none', boxSizing: 'border-box' }} 
+                        placeholder="ยอดเงิน (บาท)" 
+                        value={adAmountInput} 
+                        onChange={(e) => setAdAmountInput(e.target.value)} 
+                        style={{ backgroundColor: '#030712', border: '1px solid #ec4899', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} 
                       />
-                    </div>
 
-                    <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', fontSize: '12px', color: '#9ca3af' }}>
-                      <div>• กำไรก่อนหักค่าโฆษณา: <b style={{ color: '#34d399' }}>+฿{totalAdminProfits.toLocaleString()}</b></div>
-                      <div style={{ marginTop: '4px' }}>• กำไรสุทธิหลังหักค่าโฆษณา: <b style={{ color: '#f472b6' }}>฿{netProfitAfterAd.toLocaleString()}</b></div>
+                      <button type="submit" style={{ backgroundColor: '#ec4899', color: '#ffffff', border: 'none', padding: '10px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s ease' }}>
+                        + เพิ่ม
+                      </button>
+                    </form>
+
+                    {/* รายการโปรโมทสะสม สูงสุด 10 รายการ */}
+                    <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '10px', maxHeight: '185px', overflowY: 'auto' }}>
+                      {adPromotions.length > 0 ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {adPromotions.slice(0, 10).map((item, index) => (
+                            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111827', padding: '6px 10px', borderRadius: '8px', fontSize: '11px' }}>
+                              <div>
+                                <span style={{ color: '#f472b6', fontWeight: 'bold', marginRight: '6px' }}>{index + 1}.</span>
+                                <span style={{ color: '#ffffff', fontWeight: 'bold' }}>{item.platform}</span>
+                                <span style={{ color: '#9ca3af', marginLeft: '8px', fontSize: '10px' }}>({item.time})</span>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ color: '#f472b6', fontWeight: 'bold' }}>-฿{parseFloat(item.amount).toLocaleString()}</span>
+                                <button type="button" onClick={() => handleDeleteAdPromotion(item.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold', padding: '0 2px' }}>✕</button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '11px', padding: '10px 0' }}>
+                          ยังไม่มีรายการโปรโมทเว็บ
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1835,7 +1933,7 @@ export default function GameTopupApp() {
 
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #ec4899', borderRadius: '16px', padding: '18px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>📢 ค่าโฆษณา/โปรโมท</div>
-                    <div style={{ fontSize: '18px', fontWeight: '900', color: '#f472b6' }}>-฿{(parseFloat(adExpense) || 0).toLocaleString()}</div>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: '#f472b6' }}>-฿{adExpense.toLocaleString()}</div>
                   </div>
 
                   <div style={{ backgroundColor: '#030712', border: isVatThresholdReached ? '1.5px solid #c084fc' : '1.5px dashed #4b5563', borderRadius: '16px', padding: '18px 12px', textAlign: 'center' }}>
@@ -2020,15 +2118,17 @@ export default function GameTopupApp() {
         )}
       </main>
 
-      {/* CHECKOUT MODAL: เฉพาะ QR Code ที่ต้องกรอกรหัสผ่านบัญชี */}
+      {/* CHECKOUT MODAL: QR Code และ Wallet ที่ต้องยืนยันรหัสผ่าน */}
       {showCheckoutModal && selectedGame && selectedPackage && selectedPayment && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
             
             {checkoutStep === 1 && (
               <form onSubmit={handleVerifyPasswordStep}>
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#c084fc' }}>🔐 ยืนยันรหัสผ่านบัญชี (สำหรับ QR Code)</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรุณากรอกรหัสผ่านบัญชีของคุณเพื่อไปยังหน้าสแกน QR Code</p>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#c084fc' }}>
+                  🔐 ยืนยันรหัสผ่านบัญชี ({selectedPayment.id === 'wallet' ? 'ป้องกันกดตัดเงินพลาด' : 'เพื่อรับ QR Code'})
+                </h3>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรุณากรอกรหัสผ่านบัญชีของคุณเพื่อยืนยันการทำรายการ</p>
 
                 <div style={{ backgroundColor: '#030712', borderRadius: '12px', padding: '14px', marginBottom: '20px', textAlign: 'left', border: '1px solid #374151' }}>
                   <div style={{ fontSize: '13px', color: '#ffffff', marginBottom: '4px' }}>🎮 เกม: <b>{selectedGame.name}</b></div>
@@ -2055,7 +2155,9 @@ export default function GameTopupApp() {
 
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button type="button" onClick={resetCheckoutModal} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
-                  <button type="submit" style={{ flex: 1, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(147,51,234,0.5)' }}>ถัดไป →</button>
+                  <button type="submit" style={{ flex: 1, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(147,51,234,0.5)' }}>
+                    {selectedPayment.id === 'wallet' ? 'ยืนยันหักเครดิตร้าน' : 'ถัดไป →'}
+                  </button>
                 </div>
               </form>
             )}
@@ -2168,10 +2270,10 @@ export default function GameTopupApp() {
 
                 {walletPaymentMethod === 'credit' && (
                   <div style={{ textAlign: 'left', marginBottom: '15px', backgroundColor: '#030712', padding: '10px', borderRadius: '10px', border: '1px solid #374151' }}>
-                    <input type="text" placeholder="หมายเลขบัตร 16 หลัก" value={creditCardNum} onChange={(e) => setCreditCardNum(e.target.value.replace(/[^0-9]/g, ''))} maxLength={16} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', marginBottom: '8px', outline: 'none', boxSizing: 'border-box' }} />
+                    <input type="text" placeholder="หมายเลขบัตร 16 หลัก" value={creditCardNum} onChange={handleCreditCardNumChange} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', marginBottom: '8px', outline: 'none', boxSizing: 'border-box', letterSpacing: '1.5px' }} />
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <input type="text" placeholder="MM/YY" value={creditCardExp} onChange={(e) => setCreditCardExp(e.target.value)} maxLength={5} style={{ flex: 1, backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
-                      <input type="password" placeholder="CVV" value={creditCardCvv} onChange={(e) => setCreditCardCvv(e.target.value.replace(/[^0-9]/g, ''))} maxLength={3} style={{ flex: 1, backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
+                      <input type="text" placeholder="MM/YY" value={creditCardExp} onChange={handleCreditCardExpChange} style={{ flex: 1, backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box', letterSpacing: '1px' }} />
+                      <input type="password" placeholder="CVV" value={creditCardCvv} onChange={(e) => setCreditCardCvv(e.target.value.replace(/[^0-9]/g, ''))} maxLength={3} style={{ flex: 1, backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box', letterSpacing: '2px' }} />
                     </div>
                   </div>
                 )}
