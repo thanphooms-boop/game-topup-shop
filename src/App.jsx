@@ -49,17 +49,18 @@ export default function GameTopupApp() {
   const [eventGiftCode, setEventGiftCode] = useState('');
   const [eventMsg, setEventMsg] = useState({ text: '', type: '' });
 
-  const [globalRedeemedUsers, setGlobalRedeemedUsers] = useState(() => {
-    const saved = localStorage.getItem('cyber_global_redeemed');
+  // เปลี่ยนมาเก็บเป็นรายชื่อ ID เกมที่เคยใช้สิทธิ์แล้ว (แยกตามเกม)
+  const [globalRedeemedPlayers, setGlobalRedeemedPlayers] = useState(() => {
+    const saved = localStorage.getItem('cyber_global_redeemed_players');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
-    return ['22'];
+    return ['22']; // ตัวอย่าง ID ที่เคยใช้ไปแล้ว
   });
 
   useEffect(() => {
-    localStorage.setItem('cyber_global_redeemed', JSON.stringify(globalRedeemedUsers));
-  }, [globalRedeemedUsers]);
+    localStorage.setItem('cyber_global_redeemed_players', JSON.stringify(globalRedeemedPlayers));
+  }, [globalRedeemedPlayers]);
 
   const [gamesData] = useState([
     {
@@ -538,9 +539,9 @@ export default function GameTopupApp() {
   };
 
   const handleResetAllRedeemRights = () => {
-    if (window.confirm('คุณต้องการรีเซ็ตสิทธิ์โค้ดของขวัญทั้งหมดใช่หรือไม่? (ทุกบัญชีจะสามารถกลับมากรอกโค้ดได้ใหม่อีกครั้งคนละ 1 ครั้ง)')) {
-      setGlobalRedeemedUsers([]);
-      alert('🔄 รีเซ็ตสิทธิ์สำเร็จ! ทุกบัญชีสามารถกลับมากรอกโค้ดได้ใหม่อีกครั้งแล้ว');
+    if (window.confirm('คุณต้องการรีเซ็ตสิทธิ์ ID เกมทั้งหมดใช่หรือไม่? (ทุก ID เกมจะสามารถกลับมากรอกโค้ดได้ใหม่อีกครั้ง)')) {
+      setGlobalRedeemedPlayers([]);
+      alert('🔄 รีเซ็ตสิทธิ์สำเร็จ! ทุก ID เกมสามารถกลับมากรอกโค้ดได้ใหม่อีกครั้งแล้ว');
     }
   };
 
@@ -553,7 +554,7 @@ export default function GameTopupApp() {
       return;
     }
 
-    const currentUsername = user ? user.username : '11';
+    const cleanPlayerId = eventPlayerId.trim().toLowerCase();
     const targetCode = eventGiftCode.trim().toUpperCase();
     const foundCode = giftCodes.find(c => c.code === targetCode && c.game === eventGame);
 
@@ -562,8 +563,8 @@ export default function GameTopupApp() {
       return;
     }
 
-    if (globalRedeemedUsers.includes(currentUsername)) {
-      setEventMsg({ text: `❌ บัญชีของคุณ (${currentUsername}) เคยใช้สิทธิ์กรอกโค้ดไปแล้ว (จำกัด 1 บัญชีต่อ 1 สิทธิ์ จนกว่าแอดมินจะรีเซ็ตกิจกรรม)`, type: 'error' });
+    if (globalRedeemedPlayers.includes(cleanPlayerId)) {
+      setEventMsg({ text: `❌ ID เกม "${eventPlayerId.trim()}" เคยใช้สิทธิ์กรอกโค้ดไปแล้ว (ต้องรอแอดมินมารีเซ็ตสิทธิ์ใหม่)`, type: 'error' });
       return;
     }
 
@@ -572,7 +573,7 @@ export default function GameTopupApp() {
       return;
     }
 
-    setGlobalRedeemedUsers([...globalRedeemedUsers, currentUsername]);
+    setGlobalRedeemedPlayers([...globalRedeemedPlayers, cleanPlayerId]);
     setGiftCodes(giftCodes.map(c => c.id === foundCode.id ? { ...c, usedCount: c.usedCount + 1 } : c));
 
     const newOrderId = 'ORD-EVT-' + Math.floor(10000 + Math.random() * 90000);
@@ -589,8 +590,8 @@ export default function GameTopupApp() {
       package: `โค้ด: ${foundCode.code} (${foundCode.reward})`,
       price: 0,
       profit: 0,
-      player: currentUsername,
-      status: `รอแอดมินตรวจ [ID: ${eventPlayerId}]`,
+      player: eventPlayerId.trim(),
+      status: `รอแอดมินตรวจ [ID: ${eventPlayerId.trim()}]`,
       type: 'event',
       time: thaiTime,
       dateKey: dateKey,
@@ -1191,7 +1192,7 @@ export default function GameTopupApp() {
                 <span style={{ fontSize: '24px' }}>🎁</span>
                 <div>
                   <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>กรอกโค้ดของขวัญ / โค้ดกิจกรรมจากแอดมิน</h3>
-                  <p style={{ fontSize: '12px', color: '#9ca3af', margin: '2px 0 0 0' }}>จำกัดสิทธิ์ 1 บัญชีผู้ใช้ กรอกโค้ดรับรางวัลได้เพียง 1 ครั้งเท่านั้น</p>
+                  <p style={{ fontSize: '12px', color: '#9ca3af', margin: '2px 0 0 0' }}>จำกัดสิทธิ์ ID เกมละ 1 ครั้ง กรอกแล้วต้องรอแอดมินรีเซ็ตจึงจะกรอกใหม่ได้</p>
                 </div>
               </div>
 
@@ -1588,7 +1589,7 @@ export default function GameTopupApp() {
                       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#fbbf24'; e.currentTarget.style.transform = 'scale(1.05)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(245,158,11,0.8)'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f59e0b'; e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 0 15px rgba(245,158,11,0.5)'; }}
                     >
-                      🔄 รีเซ็ตสิทธิ์โค้ดทุกบัญชี (กิจกรรมประจำปี)
+                      🔄 รีเซ็ตสิทธิ์ ID เกมทั้งหมด (กิจกรรมประจำปี)
                     </button>
                   </div>
 
