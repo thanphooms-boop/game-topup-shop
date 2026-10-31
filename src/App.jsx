@@ -243,20 +243,12 @@ export default function GameTopupApp() {
   const [walletTimeLeft, setWalletTimeLeft] = useState(180);
   const [isWalletQrExpired, setIsWalletQrExpired] = useState(false);
 
-  // States สำหรับช่องทางชำระเงินจริง
+  // States สำหรับข้อมูลช่องทางชำระเงินจริง
   const [truemoneyPhone, setTruemoneyPhone] = useState('');
   const [truemoneyCard14, setTruemoneyCard14] = useState('');
   const [creditCardNum, setCreditCardNum] = useState('');
   const [creditCardExp, setCreditCardExp] = useState('');
   const [creditCardCvv, setCreditCardCvv] = useState('');
-
-  // States สำหรับระบบ OTP จำลองเหมือนเว็บเติมเกมทั่วไป
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otpCodeInput, setOtpCodeInput] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('882941');
-  const [otpError, setOtpError] = useState('');
-  const [otpTimer, setOtpTimer] = useState(60);
-  const [isOtpCanResend, setIsOtpCanResend] = useState(false);
 
   const [isWalletAutoRunning, setIsWalletAutoRunning] = useState(false);
   const [walletAutoSeconds, setWalletAutoSeconds] = useState(10);
@@ -304,6 +296,7 @@ export default function GameTopupApp() {
   const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
   const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(null);
   const [timeLeft, setTimeLeft] = useState(180);
   const [isQrExpired, setIsQrExpired] = useState(false);
 
@@ -343,20 +336,6 @@ export default function GameTopupApp() {
     }
     return () => clearInterval(timer);
   }, [showCheckoutModal, checkoutStep, selectedPayment, isQrExpired]);
-
-  // Countdown สำหรับ OTP
-  useEffect(() => {
-    let otpTimerInterval;
-    if (showOtpModal && otpTimer > 0) {
-      otpTimerInterval = setInterval(() => {
-        setOtpTimer((prev) => {
-          if (prev <= 1) { setIsOtpCanResend(true); return 0; }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(otpTimerInterval);
-  }, [showOtpModal, otpTimer]);
 
   useEffect(() => {
     let timer;
@@ -412,6 +391,7 @@ export default function GameTopupApp() {
               prevOrders.map((ord) => ord.id === ordId ? { ...ord, status: '✅ สำเร็จ (แอดมินอนุมัติแล้ว)' } : ord)
             );
             setIsGameAutoRunning(false);
+            setOrderSuccess(ordId);
             return 0;
           }
           return prev - 1;
@@ -632,6 +612,7 @@ export default function GameTopupApp() {
       return;
     }
 
+    // ตรวจสอบข้อมูลชำระเงินของ TrueMoney / Credit Card ในส่วนเติมเครดิต
     if (walletPaymentMethod === 'true' && (!truemoneyPhone || truemoneyPhone.length < 10)) {
       alert('กรุณากรอกเบอร์ TrueMoney Wallet ให้ครบ 10 หลัก');
       return;
@@ -649,14 +630,7 @@ export default function GameTopupApp() {
     if (walletPaymentMethod === 'qrcode') {
       setWalletStep(2);
     } else {
-      // เปิดหน้าต่างกรอก OTP จำลอง
-      const randomOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedOtp(randomOtp);
-      setOtpCodeInput('');
-      setOtpError('');
-      setOtpTimer(60);
-      setIsOtpCanResend(false);
-      setShowOtpModal(true);
+      handleWalletConfirmPayment();
     }
   };
 
@@ -690,7 +664,6 @@ export default function GameTopupApp() {
     setWalletAutoSeconds(10);
     setIsWalletAutoRunning(true);
     setShowTopupWalletModal(false);
-    setShowOtpModal(false);
     setWalletStep(1);
     setTopupAmount('');
     setTruemoneyPhone('');
@@ -711,7 +684,6 @@ export default function GameTopupApp() {
     setCreditCardNum('');
     setCreditCardExp('');
     setCreditCardCvv('');
-    setShowOtpModal(false);
   };
 
   const handleVerifyPasswordStep = (e) => {
@@ -729,6 +701,7 @@ export default function GameTopupApp() {
       return;
     }
 
+    // ตรวจสอบข้อมูลการชำระเงินตามจริงของเติมเกม
     if (selectedPayment.id === 'true' && (!truemoneyPhone || truemoneyPhone.length < 10)) {
       setCheckoutPasswordError('กรุณากรอกเบอร์ TrueMoney Wallet ให้ครบ 10 หลัก');
       return;
@@ -744,31 +717,6 @@ export default function GameTopupApp() {
       setTimeLeft(180);
       setIsQrExpired(false);
       setCheckoutStep(2);
-    } else {
-      // เปิดหน้าต่างกรอก OTP ก่อนยืนยันชำระเงินจริง
-      const randomOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      setGeneratedOtp(randomOtp);
-      setOtpCodeInput('');
-      setOtpError('');
-      setOtpTimer(60);
-      setIsOtpCanResend(false);
-      setShowOtpModal(true);
-    }
-  };
-
-  const handleVerifyOtpSubmit = (e) => {
-    e.preventDefault();
-    setOtpError('');
-
-    if (otpCodeInput.trim() !== generatedOtp) {
-      setOtpError('รหัส OTP ไม่ถูกต้อง กรุณาตรวจสอบรหัส 6 หลักอีกครั้ง');
-      return;
-    }
-
-    // ผ่าน OTP แล้ว ดำเนินการชำระเงินต่อ
-    setShowOtpModal(false);
-    if (showTopupWalletModal) {
-      handleWalletConfirmPayment();
     } else {
       handleFinalPaymentSubmit();
     }
@@ -864,7 +812,6 @@ export default function GameTopupApp() {
     setCreditCardNum('');
     setCreditCardExp('');
     setCreditCardCvv('');
-    setShowOtpModal(false);
   };
 
   const filteredGames = gamesData.filter((game) => {
@@ -1464,6 +1411,7 @@ export default function GameTopupApp() {
               </div>
             </div>
 
+            {/* ช่องกรอกข้อมูลชำระเงินตามจริงเหมือนเว็บเติมเกมเป๊ะๆ */}
             {selectedPayment && (
               <div style={{ backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '16px', padding: '20px', marginBottom: '30px' }}>
                 <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '12px' }}>
@@ -1472,7 +1420,7 @@ export default function GameTopupApp() {
 
                 {selectedPayment.id === 'true' && (
                   <div>
-                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '6px' }}>เบอร์โทรศัพท์ TrueMoney Wallet (10 หลัก - จะมีระบบส่ง OTP ยืนยัน)</label>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '6px' }}>เบอร์โทรศัพท์ TrueMoney Wallet (10 หลัก)</label>
                     <input 
                       type="text" 
                       inputMode="numeric"
@@ -1980,7 +1928,7 @@ export default function GameTopupApp() {
                   <button type="submit" style={{ flex: 1, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(147,51,234,0.5)', transition: 'all 0.25s ease' }}
                     onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#a855f7'; e.currentTarget.style.boxShadow = '0 0 20px rgba(168,85,247,0.8)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#9333ea'; e.currentTarget.style.boxShadow = '0 0 15px rgba(147,51,234,0.5)'; }}
-                  >ถัดไป (รับ OTP) →</button>
+                  >ถัดไป →</button>
                 </div>
               </form>
             )}
@@ -2026,58 +1974,6 @@ export default function GameTopupApp() {
         </div>
       )}
 
-      {/* MODAL: OTP VERIFICATION POPUP (เหมือนเว็บเติมเกมทั่วไป) */}
-      {showOtpModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '20px' }}>
-          <div style={{ backgroundColor: '#111827', border: '1.5px solid #38bdf8', borderRadius: '24px', maxWidth: '380px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 40px rgba(56,189,248,0.4)' }}>
-            <div style={{ width: '55px', height: '55px', borderRadius: '50%', backgroundColor: 'rgba(56,189,248,0.2)', border: '2px solid #38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', margin: '0 auto 15px auto' }}>📱</div>
-            <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#38bdf8' }}>ยืนยันรหัส OTP 6 หลัก</h3>
-            <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>
-              ระบบได้ส่งรหัส OTP ไปยังหมายเลขมือถือหรือแอปพลิเคชันวอลเล็ตของคุณแล้ว
-            </p>
-
-            {/* กล่องแสดงรหัส OTP จำลองเพื่อให้คุณทดสอบได้ทันที */}
-            <div style={{ backgroundColor: 'rgba(168,85,247,0.15)', border: '1px dashed #a855f7', borderRadius: '12px', padding: '10px', marginBottom: '15px' }}>
-              <div style={{ fontSize: '11px', color: '#c084fc', marginBottom: '2px' }}>💡 [จำลอง SMS สำหรับทดสอบ]:</div>
-              <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399', letterSpacing: '3px' }}>{generatedOtp}</div>
-            </div>
-
-            <form onSubmit={handleVerifyOtpSubmit}>
-              {otpError && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px', borderRadius: '8px', fontSize: '12px', marginBottom: '12px' }}>{otpError}</div>}
-
-              <input 
-                type="text" 
-                inputMode="numeric"
-                maxLength={6}
-                placeholder="กรอกรหัส OTP 6 หลัก..." 
-                value={otpCodeInput} 
-                onChange={(e) => setOtpCodeInput(e.target.value.replace(/[^0-9]/g, ''))} 
-                style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '12px', padding: '12px', color: '#ffffff', textAlign: 'center', fontSize: '20px', letterSpacing: '6px', outline: 'none', marginBottom: '12px', boxSizing: 'border-box' }} 
-              />
-
-              <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>
-                {otpTimer > 0 ? (
-                  <span>ส่งรหัสใหม่อีกครั้งใน <b style={{ color: '#f59e0b' }}>{otpTimer} วินาที</b></span>
-                ) : (
-                  <span onClick={() => { const newOtp = Math.floor(100000 + Math.random() * 900000).toString(); setGeneratedOtp(newOtp); setOtpTimer(60); setIsOtpCanResend(false); alert(`ส่งรหัส OTP ใหม่แล้ว: ${newOtp}`); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>ส่งรหัส OTP อีกครั้ง</span>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="button" onClick={() => setShowOtpModal(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4b5563'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#374151'}
-                >ยกเลิก</button>
-                <button type="submit" style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(52,211,153,0.5)' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#6ee7b7'; e.currentTarget.style.boxShadow = '0 0 20px rgba(52,211,153,0.8)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#34d399'; e.currentTarget.style.boxShadow = 'none'; }}
-                >ยืนยัน OTP</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* MODAL: TOPUP STORE WALLET */}
       {showTopupWalletModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
@@ -2101,9 +1997,9 @@ export default function GameTopupApp() {
                   <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>เลือกช่องทางชำระเงิน</label>
                   <select value={walletPaymentMethod} onChange={(e) => setWalletPaymentMethod(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '13px', outline: 'none' }}>
                     <option value="qrcode">QR PromptPay</option>
-                    <option value="true">TrueMoney Wallet (เบอร์ 10 หลัก - มี OTP)</option>
+                    <option value="true">TrueMoney Wallet (เบอร์ 10 หลัก)</option>
                     <option value="truemoneycard">บัตรเติมเงินทรูมันนี่ (14 หลัก)</option>
-                    <option value="credit">บัตรเครดิต / เดบิต (มี OTP)</option>
+                    <option value="credit">บัตรเครดิต / เดบิต</option>
                   </select>
                 </div>
 
@@ -2141,7 +2037,7 @@ export default function GameTopupApp() {
                     onMouseEnter={(e) => { if(topupAmount && parseFloat(topupAmount) > 0) { e.currentTarget.style.backgroundColor = '#a855f7'; e.currentTarget.style.boxShadow = '0 0 20px rgba(168,85,247,0.8)'; } }}
                     onMouseLeave={(e) => { if(topupAmount && parseFloat(topupAmount) > 0) { e.currentTarget.style.backgroundColor = '#9333ea'; e.currentTarget.style.boxShadow = 'none'; } }}
                   >
-                    {walletPaymentMethod === 'qrcode' ? 'ถัดไป (สแกน QR) →' : 'ถัดไป (รับ OTP) →'}
+                    {walletPaymentMethod === 'qrcode' ? 'ถัดไป (สแกน QR) →' : 'ยืนยันการเติมเครดิต'}
                   </button>
                 </div>
               </div>
@@ -2169,7 +2065,7 @@ export default function GameTopupApp() {
                     onClick={handleWalletConfirmPayment} 
                     style={{ flex: 1, backgroundColor: isWalletQrExpired ? '#374151' : '#34d399', color: isWalletQrExpired ? '#9ca3af' : '#000000', border: '1px solid #374151', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: isWalletQrExpired ? 'not-allowed' : 'pointer', transition: 'all 0.25s ease' }}
                     onMouseEnter={(e) => { if(!isWalletQrExpired) { e.currentTarget.style.backgroundColor = '#6ee7b7'; e.currentTarget.style.boxShadow = '0 0 15px rgba(52,211,153,0.8)'; } }}
-                    onMouseLeave={(e) => { if(!isWalletQrExpired) { e.currentTarget.style.backgroundColor = '#34d399'; e.currentTarget.style.boxShadow: 'none'; } }}
+                    onMouseLeave={(e) => { if(!isWalletQrExpired) { e.currentTarget.style.backgroundColor = '#34d399'; e.currentTarget.style.boxShadow = 'none'; } }}
                   >
                     ฉันโอนเงินเรียบร้อยแล้ว
                   </button>
