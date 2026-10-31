@@ -311,7 +311,6 @@ export default function GameTopupApp() {
   const [gameAutoSeconds, setGameAutoSeconds] = useState(10);
   const [pendingGameOrderId, setPendingGameOrderId] = useState('');
 
-  // 1. เพิ่ม State สำหรับเก็บค่าโปรโมทเว็บ/ค่าโฆษณา (พร้อมบันทึกลง localStorage)
   const [adExpense, setAdExpense] = useState(() => {
     const savedAd = localStorage.getItem('cyber_ad_expense');
     return savedAd ? parseFloat(savedAd) || 0 : 0;
@@ -321,18 +320,14 @@ export default function GameTopupApp() {
     localStorage.setItem('cyber_ad_expense', adExpense.toString());
   }, [adExpense]);
 
-  // 2. การคำนวณทางการเงินและการเสียภาษีแบบใหม่ (หักค่าโฆษณาจากกำไรก่อนคิด VAT และภาษี)
   const totalAdminSales = orders.reduce((sum, ord) => sum + (ord.type === 'game' ? ord.price : 0), 0);
   const totalAdminProfits = orders.reduce((sum, ord) => sum + (ord.profit || 0), 0);
 
-  // กำไรหลังหักค่าโฆษณา/โปรโมทเว็บ
   const netProfitAfterAd = Math.max(0, totalAdminProfits - (parseFloat(adExpense) || 0));
 
-  // เช็คเกณฑ์ VAT 1.8 ล้านบาท
   const isVatThresholdReached = totalAdminSales >= 1800000;
   const totalAdminVat = isVatThresholdReached ? Math.round(netProfitAfterAd * 0.07) : 0;
 
-  // กำไรสุทธิเพื่อนำไปคำนวณภาษีเงินได้บุคคลธรรมดา
   const profitForTaxCalculation = netProfitAfterAd - totalAdminVat;
   const taxableIncome = Math.max(0, profitForTaxCalculation - 150000);
 
@@ -703,7 +698,14 @@ export default function GameTopupApp() {
     }
 
     setTrueMoneyOtpStep(false);
-    handleWalletConfirmPayment();
+
+    // ถ้าเปิดหน้าต่างซื้อแพ็กเกจเติมเกมอยู่ ดำเนินการชำระเงินค่าเกมต่อ
+    if (showCheckoutModal) {
+      handleFinalPaymentSubmit();
+    } else {
+      // ถ้าเปิดเติมเครดิตร้านอยู่ ดำเนินการเติมเครดิตต่อ
+      handleWalletConfirmPayment();
+    }
   };
 
   const handleWalletConfirmPayment = () => {
@@ -766,6 +768,39 @@ export default function GameTopupApp() {
     setCreditCardCvv('');
   };
 
+  // ปุ่มกดเริ่มต้นชำระเงินเติมเกม
+  const handleStartGamePayment = () => {
+    setCheckoutPasswordError('');
+    
+    // ตรวจสอบยอดเงินเครดิตร้านถ้าระบุช่องทาง wallet
+    const totalPrice = selectedPackage.price * packageQuantity;
+    if (selectedPayment.id === 'wallet' && user.balance < totalPrice) {
+      alert('ยอดเงินใน Cyber Wallet ของคุณไม่พอ');
+      return;
+    }
+
+    // กรณีเลือก TrueMoney Wallet ให้เด้งหน้าต่าง OTP ก่อน
+    if (selectedPayment.id === 'true') {
+      if (!truemoneyPhone || truemoneyPhone.length < 10) {
+        alert('กรุณากรอกเบอร์ TrueMoney Wallet ให้ครบ 10 หลัก');
+        return;
+      }
+      setTrueMoneyOtpStep(true);
+      setTrueMoneyOtpCode('');
+      setTrueMoneyOtpError('');
+      return;
+    } else if (selectedPayment.id === 'qrcode') {
+      // กรณี QR Code ให้เปิดหน้าสแกน QR พร้อมกรอกรหัสผ่านบัญชี
+      setTimeLeft(180);
+      setIsQrExpired(false);
+      setCheckoutStep(1);
+      setShowCheckoutModal(true);
+    } else {
+      // ช่องทางอื่น ชำระเงินได้ทันทีโดยไม่ต้องใส่รหัสผ่าน
+      handleFinalPaymentSubmit();
+    }
+  };
+
   const handleVerifyPasswordStep = (e) => {
     e.preventDefault();
     setCheckoutPasswordError('');
@@ -775,30 +810,7 @@ export default function GameTopupApp() {
       return;
     }
 
-    const totalPrice = selectedPackage.price * packageQuantity;
-    if (selectedPayment.id === 'wallet' && user.balance < totalPrice) {
-      setCheckoutPasswordError('ยอดเงินใน Cyber Wallet ของคุณไม่พอ');
-      return;
-    }
-
-    if (selectedPayment.id === 'true' && (!truemoneyPhone || truemoneyPhone.length < 10)) {
-      setCheckoutPasswordError('กรุณากรอกเบอร์ TrueMoney Wallet ให้ครบ 10 หลัก');
-      return;
-    } else if (selectedPayment.id === 'truemoneycard' && (!truemoneyCard14 || truemoneyCard14.length < 14)) {
-      setCheckoutPasswordError('กรุณากรอกรหัสบัตรเติมเงิน TrueMoney ให้ครบ 14 หลัก');
-      return;
-    } else if (selectedPayment.id === 'credit' && (!creditCardNum || creditCardNum.length < 16 || !creditCardExp || !creditCardCvv)) {
-      setCheckoutPasswordError('กรุณากรอกข้อมูลบัตรเครดิตให้ครบถ้วน');
-      return;
-    }
-
-    if (selectedPayment.id === 'qrcode') {
-      setTimeLeft(180);
-      setIsQrExpired(false);
-      setCheckoutStep(2);
-    } else {
-      handleFinalPaymentSubmit();
-    }
+    setCheckoutStep(2);
   };
 
   const handleFinalPaymentSubmit = () => {
@@ -833,7 +845,7 @@ export default function GameTopupApp() {
         package: `${selectedPackage.name} (x${packageQuantity} แพ็ก)`,
         price: totalPrice,
         profit: totalProfit,
-        player: user.username,
+        player: playerId.trim() || user.username,
         status: 'รอตรวจสอบ [10s]',
         type: 'game',
         time: thaiTime,
@@ -1582,7 +1594,7 @@ export default function GameTopupApp() {
 
                 {selectedPayment.id === 'qrcode' && (
                   <div style={{ fontSize: '13px', color: '#34d399' }}>
-                    ✅ ระบบจะสร้าง QR Code อัตโนมัติในขั้นตอนถัดไปเพื่อสแกนผ่าน Mobile Banking
+                    ✅ ระบบจะสร้าง QR Code อัตโนมัติในขั้นตอนถัดไปเพื่อสแกนผ่าน Mobile Banking (ต้องยืนยันรหัสผ่านบัญชี)
                   </div>
                 )}
 
@@ -1596,7 +1608,7 @@ export default function GameTopupApp() {
 
             <button 
               disabled={!playerId.trim() || !selectedPackage || !selectedPayment}
-              onClick={() => { setShowCheckoutModal(true); setCheckoutStep(1); }} 
+              onClick={handleStartGamePayment} 
               style={{ 
                 width: '100%', 
                 backgroundColor: (!playerId.trim() || !selectedPackage || !selectedPayment) ? '#374151' : '#9333ea', 
@@ -1743,7 +1755,7 @@ export default function GameTopupApp() {
               </div>
             ) : (
               <>
-                {/* กล่องเปลี่ยน PIN และ กล่องกรอกค่าโฆษณา วางข้างๆ กัน */}
+                {/* กล่องเปลี่ยน PIN และ กล่องกรอกค่าโฆษณา */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px' }}>
                   
                   {/* ฝั่งซ้าย: เปลี่ยนรหัส PIN */}
@@ -1809,28 +1821,23 @@ export default function GameTopupApp() {
 
                 </div>
 
-                {/* การ์ดสรุปการเงิน 5 ช่อง (รวมการ์ดค่าโฆษณา) */}
+                {/* การ์ดสรุปการเงิน 5 ช่อง */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
-                  
-                  {/* 1. ยอดขายรวม */}
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '18px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>💵 ยอดขายรวมทั้งหมด</div>
                     <div style={{ fontSize: '18px', fontWeight: '900', color: '#38bdf8' }}>฿{totalAdminSales.toLocaleString()}</div>
                   </div>
 
-                  {/* 2. กำไรสุทธิรวม (หลังหักค่าโฆษณา) */}
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #34d399', borderRadius: '16px', padding: '18px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>📈 กำไรสุทธิ (หักโฆษณา)</div>
                     <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>+฿{netProfitAfterAd.toLocaleString()}</div>
                   </div>
 
-                  {/* 3. ค่าโปรโมท / ค่าโฆษณา */}
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #ec4899', borderRadius: '16px', padding: '18px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>📢 ค่าโฆษณา/โปรโมท</div>
                     <div style={{ fontSize: '18px', fontWeight: '900', color: '#f472b6' }}>-฿{(parseFloat(adExpense) || 0).toLocaleString()}</div>
                   </div>
 
-                  {/* 4. VAT 7% จากกำไร */}
                   <div style={{ backgroundColor: '#030712', border: isVatThresholdReached ? '1.5px solid #c084fc' : '1.5px dashed #4b5563', borderRadius: '16px', padding: '18px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>🏛️ VAT 7% จากกำไร</div>
                     <div style={{ fontSize: isVatThresholdReached ? '18px' : '12px', fontWeight: '900', color: isVatThresholdReached ? '#c084fc' : '#9ca3af', marginTop: isVatThresholdReached ? '0' : '4px' }}>
@@ -1838,17 +1845,15 @@ export default function GameTopupApp() {
                     </div>
                   </div>
 
-                  {/* 5. ภาษีประจำปี */}
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #f59e0b', borderRadius: '16px', padding: '18px 12px', textAlign: 'center' }}>
                     <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>📋 เสียภาษีประจำปี</div>
                     <div style={{ fontSize: totalAdminTax > 0 ? '18px' : '12px', fontWeight: '900', color: '#f59e0b', marginTop: totalAdminTax > 0 ? '0' : '4px' }}>
                       {totalAdminTax > 0 ? `-฿${totalAdminTax.toLocaleString()}` : '฿0 (ยกเว้น 150k แรก)'}
                     </div>
                   </div>
-
                 </div>
 
-                {/* รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ */}
+                {/* รายการทำรายการหลังบ้าน */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #9333ea' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                     <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0 }}>📊 รายการทำรายการหลังบ้าน + สรุปกำไรแต่ละแพ็กเกจ</h2>
@@ -2015,15 +2020,15 @@ export default function GameTopupApp() {
         )}
       </main>
 
-      {/* CHECKOUT MODAL */}
+      {/* CHECKOUT MODAL: เฉพาะ QR Code ที่ต้องกรอกรหัสผ่านบัญชี */}
       {showCheckoutModal && selectedGame && selectedPackage && selectedPayment && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
             
             {checkoutStep === 1 && (
               <form onSubmit={handleVerifyPasswordStep}>
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#c084fc' }}>🔐 ยืนยันรหัสผ่านบัญชี</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรุณากรอกรหัสผ่านบัญชีของคุณเพื่อยืนยันการสั่งซื้อ</p>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#c084fc' }}>🔐 ยืนยันรหัสผ่านบัญชี (สำหรับ QR Code)</h3>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรุณากรอกรหัสผ่านบัญชีของคุณเพื่อไปยังหน้าสแกน QR Code</p>
 
                 <div style={{ backgroundColor: '#030712', borderRadius: '12px', padding: '14px', marginBottom: '20px', textAlign: 'left', border: '1px solid #374151' }}>
                   <div style={{ fontSize: '13px', color: '#ffffff', marginBottom: '4px' }}>🎮 เกม: <b>{selectedGame.name}</b></div>
@@ -2091,12 +2096,41 @@ export default function GameTopupApp() {
         </div>
       )}
 
-      {/* MODAL: TOPUP STORE WALLET */}
-      {showTopupWalletModal && (
+      {/* MODAL: TOPUP STORE WALLET & OTP STEP */}
+      {(showTopupWalletModal || trueMoneyOtpStep) && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
             
-            {walletStep === 1 && !trueMoneyOtpStep && (
+            {/* หน้าต่างกรอกรหัส OTP สำหรับ TrueMoney Wallet */}
+            {trueMoneyOtpStep ? (
+              <form onSubmit={handleTrueMoneyOtpSubmit}>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#38bdf8' }}>🔐 กรอกรหัส OTP</h3>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>
+                  ระบบได้ส่งรหัส OTP ไปยังเบอร์ <b style={{ color: '#ffffff' }}>{truemoneyPhone}</b> แล้ว (ลองกรอกตัวเลข 6 หลัก)
+                </p>
+
+                {trueMoneyOtpError && (
+                  <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px', borderRadius: '8px', fontSize: '12px', marginBottom: '15px' }}>
+                    {trueMoneyOtpError}
+                  </div>
+                )}
+
+                <input 
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="------"
+                  value={trueMoneyOtpCode}
+                  onChange={(e) => setTrueMoneyOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '12px', padding: '14px', color: '#ffffff', fontSize: '24px', textAlign: 'center', fontWeight: 'bold', letterSpacing: '8px', outline: 'none', marginBottom: '20px', boxSizing: 'border-box' }}
+                />
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="button" onClick={() => setTrueMoneyOtpStep(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
+                  <button type="submit" style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(52,211,153,0.5)' }}>ยืนยัน OTP</button>
+                </div>
+              </form>
+            ) : walletStep === 1 ? (
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#c084fc' }}>💳 เติมเครดิตเข้า Cyber Wallet</h3>
                 <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>กรอกจำนวนเงินและเลือกช่องทางชำระเงิน</p>
@@ -2153,39 +2187,7 @@ export default function GameTopupApp() {
                   </button>
                 </div>
               </div>
-            )}
-
-            {trueMoneyOtpStep && (
-              <form onSubmit={handleTrueMoneyOtpSubmit}>
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#38bdf8' }}>🔐 กรอกรหัส OTP</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>
-                  ระบบได้ส่งรหัส OTP ไปยังเบอร์ <b style={{ color: '#ffffff' }}>{truemoneyPhone}</b> แล้ว (ลองกรอกตัวเลขอะไรก็ได้ 6 หลัก)
-                </p>
-
-                {trueMoneyOtpError && (
-                  <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px', borderRadius: '8px', fontSize: '12px', marginBottom: '15px' }}>
-                    {trueMoneyOtpError}
-                  </div>
-                )}
-
-                <input 
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={6}
-                  placeholder="------"
-                  value={trueMoneyOtpCode}
-                  onChange={(e) => setTrueMoneyOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
-                  style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '12px', padding: '14px', color: '#ffffff', fontSize: '24px', textAlign: 'center', fontWeight: 'bold', letterSpacing: '8px', outline: 'none', marginBottom: '20px', boxSizing: 'border-box' }}
-                />
-
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={() => setTrueMoneyOtpStep(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
-                  <button type="submit" style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(52,211,153,0.5)' }}>ยืนยัน OTP</button>
-                </div>
-              </form>
-            )}
-
-            {walletStep === 2 && walletPaymentMethod === 'qrcode' && (
+            ) : (
               <div>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#38bdf8' }}>📱 สแกน QR Code เติมเครดิต</h3>
                 <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>ยอดชำระ: <b style={{ color: '#34d399' }}>฿{parseFloat(topupAmount).toLocaleString()}</b></p>
