@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, push } from 'firebase/database';
 
+// ตั้งค่า Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyD-dgpKK9S2oLfLawJ8MKYHi-NWB4GQv7u",
   authDomain: "cyber-topup-game.firebaseapp.com",
@@ -18,7 +19,11 @@ const db = getDatabase(app);
 
 export default function GameTopupApp() {
   const [registeredUsers, setRegisteredUsers] = useState([]);
+  const [forgotModalOpen, setForgotModalOpen] = useState(false);
+  const [forgotEmailInput, setForgotEmailInput] = useState('');
+  const [forgotStatusMsg, setForgotStatusMsg] = useState({ text: '', type: '' });
 
+  // โหลดข้อมูลผู้ใช้งานแบบ Realtime จาก Firebase Database
   useEffect(() => {
     const usersRef = ref(db, 'users');
     const unsubscribe = onValue(usersRef, (snapshot) => {
@@ -31,9 +36,9 @@ export default function GameTopupApp() {
         setRegisteredUsers(userList);
       } else {
         const defaultUsers = [
-          { username: 'thanphooms@gmail.com', email: 'thanphooms@gmail.com', password: '0638801739Ss_@1', balance: 99999 },
-          { username: '11', email: 'user11@example.com', password: '11', balance: 1800 },
-          { username: '22', email: 'user22@example.com', password: '22', balance: 1500 }
+          { username: 'thanphooms', email: 'thanphooms@gmail.com', password: '0638801739Ss_@1', balance: 99999 },
+          { username: 'user11', email: 'user11@example.com', password: '11', balance: 1800 },
+          { username: 'user22', email: 'user22@example.com', password: '22', balance: 1500 }
         ];
         defaultUsers.forEach(u => {
           push(usersRef, u);
@@ -53,7 +58,10 @@ export default function GameTopupApp() {
 
   useEffect(() => {
     if (user) {
-      const latestUser = registeredUsers.find(u => u.username.toLowerCase() === user.username.toLowerCase());
+      const latestUser = registeredUsers.find(u => 
+        (u.email && u.email.toLowerCase() === user.email?.toLowerCase()) || 
+        (u.username && u.username.toLowerCase() === user.username?.toLowerCase())
+      );
       if (latestUser) {
         setUser(latestUser);
         localStorage.setItem('cyber_current_logged_user', JSON.stringify(latestUser));
@@ -81,6 +89,120 @@ export default function GameTopupApp() {
   const [authError, setAuthError] = useState('');
   const [authSuccessMsg, setAuthSuccessMsg] = useState('');
 
+  // ฟังก์ชันลืมรหัสผ่าน ส่งคำขอกู้คืนผ่านอีเมล
+  const handleForgotPasswordSubmit = (e) => {
+    e.preventDefault();
+    setForgotStatusMsg({ text: '', type: '' });
+
+    if (!forgotEmailInput.trim() || !forgotEmailInput.includes('@')) {
+      setForgotStatusMsg({ text: 'กรุณากรอกอีเมลที่ถูกต้อง', type: 'error' });
+      return;
+    }
+
+    const foundUser = registeredUsers.find(u => u.email && u.email.toLowerCase() === forgotEmailInput.trim().toLowerCase());
+    
+    if (foundUser) {
+      setForgotStatusMsg({ 
+        text: `📧 ส่งลิงก์กู้คืนรหัสผ่านไปยัง ${forgotEmailInput.trim()} เรียบร้อยแล้ว! กรุณาเช็คใน Inbox หรือ Junk Mail`, 
+        type: 'success' 
+      });
+      setTimeout(() => {
+        setForgotModalOpen(false);
+        setForgotEmailInput('');
+        setForgotStatusMsg({ text: '', type: '' });
+      }, 4000);
+    } else {
+      setForgotStatusMsg({ text: 'ไม่พบบัญชีที่ใช้อีเมลนี้ในระบบ', type: 'error' });
+    }
+  };
+
+  // จัดการการล็อกอิน และ สมัครสมาชิกโดยยึด Email เป็นหลัก
+  const handleAuthSubmit = (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccessMsg('');
+
+    if (authMode === 'login') {
+      if (!usernameInput.trim() || !passwordInput.trim()) {
+        setAuthError('กรุณากรอกอีเมล/ชื่อผู้ใช้ และรหัสผ่าน');
+        return;
+      }
+      
+      const inputClean = usernameInput.trim().toLowerCase();
+      const foundUser = registeredUsers.find(
+        (u) => ((u.email && u.email.toLowerCase() === inputClean) || (u.username && u.username.toLowerCase() === inputClean)) && u.password === passwordInput
+      );
+
+      if (foundUser) {
+        if (rememberMe) {
+          localStorage.setItem('cyber_remembered_user', usernameInput.trim());
+        } else {
+          localStorage.removeItem('cyber_remembered_user');
+        }
+        setUser(foundUser);
+        localStorage.setItem('cyber_current_logged_user', JSON.stringify(foundUser));
+      } else {
+        setAuthError('อีเมล/ชื่อผู้ใช้งาน หรือรหัสผ่านไม่ถูกต้อง');
+      }
+    } else if (authMode === 'register') {
+      if (!emailInput.trim() || !usernameInput.trim() || !regPasswordInput.trim() || !confirmPasswordInput.trim()) {
+        setAuthError('กรุณากรอกข้อมูลให้ครบทุกช่อง');
+        return;
+      }
+      
+      const emailClean = emailInput.trim().toLowerCase();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailClean)) {
+        setAuthError('รูปแบบ Email ไม่ถูกต้อง (เช่น name@domain.com)');
+        return;
+      }
+
+      if (regPasswordInput.length < 6) {
+        setAuthError('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+        return;
+      }
+
+      if (regPasswordInput !== confirmPasswordInput) {
+        setAuthError('รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน');
+        return;
+      }
+
+      const isEmailExist = registeredUsers.some((u) => u.email && u.email.toLowerCase() === emailClean);
+      if (isEmailExist) {
+        setAuthError('อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่นหรือกดลืมรหัสผ่าน');
+        return;
+      }
+
+      const isUserExist = registeredUsers.some((u) => u.username && u.username.toLowerCase() === usernameInput.trim().toLowerCase());
+      if (isUserExist) {
+        setAuthError('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น');
+        return;
+      }
+
+      const newUser = { 
+        username: usernameInput.trim(), 
+        email: emailClean, 
+        password: regPasswordInput, 
+        balance: 0,
+        createdAt: new Date().toISOString()
+      };
+
+      const usersRef = ref(db, 'users');
+      push(usersRef, newUser)
+        .then(() => {
+          setUsernameInput(emailClean);
+          setPasswordInput(regPasswordInput);
+          setEmailInput('');
+          setRegPasswordInput('');
+          setConfirmPasswordInput('');
+          setAuthSuccessMsg('🎉 สมัครสมาชิกสำเร็จ! ระบบเชื่อมต่ออีเมลจริงเรียบร้อยแล้ว สามารถเข้าสู่ระบบได้ทันที');
+          setAuthMode('login');
+        })
+        .catch(() => {
+          setAuthError('เกิดข้อผิดพลาดในการบันทึกข้อมูลเข้าฐานข้อมูล');
+        });
+    }
+  };// State หลักของระบบ
   const [activeTab, setActiveTab] = useState('shop');
   const [gameCategory, setGameCategory] = useState('all');
   const [selectedGame, setSelectedGame] = useState(null);
@@ -90,6 +212,7 @@ export default function GameTopupApp() {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // State กิจกรรม / Gift Code
   const [eventGame, setEventGame] = useState('VALORANT');
   const [eventPlayerId, setEventPlayerId] = useState('');
   const [eventGiftCode, setEventGiftCode] = useState('');
@@ -107,6 +230,7 @@ export default function GameTopupApp() {
     localStorage.setItem('cyber_global_redeemed_players', JSON.stringify(globalRedeemedPlayers));
   }, [globalRedeemedPlayers]);
 
+  // ข้อมูลรายการเกมและแพ็กเกจ
   const [gamesData] = useState([
     {
       id: 'valorant',
@@ -285,6 +409,7 @@ export default function GameTopupApp() {
     }
   }, [newCodeGame, gamesData]);
 
+  // State การเติมเครดิตร้าน
   const [showTopupWalletModal, setShowTopupWalletModal] = useState(false);
   const [topupAmount, setTopupAmount] = useState('');
   const [walletPaymentMethod, setWalletPaymentMethod] = useState('qrcode');
@@ -334,7 +459,10 @@ export default function GameTopupApp() {
   const [orders, setOrders] = useState([]);
 
   const creditUserWallet = (targetPlayer, amount) => {
-    const targetUser = registeredUsers.find(u => u.username.toLowerCase() === targetPlayer.toLowerCase());
+    const targetUser = registeredUsers.find(u => 
+      (u.username && u.username.toLowerCase() === targetPlayer.toLowerCase()) ||
+      (u.email && u.email.toLowerCase() === targetPlayer.toLowerCase())
+    );
     if (targetUser && targetUser.firebaseKey) {
       const newBalance = (targetUser.balance || 0) + amount;
       const userRef = ref(db, `users/${targetUser.firebaseKey}/balance`);
@@ -542,9 +670,7 @@ export default function GameTopupApp() {
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
       <line x1="1" y1="1" x2="23" y2="23"></line>
     </svg>
-  );
-
-  useEffect(() => {
+  );useEffect(() => {
     let timer;
     if (showCheckoutModal && checkoutStep === 2 && selectedPayment?.id === 'qrcode' && !isQrExpired) {
       timer = setInterval(() => {
@@ -569,76 +695,6 @@ export default function GameTopupApp() {
     }
     return () => clearInterval(timer);
   }, [showTopupWalletModal, walletStep, walletPaymentMethod, isWalletQrExpired]);
-
-  const handleAuthSubmit = (e) => {
-    e.preventDefault();
-    setAuthError('');
-    setAuthSuccessMsg('');
-
-    if (authMode === 'login') {
-      if (!usernameInput.trim() || !passwordInput.trim()) {
-        setAuthError('กรุณากรอกชื่อผู้ใช้และรหัสผ่าน');
-        return;
-      }
-      
-      const foundUser = registeredUsers.find(
-        (u) => (u.username.toLowerCase() === usernameInput.trim().toLowerCase() || u.email.toLowerCase() === usernameInput.trim().toLowerCase()) && u.password === passwordInput
-      );
-
-      if (foundUser) {
-        if (rememberMe) {
-          localStorage.setItem('cyber_remembered_user', usernameInput);
-        } else {
-          localStorage.removeItem('cyber_remembered_user');
-        }
-        setUser(foundUser);
-        localStorage.setItem('cyber_current_logged_user', JSON.stringify(foundUser));
-      } else {
-        setAuthError('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
-      }
-    } else if (authMode === 'register') {
-      if (!emailInput.trim() || !usernameInput.trim() || !regPasswordInput.trim() || !confirmPasswordInput.trim()) {
-        setAuthError('กรุณากรอกข้อมูลให้ครบทั้ง 4 ช่อง');
-        return;
-      }
-      if (!emailInput.includes('@')) {
-        setAuthError('รูปแบบ Email ไม่ถูกต้อง');
-        return;
-      }
-      if (regPasswordInput !== confirmPasswordInput) {
-        setAuthError('รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน');
-        return;
-      }
-
-      const isExist = registeredUsers.some((u) => u.username.toLowerCase() === usernameInput.trim().toLowerCase());
-      if (isExist) {
-        setAuthError('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาใช้ชื่ออื่น');
-        return;
-      }
-
-      const newUser = { 
-        username: usernameInput.trim(), 
-        email: emailInput.trim(), 
-        password: regPasswordInput, 
-        balance: 1800 
-      };
-
-      const usersRef = ref(db, 'users');
-      push(usersRef, newUser)
-        .then(() => {
-          setUsernameInput(usernameInput.trim());
-          setPasswordInput(regPasswordInput);
-          setEmailInput('');
-          setRegPasswordInput('');
-          setConfirmPasswordInput('');
-          setAuthSuccessMsg('สมัครสมาชิกสำเร็จแล้ว! สามารถเข้าสู่ระบบใช้งานได้ทุกอุปกรณ์');
-          setAuthMode('login');
-        })
-        .catch(() => {
-          setAuthError('เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล');
-        });
-    }
-  };
 
   const handleLogout = () => {
     setUser(null);
@@ -788,7 +844,7 @@ export default function GameTopupApp() {
       package: `โค้ด: ${foundCode.code} (${foundCode.reward})`,
       price: 0,
       profit: 0,
-      player: user ? user.username : eventPlayerId.trim(),
+      player: user ? (user.email || user.username) : eventPlayerId.trim(),
       gameChar: eventPlayerId.trim(),
       paymentMethod: '🎁 โค้ดกิจกรรมฟรี',
       status: 'รอตรวจสอบ',
@@ -882,7 +938,7 @@ export default function GameTopupApp() {
       package: `+฿${amt.toLocaleString()}`,
       price: amt,
       profit: 0,
-      player: user ? user.username : '11',
+      player: user ? (user.email || user.username) : 'user11@example.com',
       gameChar: 'เติมเครดิตร้าน',
       paymentMethod: paymentLabelMap[walletPaymentMethod] || walletPaymentMethod.toUpperCase(),
       status: 'รอตรวจสอบ',
@@ -999,7 +1055,7 @@ export default function GameTopupApp() {
         package: `${selectedPackage.name} (x${packageQuantity} แพ็ก)`,
         price: totalPrice,
         profit: totalProfit,
-        player: user ? user.username : '11',
+        player: user ? (user.email || user.username) : 'user11@example.com',
         gameChar: playerId.trim(),
         paymentMethod: selectedPayment.name,
         status: 'รอตรวจสอบ',
@@ -1082,7 +1138,7 @@ export default function GameTopupApp() {
     if (isOrderQuery) {
       return ord.id.toLowerCase() === lowerQ;
     } else {
-      return ord.player.toLowerCase() === lowerQ;
+      return ord.player.toLowerCase().includes(lowerQ);
     }
   });
 
@@ -1090,7 +1146,7 @@ export default function GameTopupApp() {
   const totalAdminPages = Math.ceil(filteredOrders.length / adminItemsPerPage) || 1;
   const paginatedAdminOrders = filteredOrders.slice((adminOrdersPage - 1) * adminItemsPerPage, adminOrdersPage * adminItemsPerPage);
 
-  const isUserAdmin = user && (user.username.toLowerCase() === 'thanphooms@gmail.com' || user.email.toLowerCase() === 'thanphooms@gmail.com');
+  const isUserAdmin = user && (user.username.toLowerCase() === 'thanphooms' || user.email.toLowerCase() === 'thanphooms@gmail.com');
 
   const nowObj = new Date();
   const currentDayStr = `${nowObj.getFullYear()}-${String(nowObj.getMonth() + 1).padStart(2, '0')}-${String(nowObj.getDate()).padStart(2, '0')}`;
@@ -1098,7 +1154,10 @@ export default function GameTopupApp() {
   const searchedOrders = orders.filter(o => {
     let matchUser = false;
     if (!isUserAdmin) {
-      matchUser = user && o.player.toLowerCase() === user.username.toLowerCase();
+      matchUser = user && (
+        o.player.toLowerCase() === user.username.toLowerCase() || 
+        o.player.toLowerCase() === user.email.toLowerCase()
+      );
     } else {
       const q = exactSearchQuery.trim().toLowerCase();
       matchUser = !q || (o.player.toLowerCase() === q) || (o.id.toLowerCase() === q);
@@ -1160,6 +1219,7 @@ export default function GameTopupApp() {
     setHistoryPage(1);
   };
 
+  // หากยังไม่ได้เข้าสู่ระบบ แสดงหน้าจอล็อกอิน / สมัครสมาชิก / ลืมรหัสผ่าน
   if (!user) {
     return (
       <div style={{
@@ -1194,7 +1254,7 @@ export default function GameTopupApp() {
 
           <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 20px 0' }}>
             {authMode === 'login' && 'เข้าสู่ระบบร้านเติมเกมอัตโนมัติ 24 ชม.'}
-            {authMode === 'register' && 'สมัครสมาชิกใหม่ซิงค์ข้ามอุปกรณ์'}
+            {authMode === 'register' && 'สมัครสมาชิกใหม่ด้วยอีเมลจริง เพื่อใช้งานได้ทุกอุปกรณ์'}
           </p>
 
           <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -1203,21 +1263,21 @@ export default function GameTopupApp() {
 
             {authMode === 'register' && (
               <div style={{ textAlign: 'left' }}>
-                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. อีเมล (Email)</label>
-                <input type="email" placeholder="example@email.com" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. อีเมลจริง (Email)</label>
+                <input type="email" placeholder="example@gmail.com" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
               </div>
             )}
 
             <div style={{ textAlign: 'left' }}>
               <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
-                {authMode === 'register' ? '2. ชื่อผู้ใช้งาน (Username / ID)' : 'ชื่อผู้ใช้งาน (Username / ID)'}
+                {authMode === 'register' ? '2. ชื่อผู้ใช้งาน (Username / Display Name)' : 'อีเมล หรือ ชื่อผู้ใช้งาน (Email / Username)'}
               </label>
-              <input type="text" placeholder="กรอกชื่อผู้ใช้..." value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+              <input type="text" placeholder={authMode === 'register' ? 'ตั้งชื่อผู้ใช้...' : 'กรอกอีเมล หรือ ชื่อผู้ใช้...'} value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
             </div>
 
             <div style={{ textAlign: 'left' }}>
               <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
-                {authMode === 'register' ? '3. รหัสผ่าน (Password)' : 'รหัสผ่าน (Password)'}
+                {authMode === 'register' ? '3. รหัสผ่าน (Passwordอย่างน้อย 6 ตัว)' : 'รหัสผ่าน (Password)'}
               </label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                 <input 
@@ -1260,9 +1320,12 @@ export default function GameTopupApp() {
             )}
 
             {authMode === 'login' && (
-              <div style={{ textAlign: 'left', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#9ca3af' }}>
-                <input type="checkbox" id="remember" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ cursor: 'pointer' }} />
-                <label htmlFor="remember" style={{ cursor: 'pointer' }}>จดจำไอดีของฉันไว้ (Remember ID)</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#9ca3af' }}>
+                  <input type="checkbox" id="remember" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ cursor: 'pointer' }} />
+                  <label htmlFor="remember" style={{ cursor: 'pointer' }}>จดจำไอดีไว้</label>
+                </div>
+                <span onClick={() => setForgotModalOpen(true)} style={{ color: '#f472b6', cursor: 'pointer', fontWeight: 'bold' }}>ลืมรหัสผ่าน?</span>
               </div>
             )}
 
@@ -1271,7 +1334,7 @@ export default function GameTopupApp() {
               style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', boxShadow: '0 0 15px rgba(147,51,234,0.5)', transition: 'all 0.3s ease' }}
             >
               {authMode === 'login' && 'เข้าสู่ระบบ (Login)'}
-              {authMode === 'register' && 'สมัครสมาชิก'}
+              {authMode === 'register' && 'สมัครสมาชิกด้วยอีเมลจริง'}
             </button>
           </form>
 
@@ -1280,11 +1343,33 @@ export default function GameTopupApp() {
             {authMode === 'register' && <>มีบัญชีแล้ว? <span onClick={() => { setAuthMode('login'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>เข้าสู่ระบบ</span></>}
           </div>
         </div>
+
+        {/* Modal สำหรับลืมรหัสผ่าน */}
+        {forgotModalOpen && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+            <div style={{ backgroundColor: '#111827', border: '1.5px solid #ec4899', borderRadius: '24px', maxWidth: '400px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 35px rgba(236,72,153,0.4)' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#f472b6' }}>📧 กู้คืนรหัสผ่านด้วยอีเมล</h3>
+              <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรอกอีเมลจริงที่คุณใช้สมัครสมาชิก เพื่อรับลิงก์ตั้งรหัสผ่านใหม่</p>
+
+              {forgotStatusMsg.text && (
+                <div style={{ backgroundColor: forgotStatusMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${forgotStatusMsg.type === 'success' ? '#34d399' : '#ef4444'}`, color: forgotStatusMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px', textAlign: 'left' }}>
+                  {forgotStatusMsg.text}
+                </div>
+              )}
+
+              <form onSubmit={handleForgotPasswordSubmit}>
+                <input type="email" placeholder="กรอกอีเมลของคุณ..." value={forgotEmailInput} onChange={(e) => setForgotEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', marginBottom: '20px', boxSizing: 'border-box' }} />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="button" onClick={() => setForgotModalOpen(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
+                  <button type="submit" style={{ flex: 1, backgroundColor: '#ec4899', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ส่งอีเมลรีเซ็ต</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     );
-  }
-
-  return (
+  }return (
     <div style={{
       backgroundColor: '#070a12',
       backgroundImage: `linear-gradient(to bottom, rgba(7, 10, 18, 0.85), rgba(7, 10, 18, 0.95)), url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1920&q=80')`,
@@ -1329,7 +1414,7 @@ export default function GameTopupApp() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ fontSize: '12px' }}><span style={{ color: '#9ca3af' }}>👤 ผู้ใช้: </span><b style={{ color: '#c084fc' }}>{user.username}</b></div>
+            <div style={{ fontSize: '12px' }}><span style={{ color: '#9ca3af' }}>👤 ผู้ใช้: </span><b style={{ color: '#c084fc' }}>{user.email || user.username}</b></div>
             <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px' }}><span style={{ color: '#9ca3af' }}>💰 เครดิตร้าน: </span><b style={{ color: '#34d399' }}>฿{(user.balance || 0).toLocaleString()}</b></div>
             
             <button 
@@ -1382,7 +1467,6 @@ export default function GameTopupApp() {
       </a>
 
       <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px', position: 'relative', zIndex: 1 }}>
-        
         {activeTab === 'shop' && !selectedGame && (
           <div>
             <div style={{ 
@@ -1662,7 +1746,7 @@ export default function GameTopupApp() {
               <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>📋 เช็คสถานะคำสั่งซื้อและประวัติการทำรายการ</h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#c084fc' }}>
                 <span>👤 บัญชีผู้ใช้งาน:</span>
-                <b style={{ color: '#ffffff', backgroundColor: 'rgba(147,51,234,0.3)', padding: '2px 10px', borderRadius: '6px', border: '1px solid #9333ea' }}>{user.username}</b>
+                <b style={{ color: '#ffffff', backgroundColor: 'rgba(147,51,234,0.3)', padding: '2px 10px', borderRadius: '6px', border: '1px solid #9333ea' }}>{user.email || user.username}</b>
                 {!isUserAdmin && <span style={{ fontSize: '11px', color: '#38bdf8', marginLeft: '6px' }}>(แสดงเฉพาะประวัติคำสั่งซื้อของคุณเอง)</span>}
               </div>
             </div>
@@ -1670,8 +1754,8 @@ export default function GameTopupApp() {
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <input 
                 type="text" 
-                placeholder={isUserAdmin ? "🔍 ค้นหาชื่อบัญชีลูกค้า..." : user.username}
-                value={isUserAdmin ? exactSearchQuery : user.username} 
+                placeholder={isUserAdmin ? "🔍 ค้นหาชื่อบัญชีลูกค้า/อีเมล..." : (user.email || user.username)}
+                value={isUserAdmin ? exactSearchQuery : (user.email || user.username)} 
                 disabled={!isUserAdmin}
                 onChange={(e) => isUserAdmin && setExactSearchQuery(e.target.value)} 
                 style={{ flex: 1, minWidth: '180px', backgroundColor: isUserAdmin ? '#030712' : '#1f2937', border: '1.5px solid #a855f7', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', cursor: isUserAdmin ? 'text' : 'not-allowed', fontWeight: 'bold', boxSizing: 'border-box' }} 
@@ -1937,7 +2021,7 @@ export default function GameTopupApp() {
 
                   {isAdminOrdersOpen && (
                     <div style={{ padding: '25px' }}>
-                      <input type="text" placeholder="🔍 ค้นหาเลขออร์เดอร์ หรือชื่อบัญชีลูกค้า..." value={adminSearchQuery} onChange={(e) => { setAdminSearchQuery(e.target.value); setAdminOrdersPage(1); }} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', marginBottom: '20px', outline: 'none', boxSizing: 'border-box' }} />
+                      <input type="text" placeholder="🔍 ค้นหาเลขออร์เดอร์ หรือชื่อบัญชีลูกค้า/อีเมล..." value={adminSearchQuery} onChange={(e) => { setAdminSearchQuery(e.target.value); setAdminOrdersPage(1); }} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', marginBottom: '20px', outline: 'none', boxSizing: 'border-box' }} />
                       
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
                         {paginatedAdminOrders.map((ord, idx) => {
