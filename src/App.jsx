@@ -1,174 +1,800 @@
-// State สำหรับจัดการสถานะการแจ้งเตือน LINE
-  const [lineToken, setLineToken] = useState(() => {
-    return localStorage.getItem('cyber_line_token') || '';
-  });
-  const [isLineNotifyEnabled, setIsLineNotifyEnabled] = useState(() => {
-    return localStorage.getItem('cyber_line_enabled') === 'true';
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, onValue, set, push } from 'firebase/database';
+
+// ตั้งค่า Firebase Config
+const firebaseConfig = {
+  apiKey: "AIzaSyD-dgpKK9S2oLfLawJ8MKYHi-NWB4GQv7u",
+  authDomain: "cyber-topup-game.firebaseapp.com",
+  databaseURL: "https://cyber-topup-game-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "cyber-topup-game",
+  storageBucket: "cyber-topup-game.appspot.com",
+  messagingSenderId: "191687954752",
+  appId: "1:191687954752:web:063d8ce34df50b182feaa5",
+  measurementId: "G-2VQP0N3PVZ"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+export default function GameTopupApp() {
+  const [registeredUsers, setRegisteredUsers] = useState([]);
+  const [forgotModalOpen, setForgotModalOpen] = useState(false);
+  const [forgotEmailInput, setForgotEmailInput] = useState('');
+  const [forgotStatusMsg, setForgotStatusMsg] = useState({ text: '', type: '' });
+
+  // โหลดข้อมูลผู้ใช้งานแบบ Realtime จาก Firebase Database
+  useEffect(() => {
+    const usersRef = ref(db, 'users');
+    const unsubscribe = onValue(usersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const userList = Object.keys(data).map(key => ({
+          firebaseKey: key,
+          ...data[key]
+        }));
+        setRegisteredUsers(userList);
+      } else {
+        const defaultUsers = [
+          { username: 'thanphooms', email: 'thanphooms@gmail.com', password: '0638801739Ss_@1', balance: 99999 },
+          { username: 'user11', email: 'user11@example.com', password: '11', balance: 1800 },
+          { username: 'user22', email: 'user22@example.com', password: '22', balance: 1500 }
+        ];
+        defaultUsers.forEach(u => {
+          push(usersRef, u);
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('cyber_current_logged_user');
+    if (savedUser) {
+      try { return JSON.parse(savedUser); } catch (e) {}
+    }
+    return null;
   });
 
   useEffect(() => {
-    localStorage.setItem('cyber_line_token', lineToken);
-    localStorage.setItem('cyber_line_enabled', isLineNotifyEnabled ? 'true' : 'false');
-  }, [lineToken, isLineNotifyEnabled]);
-
-  // ฟังก์ชันจำลองการยิงข้อความแจ้งเตือนเข้า Line OA / Line Notify อัตโนมัติ
-  const sendLineNotification = async (messageText) => {
-    console.log("📤 [LINE NOTIFICATION SENT]:", messageText);
-    
-    // หากเปิดใช้งานระบบ Line Notify จริง สามารถเชื่อมต่อผ่าน Fetch API ไปยัง Line Endpoint ได้ทันที
-    if (isLineNotifyEnabled && lineToken.trim()) {
-      try {
-        // ตัวอย่างการส่ง HTTP POST ไปยัง Line Notify API (ต้องใช้งานผ่าน Backend หรือ Proxy เพื่อป้องกัน CORS หรือใช้ Token ตรง)
-        /*
-        await fetch('https://notify-api.line.me/api/notify', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Authorization': `Bearer ${lineToken}`
-          },
-          body: new URLSearchParams({ message: messageText })
-        });
-        */
-      } catch (err) {
-        console.error("LINE Notify Error:", err);
+    if (user) {
+      const latestUser = registeredUsers.find(u => 
+        (u.email && u.email.toLowerCase() === user.email?.toLowerCase()) || 
+        (u.username && u.username.toLowerCase() === user.username?.toLowerCase())
+      );
+      if (latestUser) {
+        setUser(latestUser);
+        localStorage.setItem('cyber_current_logged_user', JSON.stringify(latestUser));
       }
+    } else {
+      localStorage.removeItem('cyber_current_logged_user');
     }
-  };// ฟังก์ชันสร้างรูปแบบข้อความแจ้งเตือนออเดอร์ใหม่ส่งเข้า LINE
-  const sendOrderLineNotification = (orderData) => {
-    let msg = `\n🔔 **มีออเดอร์ใหม่เข้ามา!**\n`;
-    msg += `---------------------------\n`;
-    msg += `📌 เลขออร์เดอร์: ${orderData.id}\n`;
-    msg += `👤 อีเมล/ผู้ใช้: ${orderData.player}\n`;
-    msg += `🎮 เกม: ${orderData.game}\n`;
-    msg += `📦 แพ็กเกจ: ${orderData.package}\n`;
-    msg += `💰 ยอดชำระ: ฿${orderData.price.toLocaleString()}\n`;
-    msg += `💳 ช่องทาง: ${orderData.paymentMethod}\n`;
-    if (orderData.gameChar && orderData.gameChar !== 'เติมเครดิตร้าน') {
-      msg += `🎯 UID/ตัวละคร: ${orderData.gameChar}\n`;
-    }
-    msg += `⏱️ เวลา: ${orderData.time}\n`;
-    msg += `---------------------------\n`;
-    msg += `สถานะ: ${orderData.status}`;
+  }, [registeredUsers]);
 
-    sendLineNotification(msg);
+  const [authMode, setAuthMode] = useState('login');
+  const [rememberMe, setRememberMe] = useState(false);
+  
+  const [usernameInput, setUsernameInput] = useState(() => {
+    return localStorage.getItem('cyber_remembered_user') || '';
+  });
+  const [passwordInput, setPasswordInput] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  
+  const [emailInput, setEmailInput] = useState('');
+  const [regPasswordInput, setRegPasswordInput] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [authError, setAuthError] = useState('');
+  const [authSuccessMsg, setAuthSuccessMsg] = useState('');
+
+  // ฟังก์ชันลืมรหัสผ่าน ส่งคำขอกู้คืนผ่านอีเมล
+  const handleForgotPasswordSubmit = (e) => {
+    e.preventDefault();
+    setForgotStatusMsg({ text: '', type: '' });
+
+    if (!forgotEmailInput.trim() || !forgotEmailInput.includes('@')) {
+      setForgotStatusMsg({ text: 'กรุณากรอกอีเมลที่ถูกต้อง', type: 'error' });
+      return;
+    }
+
+    const foundUser = registeredUsers.find(u => u.email && u.email.toLowerCase() === forgotEmailInput.trim().toLowerCase());
+    
+    if (foundUser) {
+      setForgotStatusMsg({ 
+        text: `📧 ส่งลิงก์กู้คืนรหัสผ่านไปยัง ${forgotEmailInput.trim()} เรียบร้อยแล้ว! กรุณาเช็คใน Inbox หรือ Junk Mail`, 
+        type: 'success' 
+      });
+      setTimeout(() => {
+        setForgotModalOpen(false);
+        setForgotEmailInput('');
+        setForgotStatusMsg({ text: '', type: '' });
+      }, 4000);
+    } else {
+      setForgotStatusMsg({ text: 'ไม่พบบัญชีที่ใช้อีเมลนี้ในระบบ', type: 'error' });
+    }
   };
 
-  // จัดการการยืนยันชำระเงินเติมเครดิตร้าน (Wallet) พร้อมส่ง LINE
-  const handleWalletConfirmPayment = () => {
-    const amt = parseFloat(topupAmount) || 0;
-    const newOrderId = 'ORD-W-' + Math.floor(10000 + Math.random() * 90000);
+  // จัดการการล็อกอิน และ สมัครสมาชิกโดยยึด Email เป็นหลัก
+  const handleAuthSubmit = (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccessMsg('');
+
+    if (authMode === 'login') {
+      if (!usernameInput.trim() || !passwordInput.trim()) {
+        setAuthError('กรุณากรอกอีเมล/ชื่อผู้ใช้ และรหัสผ่าน');
+        return;
+      }
+      
+      const inputClean = usernameInput.trim().toLowerCase();
+      const foundUser = registeredUsers.find(
+        (u) => ((u.email && u.email.toLowerCase() === inputClean) || (u.username && u.username.toLowerCase() === inputClean)) && u.password === passwordInput
+      );
+
+      if (foundUser) {
+        if (rememberMe) {
+          localStorage.setItem('cyber_remembered_user', usernameInput.trim());
+        } else {
+          localStorage.removeItem('cyber_remembered_user');
+        }
+        setUser(foundUser);
+        localStorage.setItem('cyber_current_logged_user', JSON.stringify(foundUser));
+      } else {
+        setAuthError('อีเมล/ชื่อผู้ใช้งาน หรือรหัสผ่านไม่ถูกต้อง');
+      }
+    } else if (authMode === 'register') {
+      if (!emailInput.trim() || !usernameInput.trim() || !regPasswordInput.trim() || !confirmPasswordInput.trim()) {
+        setAuthError('กรุณากรอกข้อมูลให้ครบทุกช่อง');
+        return;
+      }
+      
+      const emailClean = emailInput.trim().toLowerCase();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailClean)) {
+        setAuthError('รูปแบบ Email ไม่ถูกต้อง (เช่น name@domain.com)');
+        return;
+      }
+
+      if (regPasswordInput.length < 6) {
+        setAuthError('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+        return;
+      }
+
+      if (regPasswordInput !== confirmPasswordInput) {
+        setAuthError('รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน');
+        return;
+      }
+
+      const isEmailExist = registeredUsers.some((u) => u.email && u.email.toLowerCase() === emailClean);
+      if (isEmailExist) {
+        setAuthError('อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่นหรือกดลืมรหัสผ่าน');
+        return;
+      }
+
+      const isUserExist = registeredUsers.some((u) => u.username && u.username.toLowerCase() === usernameInput.trim().toLowerCase());
+      if (isUserExist) {
+        setAuthError('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น');
+        return;
+      }
+
+      const newUser = { 
+        username: usernameInput.trim(), 
+        email: emailClean, 
+        password: regPasswordInput, 
+        balance: 0,
+        createdAt: new Date().toISOString()
+      };
+
+      const usersRef = ref(db, 'users');
+      push(usersRef, newUser)
+        .then(() => {
+          setUsernameInput(emailClean);
+          setPasswordInput(regPasswordInput);
+          setEmailInput('');
+          setRegPasswordInput('');
+          setConfirmPasswordInput('');
+          setAuthSuccessMsg('🎉 สมัครสมาชิกสำเร็จ! ระบบเชื่อมต่ออีเมลจริงเรียบร้อยแล้ว สามารถเข้าสู่ระบบได้ทันที');
+          setAuthMode('login');
+        })
+        .catch(() => {
+          setAuthError('เกิดข้อผิดพลาดในการบันทึกข้อมูลเข้าฐานข้อมูล');
+        });
+    }
+  };// State หลักของระบบ
+  const [activeTab, setActiveTab] = useState('shop');
+  const [gameCategory, setGameCategory] = useState('all');
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [playerId, setPlayerId] = useState('');
+  const [selectedPackage, setSelectedPackage] = useState(null);
+  const [packageQuantity, setPackageQuantity] = useState(1);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // State กิจกรรม / Gift Code
+  const [eventGame, setEventGame] = useState('VALORANT');
+  const [eventPlayerId, setEventPlayerId] = useState('');
+  const [eventGiftCode, setEventGiftCode] = useState('');
+  const [eventMsg, setEventMsg] = useState({ text: '', type: '' });
+
+  const [globalRedeemedPlayers, setGlobalRedeemedPlayers] = useState(() => {
+    const saved = localStorage.getItem('cyber_global_redeemed_players');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return ['22'];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cyber_global_redeemed_players', JSON.stringify(globalRedeemedPlayers));
+  }, [globalRedeemedPlayers]);
+
+  // ข้อมูลรายการเกมและแพ็กเกจ
+  const [gamesData] = useState([
+    {
+      id: 'valorant',
+      name: 'VALORANT',
+      publisher: 'Riot Games',
+      category: 'pc',
+      image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=500&q=80',
+      badge: 'ยอดฮิตอันดับ 1 🔥',
+      packages: [
+        { id: 'v1', name: '125 VP', price: 99, profit: 15, bonus: '+0 VP' },
+        { id: 'v2', name: '420 VP', price: 319, profit: 48, bonus: '+15 VP' },
+        { id: 'v3', name: '700 VP', price: 529, profit: 80, bonus: '+30 VP' },
+        { id: 'v4', name: '1,375 VP', price: 999, profit: 150, bonus: '+80 VP' },
+        { id: 'v5', name: '2,400 VP', price: 1750, profit: 260, bonus: '+150 VP 🔥' },
+        { id: 'v6', name: '4,000 VP (Big Pack)', price: 2850, profit: 420, bonus: '+300 VP VIP ⭐' },
+        { id: 'v7', name: '8,500 VP (Whale Pack)', price: 5900, profit: 900, bonus: '+700 VP VIP 👑' }
+      ]
+    },
+    {
+      id: 'genshin',
+      name: 'Genshin Impact',
+      publisher: 'HoYoverse',
+      category: 'pc',
+      image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=500&q=80',
+      badge: 'ยอดฮิต ✨',
+      packages: [
+        { id: 'g1', name: '60 Genesis Crystals', price: 35, profit: 5, bonus: '+0' },
+        { id: 'g2', name: '300 Genesis Crystals', price: 179, profit: 27, bonus: '+10' },
+        { id: 'g3', name: '980 Genesis Crystals', price: 549, profit: 82, bonus: '+40' },
+        { id: 'g4', name: '1,980 Genesis Crystals', price: 1050, profit: 158, bonus: '+110' },
+        { id: 'g5', name: '3,280 Genesis Crystals', price: 1750, profit: 260, bonus: '+260 🔥' },
+        { id: 'g6', name: '6,480 Genesis Crystals', price: 3390, profit: 500, bonus: '+1,600 VIP 👑' }
+      ]
+    },
+    {
+      id: 'avatarstar',
+      name: 'Avatar Star',
+      publisher: 'Cubinet / AS Global',
+      category: 'pc',
+      image: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=500&q=80',
+      badge: 'ยอดนิยม ⚡',
+      packages: [
+        { id: 'as1', name: '300 Diamonds', price: 90, profit: 14, bonus: '+0' },
+        { id: 'as2', name: '1,000 Diamonds', price: 300, profit: 45, bonus: '+50' },
+        { id: 'as3', name: '2,100 Diamonds', price: 600, profit: 90, bonus: '+150' },
+        { id: 'as4', name: '3,600 Diamonds', price: 1000, profit: 150, bonus: '+300' },
+        { id: 'as5', name: '7,500 Diamonds', price: 2000, profit: 300, bonus: '+800 🔥' },
+        { id: 'as6', name: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, bonus: '+2,000 👑' }
+      ]
+    },
+    {
+      id: 'lol',
+      name: 'League of Legends',
+      publisher: 'Riot Games',
+      category: 'pc',
+      image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=500&q=80',
+      badge: 'แนะนำ 🏆',
+      packages: [
+        { id: 'l1', name: '575 RP', price: 150, profit: 22, bonus: '+0 RP' },
+        { id: 'l2', name: '1,380 RP', price: 350, profit: 52, bonus: '+30 RP' },
+        { id: 'l3', name: '2,800 RP', price: 700, profit: 105, bonus: '+100 RP' },
+        { id: 'l4', name: '5,000 RP', price: 1250, profit: 188, bonus: '+250 RP 🔥' },
+        { id: 'l5', name: '11,000 RP (Ultra Pack)', price: 2600, profit: 390, bonus: '+700 RP 👑' }
+      ]
+    },
+    {
+      id: 'pubg',
+      name: 'PUBG Mobile',
+      publisher: 'Level Infinite',
+      category: 'mobile',
+      image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=500&q=80',
+      badge: 'ยอดฮิต 🔫',
+      packages: [
+        { id: 'p1', name: '60 UC', price: 29, profit: 4, bonus: '+0 UC' },
+        { id: 'p2', name: '325 UC', price: 149, profit: 22, bonus: '+15 UC' },
+        { id: 'p3', name: '660 UC', price: 299, profit: 45, bonus: '+50 UC' },
+        { id: 'p4', name: '1,800 UC', price: 799, profit: 120, bonus: '+150 UC 🔥' },
+        { id: 'p5', name: '3,850 UC', price: 1600, profit: 240, bonus: '+350 UC ⭐' },
+        { id: 'p6', name: '8,100 UC (Whale Pack)', price: 3200, profit: 480, bonus: '+900 UC 👑' }
+      ]
+    },
+    {
+      id: 'rov',
+      name: 'ROV (Arena of Valor)',
+      publisher: 'Garena',
+      category: 'mobile',
+      image: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=500&q=80',
+      badge: 'ยอดฮิต ⚔️',
+      packages: [
+        { id: 'r1', name: '40 Coupons', price: 35, profit: 5, bonus: '+2 Coupons' },
+        { id: 'r2', name: '90 Coupons', price: 75, profit: 11, bonus: '+5 Coupons' },
+        { id: 'r3', name: '220 Coupons', price: 175, profit: 26, bonus: '+15 Coupons' },
+        { id: 'r4', name: '470 Coupons', price: 350, profit: 52, bonus: '+30 Coupons' },
+        { id: 'r5', name: '950 Coupons', price: 700, profit: 105, bonus: '+80 Coupons 🔥' },
+        { id: 'r6', name: '2,700 Coupons (Big Pack)', price: 1800, profit: 270, bonus: '+250 Coupons 👑' }
+      ]
+    },
+    {
+      id: 'freefire',
+      name: 'Free Fire',
+      publisher: 'Garena',
+      category: 'mobile',
+      image: 'https://images.unsplash.com/photo-1560253023-3ec5d502959f?auto=format&fit=crop&w=500&q=80',
+      badge: 'ยอดฮิต 💎',
+      packages: [
+        { id: 'ff1', name: '110 Diamonds', price: 35, profit: 5, bonus: '+5' },
+        { id: 'ff2', name: '341 Diamonds', price: 105, profit: 15, bonus: '+20' },
+        { id: 'ff3', name: '572 Diamonds', price: 175, profit: 26, bonus: '+40' },
+        { id: 'ff4', name: '1,160 Diamonds', price: 350, profit: 52, bonus: '+90 🔥' },
+        { id: 'ff5', name: '2,390 Diamonds', price: 700, profit: 105, bonus: '+200 ⭐' },
+        { id: 'ff6', name: '6,000 Diamonds (VIP Mega)', price: 1700, profit: 255, bonus: '+600 👑' }
+      ]
+    },
+    {
+      id: 'hsr',
+      name: 'Honkai: Star Rail',
+      publisher: 'HoYoverse',
+      category: 'mobile',
+      image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=80',
+      badge: 'แนะนำ 🚀',
+      packages: [
+        { id: 'h1', name: '60 Oneiric Shard', price: 35, profit: 5, bonus: '+0' },
+        { id: 'h2', name: '300 Oneiric Shard', price: 179, profit: 27, bonus: '+30' },
+        { id: 'h3', name: '980 Oneiric Shard', price: 549, profit: 82, bonus: '+110' },
+        { id: 'h4', name: '1,980 Oneiric Shard', price: 1050, profit: 158, bonus: '+260 🔥' },
+        { id: 'h5', name: '3,280 Oneiric Shard', price: 1750, profit: 260, bonus: '+600 ⭐' },
+        { id: 'h6', name: '6,480 Oneiric Shard', price: 3390, profit: 500, bonus: '+1,600 👑' }
+      ]
+    },
+    {
+      id: 'fcmobile',
+      name: 'EA SPORTS FC Mobile',
+      publisher: 'ELECTRONIC ARTS',
+      category: 'mobile',
+      image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=500&q=80',
+      badge: 'มาใหม่ ⚽',
+      packages: [
+        { id: 'fc1', name: '100 FC Points', price: 35, profit: 5, bonus: '+0' },
+        { id: 'fc2', name: '520 FC Points', price: 179, profit: 27, bonus: '+20' },
+        { id: 'fc3', name: '1,070 FC Points', price: 350, profit: 52, bonus: '+70' },
+        { id: 'fc4', name: '2,200 FC Points', price: 700, profit: 105, bonus: '+180 🔥' },
+        { id: 'fc5', name: '5,750 FC Points (Pro Pack)', price: 1750, profit: 260, bonus: '+550 👑' }
+      ]
+    }
+  ]);
+
+  const [giftCodes, setGiftCodes] = useState([]);
+
+  useEffect(() => {
+    const giftCodesRef = ref(db, 'giftCodes');
+    const unsubscribe = onValue(giftCodesRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const codeList = Object.keys(data).map(key => ({
+          firebaseKey: key,
+          ...data[key]
+        }));
+        setGiftCodes(codeList.reverse());
+      } else {
+        setGiftCodes([]);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const [newCodeName, setNewCodeName] = useState('');
+  const [newCodeGame, setNewCodeGame] = useState('VALORANT');
+  const [newCodeReward, setNewCodeReward] = useState('125 VP');
+  const [newCodeMaxUses, setNewCodeMaxUses] = useState(10);
+  const [adminCodeMsg, setAdminCodeMsg] = useState({ text: '', type: '' });
+
+  useEffect(() => {
+    const found = gamesData.find(g => g.name === newCodeGame);
+    if (found && found.packages.length > 0) {
+      setNewCodeReward(found.packages[0].name);
+    }
+  }, [newCodeGame, gamesData]);
+
+  // State การเติมเครดิตร้าน
+  const [showTopupWalletModal, setShowTopupWalletModal] = useState(false);
+  const [topupAmount, setTopupAmount] = useState('');
+  const [walletPaymentMethod, setWalletPaymentMethod] = useState('qrcode');
+  const [walletStep, setWalletStep] = useState(1);
+  const [walletTimeLeft, setWalletTimeLeft] = useState(180);
+  const [isWalletQrExpired, setIsWalletQrExpired] = useState(false);
+
+  const [truemoneyPhone, setTruemoneyPhone] = useState('');
+  const [trueMoneyOtpStep, setTrueMoneyOtpStep] = useState(false);
+  const [trueMoneyOtpCode, setTrueMoneyOtpCode] = useState('');
+  const [trueMoneyOtpError, setTrueMoneyOtpError] = useState('');
+
+  const [truemoneyCard14, setTruemoneyCard14] = useState('');
+  const [creditCardNum, setCreditCardNum] = useState('');
+  const [creditCardExp, setCreditCardExp] = useState('');
+  const [creditCardCvv, setCreditCardCvv] = useState('');
+
+  const handleCreditCardNumChange = (e) => {
+    let raw = e.target.value.replace(/[^0-9]/g, '');
+    if (raw.length > 16) raw = raw.slice(0, 16);
+    const formatted = raw.match(/.{1,4}/g)?.join(' ') || '';
+    setCreditCardNum(formatted);
+  };
+
+  const handleCreditCardExpChange = (e) => {
+    let raw = e.target.value.replace(/[^0-9]/g, '');
+    if (raw.length > 4) raw = raw.slice(0, 4);
+    if (raw.length >= 3) {
+      setCreditCardExp(`${raw.slice(0, 2)}/${raw.slice(2)}`);
+    } else {
+      setCreditCardExp(raw);
+    }
+  };
+
+  const [floatingTimer, setFloatingTimer] = useState(0);
+  const [activeOrderFirebaseKey, setActiveOrderFirebaseKey] = useState(null);
+
+  const [customerOrderSearch, setCustomerOrderSearch] = useState('');
+  const [exactSearchQuery, setExactSearchQuery] = useState('');
+  const [selectedGameFilter, setSelectedGameFilter] = useState('all');
+  const [selectedDateFilter, setSelectedDateFilter] = useState('');
+  const [customerOrdersPage, setCustomerOrdersPage] = useState(1);
+  const [isPastOrdersOpen, setIsPastOrdersOpen] = useState(true);
+  const [isAdminOrdersOpen, setIsAdminOrdersOpen] = useState(true);
+
+  const [adminOrdersPage, setAdminOrdersPage] = useState(1);
+  const [orders, setOrders] = useState([]);
+
+  const creditUserWallet = (targetPlayer, amount) => {
+    const targetUser = registeredUsers.find(u => 
+      (u.username && u.username.toLowerCase() === targetPlayer.toLowerCase()) ||
+      (u.email && u.email.toLowerCase() === targetPlayer.toLowerCase())
+    );
+    if (targetUser && targetUser.firebaseKey) {
+      const newBalance = (targetUser.balance || 0) + amount;
+      const userRef = ref(db, `users/${targetUser.firebaseKey}/balance`);
+      set(userRef, newBalance);
+    }
+  };
+
+  useEffect(() => {
+    const ordersRef = ref(db, 'orders');
+    const unsubscribe = onValue(ordersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const orderList = Object.keys(data).map(key => ({
+          firebaseKey: key,
+          ...data[key]
+        }));
+        setOrders(orderList.reverse());
+      } else {
+        setOrders([]);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const createRealtimeOrder = (newOrderObj) => {
+    const ordersRef = ref(db, 'orders');
+    const newRef = push(ordersRef, newOrderObj);
+    return newRef.key;
+  };
+
+  const updateRealtimeOrderStatus = (firebaseKey, newStatus) => {
+    const orderRef = ref(db, `orders/${firebaseKey}/status`);
+    set(orderRef, newStatus);
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const nowTs = Date.now();
+      orders.forEach((ord) => {
+        if (ord.status.includes('รอตรวจสอบ') && ord.timestamp) {
+          const diffSeconds = Math.floor((nowTs - ord.timestamp) / 1000);
+          if (diffSeconds >= 10) {
+            if (ord.type === 'wallet') {
+              creditUserWallet(ord.player, ord.price);
+            }
+            updateRealtimeOrderStatus(ord.firebaseKey, '✅ สำเร็จ (เติมอัตโนมัติ 10 วินาที)');
+            if (ord.firebaseKey === activeOrderFirebaseKey) {
+              setFloatingTimer(0);
+              setActiveOrderFirebaseKey(null);
+            }
+          }
+        }
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [orders, activeOrderFirebaseKey]);
+
+  useEffect(() => {
+    if (activeOrderFirebaseKey) {
+      const currentOrd = orders.find(o => o.firebaseKey === activeOrderFirebaseKey);
+      if (!currentOrd || !currentOrd.status.includes('รอตรวจสอบ')) {
+        setFloatingTimer(0);
+        setActiveOrderFirebaseKey(null);
+      }
+    }
+  }, [orders, activeOrderFirebaseKey]);
+
+  useEffect(() => {
+    let fTimer;
+    if (floatingTimer > 0) {
+      fTimer = setInterval(() => {
+        setFloatingTimer((prev) => {
+          if (prev <= 1) {
+            setActiveOrderFirebaseKey(null);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(fTimer);
+  }, [floatingTimer]);
+
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
+    return localStorage.getItem('cyber_is_admin_logged') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cyber_is_admin_logged', isAdminLoggedIn ? 'true' : 'false');
+  }, [isAdminLoggedIn]);
+
+  const [adminPin, setAdminPin] = useState(() => {
+    return localStorage.getItem('cyber_admin_pin') || '123456';
+  });
+  const [inputAdminPin, setInputAdminPin] = useState('');
+  const [adminPinError, setAdminPinError] = useState('');
+  const [adminSearchQuery, setAdminSearchQuery] = useState('');
+
+  const [oldPinInput, setOldPinInput] = useState('');
+  const [newPinInput, setNewPinInput] = useState('');
+  const [confirmNewPinInput, setConfirmNewPinInput] = useState('');
+  const [changePinMessage, setChangePinMessage] = useState({ text: '', type: '' });
+
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState(1);
+  const [checkoutPassword, setCheckoutPassword] = useState('');
+  const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
+  const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(180);
+  const [isQrExpired, setIsQrExpired] = useState(false);
+
+  const [adPlatform, setAdPlatform] = useState('Facebook Ads');
+  const [adAmountInput, setAdAmountInput] = useState('');
+  const [adPage, setAdPage] = useState(1);
+  const [adPromotions, setAdPromotions] = useState(() => {
+    const savedPromos = localStorage.getItem('cyber_ad_promotions_list');
+    if (savedPromos) {
+      try { return JSON.parse(savedPromos); } catch (e) {}
+    }
+    return [
+      { id: '1', platform: 'Facebook Ads', amount: 1500, time: '30/10/2026 14:00 น.' },
+      { id: '2', platform: 'TikTok Ads', amount: 1000, time: '29/10/2026 10:30 น.' }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('cyber_ad_promotions_list', JSON.stringify(adPromotions));
+  }, [adPromotions]);
+
+  const adExpense = adPromotions.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
+
+  const handleAddAdPromotion = (e) => {
+    e.preventDefault();
+    const amt = parseFloat(adAmountInput);
+    if (isNaN(amt) || amt <= 0) {
+      alert('กรุณากรอกจำนวนเงินโฆษณาให้ถูกต้อง');
+      return;
+    }
+
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const year = now.getFullYear();
     const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
-    const dateKey = `${year}-${month}-${day}`;
 
-    const paymentLabelMap = {
-      qrcode: 'QR PromptPay (เติมเครดิต)',
-      true: 'TrueMoney Wallet (เติมเครดิต)',
-      truemoneycard: 'บัตรทรูมันนี่ (เติมเครดิต)',
-      credit: 'บัตรเครดิต/เดบิต (เติมเครดิต)'
+    const newItem = {
+      id: Date.now().toString(),
+      platform: adPlatform,
+      amount: amt,
+      time: thaiTime
     };
 
-    const newWalletOrder = {
-      id: newOrderId,
-      game: `เติมเครดิตร้าน`,
-      package: `+฿${amt.toLocaleString()}`,
-      price: amt,
-      profit: 0,
-      player: user ? (user.email || user.username) : 'user11@example.com',
-      gameChar: 'เติมเครดิตร้าน',
-      paymentMethod: paymentLabelMap[walletPaymentMethod] || walletPaymentMethod.toUpperCase(),
-      status: 'รอตรวจสอบ',
-      type: 'wallet',
-      time: thaiTime,
-      dateKey: dateKey,
+    setAdPromotions([newItem, ...adPromotions]);
+    setAdAmountInput('');
+    setAdPage(1);
+  };
+
+  const handleDeleteAdPromotion = (id) => {
+    setAdPromotions(adPromotions.filter(item => item.id !== id));
+  };
+
+  const adItemsPerPage = 5;
+  const totalAdPages = Math.ceil(adPromotions.length / adItemsPerPage) || 1;
+  const paginatedAdPromotions = adPromotions.slice((adPage - 1) * adItemsPerPage, adPage * adItemsPerPage);
+
+  const totalAdminSales = orders.reduce((sum, ord) => sum + (ord.type === 'game' ? ord.price : 0), 0);
+  const totalAdminProfits = orders.reduce((sum, ord) => sum + (ord.profit || 0), 0);
+
+  const netProfitAfterAd = Math.max(0, totalAdminProfits - (parseFloat(adExpense) || 0));
+
+  const isVatThresholdReached = totalAdminSales >= 1800000;
+  const totalAdminVat = isVatThresholdReached ? Math.round(netProfitAfterAd * 0.07) : 0;
+
+  const profitForTaxCalculation = netProfitAfterAd - totalAdminVat;
+  const taxableIncome = Math.max(0, profitForTaxCalculation - 150000);
+
+  let calculatedTax = 0;
+  if (taxableIncome > 0 && taxableIncome <= 150000) {
+    calculatedTax = taxableIncome * 0.05;
+  } else if (taxableIncome > 150000 && taxableIncome <= 350000) {
+    calculatedTax = 7500 + (taxableIncome - 150000) * 0.10;
+  } else if (taxableIncome > 350000 && taxableIncome <= 600000) {
+    calculatedTax = 27500 + (taxableIncome - 350000) * 0.15;
+  } else if (taxableIncome > 600000) {
+    calculatedTax = 65000 + (taxableIncome - 600000) * 0.20;
+  }
+  const totalAdminTax = Math.round(calculatedTax);
+
+  const paymentMethods = [
+    { id: 'wallet', name: 'Cyber Wallet (เครดิตร้าน)', desc: 'หักจากยอดเงินในบัญชีทันที' },
+    { id: 'qrcode', name: 'QR PromptPay', desc: 'ฟรีค่าธรรมเนียม อัตโนมัติ 24 ชม.' },
+    { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนผ่านเบอร์วอลเล็ต 10 หลัก' },
+    { id: 'truemoneycard', name: 'บัตรเติมเงินทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก' },
+    { id: 'credit', name: 'บัตรเครดิต / เดบิต', desc: 'ชำระผ่านบัตรปลอดภัย' }
+  ];
+
+  const EyeIcon = ({ show }) => show ? (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c084fc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </svg>
+  ) : (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+      <line x1="1" y1="1" x2="23" y2="23"></line>
+    </svg>
+  );useEffect(() => {
+    let timer;
+    if (showCheckoutModal && checkoutStep === 2 && selectedPayment?.id === 'qrcode' && !isQrExpired) {
+      timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) { clearInterval(timer); setIsQrExpired(true); return 0; }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [showCheckoutModal, checkoutStep, selectedPayment, isQrExpired]);
+
+  useEffect(() => {
+    let timer;
+    if (showTopupWalletModal && walletStep === 2 && walletPaymentMethod === 'qrcode' && !isWalletQrExpired) {
+      timer = setInterval(() => {
+        setWalletTimeLeft((prev) => {
+          if (prev <= 1) { clearInterval(timer); setIsWalletQrExpired(true); return 0; }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [showTopupWalletModal, walletStep, walletPaymentMethod, isWalletQrExpired]);
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('cyber_current_logged_user');
+    setIsAdminLoggedIn(false);
+    localStorage.removeItem('cyber_is_admin_logged');
+    setPasswordInput('');
+    setShowLoginPassword(false);
+    setRegPasswordInput('');
+    setConfirmPasswordInput('');
+    setEmailInput('');
+    setActiveTab('shop');
+  };
+
+  const handleAdminLogin = (e) => {
+    e.preventDefault();
+    setAdminPinError('');
+    if (inputAdminPin === adminPin) {
+      setIsAdminLoggedIn(true);
+      setInputAdminPin('');
+    } else {
+      setAdminPinError('รหัส PIN ไม่ถูกต้อง');
+    }
+  };
+
+  const handleChangePinSubmit = (e) => {
+    e.preventDefault();
+    setChangePinMessage({ text: '', type: '' });
+
+    if (oldPinInput !== adminPin) {
+      setChangePinMessage({ text: 'รหัส PIN เดิมไม่ถูกต้อง', type: 'error' });
+      return;
+    }
+    if (newPinInput.length !== 6) {
+      setChangePinMessage({ text: 'รหัส PIN ใหม่ต้องมี 6 หลัก', type: 'error' });
+      return;
+    }
+    if (newPinInput !== confirmNewPinInput) {
+      setChangePinMessage({ text: 'รหัส PIN ใหม่และยืนยันรหัส PIN ไม่ตรงกัน', type: 'error' });
+      return;
+    }
+
+    setAdminPin(newPinInput);
+    localStorage.setItem('cyber_admin_pin', newPinInput);
+    setChangePinMessage({ text: 'เปลี่ยนรหัส PIN สำเร็จเรียบร้อย!', type: 'success' });
+    setOldPinInput('');
+    setNewPinInput('');
+    setConfirmNewPinInput('');
+  };
+
+  const handleCreateGiftCode = (e) => {
+    e.preventDefault();
+    setAdminCodeMsg({ text: '', type: '' });
+
+    if (!newCodeName.trim() || !newCodeReward.trim() || newCodeMaxUses <= 0) {
+      setAdminCodeMsg({ text: 'กรุณากรอกข้อมูลโค้ดและจำนวนสิทธิ์ให้ถูกต้อง', type: 'error' });
+      return;
+    }
+
+    const cleanCode = newCodeName.trim().toUpperCase();
+    if (giftCodes.some(c => c.code === cleanCode)) {
+      setAdminCodeMsg({ text: 'โค้ดนี้มีอยู่ในระบบแล้ว กรุณาใช้ชื่อโค้ดอื่น', type: 'error' });
+      return;
+    }
+
+    const newCodeObj = {
+      code: cleanCode,
+      game: newCodeGame,
+      reward: newCodeReward,
+      maxUses: parseInt(newCodeMaxUses),
+      usedCount: 0,
       timestamp: Date.now()
     };
 
-    const insertedKey = createRealtimeOrder(newWalletOrder);
-    setFloatingTimer(10);
-    setActiveOrderFirebaseKey(insertedKey);
-
-    // ส่งแจ้งเตือนเข้า LINE OA / Line Notify อัตโนมัติ
-    sendOrderLineNotification(newWalletOrder);
-
-    setShowTopupWalletModal(false);
-    setWalletStep(1);
-    setTopupAmount('');
-    setTruemoneyPhone('');
-    setTrueMoneyOtpStep(false);
-    setTrueMoneyOtpCode('');
-    setTruemoneyCard14('');
-    setCreditCardNum('');
-    setCreditCardExp('');
-    setCreditCardCvv('');
+    const giftCodesRef = ref(db, 'giftCodes');
+    push(giftCodesRef, newCodeObj)
+      .then(() => {
+        setAdminCodeMsg({ text: `สร้างโค้ด ${cleanCode} สำเร็จเรียบร้อย!`, type: 'success' });
+        setNewCodeName('');
+        setNewCodeMaxUses(10);
+      })
+      .catch(() => {
+        setAdminCodeMsg({ text: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', type: 'error' });
+      });
   };
 
-  // จัดการการยืนยันชำระเงินซื้อแพ็กเกจเกม พร้อมส่ง LINE
-  const handleFinalPaymentSubmit = () => {
-    const totalPrice = selectedPackage.price * packageQuantity;
-    const totalProfit = (selectedPackage.profit || Math.round(selectedPackage.price * 0.15)) * packageQuantity;
-
-    if (selectedPayment.id === 'wallet' && user && user.firebaseKey) {
-      const newBalance = user.balance - totalPrice;
-      const userRef = ref(db, `users/${user.firebaseKey}/balance`);
-      set(userRef, newBalance);
+  const handleDeleteGiftCode = (codeItem) => {
+    if (codeItem.firebaseKey) {
+      const targetRef = ref(db, `giftCodes/${codeItem.firebaseKey}`);
+      set(targetRef, null);
     }
-
-    setIsProcessing(true);
-
-    setTimeout(() => {
-      const newOrderId = 'ORD-' + Math.floor(10000 + Math.random() * 90000);
-      const now = new Date();
-      const day = String(now.getDate()).padStart(2, '0');
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const year = now.getFullYear();
-      const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
-      const dateKey = `${year}-${month}-${day}`;
-
-      const newOrder = {
-        id: newOrderId,
-        game: selectedGame.name,
-        package: `${selectedPackage.name} (x${packageQuantity} แพ็ก)`,
-        price: totalPrice,
-        profit: totalProfit,
-        player: user ? (user.email || user.username) : 'user11@example.com',
-        gameChar: playerId.trim(),
-        paymentMethod: selectedPayment.name,
-        status: 'รอตรวจสอบ',
-        type: 'game',
-        time: thaiTime,
-        dateKey: dateKey,
-        timestamp: Date.now(),
-      };
-
-      const insertedKey = createRealtimeOrder(newOrder);
-
-      // ส่งแจ้งเตือนออเดอร์เกมเข้า LINE OA / Line Notify อัตโนมัติ
-      sendOrderLineNotification(newOrder);
-
-      setIsProcessing(false);
-      setFloatingTimer(10);
-      setActiveOrderFirebaseKey(insertedKey);
-
-      setShowCheckoutModal(false);
-      setCheckoutStep(1);
-      setCheckoutPassword('');
-      setPackageQuantity(1);
-      setTruemoneyPhone('');
-      setTruemoneyCard14('');
-      setCreditCardNum('');
-      setCreditCardExp('');
-      setCreditCardCvv('');
-    }, 1000);
-  };// ฟังก์ชันสุ่มรหัสออร์เดอร์
-  const generateOrderId = (prefix = 'ORD-') => {
-    return prefix + Math.floor(10000 + Math.random() * 90000);
   };
 
-  // จัดการการกรอก Gift Code / โค้ดกิจกรรมจากแอดมิน
+  const handleResetAllRedeemRights = () => {
+    if (window.confirm('คุณต้องการรีเซ็ตสิทธิ์ ID เกมทั้งหมดใช่หรือไม่? (ทุก ID เกมจะสามารถกลับมากรอกโค้ดได้ใหม่อีกครั้ง)')) {
+      setGlobalRedeemedPlayers([]);
+      alert('🔄 รีเซ็ตสิทธิ์สำเร็จ! ทุก ID เกมสามารถกลับมากรอกโค้ดได้ใหม่อีกครั้งแล้ว');
+    }
+  };
+
   const handleRedeemEventCode = (e) => {
     e.preventDefault();
     setEventMsg({ text: '', type: '' });
@@ -204,7 +830,7 @@
       set(codeUsedRef, foundCode.usedCount + 1);
     }
 
-    const newOrderId = generateOrderId('ORD-EVT-');
+    const newOrderId = 'ORD-EVT-' + Math.floor(10000 + Math.random() * 90000);
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -231,9 +857,6 @@
     const insertedKey = createRealtimeOrder(newEventOrder);
     setFloatingTimer(10);
     setActiveOrderFirebaseKey(insertedKey);
-
-    // ส่ง LINE Notify เมื่อกรอกโค้ดกิจกรรมสำเร็จ
-    sendOrderLineNotification(newEventOrder);
 
     setEventMsg({ text: `🎉 ใช้โค้ด ${foundCode.code} สำเร็จ! ได้รับ: ${foundCode.reward} (เลขออร์เดอร์: ${newOrderId})`, type: 'success' });
     setEventGiftCode('');
@@ -290,6 +913,55 @@
     } else {
       handleWalletConfirmPayment();
     }
+  };
+
+  const handleWalletConfirmPayment = () => {
+    const amt = parseFloat(topupAmount) || 0;
+    const newOrderId = 'ORD-W-' + Math.floor(10000 + Math.random() * 90000);
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+    const dateKey = `${year}-${month}-${day}`;
+
+    const paymentLabelMap = {
+      qrcode: 'QR PromptPay (เติมเครดิต)',
+      true: 'TrueMoney Wallet (เติมเครดิต)',
+      truemoneycard: 'บัตรทรูมันนี่ (เติมเครดิต)',
+      credit: 'บัตรเครดิต/เดบิต (เติมเครดิต)'
+    };
+
+    const newWalletOrder = {
+      id: newOrderId,
+      game: `เติมเครดิตร้าน`,
+      package: `+฿${amt.toLocaleString()}`,
+      price: amt,
+      profit: 0,
+      player: user ? (user.email || user.username) : 'user11@example.com',
+      gameChar: 'เติมเครดิตร้าน',
+      paymentMethod: paymentLabelMap[walletPaymentMethod] || walletPaymentMethod.toUpperCase(),
+      status: 'รอตรวจสอบ',
+      type: 'wallet',
+      time: thaiTime,
+      dateKey: dateKey,
+      timestamp: Date.now()
+    };
+
+    const insertedKey = createRealtimeOrder(newWalletOrder);
+    setFloatingTimer(10);
+    setActiveOrderFirebaseKey(insertedKey);
+
+    setShowTopupWalletModal(false);
+    setWalletStep(1);
+    setTopupAmount('');
+    setTruemoneyPhone('');
+    setTrueMoneyOtpStep(false);
+    setTrueMoneyOtpCode('');
+    setTruemoneyCard14('');
+    setCreditCardNum('');
+    setCreditCardExp('');
+    setCreditCardCvv('');
   };
 
   const resetWalletModal = () => {
@@ -356,16 +1028,67 @@
     }
   };
 
+  const handleFinalPaymentSubmit = () => {
+    const totalPrice = selectedPackage.price * packageQuantity;
+    const totalProfit = (selectedPackage.profit || Math.round(selectedPackage.price * 0.15)) * packageQuantity;
+
+    if (selectedPayment.id === 'wallet' && user && user.firebaseKey) {
+      const newBalance = user.balance - totalPrice;
+      const userRef = ref(db, `users/${user.firebaseKey}/balance`);
+      set(userRef, newBalance);
+    }
+
+    setIsProcessing(true);
+
+    setTimeout(() => {
+      const newOrderId = 'ORD-' + Math.floor(10000 + Math.random() * 90000);
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+      const dateKey = `${year}-${month}-${day}`;
+
+      const newOrder = {
+        id: newOrderId,
+        game: selectedGame.name,
+        package: `${selectedPackage.name} (x${packageQuantity} แพ็ก)`,
+        price: totalPrice,
+        profit: totalProfit,
+        player: user ? (user.email || user.username) : 'user11@example.com',
+        gameChar: playerId.trim(),
+        paymentMethod: selectedPayment.name,
+        status: 'รอตรวจสอบ',
+        type: 'game',
+        time: thaiTime,
+        dateKey: dateKey,
+        timestamp: Date.now(),
+      };
+
+      const insertedKey = createRealtimeOrder(newOrder);
+
+      setIsProcessing(false);
+      setFloatingTimer(10);
+      setActiveOrderFirebaseKey(insertedKey);
+
+      setShowCheckoutModal(false);
+      setCheckoutStep(1);
+      setCheckoutPassword('');
+      setPackageQuantity(1);
+      setTruemoneyPhone('');
+      setTruemoneyCard14('');
+      setCreditCardNum('');
+      setCreditCardExp('');
+      setCreditCardCvv('');
+    }, 1000);
+  };
+
   const handleAdminApproveOrder = (order) => {
     if (order.firebaseKey) {
       if (order.type === 'wallet' && !order.status.includes('สำเร็จ')) {
         creditUserWallet(order.player, order.price);
       }
       updateRealtimeOrderStatus(order.firebaseKey, '✅ สำเร็จ (แอดมินอนุมัติแล้ว)');
-      
-      // ส่งแจ้งเตือน LINE อัปเดตสถานะ
-      sendLineNotification(`✅ **ออร์เดอร์อนุมัติแล้ว!**\nเลขออร์เดอร์: ${order.id}\nผู้ใช้: ${order.player}\nยอด: ฿${order.price.toLocaleString()}`);
-
       if (order.firebaseKey === activeOrderFirebaseKey) {
         setFloatingTimer(0);
         setActiveOrderFirebaseKey(null);
@@ -376,10 +1099,6 @@
   const handleAdminRejectOrder = (order) => {
     if (order.firebaseKey) {
       updateRealtimeOrderStatus(order.firebaseKey, '❌ ยกเลิก (ไม่พบยอดโอนเงิน)');
-
-      // ส่งแจ้งเตือน LINE อัปเดตสถานะ
-      sendLineNotification(`❌ **ออร์เดอร์ถูกยกเลิก!**\nเลขออร์เดอร์: ${order.id}\nผู้ใช้: ${order.player}`);
-
       if (order.firebaseKey === activeOrderFirebaseKey) {
         setFloatingTimer(0);
         setActiveOrderFirebaseKey(null);
@@ -498,7 +1217,159 @@
   const handleHistoryDateChange = (e) => {
     setSelectedHistoryDate(e.target.value);
     setHistoryPage(1);
-  };return (
+  };
+
+  // หากยังไม่ได้เข้าสู่ระบบ แสดงหน้าจอล็อกอิน / สมัครสมาชิก / ลืมรหัสผ่าน
+  if (!user) {
+    return (
+      <div style={{
+        backgroundColor: '#070a12',
+        backgroundImage: `linear-gradient(to bottom, rgba(7, 10, 18, 0.85), rgba(7, 10, 18, 0.95)), url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1920&q=80')`,
+        backgroundSize: 'cover', backgroundPosition: 'center',
+        color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+      }}>
+        <div style={{
+          backgroundColor: 'rgba(17, 24, 39, 0.95)', backdropFilter: 'blur(16px)',
+          border: '1.5px solid rgba(168, 85, 247, 0.5)', borderRadius: '24px',
+          padding: '40px 30px', maxWidth: '420px', width: '100%',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 35px rgba(147,51,234,0.4)', textAlign: 'center'
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+            <div style={{ 
+              position: 'relative', width: '65px', height: '65px', borderRadius: '18px', 
+              background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #1d4ed8 100%)', 
+              border: '2px solid #c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+              boxShadow: '0 0 30px rgba(168,85,247,0.9), 0 0 15px rgba(56,189,248,0.7)', 
+              marginBottom: '12px'
+            }}>
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#38bdf8" stroke="#ffffff" strokeWidth="1"></polygon>
+              </svg>
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: '900', color: '#ffffff', letterSpacing: '3px', textShadow: '0 0 15px rgba(168,85,247,0.8)' }}>CYBER TOPUP</div>
+            <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#38bdf8', letterSpacing: '2px', marginTop: '2px' }}>FAST & SECURE GAMING</div>
+          </div>
+
+          <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 20px 0' }}>
+            {authMode === 'login' && 'เข้าสู่ระบบร้านเติมเกมอัตโนมัติ 24 ชม.'}
+            {authMode === 'register' && 'สมัครสมาชิกใหม่ด้วยอีเมลจริง เพื่อใช้งานได้ทุกอุปกรณ์'}
+          </p>
+
+          <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {authError && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authError}</div>}
+            {authSuccessMsg && <div style={{ backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '1px solid #34d399', color: '#34d399', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authSuccessMsg}</div>}
+
+            {authMode === 'register' && (
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. อีเมลจริง (Email)</label>
+                <input type="email" placeholder="example@gmail.com" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+            )}
+
+            <div style={{ textAlign: 'left' }}>
+              <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
+                {authMode === 'register' ? '2. ชื่อผู้ใช้งาน (Username / Display Name)' : 'อีเมล หรือ ชื่อผู้ใช้งาน (Email / Username)'}
+              </label>
+              <input type="text" placeholder={authMode === 'register' ? 'ตั้งชื่อผู้ใช้...' : 'กรอกอีเมล หรือ ชื่อผู้ใช้...'} value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+
+            <div style={{ textAlign: 'left' }}>
+              <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
+                {authMode === 'register' ? '3. รหัสผ่าน (Passwordอย่างน้อย 6 ตัว)' : 'รหัสผ่าน (Password)'}
+              </label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input 
+                  type={authMode === 'login' ? (showLoginPassword ? 'text' : 'password') : (showRegPassword ? 'text' : 'password')} 
+                  placeholder="กรอกรหัสผ่าน..." 
+                  value={authMode === 'login' ? passwordInput : regPasswordInput} 
+                  onChange={(e) => authMode === 'login' ? setPasswordInput(e.target.value) : setRegPasswordInput(e.target.value)} 
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => authMode === 'login' ? setShowLoginPassword(!showLoginPassword) : setShowRegPassword(!showRegPassword)} 
+                  style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                >
+                  <EyeIcon show={authMode === 'login' ? showLoginPassword : showRegPassword} />
+                </button>
+              </div>
+            </div>
+
+            {authMode === 'register' && (
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>4. ยืนยันรหัสผ่าน (Confirm Password)</label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input 
+                    type={showConfirmPassword ? 'text' : 'password'} 
+                    placeholder="กรอกรหัสผ่านอีกครั้ง..." 
+                    value={confirmPasswordInput} 
+                    onChange={(e) => setConfirmPasswordInput(e.target.value)} 
+                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                    style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                  >
+                    <EyeIcon show={showConfirmPassword} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {authMode === 'login' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#9ca3af' }}>
+                  <input type="checkbox" id="remember" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ cursor: 'pointer' }} />
+                  <label htmlFor="remember" style={{ cursor: 'pointer' }}>จดจำไอดีไว้</label>
+                </div>
+                <span onClick={() => setForgotModalOpen(true)} style={{ color: '#f472b6', cursor: 'pointer', fontWeight: 'bold' }}>ลืมรหัสผ่าน?</span>
+              </div>
+            )}
+
+            <button 
+              type="submit" 
+              style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', boxShadow: '0 0 15px rgba(147,51,234,0.5)', transition: 'all 0.3s ease' }}
+            >
+              {authMode === 'login' && 'เข้าสู่ระบบ (Login)'}
+              {authMode === 'register' && 'สมัครสมาชิกด้วยอีเมลจริง'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: '15px', fontSize: '13px', color: '#9ca3af' }}>
+            {authMode === 'login' && <>ยังไม่มีบัญชี? <span onClick={() => { setAuthMode('register'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>สมัครสมาชิก</span></>}
+            {authMode === 'register' && <>มีบัญชีแล้ว? <span onClick={() => { setAuthMode('login'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>เข้าสู่ระบบ</span></>}
+          </div>
+        </div>
+
+        {/* Modal สำหรับลืมรหัสผ่าน */}
+        {forgotModalOpen && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+            <div style={{ backgroundColor: '#111827', border: '1.5px solid #ec4899', borderRadius: '24px', maxWidth: '400px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 35px rgba(236,72,153,0.4)' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#f472b6' }}>📧 กู้คืนรหัสผ่านด้วยอีเมล</h3>
+              <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรอกอีเมลจริงที่คุณใช้สมัครสมาชิก เพื่อรับลิงก์ตั้งรหัสผ่านใหม่</p>
+
+              {forgotStatusMsg.text && (
+                <div style={{ backgroundColor: forgotStatusMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${forgotStatusMsg.type === 'success' ? '#34d399' : '#ef4444'}`, color: forgotStatusMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px', textAlign: 'left' }}>
+                  {forgotStatusMsg.text}
+                </div>
+              )}
+
+              <form onSubmit={handleForgotPasswordSubmit}>
+                <input type="email" placeholder="กรอกอีเมลของคุณ..." value={forgotEmailInput} onChange={(e) => setForgotEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', marginBottom: '20px', boxSizing: 'border-box' }} />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button type="button" onClick={() => setForgotModalOpen(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
+                  <button type="submit" style={{ flex: 1, backgroundColor: '#ec4899', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ส่งอีเมลรีเซ็ต</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }return (
     <div style={{
       backgroundColor: '#070a12',
       backgroundImage: `linear-gradient(to bottom, rgba(7, 10, 18, 0.85), rgba(7, 10, 18, 0.95)), url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1920&q=80')`,
@@ -592,7 +1463,7 @@
         <div style={{ width: '22px', height: '22px', backgroundColor: '#ffffff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ fontSize: '13px', color: '#06c755', fontWeight: '900', lineHeight: '1' }}>L</span>
         </div>
-        ติดต่อแอดมิน (LINE OA)
+        ติดต่อแอดมิน (LINE)
       </a>
 
       <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px', position: 'relative', zIndex: 1 }}>
@@ -1037,30 +1908,6 @@
               </div>
             ) : (
               <>
-                {/* ส่วนการตั้งค่า LINE Notify & LINE Token */}
-                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #06c755', boxShadow: '0 0 25px rgba(6,199,85,0.2)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#06c755', margin: 0 }}>💬 การตั้งค่าแจ้งเตือนเข้า LINE OA / LINE Notify</h3>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', color: '#ffffff', fontWeight: 'bold' }}>
-                      <input type="checkbox" checked={isLineNotifyEnabled} onChange={(e) => setIsLineNotifyEnabled(e.target.checked)} />
-                      เปิดระบบแจ้งเตือน LINE
-                    </label>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '6px' }}>LINE Notify Token / LINE Webhook Secret Token</label>
-                    <input 
-                      type="password" 
-                      placeholder="วาง LINE Token สำหรับยิงแจ้งเตือนออร์เดอร์ใหม่เข้าแอดมิน..." 
-                      value={lineToken} 
-                      onChange={(e) => setLineToken(e.target.value)} 
-                      style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} 
-                    />
-                    <div style={{ fontSize: '11px', color: '#06c755', marginTop: '6px' }}>
-                      {isLineNotifyEnabled ? '✅ สถานะ: พร้อมส่งแจ้งเตือนออร์เดอร์การเติมเงินและสั่งซื้อสินค้าไปยัง LINE ร้านค้า' : '⏸️ สถานะ: ระบบ LINE ปิดใช้งานอยู่'}
-                    </div>
-                  </div>
-                </div>
-
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px' }}>
                   <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <div>
@@ -1400,8 +2247,8 @@
                   <div style={{ textAlign: 'left', marginBottom: '15px', backgroundColor: '#030712', padding: '10px', borderRadius: '10px', border: '1px solid #374151' }}>
                     <input type="text" placeholder="หมายเลขบัตร 16 หลัก" value={creditCardNum} onChange={handleCreditCardNumChange} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', marginBottom: '8px', outline: 'none', boxSizing: 'border-box', letterSpacing: '1.5px' }} />
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <input type="text" placeholder="MM/YY" value={creditCardExp} onChange={handleCreditCardExpChange} style={{ flex: 1, backgroundColor: '#111827', border: '1.5px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box', letterSpacing: '1px' }} />
-                      <input type="password" placeholder="CVV" value={creditCardCvv} onChange={(e) => setCreditCardCvv(e.target.value.replace(/[^0-9]/g, ''))} maxLength={3} style={{ flex: 1, backgroundColor: '#111827', border: '1.5px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box', letterSpacing: '2px' }} />
+                      <input type="text" placeholder="MM/YY" value={creditCardExp} onChange={handleCreditCardExpChange} style={{ flex: 1, backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box', letterSpacing: '1px' }} />
+                      <input type="password" placeholder="CVV" value={creditCardCvv} onChange={(e) => setCreditCardCvv(e.target.value.replace(/[^0-9]/g, ''))} maxLength={3} style={{ flex: 1, backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box', letterSpacing: '2px' }} />
                     </div>
                   </div>
                 )}
