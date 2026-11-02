@@ -205,7 +205,9 @@ export default function GameTopupApp() {
           setAuthError('เกิดข้อผิดพลาดในการบันทึกข้อมูลเข้าฐานข้อมูล');
         });
     }
-  };// State หลักของระบบ
+  };
+
+  // State หลักของระบบ
   const [activeTab, setActiveTab] = useState('shop');
   const [gameCategory, setGameCategory] = useState('all');
   const [selectedGame, setSelectedGame] = useState(null);
@@ -330,8 +332,8 @@ export default function GameTopupApp() {
         { id: 'r5', name: '950 Coupons', price: 700, profit: 105, bonus: '+80 Coupons 🔥' },
         { id: 'r6', name: '2,700 Coupons (Big Pack)', price: 1800, profit: 270, bonus: '+250 Coupons 👑' }
       ]
-    },
-    {
+    }
+  ]);{
       id: 'freefire',
       name: 'Free Fire',
       publisher: 'Garena',
@@ -521,7 +523,9 @@ export default function GameTopupApp() {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [orders, activeOrderFirebaseKey]);useEffect(() => {
+  }, [orders, activeOrderFirebaseKey]);
+
+  useEffect(() => {
     if (activeOrderFirebaseKey) {
       const currentOrd = orders.find(o => o.firebaseKey === activeOrderFirebaseKey);
       if (!currentOrd || !currentOrd.status.includes('รอตรวจสอบ')) {
@@ -1121,9 +1125,7 @@ export default function GameTopupApp() {
     setCreditCardNum('');
     setCreditCardExp('');
     setCreditCardCvv('');
-  };
-
-  const filteredGames = gamesData.filter((game) => {
+  };const filteredGames = gamesData.filter((game) => {
     const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = gameCategory === 'all' || game.category === gameCategory;
     return matchesSearch && matchesCategory;
@@ -1252,7 +1254,7 @@ export default function GameTopupApp() {
 
           <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 20px 0' }}>
             {authMode === 'login' && 'เข้าสู่ระบบด้วยชื่อผู้ใช้งานอัตโนมัติ 24 ชม.'}
-            {authMode === 'register' && 'สมัครสมาชิกใหม่ (ชื่อผู้ใช้ใช้อิสระ อีเมลใช้กู้คืนรหัสเท่านั้น)'}
+            {authMode === 'register' && 'สมัครสมาชิกใหม่ (อีเมลอยู่บนสุดสำหรับกู้คืนรหัส)'}
           </p>
 
           <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -1266,14 +1268,15 @@ export default function GameTopupApp() {
               </div>
             ) : (
               <>
+                {/* สลับอีเมลมาไว้บนสุดตามที่ขอ */}
                 <div style={{ textAlign: 'left' }}>
-                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. ชื่อผู้ใช้งาน (Username / Display Name)</label>
-                  <input type="text" placeholder="ตั้งชื่อผู้ใช้งาน..." value={regUsernameInput} onChange={(e) => setRegUsernameInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. อีเมลกู้คืนรหัสผ่าน (Email)</label>
+                  <input type="email" placeholder="example@gmail.com (ใช้ยืนยันตอนลืมรหัส)" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
                 </div>
 
                 <div style={{ textAlign: 'left' }}>
-                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. อีเมลกู้คืนรหัสผ่าน (Email)</label>
-                  <input type="email" placeholder="example@gmail.com (ใช้ยืนยันตอนลืมรหัส)" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. ชื่อผู้ใช้งาน (Username / Display Name)</label>
+                  <input type="text" placeholder="ตั้งชื่อผู้ใช้งาน..." value={regUsernameInput} onChange={(e) => setRegUsernameInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
                 </div>
               </>
             )}
@@ -1332,9 +1335,26 @@ export default function GameTopupApp() {
               </div>
             )}
 
+            {/* เพิ่มเอฟเฟค Glow & Transition ให้ปุ่ม */}
             <button 
               type="submit" 
-              style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', boxShadow: '0 0 15px rgba(147,51,234,0.5)', transition: 'all 0.3s ease' }}
+              className="glow-btn"
+              style={{ 
+                backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', 
+                fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', 
+                boxShadow: '0 0 15px rgba(147,51,234,0.5)', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: 'scale(1)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#a855f7';
+                e.currentTarget.style.boxShadow = '0 0 25px rgba(168,85,247,0.9), 0 0 10px rgba(56,189,248,0.5)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#9333ea';
+                e.currentTarget.style.boxShadow = '0 0 15px rgba(147,51,234,0.5)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
             >
               {authMode === 'login' && 'เข้าสู่ระบบ (Login)'}
               {authMode === 'register' && 'สมัครสมาชิก'}
@@ -1363,8 +1383,8 @@ export default function GameTopupApp() {
               <form onSubmit={handleForgotPasswordSubmit}>
                 <input type="email" placeholder="กรอกอีเมลของคุณ..." value={forgotEmailInput} onChange={(e) => setForgotEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', marginBottom: '20px', boxSizing: 'border-box' }} />
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={() => setForgotModalOpen(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
-                  <button type="submit" style={{ flex: 1, backgroundColor: '#ec4899', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ส่งอีเมลรีเซ็ต</button>
+                  <button type="button" onClick={() => setForgotModalOpen(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4b5563'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#374151'}>ยกเลิก</button>
+                  <button type="submit" style={{ flex: 1, backgroundColor: '#ec4899', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 0 10px rgba(236,72,153,0.5)' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f472b6'; e.currentTarget.style.boxShadow = '0 0 20px rgba(236,72,153,0.9)'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#ec4899'; e.currentTarget.style.boxShadow = '0 0 10px rgba(236,72,153,0.5)'; }}>ส่งอีเมลรีเซ็ต</button>
                 </div>
               </form>
             </div>
@@ -1425,6 +1445,8 @@ export default function GameTopupApp() {
             <button 
               onClick={() => { setShowTopupWalletModal(true); setWalletStep(1); }} 
               style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '5px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 10px rgba(147,51,234,0.5)', transition: 'all 0.25s ease' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#a855f7'; e.currentTarget.style.boxShadow = '0 0 20px rgba(168,85,247,0.8)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#9333ea'; e.currentTarget.style.boxShadow = '0 0 10px rgba(147,51,234,0.5)'; }}
             >
               + เติมเครดิต
             </button>
@@ -1433,14 +1455,18 @@ export default function GameTopupApp() {
           <nav style={{ display: 'flex', gap: '8px' }}>
             <button 
               onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} 
-              style={{ backgroundColor: activeTab === 'shop' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+              style={{ backgroundColor: activeTab === 'shop' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a855f7'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = activeTab === 'shop' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)'}
             >
               ✨ หน้าแรก
             </button>
             
             <button 
               onClick={() => setActiveTab('track')} 
-              style={{ backgroundColor: activeTab === 'track' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+              style={{ backgroundColor: activeTab === 'track' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a855f7'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = activeTab === 'track' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)'}
             >
               📋 เช็คสถานะ
             </button>
@@ -1448,7 +1474,9 @@ export default function GameTopupApp() {
             {isUserAdmin && (
               <button 
                 onClick={() => setActiveTab('admin')} 
-                style={{ backgroundColor: activeTab === 'admin' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                style={{ backgroundColor: activeTab === 'admin' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.1)', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a855f7'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = activeTab === 'admin' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)'}
               >
                 ⚙️ หลังบ้าน
               </button>
@@ -1456,7 +1484,9 @@ export default function GameTopupApp() {
 
             <button 
               onClick={handleLogout} 
-              style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px 12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+              style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px 12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ef4444'; e.currentTarget.style.color = '#ffffff'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'; e.currentTarget.style.color = '#fca5a5'; }}
             >
               🚪 ออกจากระบบ
             </button>
@@ -1464,7 +1494,7 @@ export default function GameTopupApp() {
         </div>
       </header>
 
-      <a href="https://lin.ee/Nn1UeBC" target="_blank" rel="noopener noreferrer" style={{ position: 'fixed', bottom: '25px', right: '25px', zIndex: 99, backgroundColor: '#06c755', color: '#ffffff', padding: '12px 20px', borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 25px rgba(6, 199, 85, 0.6)', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', border: '1.5px solid #ffffff' }}>
+      <a href="https://lin.ee/Nn1UeBC" target="_blank" rel="noopener noreferrer" style={{ position: 'fixed', bottom: '25px', right: '25px', zIndex: 99, backgroundColor: '#06c755', color: '#ffffff', padding: '12px 20px', borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 4px 25px rgba(6, 199, 85, 0.6)', textDecoration: 'none', fontWeight: 'bold', fontSize: '14px', border: '1.5px solid #ffffff', transition: 'transform 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'} onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}>
         <div style={{ width: '22px', height: '22px', backgroundColor: '#ffffff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span style={{ fontSize: '13px', color: '#06c755', fontWeight: '900', lineHeight: '1' }}>L</span>
         </div>
@@ -1511,8 +1541,10 @@ export default function GameTopupApp() {
                       style={{ 
                         backgroundColor: gameCategory === cat.id ? '#9333ea' : 'transparent', 
                         color: '#ffffff', border: 'none', padding: '8px 18px', borderRadius: '10px', 
-                        fontWeight: 'bold', cursor: 'pointer', fontSize: '13px'
+                        fontWeight: 'bold', cursor: 'pointer', fontSize: '13px', transition: 'background 0.2s'
                       }}
+                      onMouseEnter={(e) => { if (gameCategory !== cat.id) e.currentTarget.style.backgroundColor = 'rgba(147,51,234,0.2)'; }}
+                      onMouseLeave={(e) => { if (gameCategory !== cat.id) e.currentTarget.style.backgroundColor = 'transparent'; }}
                     >
                       {cat.label}
                     </button>
@@ -1541,7 +1573,17 @@ export default function GameTopupApp() {
                     transition: 'all 0.35s ease', 
                     boxShadow: '0 6px 25px rgba(0,0,0,0.6)',
                     position: 'relative'
-                  }} 
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-5px)';
+                    e.currentTarget.style.borderColor = '#c084fc';
+                    e.currentTarget.style.boxShadow = '0 12px 35px rgba(168,85,247,0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+                    e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,0,0,0.6)';
+                  }}
                 >
                   <div style={{ height: '160px', overflow: 'hidden', position: 'relative' }}>
                     <img src={game.image} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -1550,7 +1592,7 @@ export default function GameTopupApp() {
                   <div style={{ padding: '16px' }}>
                     <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0' }}>{game.name}</h3>
                     <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 12px 0' }}>{game.publisher}</p>
-                    <button style={{ width: '100%', backgroundColor: '#9333ea', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>คลิกเพื่อเติมเงิน →</button>
+                    <button style={{ width: '100%', backgroundColor: '#9333ea', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a855f7'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9333ea'}>คลิกเพื่อเติมเงิน →</button>
                   </div>
                 </div>
               ))}
@@ -1599,7 +1641,7 @@ export default function GameTopupApp() {
                   <input type="text" placeholder="กรอกโค้ดกิจกรรม..." value={eventGiftCode} onChange={(e) => setEventGiftCode(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
                 </div>
                 <div>
-                  <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>✨ ยืนยันรับสิทธิ์โค้ด</button>
+                  <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 0 10px rgba(2,132,199,0.5)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0369a1'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0284c7'}>✨ ยืนยันรับสิทธิ์โค้ด</button>
                 </div>
               </form>
             </div>
@@ -1608,7 +1650,7 @@ export default function GameTopupApp() {
 
         {activeTab === 'shop' && selectedGame && (
           <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '24px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.5)' }}>
-            <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: 'transparent', border: '1px solid #374151', color: '#9ca3af', padding: '8px 16px', borderRadius: '10px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold' }}>← กลับไปหน้าเลือกเกม</button>
+            <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: 'transparent', border: '1px solid #374151', color: '#9ca3af', padding: '8px 16px', borderRadius: '10px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#a855f7'; e.currentTarget.style.color = '#ffffff'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#374151'; e.currentTarget.style.color = '#9ca3af'; }}>← กลับไปหน้าเลือกเกม</button>
 
             <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap' }}>
               <img src={selectedGame.image} alt={selectedGame.name} style={{ width: '100px', height: '100px', borderRadius: '16px', objectFit: 'cover', border: '2px solid #a855f7' }} />
@@ -1635,6 +1677,8 @@ export default function GameTopupApp() {
                       border: selectedPackage?.id === pkg.id ? '2px solid #a855f7' : '1px solid #374151', 
                       borderRadius: '16px', padding: '16px', cursor: 'pointer', transition: 'all 0.25s ease'
                     }}
+                    onMouseEnter={(e) => { if (selectedPackage?.id !== pkg.id) e.currentTarget.style.borderColor = '#a855f7'; }}
+                    onMouseLeave={(e) => { if (selectedPackage?.id !== pkg.id) e.currentTarget.style.borderColor = '#374151'; }}
                   >
                     <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff', marginBottom: '4px' }}>{pkg.name}</div>
                     <div style={{ fontSize: '12px', color: '#34d399', marginBottom: '10px' }}>โบนัส: {pkg.bonus}</div>
@@ -1677,6 +1721,8 @@ export default function GameTopupApp() {
                       border: selectedPayment?.id === pm.id ? '2px solid #38bdf8' : '1px solid #374151', 
                       borderRadius: '14px', padding: '14px', cursor: 'pointer', transition: 'all 0.25s ease'
                     }}
+                    onMouseEnter={(e) => { if (selectedPayment?.id !== pm.id) e.currentTarget.style.borderColor = '#38bdf8'; }}
+                    onMouseLeave={(e) => { if (selectedPayment?.id !== pm.id) e.currentTarget.style.borderColor = '#374151'; }}
                   >
                     <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ffffff' }}>{pm.name}</div>
                     <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>{pm.desc}</div>
@@ -1737,8 +1783,11 @@ export default function GameTopupApp() {
                 backgroundColor: (!playerId.trim() || !selectedPackage || !selectedPayment) ? '#374151' : '#9333ea', 
                 color: '#ffffff', border: 'none', padding: '16px', borderRadius: '14px', 
                 fontWeight: 'bold', fontSize: '16px', cursor: (!playerId.trim() || !selectedPackage || !selectedPayment) ? 'not-allowed' : 'pointer',
-                boxShadow: (!playerId.trim() || !selectedPackage || !selectedPayment) ? 'none' : '0 0 25px rgba(147,51,234,0.6)'
+                boxShadow: (!playerId.trim() || !selectedPackage || !selectedPayment) ? 'none' : '0 0 25px rgba(147,51,234,0.6)',
+                transition: 'all 0.3s ease'
               }}
+              onMouseEnter={(e) => { if (playerId.trim() && selectedPackage && selectedPayment) { e.currentTarget.style.backgroundColor = '#a855f7'; e.currentTarget.style.boxShadow = '0 0 35px rgba(168,85,247,0.9)'; } }}
+              onMouseLeave={(e) => { if (playerId.trim() && selectedPackage && selectedPayment) { e.currentTarget.style.backgroundColor = '#9333ea'; e.currentTarget.style.boxShadow = '0 0 25px rgba(147,51,234,0.6)'; } }}
             >
               {!playerId.trim() ? 'กรุณากรอกชื่อในเกม หรือ UID (ห้ามเว้นว่าง)' : !selectedPackage ? 'กรุณาเลือกแพ็กเกจเติมเกม' : !selectedPayment ? 'กรุณาเลือกช่องทางชำระเงิน' : `ยืนยันชำระเงิน ฿${(selectedPackage.price * packageQuantity).toLocaleString()} (${packageQuantity} แพ็ก)`}
             </button>
@@ -1908,7 +1957,7 @@ export default function GameTopupApp() {
                 <form onSubmit={handleAdminLogin}>
                   {adminPinError && <div style={{ color: '#fca5a5', marginBottom: '12px', fontSize: '12px', backgroundColor: 'rgba(239, 68, 68, 0.2)', padding: '8px', borderRadius: '8px' }}>{adminPinError}</div>}
                   <input type="password" maxLength={6} placeholder="PIN 6 หลัก" value={inputAdminPin} onChange={(e) => setInputAdminPin(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #374151', borderRadius: '12px', padding: '14px', color: '#ffffff', textAlign: 'center', fontSize: '22px', letterSpacing: '6px', marginBottom: '20px', outline: 'none', boxSizing: 'border-box' }} />
-                  <button type="submit" style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>เข้าสู่ระบบแอดมิน</button>
+                  <button type="submit" style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 0 15px rgba(147,51,234,0.5)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a855f7'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9333ea'}>เข้าสู่ระบบแอดมิน</button>
                 </form>
               </div>
             ) : (
@@ -1918,7 +1967,7 @@ export default function GameTopupApp() {
                     <div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                         <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🔐 เปลี่ยนรหัส PIN 6 หลัก</h3>
-                        <button onClick={() => { setIsAdminLoggedIn(false); localStorage.removeItem('cyber_is_admin_logged'); }} style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px' }}>ล็อกเอาท์ PIN</button>
+                        <button onClick={() => { setIsAdminLoggedIn(false); localStorage.removeItem('cyber_is_admin_logged'); }} style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#ef4444'; e.currentTarget.style.color = '#ffffff'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.2)'; e.currentTarget.style.color = '#fca5a5'; }}>ล็อกเอาท์ PIN</button>
                       </div>
                       {changePinMessage.text && (
                         <div style={{ backgroundColor: changePinMessage.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: changePinMessage.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px' }}>{changePinMessage.text}</div>
@@ -1939,7 +1988,7 @@ export default function GameTopupApp() {
                           <input type="password" maxLength={6} placeholder="------" value={confirmNewPinInput} onChange={(e) => setConfirmNewPinInput(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontSize: '18px', fontWeight: 'bold', letterSpacing: '6px', outline: 'none', boxSizing: 'border-box' }} />
                         </div>
                       </div>
-                      <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', boxSizing: 'border-box' }}>✨ บันทึกเปลี่ยนรหัส PIN ใหม่</button>
+                      <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', boxSizing: 'border-box', transition: 'background 0.2s', boxShadow: '0 0 10px rgba(2,132,199,0.5)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0369a1'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0284c7'}>✨ บันทึกเปลี่ยนรหัส PIN ใหม่</button>
                     </form>
                   </div>
 
@@ -1955,7 +2004,7 @@ export default function GameTopupApp() {
                         <option value="อื่นๆ (Custom)">อื่นๆ (Custom)</option>
                       </select>
                       <input type="number" placeholder="ยอดเงิน (บาท)" value={adAmountInput} onChange={(e) => setAdAmountInput(e.target.value)} style={{ backgroundColor: '#030712', border: '1px solid #ec4899', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
-                      <button type="submit" style={{ backgroundColor: '#ec4899', color: '#ffffff', border: 'none', padding: '10px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>+ เพิ่ม</button>
+                      <button type="submit" style={{ backgroundColor: '#ec4899', color: '#ffffff', border: 'none', padding: '10px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 0 10px rgba(236,72,153,0.5)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#db2777'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ec4899'}>+ เพิ่ม</button>
                     </form>
                     <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '10px', minHeight: '165px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       {adPromotions.length > 0 ? (
@@ -2062,8 +2111,8 @@ export default function GameTopupApp() {
                                   <div>
                                     <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 'bold', marginBottom: '6px' }}>⏱️ อนุมัติออโต้ใน ({adminCountdownSec}s)</div>
                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                      <button onClick={() => handleAdminApproveOrder(ord)} style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>✅ อนุมัติ</button>
-                                      <button onClick={() => handleAdminRejectOrder(ord)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}>❌ ยกเลิก</button>
+                                      <button onClick={() => handleAdminApproveOrder(ord)} style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#059669'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#10b981'}>✅ อนุมัติ</button>
+                                      <button onClick={() => handleAdminRejectOrder(ord)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ef4444'}>❌ ยกเลิก</button>
                                     </div>
                                   </div>
                                 ) : (
@@ -2089,7 +2138,7 @@ export default function GameTopupApp() {
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🎁 สร้างและจัดการโค้ดของขวัญ / โค้ดกิจกรรม (Realtime Cloud)</h3>
-                    <button onClick={handleResetAllRedeemRights} style={{ backgroundColor: '#f59e0b', color: '#000000', border: 'none', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>🔄 รีเซ็ตสิทธิ์ ID เกมทั้งหมด</button>
+                    <button onClick={handleResetAllRedeemRights} style={{ backgroundColor: '#f59e0b', color: '#000000', border: 'none', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 0 10px rgba(245,158,11,0.5)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fbbf24'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f59e0b'}>🔄 รีเซ็ตสิทธิ์ ID เกมทั้งหมด</button>
                   </div>
 
                   {adminCodeMsg.text && (
@@ -2126,7 +2175,7 @@ export default function GameTopupApp() {
                       </div>
                     </div>
                     <div style={{ gridColumn: '1 / -1' }}>
-                      <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>+ สร้างโค้ดกิจกรรมใหม่ (บันทึกลงเรียลไทม์)</button>
+                      <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 0 10px rgba(2,132,199,0.5)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0369a1'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0284c7'}>+ สร้างโค้ดกิจกรรมใหม่ (บันทึกลงเรียลไทม์)</button>
                     </div>
                   </form>
 
@@ -2177,8 +2226,8 @@ export default function GameTopupApp() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={resetCheckoutModal} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
-                  <button type="submit" style={{ flex: 1, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>{selectedPayment.id === 'wallet' ? 'ยืนยันหักเครดิตร้าน' : 'ถัดไป →'}</button>
+                  <button type="button" onClick={resetCheckoutModal} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4b5563'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#374151'}>ยกเลิก</button>
+                  <button type="submit" style={{ flex: 1, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 0 10px rgba(147,51,234,0.5)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#a855f7'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#9333ea'}>{selectedPayment.id === 'wallet' ? 'ยืนยันหักเครดิตร้าน' : 'ถัดไป →'}</button>
                 </div>
               </form>
             )}
@@ -2194,8 +2243,8 @@ export default function GameTopupApp() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setCheckoutStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: '1px solid #374151', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
-                  <button disabled={isQrExpired} onClick={handleFinalPaymentSubmit} style={{ flex: 1, backgroundColor: isQrExpired ? '#374151' : '#34d399', color: isQrExpired ? '#9ca3af' : '#000000', border: '1px solid #374151', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: isQrExpired ? 'not-allowed' : 'pointer' }}>ฉันโอนเงินแล้ว</button>
+                  <button onClick={() => setCheckoutStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: '1px solid #374151', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4b5563'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#374151'}>← ย้อนกลับ</button>
+                  <button disabled={isQrExpired} onClick={handleFinalPaymentSubmit} style={{ flex: 1, backgroundColor: isQrExpired ? '#374151' : '#34d399', color: isQrExpired ? '#9ca3af' : '#000000', border: '1px solid #374151', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: isQrExpired ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => { if (!isQrExpired) e.currentTarget.style.backgroundColor = '#6ee7b7'; }} onMouseLeave={(e) => { if (!isQrExpired) e.currentTarget.style.backgroundColor = '#34d399'; }}>ฉันโอนเงินแล้ว</button>
                 </div>
               </div>
             )}
@@ -2220,8 +2269,8 @@ export default function GameTopupApp() {
                 {trueMoneyOtpError && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px', borderRadius: '8px', fontSize: '12px', marginBottom: '15px' }}>{trueMoneyOtpError}</div>}
                 <input type="text" inputMode="numeric" maxLength={6} placeholder="------" value={trueMoneyOtpCode} onChange={(e) => setTrueMoneyOtpCode(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '12px', padding: '14px', color: '#ffffff', fontSize: '24px', textAlign: 'center', fontWeight: 'bold', letterSpacing: '8px', outline: 'none', marginBottom: '20px', boxSizing: 'border-box' }} />
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={() => setTrueMoneyOtpStep(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
-                  <button type="submit" style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยืนยัน OTP</button>
+                  <button type="button" onClick={() => setTrueMoneyOtpStep(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4b5563'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#374151'}>← ย้อนกลับ</button>
+                  <button type="submit" style={{ flex: 1, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 0 10px rgba(52,211,153,0.5)' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#6ee7b7'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#34d399'}>ยืนยัน OTP</button>
                 </div>
               </form>
             ) : walletStep === 1 ? (
@@ -2258,7 +2307,7 @@ export default function GameTopupApp() {
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={resetWalletModal} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
+                  <button onClick={resetWalletModal} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4b5563'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#374151'}>ยกเลิก</button>
                   <button 
                     disabled={!topupAmount || parseFloat(topupAmount) <= 0 || (walletPaymentMethod === 'true' && (!truemoneyPhone || truemoneyPhone.length < 10))} 
                     onClick={walletPaymentMethod === 'qrcode' ? () => setWalletStep(2) : walletPaymentMethod === 'true' ? () => {
@@ -2270,7 +2319,9 @@ export default function GameTopupApp() {
                       setTrueMoneyOtpCode('');
                       setTrueMoneyOtpError('');
                     } : handleWalletConfirmPayment} 
-                    style={{ flex: 1, backgroundColor: (!topupAmount || parseFloat(topupAmount) <= 0) ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                    style={{ flex: 1, backgroundColor: (!topupAmount || parseFloat(topupAmount) <= 0) ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+                    onMouseEnter={(e) => { if (topupAmount && parseFloat(topupAmount) > 0) e.currentTarget.style.backgroundColor = '#a855f7'; }}
+                    onMouseLeave={(e) => { if (topupAmount && parseFloat(topupAmount) > 0) e.currentTarget.style.backgroundColor = '#9333ea'; }}
                   >
                     {walletPaymentMethod === 'qrcode' ? 'ถัดไป (สแกน QR) →' : walletPaymentMethod === 'true' ? 'ส่งรหัส OTP →' : 'ยืนยันการเติมเงิน'}
                   </button>
@@ -2287,8 +2338,8 @@ export default function GameTopupApp() {
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button onClick={() => setWalletStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: '1.5px solid #374151', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>← ย้อนกลับ</button>
-                  <button disabled={isWalletQrExpired} onClick={handleWalletConfirmPayment} style={{ flex: 1, backgroundColor: isWalletQrExpired ? '#374151' : '#34d399', color: isWalletQrExpired ? '#9ca3af' : '#000000', border: '1.5px solid #374151', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: isWalletQrExpired ? 'not-allowed' : 'pointer' }}>ฉันโอนเงินเรียบร้อยแล้ว</button>
+                  <button onClick={() => setWalletStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: '1.5px solid #374151', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#4b5563'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#374151'}>← ย้อนกลับ</button>
+                  <button disabled={isWalletQrExpired} onClick={handleWalletConfirmPayment} style={{ flex: 1, backgroundColor: isWalletQrExpired ? '#374151' : '#34d399', color: isWalletQrExpired ? '#9ca3af' : '#000000', border: '1.5px solid #374151', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: isWalletQrExpired ? 'not-allowed' : 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => { if (!isWalletQrExpired) e.currentTarget.style.backgroundColor = '#6ee7b7'; }} onMouseLeave={(e) => { if (!isWalletQrExpired) e.currentTarget.style.backgroundColor = '#34d399'; }}>ฉันโอนเงินเรียบร้อยแล้ว</button>
                 </div>
               </div>
             )}
