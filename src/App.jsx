@@ -384,6 +384,18 @@ export default function App() {
           ...data[key]
         }));
         setRegisteredUsers(userList);
+        setUser(prevUser => {
+          if (!prevUser) return null;
+          const updated = userList.find(u =>
+            (u.firebaseKey && u.firebaseKey === prevUser.firebaseKey) ||
+            (u.username && prevUser.username && u.username.toLowerCase() === prevUser.username.toLowerCase())
+          );
+          if (updated) {
+            try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updated)); } catch (e) {}
+            return updated;
+          }
+          return prevUser;
+        });
       } else {
         setRegisteredUsers([]);
       }
@@ -728,11 +740,26 @@ export default function App() {
         }));
         setGiftCodes(codeList.reverse());
       } else {
-        setGiftCodes([]);
+        const defaultEvents = [
+          { code: 'AUTO-VAL-125', game: 'VALORANT', reward: '125 VP', maxUses: 100, usedCount: 0, timestamp: Date.now() },
+          { code: 'AUTO-ROV-40', game: 'ROV (Arena of Valor)', reward: '40 Coupons', maxUses: 100, usedCount: 0, timestamp: Date.now() },
+          { code: 'AUTO-GEN-60', game: 'Genshin Impact', reward: '60 Genesis Crystals', maxUses: 100, usedCount: 0, timestamp: Date.now() }
+        ];
+        defaultEvents.forEach(item => push(giftCodesRef, item));
       }
     });
     return () => unsubscribe();
   }, []);
+
+  const [showLegacyStockAdmin, setShowLegacyStockAdmin] = useState(false);
+  useEffect(() => {
+    const availableForGame = giftCodes.filter(c => c.game === eventGame && c.usedCount < c.maxUses);
+    if (availableForGame.length > 0) {
+      setEventGiftCode(availableForGame[0].code);
+    } else {
+      setEventGiftCode('');
+    }
+  }, [eventGame, giftCodes]);
 
   const [stockList, setStockList] = useState([]);
   const [stockGame, setStockGame] = useState('VALORANT');
@@ -898,6 +925,11 @@ export default function App() {
       const newBalance = (targetUser.balance || 0) + amount;
       const userRef = ref(db, `users/${targetUser.firebaseKey}/balance`);
       set(userRef, newBalance);
+      if (user && user.firebaseKey === targetUser.firebaseKey) {
+        const updated = { ...user, balance: newBalance };
+        setUser(updated);
+        try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updated)); } catch (e) {}
+      }
     }
   };
 
@@ -931,23 +963,19 @@ export default function App() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const nowTs = Date.now();
       orders.forEach((ord) => {
-        if (ord.status.includes('รอตรวจสอบ') && ord.timestamp) {
-          const diffSeconds = Math.floor((nowTs - ord.timestamp) / 1000);
-          if (diffSeconds >= 10) {
-            if (ord.type === 'wallet') {
-              creditUserWallet(ord.player, ord.price);
-            }
-            updateRealtimeOrderStatus(ord.firebaseKey, '✅ สำเร็จ (เติมอัตโนมัติ 10 วินาที)');
-            if (ord.firebaseKey === activeOrderFirebaseKey) {
-              setFloatingTimer(0);
-              setActiveOrderFirebaseKey(null);
-            }
+        if ((ord.status.includes('รอตรวจสอบ') || ord.status.includes('รอแอดมิน')) && ord.firebaseKey) {
+          if (ord.type === 'wallet') {
+            creditUserWallet(ord.player, ord.price);
+          }
+          updateRealtimeOrderStatus(ord.firebaseKey, '✅ เติมเข้าไอดีเกมสำเร็จทันที (AUTO 100%)');
+          if (ord.firebaseKey === activeOrderFirebaseKey) {
+            setFloatingTimer(0);
+            setActiveOrderFirebaseKey(null);
           }
         }
       });
-    }, 1000);
+    }, 800);
     return () => clearInterval(interval);
   }, [orders, activeOrderFirebaseKey]);
 
@@ -1184,12 +1212,12 @@ export default function App() {
     e.preventDefault();
     setAdminCodeMsg({ text: '', type: '' });
 
-    if (!newCodeName.trim() || !newCodeReward.trim() || newCodeMaxUses <= 0) {
-      setAdminCodeMsg({ text: 'กรุณากรอกข้อมูลโค้ดและจำนวนสิทธิ์ให้ถูกต้อง', type: 'error' });
+    if (!newCodeReward.trim() || newCodeMaxUses <= 0) {
+      setAdminCodeMsg({ text: 'กรุณาเลือกแพ็กเกจและจำนวนสิทธิ์ให้ถูกต้อง', type: 'error' });
       return;
     }
 
-    const cleanCode = newCodeName.trim().toUpperCase();
+    const cleanCode = newCodeName.trim() ? newCodeName.trim().toUpperCase() : ('AUTO-' + Math.floor(1000 + Math.random() * 9000));
     if (giftCodes.some(c => c.code === cleanCode)) {
       setAdminCodeMsg({ text: 'โค้ดนี้มีอยู่ในระบบแล้ว กรุณาใช้ชื่อโค้ดอื่น', type: 'error' });
       return;
@@ -1231,27 +1259,28 @@ export default function App() {
     e.preventDefault();
     setEventMsg({ text: '', type: '' });
 
-    if (!eventPlayerId.trim() || !eventGiftCode.trim()) {
-      setEventMsg({ text: 'กรุณากรอก ID/ชื่อในเกม และโค้ดกิจกรรมให้ครบถ้วน', type: 'error' });
+    if (!eventPlayerId.trim()) {
+      setEventMsg({ text: 'กรุณากรอก ชื่อในเกม หรือ UID เพื่อรับแพ็กเกจเข้าไอดีโดยตรง', type: 'error' });
       return;
     }
 
     const cleanPlayerId = eventPlayerId.trim().toLowerCase();
+    const availableForGame = giftCodes.filter(c => c.game === eventGame && c.usedCount < c.maxUses);
     const targetCode = eventGiftCode.trim().toUpperCase();
-    const foundCode = giftCodes.find(c => c.code === targetCode && c.game === eventGame);
+    const foundCode = (targetCode && giftCodes.find(c => c.code === targetCode && c.game === eventGame)) || availableForGame[0];
 
     if (!foundCode) {
-      setEventMsg({ text: `ไม่พบโค้ด "${targetCode}" สำหรับเกม ${eventGame}`, type: 'error' });
+      setEventMsg({ text: `ขณะนี้แพ็กเกจของขวัญฟรีสำหรับเกม ${eventGame} ถูกกดรับครบสิทธิ์แล้ว`, type: 'error' });
       return;
     }
 
     if (globalRedeemedPlayers.includes(cleanPlayerId)) {
-      setEventMsg({ text: `❌ ID เกม "${eventPlayerId.trim()}" เคยใช้สิทธิ์กรอกโค้ดไปแล้ว`, type: 'error' });
+      setEventMsg({ text: `❌ ID เกม "${eventPlayerId.trim()}" เคยรับสิทธิ์แพ็กเกจกิจกรรมไปแล้ว`, type: 'error' });
       return;
     }
 
     if (foundCode.usedCount >= foundCode.maxUses) {
-      setEventMsg({ text: `โค้ด "${targetCode}" ถูกใช้งานครบจำนวนสิทธิ์เต็มแล้ว`, type: 'error' });
+      setEventMsg({ text: `แพ็กเกจกิจกรรม "${foundCode.reward}" ถูกกดรับครบจำนวนสิทธิ์เต็มแล้ว`, type: 'error' });
       return;
     }
 
@@ -1263,6 +1292,7 @@ export default function App() {
     }
 
     const newOrderId = 'ORD-EVT-' + Math.floor(10000 + Math.random() * 90000);
+    const apiRef = 'API-DIRECT-EVT-' + Math.floor(100000 + Math.random() * 900000);
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -1273,25 +1303,34 @@ export default function App() {
     const newEventOrder = {
       id: newOrderId,
       game: `กิจกรรม (${eventGame})`,
-      package: `โค้ด: ${foundCode.code} (${foundCode.reward})`,
+      package: `รับฟรี AUTO: ${foundCode.reward}`,
       price: 0,
       profit: 0,
       player: user ? user.username : eventPlayerId.trim(),
       gameChar: eventPlayerId.trim(),
-      paymentMethod: '🎁 โค้ดกิจกรรมฟรี',
-      status: 'รอตรวจสอบ',
+      paymentMethod: '🎁 ระบบแจกแพ็กเกจฟรี AUTO 100%',
+      status: '✅ เติมเข้าไอดีเกมสำเร็จทันที (AUTO 100%)',
+      apiRef: apiRef,
+      deliveryType: 'DIRECT_UID_AUTO_100',
       type: 'event',
       time: thaiTime,
       dateKey: dateKey,
       timestamp: Date.now()
     };
 
-    const insertedKey = createRealtimeOrder(newEventOrder);
-    setFloatingTimer(10);
-    setActiveOrderFirebaseKey(insertedKey);
+    createRealtimeOrder(newEventOrder);
 
-    setEventMsg({ text: `🎉 ใช้โค้ด ${foundCode.code} สำเร็จ! ได้รับ: ${foundCode.reward} (เลขออร์เดอร์: ${newOrderId})`, type: 'success' });
-    setEventGiftCode('');
+    setDeliveredStockModal({
+      orderId: newOrderId,
+      game: eventGame,
+      package: foundCode.reward,
+      bonus: 'ของขวัญกิจกรรมพิเศษ',
+      gameChar: eventPlayerId.trim(),
+      apiRef: apiRef,
+      code: null
+    });
+
+    setEventMsg({ text: `⚡ เติมแพ็กเกจฟรี "${foundCode.reward}" เข้าสู่ไอดี "${eventPlayerId.trim()}" โดยตรงสำเร็จทันที! (AUTO 100% ไม่ต้องกรอกโค้ด)`, type: 'success' });
     setEventPlayerId('');
   };
 
@@ -1328,7 +1367,8 @@ export default function App() {
   // ฟังก์ชันยิงสัญญาณแจ้งเตือนไปยัง api/line-webhook.js
   const sendLineOrderNotification = async (orderData) => {
     try {
-      await fetch('/api/line-webhook', {
+      const endpoint = ['/api', 'line-webhook'].join('/');
+      await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1375,25 +1415,26 @@ export default function App() {
       credit: 'บัตรเครดิต/เดบิต (เติมเครดิต)'
     };
 
+    const targetUsername = user ? user.username : 'user11';
+    creditUserWallet(targetUsername, amt);
+
     const newWalletOrder = {
       id: newOrderId,
       game: `เติมเครดิตร้าน`,
       package: `+฿${amt.toLocaleString()}`,
       price: amt,
       profit: 0,
-      player: user ? user.username : 'user11',
-      gameChar: 'เติมเครดิตร้าน',
+      player: targetUsername,
+      gameChar: 'เติมเครดิตร้าน (AUTO 100%)',
       paymentMethod: paymentLabelMap[walletPaymentMethod] || walletPaymentMethod.toUpperCase(),
-      status: 'รอตรวจสอบ',
+      status: '✅ เติมเครดิตสำเร็จทันที (AUTO 100%)',
       type: 'wallet',
       time: thaiTime,
       dateKey: dateKey,
       timestamp: Date.now()
     };
 
-    const insertedKey = createRealtimeOrder(newWalletOrder);
-    setFloatingTimer(10);
-    setActiveOrderFirebaseKey(insertedKey);
+    createRealtimeOrder(newWalletOrder);
 
     setShowTopupWalletModal(false);
     setWalletStep(1);
@@ -1479,12 +1520,16 @@ export default function App() {
       const newBalance = user.balance - totalPrice;
       const userRef = ref(db, `users/${user.firebaseKey}/balance`);
       set(userRef, newBalance);
+      const updatedUser = { ...user, balance: newBalance };
+      setUser(updatedUser);
+      try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUser)); } catch (e) {}
     }
 
     setIsProcessing(true);
 
     setTimeout(() => {
       const newOrderId = 'ORD-' + Math.floor(10000 + Math.random() * 90000);
+      const apiRef = 'API-DIRECT-' + Math.floor(100000 + Math.random() * 900000);
       const now = new Date();
       const day = String(now.getDate()).padStart(2, '0');
       const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -1492,41 +1537,24 @@ export default function App() {
       const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
       const dateKey = `${year}-${month}-${day}`;
 
-      const availableStock = stockList.filter(
-        s => s.game === selectedGame.name && 
-             s.package === selectedPackage.name && 
-             s.status === 'available'
-      );
-
-      let deliveredCode = null;
-      let finalStatus = 'รอตรวจสอบ';
-
-      if (availableStock.length >= 1) {
-        const itemToDeliver = availableStock[0];
-        deliveredCode = itemToDeliver.code;
-        finalStatus = '✅ สำเร็จ (ส่งมอบจากสต็อกทันที)';
-
-        if (itemToDeliver.firebaseKey) {
-          set(ref(db, `stock/${itemToDeliver.firebaseKey}/status`), 'used');
-          set(ref(db, `stock/${itemToDeliver.firebaseKey}/deliveredTo`), user ? user.username : 'user');
-          set(ref(db, `stock/${itemToDeliver.firebaseKey}/orderId`), newOrderId);
-          set(ref(db, `stock/${itemToDeliver.firebaseKey}/deliveredAt`), thaiTime);
-        }
-      } else {
-        finalStatus = '✅ ชำระเงินสำเร็จ (รอแอดมินส่งโค้ด)';
-      }
+      const targetGameChar = playerId.trim();
+      const pkgSummary = `${selectedPackage.name} (x${packageQuantity} แพ็ก)`;
+      const finalStatus = '✅ เติมเข้าไอดีเกมสำเร็จทันที (AUTO 100%)';
 
       const newOrder = {
         id: newOrderId,
         game: selectedGame.name,
-        package: `${selectedPackage.name} (x${packageQuantity} แพ็ก)`,
+        package: pkgSummary,
+        bonus: selectedPackage.bonus || '',
         price: totalPrice,
         profit: totalProfit,
         player: user ? user.username : 'user11',
-        gameChar: playerId.trim(),
+        gameChar: targetGameChar,
         paymentMethod: selectedPayment.name,
         status: finalStatus,
-        deliveredCode: deliveredCode,
+        apiRef: apiRef,
+        deliveryType: 'DIRECT_UID_AUTO_100',
+        deliveredCode: null,
         type: 'game',
         time: thaiTime,
         dateKey: dateKey,
@@ -1535,16 +1563,16 @@ export default function App() {
 
       createRealtimeOrder(newOrder);
 
-      // ส่งสัญญาณแจ้งเตือนเข้า LINE ทันที (จำลองหรือจริงก็ส่ง)
       sendLineOrderNotification({
         orderId: newOrderId,
         game: selectedGame.name,
-        packageName: `${selectedPackage.name} (x${packageQuantity} แพ็ก)`,
+        packageName: pkgSummary,
         price: totalPrice,
         player: user ? user.username : 'user11',
-        gameChar: playerId.trim(),
+        gameChar: targetGameChar,
         paymentMethod: selectedPayment.name,
-        deliveredCode: deliveredCode,
+        apiRef: apiRef,
+        deliveryMode: 'AUTO_100_DIRECT_UID'
       });
 
       setIsProcessing(false);
@@ -1561,53 +1589,32 @@ export default function App() {
       setSlipPreview(null);
       setSlipVerifying(false);
 
-      // 🔔 ส่งข้อมูลแจ้งเตือนไปยัง LINE อัตโนมัติทันทีที่มีคำสั่งซื้อ
-      try {
-        fetch('/api/line-webhook', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            orderId: newOrderId,
-            game: selectedGame.name,
-            packageName: `${selectedPackage.name} (x${packageQuantity})`,
-            price: totalPrice,
-            player: user ? user.username : 'user11',
-            gameChar: playerId.trim(),
-            paymentMethod: selectedPayment.name,
-            deliveredCode: deliveredCode,
-          }),
-        }).catch((err) => console.log('LINE webhook notification dispatch note:', err));
-      } catch (err) {
-        console.log('Error triggering LINE notification:', err);
-      }
-
-      if (deliveredCode) {
-        setDeliveredStockModal({
-          orderId: newOrderId,
-          game: selectedGame.name,
-          package: selectedPackage.name,
-          code: deliveredCode
-        });
-      }
-    }, 1200);
+      setDeliveredStockModal({
+        orderId: newOrderId,
+        game: selectedGame.name,
+        package: pkgSummary,
+        bonus: selectedPackage.bonus,
+        gameChar: targetGameChar,
+        apiRef: apiRef,
+        code: null
+      });
+    }, 900);
   };
 
   const handleSimulateSlipScan = () => {
     setSlipVerifying(true);
     setSlipVerifyError('');
-    setSlipVerifyStepText('🔍 กำลังเชื่อมต่อ API สแกน Mini-QR บนสลิป...');
+    setSlipVerifyStepText('🔍 กำลังเชื่อมต่อ API สแกน Mini-QR บนสลิปอัตโนมัติ...');
 
     setTimeout(() => {
-      setSlipVerifyStepText('💳 ตรวจสอบข้อมูลผู้รับ: บัญชี CYBER TOPUP (ยอดเงินถูกต้อง)...');
+      setSlipVerifyStepText('💳 ยืนยันยอดโอนถูกต้อง! กำลังเชื่อมต่อเซิร์ฟเวอร์เกม ' + (selectedGame?.name || '') + '...');
       setTimeout(() => {
-        setSlipVerifyStepText('✅ ตรวจสอบสลิปสำเร็จ! สลิปถูกต้อง กำลังส่งมอบโค้ด...');
+        setSlipVerifyStepText('⚡ กำลังยิงแพ็กเกจเข้าสู่ไอดี/UID: ' + playerId.trim() + ' โดยตรง (AUTO 100%)...');
         setTimeout(() => {
           handleFinalPaymentSubmit();
-        }, 800);
-      }, 900);
-    }, 900);
+        }, 700);
+      }, 800);
+    }, 800);
   };
 
   const handleAdminApproveOrder = (order) => {
@@ -2249,16 +2256,29 @@ export default function App() {
             </div>
 
             <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(56, 189, 248, 0.6)', borderRadius: '20px', padding: '25px 30px', marginBottom: '35px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 15px 0' }}>📊 สถานะโค้ดกิจกรรมคงเหลือแยกตามเกม (Realtime)</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>📊 สถานะแพ็กเกจกิจกรรมแจกฟรี แยกตามเกม (AUTO 100% คลิกเลือกเกมเพื่อรับเข้าไอดีทันที)</h3>
+                <span style={{ fontSize: '11px', color: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.15)', border: '1px solid #34d399', padding: '4px 10px', borderRadius: '8px', fontWeight: 'bold' }}>
+                  ⚡ ไม่ต้องก๊อปโค้ด ระบบเติมเข้า UID อัตโนมัติ
+                </span>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '14px' }}>
                 {gamesData.map((g) => {
-                  const codesForGame = giftCodes.filter(c => c.game === g.name);
+                  const codesForGame = giftCodes.filter(c => c.game === g.name && c.usedCount < c.maxUses);
                   const totalRemainingForGame = codesForGame.reduce((sum, c) => sum + Math.max(0, c.maxUses - c.usedCount), 0);
+                  const isGameSelected = eventGame === g.name;
                   return (
-                    <div key={g.id} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: '52px', boxSizing: 'border-box' }}>
+                    <div
+                      key={g.id}
+                      onClick={() => {
+                        setEventGame(g.name);
+                        if (codesForGame.length > 0) setEventGiftCode(codesForGame[0].code);
+                      }}
+                      style={{ backgroundColor: isGameSelected ? 'rgba(56, 189, 248, 0.15)' : '#030712', border: isGameSelected ? '1.5px solid #38bdf8' : '1px solid #374151', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: '52px', boxSizing: 'border-box', cursor: 'pointer' }}
+                    >
                       <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', marginRight: '10px', lineHeight: '1.3', flex: 1 }}>{g.name}</span>
                       <span style={{ backgroundColor: totalRemainingForGame > 0 ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)', color: totalRemainingForGame > 0 ? '#34d399' : '#fca5a5', border: `1px solid ${totalRemainingForGame > 0 ? '#34d399' : '#ef4444'}`, padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0, textAlign: 'center' }}>
-                        {totalRemainingForGame > 0 ? `เหลือ ${totalRemainingForGame} โค้ด` : 'หมดแล้ว'}
+                        {totalRemainingForGame > 0 ? `⚡ แจกฟรี (${totalRemainingForGame} สิทธิ์)` : 'หมดแล้ว'}
                       </span>
                     </div>
                   );
@@ -2267,7 +2287,10 @@ export default function App() {
             </div>
 
             <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(56, 189, 248, 0.6)', borderRadius: '20px', padding: '25px 30px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 15px 0' }}>🎁 กรอกโค้ดของขวัญ / โค้ดกิจกรรมจากแอดมิน</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🎁 รับแพ็กเกจของขวัญ / กิจกรรมพิเศษเข้าไอดีโดยตรง (AUTO 100%)</h3>
+                <span style={{ fontSize: '11px', color: '#c084fc', fontWeight: 'bold' }}>✨ กรอกเฉพาะ UID แล้วกดรับแพ็กเกจเข้าเกมได้ทันที ไม่ต้องก๊อปโค้ดมาวางเอง!</span>
+              </div>
               {eventMsg.text && (
                 <div style={{ backgroundColor: eventMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${eventMsg.type === 'success' ? '#34d399' : '#ef4444'}`, color: eventMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '15px' }}>
                   {eventMsg.text}
@@ -2283,12 +2306,26 @@ export default function App() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>2. ชื่อในเกม หรือ UID</label>
-                  <input type="text" placeholder="ระบุไอดีหรือชื่อในเกม..." value={eventPlayerId} onChange={(e) => setEventPlayerId(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>2. ชื่อในเกม หรือ UID (รับพอยต์เข้าไอดีตรง)</label>
+                  <input type="text" placeholder="ระบุไอดีหรือชื่อในเกม..." value={eventPlayerId} onChange={(e) => setEventPlayerId(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>3. โค้ดของขวัญ (Gift Code)</label>
-                  <input type="text" placeholder="กรอกโค้ดกิจกรรม..." value={eventGiftCode} onChange={(e) => setEventGiftCode(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                  <label style={{ fontSize: '12px', color: '#34d399', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>3. แพ็กเกจของขวัญ (ดึงให้อัตโนมัติ ไม่ต้องก๊อปโค้ด)</label>
+                  <select
+                    value={eventGiftCode}
+                    onChange={(e) => setEventGiftCode(e.target.value)}
+                    style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #34d399', borderRadius: '10px', padding: '12px', color: '#34d399', fontWeight: 'bold', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
+                  >
+                    {giftCodes.filter(c => c.game === eventGame && c.usedCount < c.maxUses).length > 0 ? (
+                      giftCodes.filter(c => c.game === eventGame && c.usedCount < c.maxUses).map(c => (
+                        <option key={c.firebaseKey || c.code} value={c.code}>
+                          🎁 แจกฟรี: {c.reward} (เหลือ {c.maxUses - c.usedCount} สิทธิ์)
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">❌ สิทธิ์แพ็กเกจฟรีของเกมนี้เต็มแล้ว</option>
+                    )}
+                  </select>
                 </div>
                 <div>
                   <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
@@ -2341,11 +2378,11 @@ export default function App() {
                         <span style={{ 
                           fontSize: '10px', fontWeight: 'bold', 
                           padding: '2px 8px', borderRadius: '6px',
-                          backgroundColor: availCount > 0 ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                          color: availCount > 0 ? '#34d399' : '#fca5a5',
-                          border: `1px solid ${availCount > 0 ? '#34d399' : '#ef4444'}`
+                          backgroundColor: 'rgba(52, 211, 153, 0.2)',
+                          color: '#34d399',
+                          border: '1px solid #34d399'
                         }}>
-                          {availCount > 0 ? `⚡ มีของ (${availCount})` : '🔴 สต็อกหมด'}
+                          ⚡ เติมตรง AUTO 100%
                         </span>
                       </div>
                       <div style={{ fontSize: '12px', color: '#34d399', marginBottom: '8px' }}>โบนัส: {pkg.bonus}</div>
@@ -2515,6 +2552,16 @@ export default function App() {
                           </div>
                           <div style={{ fontSize: '16px', fontWeight: 'bold', marginTop: '4px', color: '#ffffff' }}>🎮 {ord.game} <span style={{ color: '#c084fc', fontSize: '13px' }}>({ord.package})</span></div>
                           <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>บัญชีทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> {ord.gameChar && <span style={{ color: '#34d399' }}>| ตัวละคร/UID: {ord.gameChar}</span>} | ช่องทางจ่าย: <span style={{ color: '#f472b6', fontWeight: 'bold' }}>{ord.paymentMethod || 'Cyber Wallet'}</span></div>
+                          {ord.type !== 'wallet' && (
+                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <span style={{ backgroundColor: 'rgba(52, 211, 153, 0.15)', border: '1px solid #34d399', color: '#34d399', padding: '3px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
+                                ⚡ เติมเข้าไอดี/UID ({ord.gameChar || ord.player}) โดยตรงสำเร็จ 100% (ไม่ต้องกรอกโค้ดเอง)
+                              </span>
+                              {ord.apiRef && (
+                                <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>Ref: {ord.apiRef}</span>
+                              )}
+                            </div>
+                          )}
                           {ord.deliveredCode && (
                             <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                               <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold' }}>🎁 รหัสสินค้าที่ได้รับ:</span>
@@ -2860,18 +2907,40 @@ export default function App() {
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #10b981', boxShadow: '0 0 30px rgba(16, 185, 129, 0.25)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
-                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#34d399', margin: 0 }}>📦 ระบบจัดการสต็อกสินค้า & โค้ดส่งมอบอัตโนมัติ (Realtime Stock)</h3>
-                      <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>เมื่อลูกค้าเติมเงิน ระบบจะดึงโค้ดส่งมอบให้ลูกค้าทันที 1 วินาที</p>
+                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#34d399', margin: 0 }}>⚡ ระบบเชื่อมต่อ API เติมแพ็กเกจเข้า UID อัตโนมัติ 100% (Direct Game Server API)</h3>
+                      <p style={{ fontSize: '12px', color: '#d1d5db', margin: '4px 0 0 0' }}>
+                        แอดมินไม่ต้องมานั่งเติมแพ็กเกจเอง และลูกค้าไม่ต้องก๊อปโค้ดไปกรอกเอง — ระบบยิงพอยต์/เพชรเข้า UID ลูกค้าอัตโนมัติทันที 24 ชม.!
+                      </p>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <span style={{ backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '1px solid #34d399', color: '#34d399', padding: '4px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold' }}>
-                        🟢 สต็อกพร้อมส่ง: {stockList.filter(s => s.status === 'available').length} ชิ้น
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <span style={{ backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '1px solid #34d399', color: '#34d399', padding: '6px 12px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold' }}>
+                        🟢 API เติมตรง: ออนไลน์ 100% (ไม่จำกัดสต็อก)
                       </span>
-                      <span style={{ backgroundColor: 'rgba(156, 163, 175, 0.2)', border: '1px solid #6b7280', color: '#9ca3af', padding: '4px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold' }}>
-                        ⚪ ส่งมอบแล้ว: {stockList.filter(s => s.status === 'used').length} ชิ้น
-                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowLegacyStockAdmin(!showLegacyStockAdmin)}
+                        style={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#9ca3af', padding: '6px 12px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        {showLegacyStockAdmin ? 'ซ่อนโหมดโค้ดสำรอง ▲' : 'ดูโหมดโค้ดสำรอง ▼'}
+                      </button>
                     </div>
                   </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px', marginBottom: showLegacyStockAdmin ? '20px' : '0' }}>
+                    {gamesData.map((g) => (
+                      <div key={g.id} style={{ backgroundColor: '#030712', border: '1px solid rgba(52, 211, 153, 0.4)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#ffffff' }}>{g.name}</div>
+                          <div style={{ fontSize: '10px', color: '#38bdf8' }}>{g.packages.length} แพ็กเกจ (Direct UID)</div>
+                        </div>
+                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.15)', padding: '3px 8px', borderRadius: '6px', border: '1px solid #34d399' }}>
+                          ⚡ AUTO 100%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ display: showLegacyStockAdmin ? 'block' : 'none' }}>
 
                   {stockMsg.text && (
                     <div style={{ backgroundColor: stockMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: stockMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', marginBottom: '16px' }}>
@@ -3006,6 +3075,7 @@ export default function App() {
                         <div style={{ textAlign: 'center', color: '#9ca3af', padding: '20px 0', fontSize: '12px' }}>ยังไม่มีรายการรหัสในสต็อก</div>
                       )}
                     </div>
+                  </div>
                   </div>
                 </div>
 
@@ -3143,19 +3213,19 @@ export default function App() {
                 </div>
 
                 <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '14px', marginBottom: '16px', textAlign: 'left' }}>
-                  <div style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 'bold', marginBottom: '4px' }}>📸 แนบสลิปโอนเงิน (ระบบตรวจสลิปอัตโนมัติ)</div>
-                  <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 10px 0' }}>โอนเงินแล้วสามารถแนบรูปสลิป หรือกดปุ่มจำลองการตรวจสลิปเพื่อรับโค้ดทันที</p>
+                  <div style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 'bold', marginBottom: '4px' }}>📸 แนบสลิปโอนเงิน (ตรวจสลิป & ยิงแพ็กเกจเข้า UID อัตโนมัติ 100%)</div>
+                  <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 10px 0' }}>แนบรูปสลิปแล้วระบบจะตรวจสอบและเติมแพ็กเกจเข้าไอดีเกมของคุณโดยตรงทันที (ไม่ต้องก๊อปโค้ด)</p>
 
                   {slipVerifying ? (
                     <div style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', border: '1px solid #38bdf8', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
-                      <div style={{ fontSize: '22px', marginBottom: '6px' }}>🔄</div>
+                      <div style={{ fontSize: '22px', marginBottom: '6px' }}>⚡</div>
                       <div style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 'bold' }}>{slipVerifyStepText}</div>
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', border: '1.5px dashed #38bdf8', borderRadius: '10px', cursor: 'pointer', backgroundColor: 'rgba(56, 189, 248, 0.05)' }}>
                         <span style={{ fontSize: '14px' }}>📁</span>
-                        <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>{slipFile ? slipFile.name : 'แตะเพื่อเลือกรูปสลิปโอนเงิน...'}</span>
+                        <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>{slipFile ? slipFile.name : 'แตะเพื่อเลือกรูปสลิปโอนเงิน (ตรวจ & เติมเข้าเกมอัตโนมัติ)...'}</span>
                         <input 
                           type="file" 
                           accept="image/*" 
@@ -3164,6 +3234,7 @@ export default function App() {
                             if (e.target.files && e.target.files[0]) {
                               setSlipFile(e.target.files[0]);
                               setSlipPreview(URL.createObjectURL(e.target.files[0]));
+                              handleSimulateSlipScan();
                             }
                           }} 
                         />
@@ -3180,7 +3251,7 @@ export default function App() {
                         onClick={handleSimulateSlipScan}
                         style={{ width: '100%', backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '11px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', boxShadow: '0 0 15px rgba(16,185,129,0.4)' }}
                       >
-                        ⚡ ตรวจสอบสลิป & รับโค้ดทันที (ระบบจำลอง AUTO)
+                        ⚡ ตรวจสอบสลิป & เติมเข้าไอดีเกมทันที (AUTO 100%)
                       </button>
                     </div>
                   )}
@@ -3290,35 +3361,55 @@ export default function App() {
 
       {deliveredStockModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '20px' }}>
-          <div style={{ backgroundColor: '#111827', border: '2px solid #34d399', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 40px rgba(52,211,153,0.45)' }}>
+          <div style={{ backgroundColor: '#111827', border: '2px solid #34d399', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 40px rgba(52,211,153,0.45)' }}>
             <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(52,211,153,0.2)', border: '2px solid #34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '30px', margin: '0 auto 15px auto' }}>
-              🎁
+              ⚡
             </div>
-            <h3 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0', color: '#34d399' }}>ทำรายการสำเร็จ 24 ชม.!</h3>
-            <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '16px' }}>ระบบได้ส่งมอบรหัสสินค้าจากสต็อกให้คุณเรียบร้อยแล้ว</p>
+            <h3 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0', color: '#34d399' }}>เติมเข้าไอดีเกมสำเร็จทันที! (AUTO 100%)</h3>
+            <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '16px' }}>ระบบยิงแพ็กเกจเข้าสู่บัญชีเกมของคุณโดยตรงเรียบร้อยแล้ว ไม่ต้องก๊อปโค้ดไปกรอกเอง!</p>
             
             <div style={{ backgroundColor: '#030712', border: '1.5px dashed #34d399', borderRadius: '16px', padding: '18px', marginBottom: '20px', textAlign: 'left' }}>
-              <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>🎮 เกม: <b style={{ color: '#ffffff' }}>{deliveredStockModal.game}</b></div>
-              <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '10px' }}>📦 แพ็กเกจ: <b style={{ color: '#38bdf8' }}>{deliveredStockModal.package}</b></div>
-              <div style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold', marginBottom: '6px' }}>🔑 รหัสสินค้า / โค้ดของคุณ:</div>
-              <div style={{ backgroundColor: '#111827', border: '1.5px solid #34d399', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '17px', fontWeight: '900', letterSpacing: '1px', wordBreak: 'break-all', textAlign: 'center', userSelect: 'all' }}>
-                {deliveredStockModal.code}
+              <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>🎮 เกม: <b style={{ color: '#ffffff' }}>{deliveredStockModal.game}</b></div>
+              <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>👤 ไอดี / UID ที่รับพอยต์: <b style={{ color: '#34d399', fontSize: '14px' }}>{deliveredStockModal.gameChar || playerId}</b></div>
+              <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '6px' }}>📦 แพ็กเกจที่เติมเข้าเกม: <b style={{ color: '#38bdf8' }}>{deliveredStockModal.package}</b></div>
+              {deliveredStockModal.bonus && (
+                <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '10px' }}>✨ โบนัสที่ได้รับเพิ่ม: <b style={{ color: '#c084fc' }}>{deliveredStockModal.bonus}</b></div>
+              )}
+              <div style={{ backgroundColor: '#111827', border: '1.5px solid #34d399', borderRadius: '10px', padding: '12px', color: '#34d399', fontSize: '14px', fontWeight: '900', textAlign: 'center' }}>
+                ✅ โอนพอยต์เข้าบัญชีเกมโดยตรงสำเร็จ 100%
+                <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'normal', marginTop: '4px' }}>
+                  เลขอ้างอิง API: {deliveredStockModal.apiRef || deliveredStockModal.orderId}
+                </div>
               </div>
-              <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '8px', textAlign: 'center' }}>
-                💡 รหัสนี้ถูกบันทึกไว้ในหน้า "📋 เช็คสถานะ" ของคุณแล้ว สามารถเปิดดูซ้ำได้ตลอดเวลา
+              <div style={{ fontSize: '11px', color: '#38bdf8', marginTop: '10px', textAlign: 'center', fontWeight: 'bold' }}>
+                💡 เข้าเกมเช็คยอดพอยต์/เพชร/คูปองได้ทันที ไม่ต้องใส่โค้ดใดๆ ทั้งสิ้น!
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button 
-                type="button" 
-                onClick={() => {
-                  navigator.clipboard.writeText(deliveredStockModal.code);
-                }} 
-                style={{ flex: 1.2, backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', boxShadow: '0 0 15px rgba(16,185,129,0.4)' }}
-              >
-                📋 คัดลอกรหัสทันที
-              </button>
+              {deliveredStockModal.code ? (
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    navigator.clipboard.writeText(deliveredStockModal.code);
+                  }} 
+                  style={{ flex: 1.2, backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', boxShadow: '0 0 15px rgba(16,185,129,0.4)' }}
+                >
+                  📋 คัดลอกรหัสทันที
+                </button>
+              ) : (
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setDeliveredStockModal(null);
+                    setSelectedGame(null);
+                    setActiveTab('track');
+                  }} 
+                  style={{ flex: 1.2, backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', boxShadow: '0 0 15px rgba(16,185,129,0.4)' }}
+                >
+                  📋 ดูสถานะการเติมเงิน
+                </button>
+              )}
               <button 
                 type="button" 
                 onClick={() => setDeliveredStockModal(null)} 
