@@ -1,4 +1,4 @@
-// ตั้งค่า Firebase Config ที่ถูกต้องสมบูรณ์
+
 const firebaseConfig = {
   apiKey: "AIzaSyD-dgpKK9S2oLfLawJ8MKYHi-NWB4GQv7u",
   authDomain: "cyber-topup-game.firebaseapp.com",
