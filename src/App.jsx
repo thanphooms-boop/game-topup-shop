@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, push } from 'firebase/database';
-import { getAuth, sendPasswordResetEmail, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth';
 
-// ----------------------------------------------------
-// ตั้งค่า Firebase Config ของคุณ
-// ----------------------------------------------------
+// ตั้งค่า Firebase Config
+// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyD-dgpKK9S2olFLawJ8MKYHi-NWB4GQv7U",
   authDomain: "cyber-topup-game.firebaseapp.com",
@@ -20,6 +19,107 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
+
+// สไตล์ CSS สำหรับเอฟเฟคปุ่มทุกปุ่มและองค์ประกอบที่คลิกได้ในเว็บ (Hover & Active Effects)
+const cyberGlobalStyles = `
+  /* กำหนดคุณสมบัติพื้นฐานของปุ่มทุกปุ่มในเว็บ */
+  button, 
+  [role="button"], 
+  input[type="submit"], 
+  input[type="button"],
+  .cyber-btn {
+    position: relative;
+    cursor: pointer !important;
+    transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    outline: none !important;
+  }
+
+  /* เอฟเฟคตอนเมาส์ผ่านและชี้ (Hover Effect) ของทุกปุ่ม */
+  button:hover:not(:disabled),
+  [role="button"]:hover,
+  input[type="submit"]:hover,
+  input[type="button"]:hover,
+  .cyber-btn:hover {
+    transform: translateY(-2.5px) scale(1.025) !important;
+    filter: brightness(1.18) contrast(1.05) !important;
+    box-shadow: 0 8px 25px rgba(168, 85, 247, 0.45), 0 0 15px rgba(56, 189, 248, 0.35) !important;
+  }
+
+  /* เอฟเฟคตอนกดปุ่ม (Active / Click Effect) */
+  button:active:not(:disabled),
+  [role="button"]:active,
+  input[type="submit"]:active,
+  input[type="button"]:active,
+  .cyber-btn:active {
+    transform: translateY(1.5px) scale(0.96) !important;
+    filter: brightness(0.92) !important;
+    box-shadow: 0 2px 10px rgba(168, 85, 247, 0.3) !important;
+    transition: all 0.08s ease !important;
+  }
+
+  /* ประกายแสงชิมเมอร์วิ่งผ่านปุ่มเมื่อเมาส์ผ่าน (Shimmer Sweep) */
+  button:not(.no-shimmer):not([style*="position: absolute"]):not([style*="background: none"])::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transform: skewX(-25deg);
+    transition: none;
+    pointer-events: none;
+  }
+
+  button:not(.no-shimmer):not([style*="position: absolute"]):not([style*="background: none"]):hover::after {
+    left: 170%;
+    transition: left 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ปุ่มไอคอน เช่น ปุ่มลูกตาดูรหัสผ่าน */
+  button[style*="position: absolute"],
+  button[style*="background: none"] {
+    overflow: visible !important;
+    box-shadow: none !important;
+  }
+  button[style*="position: absolute"]:hover,
+  button[style*="background: none"]:hover {
+    transform: scale(1.22) !important;
+    box-shadow: none !important;
+    filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.9)) !important;
+  }
+  button[style*="position: absolute"]:active,
+  button[style*="background: none"]:active {
+    transform: scale(0.9) !important;
+  }
+
+  /* การ์ดเกม การ์ดแพ็กเกจ และการ์ดช่องทางชำระเงิน */
+  .cyber-card-clickable {
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    cursor: pointer !important;
+  }
+  .cyber-card-clickable:hover {
+    transform: translateY(-4px) scale(1.02) !important;
+    border-color: #c084fc !important;
+    box-shadow: 0 10px 30px rgba(168, 85, 247, 0.5), 0 0 15px rgba(56, 189, 248, 0.4) !important;
+    filter: brightness(1.08) !important;
+  }
+  .cyber-card-clickable:active {
+    transform: translateY(1px) scale(0.98) !important;
+  }
+
+  /* ปุ่มที่ปิดใช้งาน (Disabled) */
+  button:disabled,
+  button[disabled] {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+    filter: grayscale(0.8) !important;
+  }
+`;
 
 export default function App() {
   const [user, setUser] = useState(() => {
@@ -50,43 +150,204 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [authSuccessMsg, setAuthSuccessMsg] = useState('');
 
-  // สเตตระบบลืมรหัสผ่าน
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1: ขอ OTP, 2: กรอก OTP, 3: ตั้งรหัสผ่านใหม่
   const [forgotEmailInput, setForgotEmailInput] = useState('');
+  const [forgotTargetUser, setForgotTargetUser] = useState(null);
+  const [generatedOtp, setGeneratedOtp] = useState('');
+  const [forgotOtpInput, setForgotOtpInput] = useState('');
+  const [otpCountdown, setOtpCountdown] = useState(300); // 5 นาที (300 วินาที)
+  const [otpResendCountdown, setOtpResendCountdown] = useState(60); // 60 วินาที
+  const [forgotNewPassword, setForgotNewPassword] = useState('');
+  const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
+  const [showForgotConfirmPassword, setShowForgotConfirmPassword] = useState(false);
   const [forgotStatusMsg, setForgotStatusMsg] = useState({ text: '', type: '' });
+  const [emailVerifyMsg, setEmailVerifyMsg] = useState('');
 
-  // ฟังก์ชันลืมรหัสผ่าน ส่งอีเมลรีเซ็ตรหัสผ่านจริงผ่าน Firebase Auth
-  const handleForgotPasswordSubmit = (e) => {
+  // ฟังก์ชันรีเซ็ตค่าของ Modal ลืมรหัสผ่าน
+  const resetForgotState = () => {
+    setForgotStep(1);
+    setForgotEmailInput('');
+    setForgotTargetUser(null);
+    setGeneratedOtp('');
+    setForgotOtpInput('');
+    setOtpCountdown(300);
+    setOtpResendCountdown(60);
+    setForgotNewPassword('');
+    setShowForgotNewPassword(false);
+    setForgotConfirmPassword('');
+    setShowForgotConfirmPassword(false);
+    setForgotStatusMsg({ text: '', type: '' });
+  };
+
+  // ตัวนับเวลาถอยหลัง OTP เมื่ออยู่ในขั้นตอนที่ 2
+  useEffect(() => {
+    let timer;
+    if (forgotModalOpen && forgotStep === 2) {
+      timer = setInterval(() => {
+        setOtpCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+        setOtpResendCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [forgotModalOpen, forgotStep]);
+
+  // ฟอร์แมตเวลา MM:SS
+  const formatOtpTime = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // ฟังก์ชันส่งลิงก์ยืนยันอีเมลซ้ำ (Resend Email Verification)
+  const handleResendEmailVerification = () => {
+    setEmailVerifyMsg('');
+    if (auth.currentUser) {
+      sendEmailVerification(auth.currentUser)
+        .then(() => {
+          setEmailVerifyMsg(`📧 ส่งลิงก์ยืนยันอีเมลไปยัง ${user?.email || auth.currentUser.email} เรียบร้อยแล้ว! กรุณาตรวจสอบใน Inbox หรือ Junk Mail`);
+          setTimeout(() => setEmailVerifyMsg(''), 7000);
+        })
+        .catch((err) => {
+          setEmailVerifyMsg(`⚠️ ไม่สามารถส่งอีเมลยืนยันได้: ${err.message}`);
+          setTimeout(() => setEmailVerifyMsg(''), 7000);
+        });
+    } else {
+      setEmailVerifyMsg(`📧 กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่อีกครั้งเพื่อส่งลิงก์ยืนยันอีเมล`);
+      setTimeout(() => setEmailVerifyMsg(''), 7000);
+    }
+  };
+
+  // ขั้นตอนที่ 1: ขอรับรหัส OTP สำหรับเปลี่ยนรหัสผ่าน
+  const handleRequestOtpSubmit = (e) => {
     e.preventDefault();
     setForgotStatusMsg({ text: '', type: '' });
 
-    if (!forgotEmailInput.trim() || !forgotEmailInput.includes('@')) {
-      setForgotStatusMsg({ text: 'กรุณากรอกอีเมลที่ถูกต้อง', type: 'error' });
+    const inputClean = forgotEmailInput.trim();
+    if (!inputClean) {
+      setForgotStatusMsg({ text: 'กรุณากรอกอีเมล หรือชื่อผู้ใช้ของคุณ', type: 'error' });
       return;
     }
 
-    sendPasswordResetEmail(auth, forgotEmailInput.trim())
+    // ค้นหาบัญชีในระบบจากชื่อผู้ใช้ หรืออีเมล
+    const matched = registeredUsers.find(
+      (u) => (u.username && u.username.toLowerCase() === inputClean.toLowerCase()) ||
+             (u.email && u.email.toLowerCase() === inputClean.toLowerCase())
+    );
+
+    if (!matched) {
+      setForgotStatusMsg({ text: `ไม่พบบัญชีผู้ใช้ "${inputClean}" ในระบบ กรุณาตรวจสอบอีกครั้ง`, type: 'error' });
+      return;
+    }
+
+    // สร้างรหัส OTP 6 หลัก
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(otp);
+    setForgotTargetUser(matched);
+    setOtpCountdown(300);
+    setOtpResendCountdown(60);
+    setForgotOtpInput('');
+    setForgotStep(2);
+    setForgotStatusMsg({
+      text: `📧 ส่งรหัส OTP 6 หลักไปยัง ${matched.email || matched.username} เรียบร้อยแล้ว (รหัส OTP ของคุณคือ: ${otp})`,
+      type: 'success'
+    });
+  };
+
+  // ฟังก์ชันขอส่งรหัส OTP ใหม่อีกครั้ง
+  const handleResendOtp = () => {
+    if (otpResendCountdown > 0) return;
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(newOtp);
+    setOtpCountdown(300);
+    setOtpResendCountdown(60);
+    setForgotOtpInput('');
+    setForgotStatusMsg({
+      text: `🔄 ส่งรหัส OTP ใหม่เรียบร้อยแล้ว (รหัส OTP: ${newOtp})`,
+      type: 'success'
+    });
+  };
+
+  // ขั้นตอนที่ 2: ตรวจสอบรหัส OTP
+  const handleVerifyOtpSubmit = (e) => {
+    e.preventDefault();
+    setForgotStatusMsg({ text: '', type: '' });
+
+    if (otpCountdown <= 0) {
+      setForgotStatusMsg({ text: '⚠️ รหัส OTP หมดอายุแล้ว กรุณากดขอรหัส OTP ใหม่', type: 'error' });
+      return;
+    }
+
+    if (!forgotOtpInput.trim() || forgotOtpInput.trim().length !== 6) {
+      setForgotStatusMsg({ text: 'กรุณากรอกรหัส OTP ให้ครบ 6 หลัก', type: 'error' });
+      return;
+    }
+
+    if (forgotOtpInput.trim() !== generatedOtp) {
+      setForgotStatusMsg({ text: '❌ รหัส OTP ไม่ถูกต้อง กรุณากรอกรหัสให้ตรงกับที่ส่งให้', type: 'error' });
+      return;
+    }
+
+    // ยืนยันรหัส OTP ถูกต้อง
+    setForgotStep(3);
+    setForgotStatusMsg({
+      text: '✅ ยืนยันรหัส OTP ถูกต้องแล้ว! กรุณาตั้งรหัสผ่านใหม่ของคุณด้านล่างได้ทันที',
+      type: 'success'
+    });
+  };
+
+  // ขั้นตอนที่ 3: บันทึกรหัสผ่านใหม่ลงหน้าเว็บทันที
+  const handleSetNewPasswordSubmit = (e) => {
+    e.preventDefault();
+    setForgotStatusMsg({ text: '', type: '' });
+
+    if (!forgotNewPassword.trim() || !forgotConfirmPassword.trim()) {
+      setForgotStatusMsg({ text: 'กรุณากรอกรหัสผ่านใหม่ให้ครบทั้งสองช่อง', type: 'error' });
+      return;
+    }
+
+    if (forgotNewPassword.trim().length < 6) {
+      setForgotStatusMsg({ text: 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร', type: 'error' });
+      return;
+    }
+
+    if (forgotNewPassword.trim() !== forgotConfirmPassword.trim()) {
+      setForgotStatusMsg({ text: 'รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน', type: 'error' });
+      return;
+    }
+
+    if (!forgotTargetUser || !forgotTargetUser.firebaseKey) {
+      setForgotStatusMsg({ text: 'เกิดข้อผิดพลาด: ไม่พบข้อมูลบัญชี กรุณาลองใหม่อีกครั้ง', type: 'error' });
+      return;
+    }
+
+    const newPass = forgotNewPassword.trim();
+    // อัปเดตรหัสผ่านใหม่ลง Realtime Database
+    set(ref(db, `users/${forgotTargetUser.firebaseKey}/password`), newPass)
       .then(() => {
-        setForgotStatusMsg({ 
-          text: `📧 ส่งลิงก์รีเซ็ตรหัสผ่านไปยัง ${forgotEmailInput.trim()} แล้ว! ตรวจสอบ Inbox หรือโฟลเดอร์ Junk Mail ได้เลยครับ`, 
-          type: 'success' 
+        // อัปเดตในช่องล็อกอินให้อัตโนมัติ เพื่อให้กดเข้าสู่ระบบได้ทันที
+        setUsernameInput(forgotTargetUser.username);
+        setPasswordInput(newPass);
+
+        setForgotStatusMsg({
+          text: '🎉 เปลี่ยนรหัสผ่านใหม่สำเร็จเรียบร้อยแล้ว! ระบบได้กรอกรหัสผ่านใหม่ให้ในหน้าเข้าสู่ระบบแล้ว กำลังกลับสู่หน้าแรก...',
+          type: 'success'
         });
+
         setTimeout(() => {
           setForgotModalOpen(false);
-          setForgotEmailInput('');
-          setForgotStatusMsg({ text: '', type: '' });
-        }, 5000);
+          resetForgotState();
+        }, 2500);
       })
-      .catch((error) => {
-        if (error.code === 'auth/user-not-found') {
-          setForgotStatusMsg({ text: 'ไม่พบบัญชีที่ผูกกับอีเมลนี้ในระบบ', type: 'error' });
-        } else {
-          setForgotStatusMsg({ text: 'เกิดข้อผิดพลาดในการส่งอีเมล: ' + error.message, type: 'error' });
-        }
+      .catch((err) => {
+        setForgotStatusMsg({
+          text: 'เกิดข้อผิดพลาดในการบันทึกรหัสผ่านใหม่: ' + err.message,
+          type: 'error'
+        });
       });
   };
 
-  // ดึงข้อมูล Users จาก Realtime Database
   useEffect(() => {
     const usersRef = ref(db, 'users');
     const unsubscribe = onValue(usersRef, (snapshot) => {
@@ -103,8 +364,6 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
-
-  // ฟังก์ชัน Login & Register
   const handleAuthSubmit = (e) => {
     e.preventDefault();
     setAuthError('');
@@ -117,20 +376,75 @@ export default function App() {
       }
       
       const inputClean = usernameInput.trim().toLowerCase();
+      // ค้นหาผู้ใช้จากชื่อผู้ใช้ หรืออีเมล
       const foundUser = registeredUsers.find(
-        (u) => (u.username && u.username.toLowerCase() === inputClean) && u.password === passwordInput
+        (u) => (u.username && u.username.toLowerCase() === inputClean) || 
+               (u.email && u.email.toLowerCase() === inputClean)
       );
 
-      if (foundUser) {
-        if (rememberMe) {
-          localStorage.setItem('cyber_remembered_user', usernameInput.trim());
-        } else {
-          localStorage.removeItem('cyber_remembered_user');
-        }
-        setUser(foundUser);
-        localStorage.setItem('cyber_current_logged_user', JSON.stringify(foundUser));
+      if (!foundUser) {
+        setAuthError('ไม่พบบัญชีผู้ใช้งานนี้ในระบบ กรุณาตรวจสอบชื่อผู้ใช้หรือสมัครสมาชิก');
+        return;
+      }
+
+      // ตรวจสอบรหัสผ่านกับ Firebase Auth (ซึ่งรองรับรหัสผ่านใหม่ที่เปลี่ยนผ่านอีเมลรีเซ็ตรหัสผ่าน)
+      if (foundUser.email) {
+        signInWithEmailAndPassword(auth, foundUser.email, passwordInput)
+          .then((userCredential) => {
+            const isVerified = userCredential.user.emailVerified;
+            
+            // หากรหัสผ่านถูกเปลี่ยนผ่านลิงก์รีเซ็ตในเมล ให้อัปเดตรหัสผ่านใหม่ลง Realtime Database เพื่อให้ข้อมูลซิงค์กัน
+            if (foundUser.firebaseKey && foundUser.password !== passwordInput) {
+              set(ref(db, `users/${foundUser.firebaseKey}/password`), passwordInput);
+            }
+            if (foundUser.firebaseKey && isVerified !== foundUser.emailVerified) {
+              set(ref(db, `users/${foundUser.firebaseKey}/emailVerified`), isVerified);
+            }
+
+            const updatedUser = {
+              ...foundUser,
+              password: passwordInput,
+              emailVerified: isVerified
+            };
+
+            if (rememberMe) {
+              localStorage.setItem('cyber_remembered_user', usernameInput.trim());
+            } else {
+              localStorage.removeItem('cyber_remembered_user');
+            }
+            setUser(updatedUser);
+            localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUser));
+          })
+          .catch((error) => {
+            // สำรอง: หากรหัสผ่านตรงกับในฐานข้อมูล (กรณีบัญชีสร้างใน DB ก่อนมี Auth)
+            if (foundUser.password === passwordInput) {
+              if (rememberMe) {
+                localStorage.setItem('cyber_remembered_user', usernameInput.trim());
+              } else {
+                localStorage.removeItem('cyber_remembered_user');
+              }
+              setUser(foundUser);
+              localStorage.setItem('cyber_current_logged_user', JSON.stringify(foundUser));
+            } else {
+              if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                setAuthError('รหัสผ่านไม่ถูกต้อง (หากคุณเพิ่งเปลี่ยนรหัสผ่านผ่านอีเมล กรุณากรอกรหัสผ่านใหม่ที่คุณตั้ง)');
+              } else {
+                setAuthError('ชื่อผู้ใช้งาน หรือรหัสผ่านไม่ถูกต้อง');
+              }
+            }
+          });
       } else {
-        setAuthError('ชื่อผู้ใช้งาน หรือรหัสผ่านไม่ถูกต้อง');
+        if (foundUser.password === passwordInput) {
+          if (rememberMe) {
+            localStorage.setItem('cyber_remembered_user', usernameInput.trim());
+          } else {
+            localStorage.removeItem('cyber_remembered_user');
+          }
+          setUser(foundUser);
+          localStorage.setItem('cyber_current_logged_user', JSON.stringify(foundUser));
+        } else {
+          setAuthError('ชื่อผู้ใช้งาน หรือรหัสผ่านไม่ถูกต้อง');
+        }
       }
     } else if (authMode === 'register') {
       if (!emailInput.trim() || !regUsernameInput.trim() || !regPasswordInput.trim() || !confirmPasswordInput.trim()) {
@@ -141,12 +455,12 @@ export default function App() {
       const emailClean = emailInput.trim().toLowerCase();
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(emailClean)) {
-        setAuthError('รูปแบบ Email ไม่ถูกต้อง (ตัวอย่าง: name@gmail.com)');
+        setAuthError('รูปแบบ Email สำหรับกู้คืนรหัสผ่านไม่ถูกต้อง (เช่น name@domain.com)');
         return;
       }
 
       if (regPasswordInput.length < 6) {
-        setAuthError('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษรขึ้นไป');
+        setAuthError('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
         return;
       }
 
@@ -168,13 +482,19 @@ export default function App() {
         return;
       }
 
-      // สร้าง Account ใน Firebase Auth เพื่อรองรับ Reset Password ทาง Email
+      // สร้างบัญชีในระบบ Firebase Authentication พร้อมส่งอีเมลยืนยันตัวตน (Email Verification)
       createUserWithEmailAndPassword(auth, emailClean, regPasswordInput)
-        .then(() => {
+        .then((userCredential) => {
+          // ส่งอีเมลยืนยันตัวตนทันทีแบบเว็บมาตรฐานสากล
+          sendEmailVerification(userCredential.user).catch((err) => {
+            console.log("Email verification dispatch note:", err);
+          });
+
           const newUser = { 
             username: usernameClean, 
             email: emailClean, 
             password: regPasswordInput, 
+            emailVerified: false,
             balance: 0,
             createdAt: new Date().toISOString()
           };
@@ -189,14 +509,14 @@ export default function App() {
           setRegUsernameInput('');
           setRegPasswordInput('');
           setConfirmPasswordInput('');
-          setAuthSuccessMsg('🎉 สมัครสมาชิกสำเร็จ! เข้าสู่ระบบและใช้อีเมลนี้รีเซ็ตรหัสผ่านได้ทันที');
+          setAuthSuccessMsg('🎉 สมัครสมาชิกสำเร็จ! ระบบได้ส่งอีเมลยืนยันตัวตนไปยัง ' + emailClean + ' เรียบร้อยแล้ว (สามารถนำอีเมลนี้ใช้กู้คืนรหัสผ่านได้ตลอด 24 ชม.)');
           setAuthMode('login');
         })
         .catch((error) => {
           if (error.code === 'auth/email-already-in-use') {
-            setAuthError('อีเมลนี้ถูกลงทะเบียนไว้ใน Firebase แล้ว');
+            setAuthError('อีเมลนี้ถูกใช้งานในระบบ Firebase Auth แล้ว');
           } else {
-            setAuthError('สมัครสมาชิกล้มเหลว: ' + error.message);
+            setAuthError('เกิดข้อผิดพลาดในการสร้างบัญชีสมาชิก: ' + error.message);
           }
         });
     }
@@ -392,7 +712,6 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
-
   const [newCodeName, setNewCodeName] = useState('');
   const [newCodeGame, setNewCodeGame] = useState('VALORANT');
   const [newCodeReward, setNewCodeReward] = useState('125 VP');
@@ -627,10 +946,12 @@ export default function App() {
 
   const totalAdminSales = orders.reduce((sum, ord) => sum + (ord.type === 'game' ? ord.price : 0), 0);
   const totalAdminProfits = orders.reduce((sum, ord) => sum + (ord.profit || 0), 0);
+
   const netProfitAfterAd = Math.max(0, totalAdminProfits - (parseFloat(adExpense) || 0));
 
   const isVatThresholdReached = totalAdminSales >= 1800000;
   const totalAdminVat = isVatThresholdReached ? Math.round(netProfitAfterAd * 0.07) : 0;
+
   const profitForTaxCalculation = netProfitAfterAd - totalAdminVat;
   const taxableIncome = Math.max(0, profitForTaxCalculation - 150000);
 
@@ -693,6 +1014,7 @@ export default function App() {
   }, [showTopupWalletModal, walletStep, walletPaymentMethod, isWalletQrExpired]);
 
   const handleLogout = () => {
+    signOut(auth).catch(() => {});
     setUser(null);
     localStorage.removeItem('cyber_current_logged_user');
     setIsAdminLoggedIn(false);
@@ -1212,9 +1534,7 @@ export default function App() {
     setHistoryPage(1);
   };
 
-  // ====================================================
-  // จอเข้าสู่ระบบ / สมัครสมาชิก
-  // ====================================================
+  // หากยังไม่ได้เข้าสู่ระบบ
   if (!user) {
     return (
       <div style={{
@@ -1224,22 +1544,7 @@ export default function App() {
         color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
       }}>
-        {/* Style Tag สำหรับ Hover / Active Effect ทุกปุ่ม */}
-        <style>{`
-          button {
-            transition: all 0.25s ease !important;
-          }
-          button:hover {
-            transform: translateY(-2px) scale(1.02) !important;
-            filter: brightness(1.15) !important;
-            box-shadow: 0 8px 20px rgba(168, 85, 247, 0.4) !important;
-          }
-          button:active {
-            transform: translateY(1px) scale(0.97) !important;
-            filter: brightness(0.9) !important;
-          }
-        `}</style>
-
+        <style>{cyberGlobalStyles}</style>
         <div style={{
           backgroundColor: 'rgba(17, 24, 39, 0.95)', backdropFilter: 'blur(16px)',
           border: '1.5px solid rgba(168, 85, 247, 0.5)', borderRadius: '24px',
@@ -1265,7 +1570,7 @@ export default function App() {
 
           <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 20px 0' }}>
             {authMode === 'login' && 'เข้าสู่ระบบด้วยชื่อผู้ใช้งานอัตโนมัติ 24 ชม.'}
-            {authMode === 'register' && 'สมัครสมาชิกใหม่ (กรอกอีเมลสำหรับกู้คืนรหัสผ่าน)'}
+            {authMode === 'register' && 'สมัครสมาชิกใหม่ (กรอกอีเมลกู้คืนขึ้นก่อน แล้วตามด้วยชื่อผู้ใช้งาน)'}
           </p>
 
           <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -1341,7 +1646,7 @@ export default function App() {
                   <input type="checkbox" id="remember" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ cursor: 'pointer' }} />
                   <label htmlFor="remember" style={{ cursor: 'pointer' }}>จดจำไอดีไว้</label>
                 </div>
-                <span onClick={() => setForgotModalOpen(true)} style={{ color: '#f472b6', cursor: 'pointer', fontWeight: 'bold' }}>ลืมรหัสผ่าน?</span>
+                <span onClick={() => { setForgotModalOpen(true); resetForgotState(); }} style={{ color: '#f472b6', cursor: 'pointer', fontWeight: 'bold' }}>ลืมรหัสผ่าน?</span>
               </div>
             )}
 
@@ -1350,7 +1655,7 @@ export default function App() {
               style={{ 
                 backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', 
                 fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', 
-                boxShadow: '0 0 15px rgba(147,51,234,0.5)'
+                boxShadow: '0 0 15px rgba(147,51,234,0.5)', transition: 'all 0.25s ease', transform: 'scale(1)' 
               }}
             >
               {authMode === 'login' && 'เข้าสู่ระบบ (Login)'}
@@ -1364,26 +1669,181 @@ export default function App() {
           </div>
         </div>
 
-        {/* Modal ลืมรหัสผ่าน */}
         {forgotModalOpen && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-            <div style={{ backgroundColor: '#111827', border: '1.5px solid #ec4899', borderRadius: '24px', maxWidth: '400px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 35px rgba(236,72,153,0.4)' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#f472b6' }}>📧 กู้คืนรหัสผ่านด้วยอีเมล</h3>
-              <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรอกอีเมลที่คุณใช้สมัครสมาชิก เพื่อรับลิงก์ตั้งรหัสผ่านใหม่ทางอีเมล</p>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+            <div style={{ backgroundColor: '#111827', border: '1.5px solid #a855f7', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '28px', textAlign: 'center', boxShadow: '0 0 40px rgba(168,85,247,0.45)', position: 'relative' }}>
+              
+              {/* ปุ่มปิด Modal */}
+              <button 
+                type="button" 
+                onClick={() => { setForgotModalOpen(false); resetForgotState(); }} 
+                style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#9ca3af', fontSize: '20px', cursor: 'pointer', padding: '4px 8px' }}
+              >
+                ✕
+              </button>
+
+              {/* ไอคอนหัวข้อ */}
+              <div style={{ width: '54px', height: '54px', margin: '0 auto 12px auto', borderRadius: '50%', backgroundColor: 'rgba(168,85,247,0.15)', border: '2px solid #c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+                {forgotStep === 1 ? '🔐' : forgotStep === 2 ? '🔢' : '✨'}
+              </div>
+
+              {/* ตัวบอกขั้นตอน Step Indicator */}
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginBottom: '16px' }}>
+                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold', backgroundColor: forgotStep === 1 ? '#9333ea' : 'rgba(55,65,81,0.5)', color: '#ffffff' }}>1. ขอรหัส OTP</span>
+                <span style={{ color: '#4b5563', fontSize: '11px' }}>➔</span>
+                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold', backgroundColor: forgotStep === 2 ? '#9333ea' : 'rgba(55,65,81,0.5)', color: '#ffffff' }}>2. ยืนยัน OTP</span>
+                <span style={{ color: '#4b5563', fontSize: '11px' }}>➔</span>
+                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold', backgroundColor: forgotStep === 3 ? '#9333ea' : 'rgba(55,65,81,0.5)', color: '#ffffff' }}>3. ตั้งรหัสใหม่</span>
+              </div>
+
+              <h3 style={{ fontSize: '19px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#ffffff' }}>
+                {forgotStep === 1 && 'กู้คืนรหัสผ่านด้วยรหัส OTP'}
+                {forgotStep === 2 && 'กรอกรหัสยืนยัน OTP 6 หลัก'}
+                {forgotStep === 3 && 'ตั้งรหัสผ่านใหม่บนหน้าเว็บ'}
+              </h3>
+              
+              <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '16px', lineHeight: '1.4' }}>
+                {forgotStep === 1 && 'กรอกอีเมล หรือ ชื่อผู้ใช้งานของคุณ เพื่อรับรหัส OTP 6 หลัก'}
+                {forgotStep === 2 && (
+                  <>
+                    รหัส OTP ถูกส่งไปที่: <b style={{ color: '#38bdf8' }}>{forgotTargetUser?.email || forgotTargetUser?.username}</b>
+                  </>
+                )}
+                {forgotStep === 3 && (
+                  <>
+                    ตั้งรหัสผ่านใหม่สำหรับบัญชี: <b style={{ color: '#c084fc' }}>{forgotTargetUser?.username}</b>
+                  </>
+                )}
+              </p>
 
               {forgotStatusMsg.text && (
-                <div style={{ backgroundColor: forgotStatusMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${forgotStatusMsg.type === 'success' ? '#34d399' : '#ef4444'}`, color: forgotStatusMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px', textAlign: 'left' }}>
+                <div style={{ backgroundColor: forgotStatusMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${forgotStatusMsg.type === 'success' ? '#34d399' : '#ef4444'}`, color: forgotStatusMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '12px', borderRadius: '12px', fontSize: '12px', marginBottom: '16px', textAlign: 'left', lineHeight: '1.4' }}>
                   {forgotStatusMsg.text}
                 </div>
               )}
 
-              <form onSubmit={handleForgotPasswordSubmit}>
-                <input type="email" placeholder="กรอกอีเมลของคุณ..." value={forgotEmailInput} onChange={(e) => setForgotEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', marginBottom: '20px', boxSizing: 'border-box' }} />
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={() => setForgotModalOpen(false)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
-                  <button type="submit" style={{ flex: 1, backgroundColor: '#ec4899', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ส่งอีเมลรีเซ็ต</button>
-                </div>
-              </form>
+              {/* ขั้นตอนที่ 1: ขอรหัส OTP */}
+              {forgotStep === 1 && (
+                <form onSubmit={handleRequestOtpSubmit}>
+                  <div style={{ textAlign: 'left', marginBottom: '16px' }}>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '5px' }}>อีเมล หรือ ชื่อผู้ใช้งาน (Username)</label>
+                    <input 
+                      type="text" 
+                      placeholder="เช่น user@example.com หรือชื่อผู้ใช้งาน" 
+                      value={forgotEmailInput} 
+                      onChange={(e) => setForgotEmailInput(e.target.value)} 
+                      style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                      autoFocus
+                    />
+                  </div>
+
+                  <div style={{ backgroundColor: 'rgba(55, 65, 81, 0.35)', borderRadius: '10px', padding: '10px 12px', fontSize: '11px', color: '#9ca3af', marginBottom: '18px', textAlign: 'left', border: '1px dashed #4b5563', lineHeight: '1.5' }}>
+                    💡 <b>สะดวก รวดเร็ว จบในหน้าเดียว:</b><br/>
+                    ระบบจะส่งรหัส OTP 6 หลัก และเปิดให้คุณเปลี่ยนรหัสผ่านใหม่ได้ทันทีบนหน้านี้ ไม่ต้องสลับจอไปมา
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button type="button" onClick={() => { setForgotModalOpen(false); resetForgotState(); }} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
+                    <button type="submit" style={{ flex: 1.5, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(147,51,234,0.5)' }}>ขอรับรหัส OTP ➔</button>
+                  </div>
+                </form>
+              )}
+
+              {/* ขั้นตอนที่ 2: กรอกรหัส OTP */}
+              {forgotStep === 2 && (
+                <form onSubmit={handleVerifyOtpSubmit}>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>กรอกรหัสยืนยัน OTP 6 หลัก</label>
+                    <input 
+                      type="text" 
+                      inputMode="numeric" 
+                      maxLength={6} 
+                      placeholder="• • • • • •" 
+                      value={forgotOtpInput} 
+                      onChange={(e) => setForgotOtpInput(e.target.value.replace(/[^0-9]/g, ''))} 
+                      style={{ width: '100%', maxWidth: '240px', margin: '0 auto', backgroundColor: '#030712', border: '2px solid #a855f7', borderRadius: '12px', padding: '12px', color: '#ffffff', fontSize: '24px', fontWeight: '900', letterSpacing: '8px', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} 
+                      autoFocus
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', marginBottom: '18px', padding: '0 6px' }}>
+                    <div style={{ color: otpCountdown > 60 ? '#38bdf8' : '#ef4444', fontWeight: 'bold' }}>
+                      ⏳ หมดอายุใน: {formatOtpTime(otpCountdown)}
+                    </div>
+                    <button 
+                      type="button" 
+                      disabled={otpResendCountdown > 0} 
+                      onClick={handleResendOtp} 
+                      style={{ background: 'none', border: 'none', color: otpResendCountdown > 0 ? '#6b7280' : '#38bdf8', cursor: otpResendCountdown > 0 ? 'not-allowed' : 'pointer', fontSize: '12px', textDecoration: 'underline' }}
+                    >
+                      {otpResendCountdown > 0 ? `ขอรหัสใหม่ใน (${otpResendCountdown}s)` : '🔄 ขอรหัสใหม่อีกครั้ง'}
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button type="button" onClick={() => setForgotStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ย้อนกลับ</button>
+                    <button type="submit" style={{ flex: 1.5, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(52,211,153,0.5)' }}>ยืนยันรหัส OTP ➔</button>
+                  </div>
+                </form>
+              )}
+
+              {/* ขั้นตอนที่ 3: ตั้งรหัสผ่านใหม่บนหน้าเว็บ */}
+              {forgotStep === 3 && (
+                <form onSubmit={handleSetNewPasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>1. รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)</label>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <input 
+                        type={showForgotNewPassword ? 'text' : 'password'} 
+                        placeholder="กรอกรหัสผ่านใหม่..." 
+                        value={forgotNewPassword} 
+                        onChange={(e) => setForgotNewPassword(e.target.value)} 
+                        style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                        autoFocus
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowForgotNewPassword(!showForgotNewPassword)} 
+                        style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                      >
+                        <EyeIcon show={showForgotNewPassword} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. ยืนยันรหัสผ่านใหม่อีกครั้ง</label>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <input 
+                        type={showForgotConfirmPassword ? 'text' : 'password'} 
+                        placeholder="กรอกรหัสผ่านใหม่อีกครั้ง..." 
+                        value={forgotConfirmPassword} 
+                        onChange={(e) => setForgotConfirmPassword(e.target.value)} 
+                        style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowForgotConfirmPassword(!showForgotConfirmPassword)} 
+                        style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                      >
+                        <EyeIcon show={showForgotConfirmPassword} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    style={{ 
+                      backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', 
+                      fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', 
+                      boxShadow: '0 0 20px rgba(147,51,234,0.6)' 
+                    }}
+                  >
+                    💾 บันทึกรหัสผ่านใหม่ทันที
+                  </button>
+                </form>
+              )}
+
             </div>
           </div>
         )}
@@ -1391,9 +1851,7 @@ export default function App() {
     );
   }
 
-  // ====================================================
-  // จอเมื่อเข้าสู่ระบบแล้ว (Dashboard / Shop / Admin)
-  // ====================================================
+  // หากเข้าสู่ระบบแล้ว
   return (
     <div style={{
       backgroundColor: '#070a12',
@@ -1401,32 +1859,7 @@ export default function App() {
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
       color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '60px', position: 'relative'
     }}>
-      {/* Global Button & Card Hover/Active Effects */}
-      <style>{`
-        button {
-          transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        }
-        button:hover {
-          transform: translateY(-2px) scale(1.02) !important;
-          filter: brightness(1.15) !important;
-          box-shadow: 0 6px 18px rgba(168, 85, 247, 0.45) !important;
-        }
-        button:active {
-          transform: translateY(1px) scale(0.96) !important;
-          filter: brightness(0.9) !important;
-        }
-        .cyber-card {
-          transition: all 0.3s ease !important;
-        }
-        .cyber-card:hover {
-          transform: translateY(-6px) scale(1.01) !important;
-          border-color: #a855f7 !important;
-          box-shadow: 0 12px 30px rgba(147, 51, 234, 0.35) !important;
-        }
-        .cyber-card:active {
-          transform: scale(0.98) !important;
-        }
-      `}</style>
+      <style>{cyberGlobalStyles}</style>
       
       {floatingTimer > 0 && (
         <div style={{
@@ -1443,7 +1876,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Header */}
       <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '12px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
           <div style={{ 
@@ -1465,8 +1897,35 @@ export default function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <div style={{ fontSize: '12px' }}><span style={{ color: '#9ca3af' }}>👤 ผู้ใช้: </span><b style={{ color: '#c084fc' }}>{user.username}</b></div>
+            {user.email && (
+              <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ color: '#9ca3af' }}>✉️ </span>
+                <span style={{ color: '#e5e7eb', fontSize: '11px' }}>{user.email}</span>
+                {user.emailVerified ? (
+                  <span style={{ color: '#34d399', fontSize: '11px', fontWeight: 'bold' }}>✅ ยืนยันแล้ว</span>
+                ) : (
+                  <button 
+                    type="button" 
+                    onClick={handleResendEmailVerification}
+                    title="คลิกเพื่อส่งลิงก์ยืนยันตัวตนไปยังอีเมลนี้"
+                    style={{ 
+                      backgroundColor: 'rgba(245, 158, 11, 0.25)', 
+                      border: '1px solid #f59e0b', 
+                      color: '#fbbf24', 
+                      padding: '2px 8px', 
+                      borderRadius: '6px', 
+                      fontSize: '10px', 
+                      fontWeight: 'bold',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ⚠️ ยืนยันเมล
+                  </button>
+                )}
+              </div>
+            )}
             <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px' }}><span style={{ color: '#9ca3af' }}>💰 เครดิตร้าน: </span><b style={{ color: '#34d399' }}>฿{(user.balance || 0).toLocaleString()}</b></div>
             
             <button 
@@ -1487,8 +1946,12 @@ export default function App() {
           </nav>
         </div>
       </header>
+      {emailVerifyMsg && (
+        <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.25)', borderBottom: '1px solid #10b981', color: '#6ee7b7', padding: '10px 20px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold' }}>
+          {emailVerifyMsg}
+        </div>
+      )}
 
-      {/* ปุ่มติดต่อ LINE */}
       <a 
         href="https://lin.ee/Nn1UeBC" 
         target="_blank" 
@@ -1507,7 +1970,6 @@ export default function App() {
         ติดต่อแอดมิน (LINE)
       </a>
 
-      {/* เนื้อหาหลัก */}
       <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px', position: 'relative', zIndex: 1 }}>
         {activeTab === 'shop' && !selectedGame && (
           <div>
@@ -1517,7 +1979,8 @@ export default function App() {
               borderRadius: '24px', 
               padding: '40px', 
               marginBottom: '35px', 
-              boxShadow: '0 0 50px rgba(168, 85, 247, 0.4), inset 0 0 30px rgba(56, 189, 248, 0.2)'
+              boxShadow: '0 0 50px rgba(168, 85, 247, 0.4), inset 0 0 30px rgba(56, 189, 248, 0.2)',
+              position: 'hidden'
             }}>
               <span style={{ backgroundColor: 'rgba(168, 85, 247, 0.3)', color: '#c084fc', border: '1px solid #c084fc', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>
                 ⚡ ระบบเติมเกมอัตโนมัติออนไลน์ 24 ชั่วโมง
@@ -1566,7 +2029,6 @@ export default function App() {
               {filteredGames.map((game) => (
                 <div 
                   key={game.id} 
-                  className="cyber-card"
                   onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPackageQuantity(1); setPlayerId(''); }} 
                   style={{ 
                     backgroundColor: 'rgba(17, 24, 39, 0.85)', 
@@ -1591,7 +2053,6 @@ export default function App() {
               ))}
             </div>
 
-            {/* โค้ดกิจกรรม Realtime */}
             <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(56, 189, 248, 0.6)', borderRadius: '20px', padding: '25px 30px', marginBottom: '35px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 15px 0' }}>📊 สถานะโค้ดกิจกรรมคงเหลือแยกตามเกม (Realtime)</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
@@ -1610,7 +2071,6 @@ export default function App() {
               </div>
             </div>
 
-            {/* ส่วนกรอกโค้ดกิจกรรม */}
             <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(56, 189, 248, 0.6)', borderRadius: '20px', padding: '25px 30px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 15px 0' }}>🎁 กรอกโค้ดของขวัญ / โค้ดกิจกรรมจากแอดมิน</h3>
               {eventMsg.text && (
@@ -1645,7 +2105,6 @@ export default function App() {
           </div>
         )}
 
-        {/* หน้าสั่งซื้อเกม */}
         {activeTab === 'shop' && selectedGame && (
           <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '24px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.5)' }}>
             <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: 'transparent', border: '1px solid #374151', color: '#9ca3af', padding: '8px 16px', borderRadius: '10px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold' }}>
@@ -1671,7 +2130,6 @@ export default function App() {
                 {selectedGame.packages.map((pkg) => (
                   <div 
                     key={pkg.id} 
-                    className="cyber-card"
                     onClick={() => { setSelectedPackage(pkg); setPackageQuantity(1); }} 
                     style={{ 
                       backgroundColor: selectedPackage?.id === pkg.id ? 'rgba(147, 51, 234, 0.3)' : '#030712', 
@@ -1712,11 +2170,7 @@ export default function App() {
               <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '12px', fontWeight: 'bold' }}>3. เลือกช่องทางชำระเงิน</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
                 {paymentMethods.map((pm) => (
-                  <div 
-                    key={pm.id} 
-                    className="cyber-card"
-                    onClick={() => setSelectedPayment(pm)} 
-                    style={{ 
+                  <div key={pm.id} className="cyber-card-clickable" onClick={() => setSelectedPayment(pm)} style={{ 
                       backgroundColor: selectedPayment?.id === pm.id ? 'rgba(56, 189, 248, 0.2)' : '#030712', 
                       border: selectedPayment?.id === pm.id ? '2px solid #38bdf8' : '1px solid #374151', 
                       borderRadius: '14px', padding: '14px', cursor: 'pointer' 
@@ -1789,7 +2243,6 @@ export default function App() {
           </div>
         )}
 
-        {/* ตรวจสอบประวัติคำสั่งซื้อ */}
         {activeTab === 'track' && (
           <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 0 35px rgba(0,0,0,0.7)' }}>
             <div style={{ borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '20px' }}>
@@ -1943,7 +2396,6 @@ export default function App() {
           </div>
         )}
 
-        {/* แดชบอร์ดแอดมิน */}
         {activeTab === 'admin' && isUserAdmin && (
           <div style={{ maxWidth: '950px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '25px' }}>
             {!isAdminLoggedIn ? (
@@ -2138,7 +2590,6 @@ export default function App() {
                   )}
                 </div>
 
-                {/* ส่วนสร้างโค้ดกิจกรรม */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🎁 สร้างและจัดการโค้ดของขวัญ / โค้ดกิจกรรม (Realtime Cloud)</h3>
@@ -2210,7 +2661,6 @@ export default function App() {
         )}
       </main>
 
-      {/* Modal ชำระเงิน / ยืนยันรหัสผ่าน */}
       {showCheckoutModal && selectedGame && selectedPackage && selectedPayment && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
@@ -2268,14 +2718,13 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal เติมเครดิต Cyber Wallet / OTP */}
       {(showTopupWalletModal || trueMoneyOtpStep) && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
             {trueMoneyOtpStep ? (
               <form onSubmit={handleTrueMoneyOtpSubmit}>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#38bdf8' }}>🔐 กรอกรหัส OTP</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>ระบบได้ส่งรหัส OTP ไปยังเบอร์ <b style={{ color: '#ffffff' }}>{truemoneyPhone}</b> แล้ว</p>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>ระบบได้ส่งรหัส OTP ไปยังเบอร์ <b style={{ color: '#ffffff' }}>{truemoneyPhone}</b> แล้ว (ลองกรอกตัวเลข 6 หลัก)</p>
                 {trueMoneyOtpError && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px', borderRadius: '8px', fontSize: '12px', marginBottom: '15px' }}>{trueMoneyOtpError}</div>}
                 <input type="text" inputMode="numeric" maxLength={6} placeholder="------" value={trueMoneyOtpCode} onChange={(e) => setTrueMoneyOtpCode(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '12px', padding: '14px', color: '#ffffff', fontSize: '24px', textAlign: 'center', fontWeight: 'bold', letterSpacing: '8px', outline: 'none', marginBottom: '20px', boxSizing: 'border-box' }} />
                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -2355,7 +2804,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Footer */}
       <footer style={{ textAlign: 'center', marginTop: '50px', padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', color: '#9ca3af', fontSize: '13px' }}>
         <p style={{ margin: 0 }}>⚡ <b>CYBER TOPUP</b> - บริการเติมเกมออนไลน์ ตลอด 24 ชั่วโมง</p>
       </footer>
