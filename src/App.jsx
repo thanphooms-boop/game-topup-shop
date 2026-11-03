@@ -1,4 +1,9 @@
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, onValue, set, push } from 'firebase/database';
+import { getAuth, sendPasswordResetEmail, createUserWithEmailAndPassword } from 'firebase/auth';
 
+// ตั้งค่า Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyD-dgpKK9S2oLfLawJ8MKYHi-NWB4GQv7u",
   authDomain: "cyber-topup-game.firebaseapp.com",
@@ -9,6 +14,10 @@ const firebaseConfig = {
   appId: "1:191687954752:web:063d8ce34df50b182feaa5",
   measurementId: "G-2VQP0N3PVZ"
 };
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
 export default function App() {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('cyber_current_logged_user');
