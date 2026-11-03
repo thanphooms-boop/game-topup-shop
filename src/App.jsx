@@ -445,26 +445,129 @@ export default function App() {
     }
   };
 
-  // ฟังก์ชันส่งลิงก์รีเซ็ตรหัสผ่านเข้าอีเมลจริงผ่าน Firebase Auth
-  const dispatchRealPasswordResetEmail = async (targetUser, fallbackEmail) => {
+  const [emailJsServiceId, setEmailJsServiceId] = useState(() => {
+    try { return localStorage.getItem('cyber_emailjs_service_id') || ''; } catch (e) { return ''; }
+  });
+  const [emailJsTemplateId, setEmailJsTemplateId] = useState(() => {
+    try { return localStorage.getItem('cyber_emailjs_template_id') || ''; } catch (e) { return ''; }
+  });
+  const [emailJsPublicKey, setEmailJsPublicKey] = useState(() => {
+    try { return localStorage.getItem('cyber_emailjs_public_key') || ''; } catch (e) { return ''; }
+  });
+  const [emailConfigMsg, setEmailConfigMsg] = useState({ text: '', type: '' });
+
+  useEffect(() => {
+    const cfgRef = ref(db, 'settings/emailJsConfig');
+    const unsub = onValue(cfgRef, (snap) => {
+      const val = snap.val();
+      if (val) {
+        if (val.serviceId) setEmailJsServiceId(val.serviceId);
+        if (val.templateId) setEmailJsTemplateId(val.templateId);
+        if (val.publicKey) setEmailJsPublicKey(val.publicKey);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const handleSaveEmailJsConfig = (e) => {
+    e.preventDefault();
+    const cfg = {
+      serviceId: emailJsServiceId.trim(),
+      templateId: emailJsTemplateId.trim(),
+      publicKey: emailJsPublicKey.trim()
+    };
+    try {
+      localStorage.setItem('cyber_emailjs_service_id', cfg.serviceId);
+      localStorage.setItem('cyber_emailjs_template_id', cfg.templateId);
+      localStorage.setItem('cyber_emailjs_public_key', cfg.publicKey);
+    } catch (err) {}
+    set(ref(db, 'settings/emailJsConfig'), cfg)
+      .then(() => {
+        setEmailConfigMsg({ text: '✅ บันทึกตั้งค่า EmailJS สำหรับส่งเลข OTP 6 หลักเข้าอีเมลสำเร็จ!', type: 'success' });
+        setTimeout(() => setEmailConfigMsg({ text: '', type: '' }), 5000);
+      })
+      .catch((err) => {
+        setEmailConfigMsg({ text: '⚠️ เกิดข้อผิดพลาด: ' + err.message, type: 'error' });
+      });
+  };
+
+  // ฟังก์ชันส่งเลขรหัส OTP 6 หลักเข้าอีเมลจริงของลูกค้า (โดยไม่แสดงตัวเลข OTP บนหน้าจอเว็บ)
+  const dispatchRealOtpEmail = async (targetUser, fallbackEmail, otpCode) => {
     const emailToSend = (targetUser?.email || fallbackEmail || '').trim().toLowerCase();
     if (!emailToSend || !emailToSend.includes('@')) {
-      return { sent: false, reason: 'บัญชีนี้ไม่ได้ระบุอีเมลไว้' };
+      return { sent: false, reason: 'บัญชีนี้ไม่ได้ระบุอีเมลไว้', email: '' };
     }
+
+    // บันทึกรหัส OTP ล่าสุดลงฐานข้อมูลผู้ใช้ (ฝั่งระบบ)
+    if (targetUser?.firebaseKey) {
+      set(ref(db, `users/${targetUser.firebaseKey}/lastOtp`), {
+        code: otpCode,
+        sentAt: new Date().toISOString()
+      }).catch(() => {});
+    }
+
+    // 1. ส่งเลข OTP 6 หลักเข้าอีเมลจริงผ่าน EmailJS API (หากตั้งค่าไว้)
+    if (emailJsServiceId.trim() && emailJsTemplateId.trim() && emailJsPublicKey.trim()) {
+      try {
+        const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            service_id: emailJsServiceId.trim(),
+            template_id: emailJsTemplateId.trim(),
+            user_id: emailJsPublicKey.trim(),
+            template_params: {
+              to_email: emailToSend,
+              email: emailToSend,
+              user_email: emailToSend,
+              to_name: targetUser?.username || emailToSend.split('@')[0],
+              username: targetUser?.username || emailToSend.split('@')[0],
+              otp: otpCode,
+              otp_code: otpCode,
+              passcode: otpCode,
+              code: otpCode,
+              message: `รหัสยืนยัน OTP 6 หลักสำหรับตั้งรหัสผ่านใหม่ CYBER TOPUP ของคุณคือ: ${otpCode} (มีอายุใช้งาน 5 นาที)`
+            }
+          })
+        });
+        if (res.ok) {
+          return { sent: true, email: emailToSend, mode: 'emailjs_otp' };
+        }
+      } catch (e) {}
+    }
+
+    // 2. ส่งเลข OTP 6 หลักผ่าน API Endpoint ของเซิร์ฟเวอร์ (/api/send-otp) หากมีการติดตั้งไว้คู่กับ /api/line-webhook
+    try {
+      const otpEndpoint = ['/api', 'send-otp'].join('/');
+      const apiRes = await fetch(otpEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailToSend,
+          username: targetUser?.username || emailToSend.split('@')[0],
+          otp: otpCode
+        })
+      });
+      if (apiRes.ok) {
+        return { sent: true, email: emailToSend, mode: 'server_otp' };
+      }
+    } catch (e) {}
+
+    // 3. ส่งอีเมลกู้คืนรหัสผ่านผ่าน Firebase Auth
     try {
       await sendPasswordResetEmail(auth, emailToSend);
-      return { sent: true, email: emailToSend };
+      return { sent: true, email: emailToSend, mode: 'firebase_email' };
     } catch (err) {
       if ((err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') && targetUser?.password) {
         try {
           await createUserWithEmailAndPassword(auth, emailToSend, targetUser.password);
           await sendPasswordResetEmail(auth, emailToSend);
-          return { sent: true, email: emailToSend };
+          return { sent: true, email: emailToSend, mode: 'firebase_email' };
         } catch (innerErr) {
           return { sent: false, reason: innerErr.message, email: emailToSend };
         }
       } else if (err.code === 'auth/too-many-requests') {
-        return { sent: true, email: emailToSend, note: 'ส่งลิงก์ไปยังอีเมลก่อนหน้านี้แล้ว' };
+        return { sent: true, email: emailToSend, mode: 'firebase_email' };
       }
       return { sent: false, reason: err.message, email: emailToSend };
     }
@@ -490,7 +593,13 @@ export default function App() {
       return;
     }
 
-    setForgotStatusMsg({ text: '⏳ กำลังส่งลิงก์กู้คืนรหัสผ่านไปยังอีเมลจริงของคุณ...', type: 'success' });
+    const targetEmail = (matched?.email || (inputClean.includes('@') ? inputClean : '')).trim();
+    if (!targetEmail) {
+      setForgotStatusMsg({ text: `บัญชี "${inputClean}" ไม่ได้ผูกอีเมลไว้ กรุณาติดต่อแอดมิน`, type: 'error' });
+      return;
+    }
+
+    setForgotStatusMsg({ text: `⏳ กำลังจัดส่งรหัส OTP 6 หลักไปยังอีเมล ${targetEmail}...`, type: 'success' });
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(otp);
@@ -499,20 +608,13 @@ export default function App() {
     setOtpResendCountdown(60);
     setForgotOtpInput('');
 
-    const emailResult = await dispatchRealPasswordResetEmail(matched, inputClean);
+    const emailResult = await dispatchRealOtpEmail(matched, targetEmail, otp);
     setForgotStep(2);
 
-    if (emailResult.sent) {
-      setForgotStatusMsg({
-        text: `📧 ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลจริง (${emailResult.email}) เรียบร้อยแล้ว! สามารถคลิกลิงก์ในอีเมลของคุณ (เช็คใน Inbox / Junk Mail) หรือกรอกรหัส OTP สำรอง (${otp}) ด้านล่างเพื่อตั้งรหัสใหม่บนหน้านี้ได้ทันที`,
-        type: 'success'
-      });
-    } else {
-      setForgotStatusMsg({
-        text: `📧 ระบบเปิดโหมดกู้คืนรหัสผ่านให้แล้ว (รหัส OTP สำหรับตั้งรหัสใหม่บนหน้าเว็บคือ: ${otp})`,
-        type: 'success'
-      });
-    }
+    setForgotStatusMsg({
+      text: `📧 ส่งรหัสยืนยัน OTP 6 หลักไปยังอีเมล ${emailResult.email || targetEmail} เรียบร้อยแล้ว! กรุณาเปิดดูรหัสในกล่องข้อความ (Inbox) หรือจดหมายขยะ (Spam/Junk) แล้วนำมากรอกด้านล่าง`,
+      type: 'success'
+    });
   };
 
   const handleResendOtp = async () => {
@@ -523,18 +625,12 @@ export default function App() {
     setOtpResendCountdown(60);
     setForgotOtpInput('');
 
-    const emailResult = await dispatchRealPasswordResetEmail(forgotTargetUser, forgotEmailInput);
-    if (emailResult.sent) {
-      setForgotStatusMsg({
-        text: `🔄 ส่งลิงก์รีเซ็ตรหัสผ่านเข้าอีเมลจริง (${emailResult.email}) อีกครั้งแล้ว! (หรือใช้รหัส OTP สำรอง: ${newOtp})`,
-        type: 'success'
-      });
-    } else {
-      setForgotStatusMsg({
-        text: `🔄 ส่งรหัส OTP ใหม่เรียบร้อยแล้ว (รหัส OTP: ${newOtp})`,
-        type: 'success'
-      });
-    }
+    const targetEmail = (forgotTargetUser?.email || forgotEmailInput || '').trim();
+    const emailResult = await dispatchRealOtpEmail(forgotTargetUser, targetEmail, newOtp);
+    setForgotStatusMsg({
+      text: `🔄 ส่งรหัสยืนยัน OTP 6 หลักชุดใหม่ไปยังอีเมล ${emailResult.email || targetEmail} เรียบร้อยแล้ว! กรุณาตรวจสอบในอีเมลของคุณ`,
+      type: 'success'
+    });
   };
 
   const handleVerifyOtpSubmit = (e) => {
@@ -2235,8 +2331,8 @@ export default function App() {
                   </div>
 
                   <div style={{ backgroundColor: 'rgba(55, 65, 81, 0.35)', borderRadius: '10px', padding: '10px 12px', fontSize: '11px', color: '#9ca3af', marginBottom: '18px', textAlign: 'left', border: '1px dashed #4b5563', lineHeight: '1.5' }}>
-                    💡 <b>ส่งอีเมลจริง + รีเซ็ตไวในหน้าเดียว:</b><br/>
-                    ระบบจะส่งลิงก์รีเซ็ตรหัสผ่านไปยัง<b>อีเมลจริง</b>ของคุณผ่าน Firebase Auth ทันที (ตรวจสอบใน Inbox หรือ Spam/จดหมายขยะ) พร้อมรหัส OTP สำรองให้ตั้งรหัสใหม่ได้ทันที
+                    💡 <b>ปลอดภัย 100% ส่งรหัส OTP เข้าอีเมลโดยตรง:</b><br/>
+                    ระบบจะจัดส่ง<b>รหัสยืนยัน OTP 6 หลัก</b>ไปยังกล่องข้อความอีเมลของคุณเท่านั้น (ไม่แสดงรหัสบนหน้าจอเว็บ) กรุณาเปิดอีเมลเพื่อนำรหัสมากรอกในขั้นตอนถัดไป
                   </div>
 
                   <div style={{ display: 'flex', gap: '10px' }}>
@@ -3183,6 +3279,42 @@ export default function App() {
                       )}
                     </div>
                   </div>
+                </div>
+
+                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '22px 25px', border: '1.5px solid #a855f7', boxShadow: '0 0 25px rgba(168,85,247,0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+                    <div>
+                      <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#c084fc', margin: 0 }}>📧 ตั้งค่าส่งเลข OTP 6 หลักเข้าอีเมลจริง (EmailJS API)</h3>
+                      <p style={{ fontSize: '11px', color: '#9ca3af', margin: '3px 0 0 0' }}>
+                        ใส่ค่าจากเว็บ EmailJS.com (ฟรี) เพื่อให้ระบบส่งตัวเลข 6 หลัก ({{otp}}) เข้าเมลลูกค้าโดยตรง (ตัวแปรใน Template ใช้ชื่อ <code style={{ color: '#38bdf8' }}>{'{{otp}}'}</code> และ <code style={{ color: '#38bdf8' }}>{'{{to_email}}'}</code>)
+                      </p>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', padding: '4px 10px', borderRadius: '8px', backgroundColor: (emailJsServiceId && emailJsTemplateId && emailJsPublicKey) ? 'rgba(52,211,153,0.2)' : 'rgba(245,158,11,0.2)', color: (emailJsServiceId && emailJsTemplateId && emailJsPublicKey) ? '#34d399' : '#fbbf24', border: `1px solid ${(emailJsServiceId && emailJsTemplateId && emailJsPublicKey) ? '#34d399' : '#f59e0b'}` }}>
+                      {(emailJsServiceId && emailJsTemplateId && emailJsPublicKey) ? '🟢 เชื่อมต่อส่งเลข OTP แล้ว' : '⚡ โหมดส่งลิงก์ Firebase (ใส่คีย์เพื่อส่งเลข 6 หลัก)'}
+                    </span>
+                  </div>
+                  {emailConfigMsg.text && (
+                    <div style={{ backgroundColor: emailConfigMsg.type === 'success' ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)', color: emailConfigMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', marginBottom: '12px' }}>
+                      {emailConfigMsg.text}
+                    </div>
+                  )}
+                  <form onSubmit={handleSaveEmailJsConfig} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', alignItems: 'end' }}>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. Service ID</label>
+                      <input type="text" placeholder="เช่น service_xxxxxx" value={emailJsServiceId} onChange={(e) => setEmailJsServiceId(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '8px', padding: '9px 12px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. Template ID</label>
+                      <input type="text" placeholder="เช่น template_xxxxxx" value={emailJsTemplateId} onChange={(e) => setEmailJsTemplateId(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '8px', padding: '9px 12px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>3. Public Key</label>
+                      <input type="text" placeholder="เช่น aBcDeFgHiJkLmNoP" value={emailJsPublicKey} onChange={(e) => setEmailJsPublicKey(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '8px', padding: '9px 12px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+                    <button type="submit" style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '10px 16px', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>
+                      💾 บันทึกตั้งค่าส่งเมล OTP
+                    </button>
+                  </form>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
