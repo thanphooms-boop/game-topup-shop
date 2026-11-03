@@ -57,7 +57,7 @@ const cyberGlobalStyles = `
     box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3) !important;
   }
 
-  /* ปรับแต่ง Scrollbar สวยงามแบบ Cyberpunk */
+  /* ปรับแต่ง Scrollbar สวยงามแบบ Cyberpunk (Request 5: ปรับลูกศรเลื่อนขึ้นลงสวยๆ) */
   ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -118,7 +118,7 @@ const cyberGlobalStyles = `
     display: none;
   }
 
-  /* ซ่อน Spin Button เดิมของบราวเซอร์สำหรับ Input Number */
+  /* ซ่อน Spin Button เดิมของบราวเซอร์สำหรับ Input Number (Request 2) */
   .no-native-spin::-webkit-inner-spin-button,
   .no-native-spin::-webkit-outer-spin-button {
     -webkit-appearance: none;
@@ -128,7 +128,7 @@ const cyberGlobalStyles = `
     -moz-appearance: textfield;
   }
 
-  /* ลูกศร Dropdown Select สไตล์โมเดิร์น สวยงาม พรีเมียม */
+  /* ลูกศร Dropdown Select สไตล์โมเดิร์น สวยงาม พรีเมียม (Request 2) */
   .cyber-select {
     appearance: none;
     -webkit-appearance: none;
@@ -148,7 +148,7 @@ const cyberGlobalStyles = `
     background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c084fc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
   }
 
-  /* สไตล์ Textarea เฉพาะพร้อม Scrollbar และลูกศรเลื่อนขึ้นลงสวยงาม */
+  /* สไตล์ Textarea เฉพาะพร้อม Scrollbar และลูกศรเลื่อนขึ้นลงสวยงาม (Request 5) */
   .cyber-textarea {
     scrollbar-color: #38bdf8 #090d16;
     scrollbar-width: thin;
@@ -159,7 +159,7 @@ const cyberGlobalStyles = `
     box-shadow: 0 0 15px rgba(56, 189, 248, 0.35) !important;
   }
 
-  /* เอฟเฟกต์ปุ่ม LINE ลอยสุดพรีเมียม */
+  /* เอฟเฟกต์ปุ่ม LINE ลอยสุดพรีเมียม (Floating + Neon Radar Pulse + Shimmer Sweep) */
   @keyframes cyberLineFloat {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-7px); }
@@ -206,6 +206,7 @@ const cyberGlobalStyles = `
     box-shadow: 0 0 35px rgba(6, 199, 85, 1), 0 0 60px rgba(56, 189, 248, 0.6) !important;
   }
 `;
+
 export default function App() {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('cyber_current_logged_user');
@@ -313,7 +314,7 @@ export default function App() {
     } catch (e) {}
   }, []);
 
-  // ซิงค์สถานะการยืนยันอีเมลจริงจาก Firebase Auth อัตโนมัติ
+  // ซิงค์สถานะการยืนยันอีเมลจริงจาก Firebase Auth อัตโนมัติ (เมื่อผู้ใช้กดลิงก์ในอีเมลแล้วกลับมาที่หน้าเว็บ)
   const checkAndSyncEmailVerified = async (silent = true) => {
     if (!user || !user.email) return;
     try {
@@ -346,7 +347,7 @@ export default function App() {
           }
           return true;
         } else if (!silent) {
-          setEmailVerifyMsg(`⏳ ยังไม่พบการกดยืนยันจากอีเมล ${user.email} กรุณาเปิดอีเมลแล้วคลิกลิงก์ยืนยัน`);
+          setEmailVerifyMsg(`⏳ ยังไม่พบการกดยืนยันจากอีเมล ${user.email} กรุณาเปิดอีเมลแล้วคลิกลิงก์ยืนยัน (ตรวจสอบใน Inbox หรือ Spam/จดหมายขยะ)`);
           setTimeout(() => setEmailVerifyMsg(''), 7000);
         }
       }
@@ -428,13 +429,13 @@ export default function App() {
         }
 
         await sendEmailVerification(currentAuthUser);
-        setEmailVerifyMsg(`📧 ส่งลิงก์ยืนยันตัวตนไปยังอีเมลจริง ${user.email} เรียบร้อยแล้ว!`);
+        setEmailVerifyMsg(`📧 ส่งลิงก์ยืนยันตัวตนไปยังอีเมลจริง ${user.email} เรียบร้อยแล้ว! กรุณาเปิดอีเมลแล้วคลิกลิงก์ยืนยัน (ตรวจสอบใน Inbox หรือ Spam/จดหมายขยะ)`);
       } else {
         setEmailVerifyMsg(`⚠️ กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่อีกครั้งเพื่อส่งลิงก์ยืนยันอีเมล`);
       }
     } catch (err) {
       if (err.code === 'auth/too-many-requests') {
-        setEmailVerifyMsg(`⏳ ส่งลิงก์ยืนยันไปยัง ${user.email} ไปแล้วเมื่อสักครู่`);
+        setEmailVerifyMsg(`⏳ ส่งลิงก์ยืนยันไปยัง ${user.email} ไปแล้วเมื่อสักครู่ กรุณาเช็คในกล่องข้อความหรือ Spam ของอีเมลคุณ`);
       } else {
         setEmailVerifyMsg(`⚠️ ไม่สามารถส่งอีเมลยืนยันได้: ${err.message}`);
       }
@@ -443,6 +444,473 @@ export default function App() {
       setTimeout(() => setEmailVerifyMsg(''), 9000);
     }
   };
+
+  const [emailJsServiceId, setEmailJsServiceId] = useState(() => {
+    try { return localStorage.getItem('cyber_emailjs_service_id') || ''; } catch (e) { return ''; }
+  });
+  const [emailJsTemplateId, setEmailJsTemplateId] = useState(() => {
+    try { return localStorage.getItem('cyber_emailjs_template_id') || ''; } catch (e) { return ''; }
+  });
+  const [emailJsPublicKey, setEmailJsPublicKey] = useState(() => {
+    try { return localStorage.getItem('cyber_emailjs_public_key') || ''; } catch (e) { return ''; }
+  });
+  const [emailConfigMsg, setEmailConfigMsg] = useState({ text: '', type: '' });
+
+  useEffect(() => {
+    const cfgRef = ref(db, 'settings/emailJsConfig');
+    const unsub = onValue(cfgRef, (snap) => {
+      const val = snap.val();
+      if (val) {
+        if (val.serviceId) setEmailJsServiceId(val.serviceId);
+        if (val.templateId) setEmailJsTemplateId(val.templateId);
+        if (val.publicKey) setEmailJsPublicKey(val.publicKey);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const handleSaveEmailJsConfig = (e) => {
+    e.preventDefault();
+    const cfg = {
+      serviceId: emailJsServiceId.trim(),
+      templateId: emailJsTemplateId.trim(),
+      publicKey: emailJsPublicKey.trim()
+    };
+    try {
+      localStorage.setItem('cyber_emailjs_service_id', cfg.serviceId);
+      localStorage.setItem('cyber_emailjs_template_id', cfg.templateId);
+      localStorage.setItem('cyber_emailjs_public_key', cfg.publicKey);
+    } catch (err) {}
+    set(ref(db, 'settings/emailJsConfig'), cfg)
+      .then(() => {
+        setEmailConfigMsg({ text: '✅ บันทึกตั้งค่า EmailJS สำหรับส่งเลข OTP 6 หลักเข้าอีเมลสำเร็จ!', type: 'success' });
+        setTimeout(() => setEmailConfigMsg({ text: '', type: '' }), 5000);
+      })
+      .catch((err) => {
+        setEmailConfigMsg({ text: '⚠️ เกิดข้อผิดพลาด: ' + err.message, type: 'error' });
+      });
+  };
+
+  // ฟังก์ชันส่งเลขรหัส OTP 6 หลักเข้าอีเมลจริงของลูกค้า (โดยไม่แสดงตัวเลข OTP บนหน้าจอเว็บ)
+  const dispatchRealOtpEmail = async (targetUser, fallbackEmail, otpCode) => {
+    const emailToSend = (targetUser?.email || fallbackEmail || '').trim().toLowerCase();
+    if (!emailToSend || !emailToSend.includes('@')) {
+      return { sent: false, reason: 'บัญชีนี้ไม่ได้ระบุอีเมลไว้', email: '' };
+    }
+
+    // บันทึกรหัส OTP ล่าสุดลงฐานข้อมูลผู้ใช้ (ฝั่งระบบ)
+    if (targetUser?.firebaseKey) {
+      set(ref(db, `users/${targetUser.firebaseKey}/lastOtp`), {
+        code: otpCode,
+        sentAt: new Date().toISOString()
+      }).catch(() => {});
+    }
+
+    // 1. ส่งเลข OTP 6 หลักเข้าอีเมลจริงผ่าน EmailJS API (หากตั้งค่าไว้)
+    if (emailJsServiceId.trim() && emailJsTemplateId.trim() && emailJsPublicKey.trim()) {
+      try {
+        const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            service_id: emailJsServiceId.trim(),
+            template_id: emailJsTemplateId.trim(),
+            user_id: emailJsPublicKey.trim(),
+            template_params: {
+              to_email: emailToSend,
+              email: emailToSend,
+              user_email: emailToSend,
+              to_name: targetUser?.username || emailToSend.split('@')[0],
+              username: targetUser?.username || emailToSend.split('@')[0],
+              otp: otpCode,
+              otp_code: otpCode,
+              passcode: otpCode,
+              code: otpCode,
+              message: `รหัสยืนยัน OTP 6 หลักสำหรับตั้งรหัสผ่านใหม่ CYBER TOPUP ของคุณคือ: ${otpCode} (มีอายุใช้งาน 5 นาที)`
+            }
+          })
+        });
+        if (res.ok) {
+          return { sent: true, email: emailToSend, mode: 'emailjs_otp' };
+        }
+      } catch (e) {}
+    }
+
+    // 2. ส่งเลข OTP 6 หลักผ่าน API Endpoint ของเซิร์ฟเวอร์ (/api/send-otp) หากมีการติดตั้งไว้คู่กับ /api/line-webhook
+    try {
+      const otpEndpoint = ['/api', 'send-otp'].join('/');
+      const apiRes = await fetch(otpEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailToSend,
+          username: targetUser?.username || emailToSend.split('@')[0],
+          otp: otpCode
+        })
+      });
+      if (apiRes.ok) {
+        return { sent: true, email: emailToSend, mode: 'server_otp' };
+      }
+    } catch (e) {}
+
+    // 3. ส่งอีเมลกู้คืนรหัสผ่านผ่าน Firebase Auth
+    try {
+      await sendPasswordResetEmail(auth, emailToSend);
+      return { sent: true, email: emailToSend, mode: 'firebase_email' };
+    } catch (err) {
+      if ((err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') && targetUser?.password) {
+        try {
+          await createUserWithEmailAndPassword(auth, emailToSend, targetUser.password);
+          await sendPasswordResetEmail(auth, emailToSend);
+          return { sent: true, email: emailToSend, mode: 'firebase_email' };
+        } catch (innerErr) {
+          return { sent: false, reason: innerErr.message, email: emailToSend };
+        }
+      } else if (err.code === 'auth/too-many-requests') {
+        return { sent: true, email: emailToSend, mode: 'firebase_email' };
+      }
+      return { sent: false, reason: err.message, email: emailToSend };
+    }
+  };
+
+  const handleRequestOtpSubmit = async (e) => {
+    e.preventDefault();
+    setForgotStatusMsg({ text: '', type: '' });
+
+    const inputClean = forgotEmailInput.trim();
+    if (!inputClean) {
+      setForgotStatusMsg({ text: 'กรุณากรอกอีเมล หรือชื่อผู้ใช้ของคุณ', type: 'error' });
+      return;
+    }
+
+    const matched = registeredUsers.find(
+      (u) => (u.username && u.username.toLowerCase() === inputClean.toLowerCase()) ||
+             (u.email && u.email.toLowerCase() === inputClean.toLowerCase())
+    );
+
+    if (!matched && !inputClean.includes('@')) {
+      setForgotStatusMsg({ text: `ไม่พบบัญชีผู้ใช้ "${inputClean}" ในระบบ กรุณาตรวจสอบอีกครั้ง`, type: 'error' });
+      return;
+    }
+
+    const targetEmail = (matched?.email || (inputClean.includes('@') ? inputClean : '')).trim();
+    if (!targetEmail) {
+      setForgotStatusMsg({ text: `บัญชี "${inputClean}" ไม่ได้ผูกอีเมลไว้ กรุณาติดต่อแอดมิน`, type: 'error' });
+      return;
+    }
+
+    setForgotStatusMsg({ text: `⏳ กำลังจัดส่งรหัส OTP 6 หลักไปยังอีเมล ${targetEmail}...`, type: 'success' });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(otp);
+    if (matched) setForgotTargetUser(matched);
+    setOtpCountdown(300);
+    setOtpResendCountdown(60);
+    setForgotOtpInput('');
+
+    const emailResult = await dispatchRealOtpEmail(matched, targetEmail, otp);
+    setForgotStep(2);
+
+    setForgotStatusMsg({
+      text: `📧 ส่งรหัสยืนยัน OTP 6 หลักไปยังอีเมล ${emailResult.email || targetEmail} เรียบร้อยแล้ว! กรุณาเปิดดูรหัสในกล่องข้อความ (Inbox) หรือจดหมายขยะ (Spam/Junk) แล้วนำมากรอกด้านล่าง`,
+      type: 'success'
+    });
+  };
+
+  const handleResendOtp = async () => {
+    if (otpResendCountdown > 0) return;
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(newOtp);
+    setOtpCountdown(300);
+    setOtpResendCountdown(60);
+    setForgotOtpInput('');
+
+    const targetEmail = (forgotTargetUser?.email || forgotEmailInput || '').trim();
+    const emailResult = await dispatchRealOtpEmail(forgotTargetUser, targetEmail, newOtp);
+    setForgotStatusMsg({
+      text: `🔄 ส่งรหัสยืนยัน OTP 6 หลักชุดใหม่ไปยังอีเมล ${emailResult.email || targetEmail} เรียบร้อยแล้ว! กรุณาตรวจสอบในอีเมลของคุณ`,
+      type: 'success'
+    });
+  };
+
+  const handleVerifyOtpSubmit = (e) => {
+    e.preventDefault();
+    setForgotStatusMsg({ text: '', type: '' });
+
+    if (otpCountdown <= 0) {
+      setForgotStatusMsg({ text: '⚠️ รหัส OTP หมดอายุแล้ว กรุณากดขอรหัส OTP ใหม่', type: 'error' });
+      return;
+    }
+
+    if (!forgotOtpInput.trim() || forgotOtpInput.trim().length !== 6) {
+      setForgotStatusMsg({ text: 'กรุณากรอกรหัส OTP ให้ครบ 6 หลัก', type: 'error' });
+      return;
+    }
+
+    if (forgotOtpInput.trim() !== generatedOtp) {
+      setForgotStatusMsg({ text: '❌ รหัส OTP ไม่ถูกต้อง กรุณากรอกรหัสให้ตรงกับที่ส่งให้', type: 'error' });
+      return;
+    }
+
+    setForgotStep(3);
+    setForgotStatusMsg({
+      text: '✅ ยืนยันรหัส OTP ถูกต้องแล้ว! กรุณาตั้งรหัสผ่านใหม่ของคุณด้านล่างได้ทันที',
+      type: 'success'
+    });
+  };
+
+  const handleSetNewPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setForgotStatusMsg({ text: '', type: '' });
+
+    if (!forgotNewPassword.trim() || !forgotConfirmPassword.trim()) {
+      setForgotStatusMsg({ text: 'กรุณากรอกรหัสผ่านใหม่ให้ครบทั้งสองช่อง', type: 'error' });
+      return;
+    }
+
+    if (forgotNewPassword.trim().length < 6) {
+      setForgotStatusMsg({ text: 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 6 ตัวอักษร', type: 'error' });
+      return;
+    }
+
+    if (forgotNewPassword.trim() !== forgotConfirmPassword.trim()) {
+      setForgotStatusMsg({ text: 'รหัสผ่านใหม่และยืนยันรหัสผ่านไม่ตรงกัน', type: 'error' });
+      return;
+    }
+
+    const newPass = forgotNewPassword.trim();
+    const matchedUser = forgotTargetUser || registeredUsers.find(
+      (u) => (u.email && u.email.toLowerCase() === forgotEmailInput.trim().toLowerCase()) ||
+             (u.username && u.username.toLowerCase() === forgotEmailInput.trim().toLowerCase())
+    );
+
+    try {
+      // ถ้ารีเซ็ตผ่านลิงก์จริงจากอีเมล (oobCode)
+      if (resetOobCode) {
+        await confirmPasswordReset(auth, resetOobCode, newPass);
+      } else if (matchedUser?.email && matchedUser?.password) {
+        // ซิงค์รหัสผ่านใหม่เข้า Firebase Auth ด้วยเพื่อให้เข้าสู่ระบบด้วยอีเมลจริงได้ตรงกัน
+        try {
+          const cred = await signInWithEmailAndPassword(auth, matchedUser.email, matchedUser.password);
+          await updatePassword(cred.user, newPass);
+        } catch (syncErr) {
+          if (syncErr.code === 'auth/user-not-found') {
+            try {
+              await createUserWithEmailAndPassword(auth, matchedUser.email, newPass);
+            } catch (e) {}
+          }
+        }
+      }
+
+      if (matchedUser && matchedUser.firebaseKey) {
+        await set(ref(db, `users/${matchedUser.firebaseKey}/password`), newPass);
+        setUsernameInput(matchedUser.username);
+      } else {
+        setUsernameInput(forgotEmailInput.trim());
+      }
+      setPasswordInput(newPass);
+
+      setForgotStatusMsg({
+        text: '🎉 เปลี่ยนรหัสผ่านใหม่สำเร็จเรียบร้อยแล้ว! ระบบซิงค์รหัสผ่านใหม่ทั้งในระบบและอีเมลให้แล้ว กำลังกลับสู่หน้าเข้าสู่ระบบ...',
+        type: 'success'
+      });
+
+      setTimeout(() => {
+        setForgotModalOpen(false);
+        resetForgotState();
+      }, 2200);
+    } catch (err) {
+      setForgotStatusMsg({
+        text: 'เกิดข้อผิดพลาดในการบันทึกรหัสผ่านใหม่: ' + err.message,
+        type: 'error'
+      });
+    }
+  };
+
+  useEffect(() => {
+    const usersRef = ref(db, 'users');
+    const unsubscribe = onValue(usersRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const userList = Object.keys(data).map(key => ({
+          firebaseKey: key,
+          ...data[key]
+        }));
+        setRegisteredUsers(userList);
+        setUser(prevUser => {
+          if (!prevUser) return null;
+          const updated = userList.find(u =>
+            (u.firebaseKey && u.firebaseKey === prevUser.firebaseKey) ||
+            (u.username && prevUser.username && u.username.toLowerCase() === prevUser.username.toLowerCase())
+          );
+          if (updated) {
+            try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updated)); } catch (e) {}
+            return updated;
+          }
+          return prevUser;
+        });
+      } else {
+        setRegisteredUsers([]);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleAuthSubmit = (e) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthSuccessMsg('');
+
+    if (authMode === 'login') {
+      if (!usernameInput.trim() || !passwordInput.trim()) {
+        setAuthError('กรุณากรอกชื่อผู้ใช้ และรหัสผ่าน');
+        return;
+      }
+      
+      const inputClean = usernameInput.trim().toLowerCase();
+      const foundUser = registeredUsers.find(
+        (u) => (u.username && u.username.toLowerCase() === inputClean) || 
+               (u.email && u.email.toLowerCase() === inputClean)
+      );
+
+      if (!foundUser) {
+        setAuthError('ไม่พบบัญชีผู้ใช้งานนี้ในระบบ กรุณาตรวจสอบชื่อผู้ใช้หรือสมัครสมาชิก');
+        return;
+      }
+
+      if (foundUser.email) {
+        signInWithEmailAndPassword(auth, foundUser.email, passwordInput)
+          .then((userCredential) => {
+            const isVerified = userCredential.user.emailVerified;
+            
+            if (foundUser.firebaseKey && foundUser.password !== passwordInput) {
+              set(ref(db, `users/${foundUser.firebaseKey}/password`), passwordInput);
+            }
+            if (foundUser.firebaseKey && isVerified !== foundUser.emailVerified) {
+              set(ref(db, `users/${foundUser.firebaseKey}/emailVerified`), isVerified);
+            }
+
+            const updatedUser = {
+              ...foundUser,
+              password: passwordInput,
+              emailVerified: isVerified
+            };
+
+            if (rememberMe) {
+              localStorage.setItem('cyber_remembered_user', usernameInput.trim());
+            } else {
+              localStorage.removeItem('cyber_remembered_user');
+            }
+            setUser(updatedUser);
+            localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUser));
+          })
+          .catch((error) => {
+            if (foundUser.password === passwordInput) {
+              if (foundUser.email && (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential')) {
+                createUserWithEmailAndPassword(auth, foundUser.email, passwordInput).catch(() => {});
+              }
+              if (rememberMe) {
+                localStorage.setItem('cyber_remembered_user', usernameInput.trim());
+              } else {
+                localStorage.removeItem('cyber_remembered_user');
+              }
+              setUser(foundUser);
+              localStorage.setItem('cyber_current_logged_user', JSON.stringify(foundUser));
+            } else {
+              if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                setAuthError('รหัสผ่านไม่ถูกต้อง (หากคุณเพิ่งเปลี่ยนรหัสผ่านผ่านอีเมล กรุณากรอกรหัสผ่านใหม่ที่คุณตั้ง)');
+              } else {
+                setAuthError('ชื่อผู้ใช้งาน หรือรหัสผ่านไม่ถูกต้อง');
+              }
+            }
+          });
+      } else {
+        if (foundUser.password === passwordInput) {
+          if (rememberMe) {
+            localStorage.setItem('cyber_remembered_user', usernameInput.trim());
+          } else {
+            localStorage.removeItem('cyber_remembered_user');
+          }
+          setUser(foundUser);
+          localStorage.setItem('cyber_current_logged_user', JSON.stringify(foundUser));
+        } else {
+          setAuthError('ชื่อผู้ใช้งาน หรือรหัสผ่านไม่ถูกต้อง');
+        }
+      }
+    } else if (authMode === 'register') {
+      if (!emailInput.trim() || !regUsernameInput.trim() || !regPasswordInput.trim() || !confirmPasswordInput.trim()) {
+        setAuthError('กรุณากรอกข้อมูลให้ครบทุกช่อง');
+        return;
+      }
+      
+      const emailClean = emailInput.trim().toLowerCase();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(emailClean)) {
+        setAuthError('รูปแบบ Email สำหรับกู้คืนรหัสผ่านไม่ถูกต้อง (เช่น name@domain.com)');
+        return;
+      }
+
+      if (regPasswordInput.length < 6) {
+        setAuthError('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+        return;
+      }
+
+      if (regPasswordInput !== confirmPasswordInput) {
+        setAuthError('รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน');
+        return;
+      }
+
+      const isEmailExist = registeredUsers.some((u) => u.email && u.email.toLowerCase() === emailClean);
+      if (isEmailExist) {
+        setAuthError('อีเมลนี้ถูกใช้งานในระบบแล้ว กรุณาใช้อีเมลอื่น');
+        return;
+      }
+
+      const usernameClean = regUsernameInput.trim();
+      const isUserExist = registeredUsers.some((u) => u.username && u.username.toLowerCase() === usernameClean.toLowerCase());
+      if (isUserExist) {
+        setAuthError('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น');
+        return;
+      }
+
+      createUserWithEmailAndPassword(auth, emailClean, regPasswordInput)
+        .then((userCredential) => {
+          sendEmailVerification(userCredential.user).catch((err) => {
+            console.log("Email verification dispatch note:", err);
+          });
+
+          const newUser = { 
+            username: usernameClean, 
+            email: emailClean, 
+            password: regPasswordInput, 
+            emailVerified: false,
+            balance: 0,
+            createdAt: new Date().toISOString()
+          };
+
+          const usersRef = ref(db, 'users');
+          return push(usersRef, newUser);
+        })
+        .then(() => {
+          setUsernameInput(usernameClean);
+          setPasswordInput(regPasswordInput);
+          setEmailInput('');
+          setRegUsernameInput('');
+          setRegPasswordInput('');
+          setConfirmPasswordInput('');
+          setAuthSuccessMsg('🎉 สมัครสมาชิกสำเร็จ! ระบบได้ส่งอีเมลยืนยันตัวตนไปยัง ' + emailClean + ' เรียบร้อยแล้ว (สามารถนำอีเมลนี้ใช้กู้คืนรหัสผ่านได้ตลอด 24 ชม.)');
+          setAuthMode('login');
+        })
+        .catch((error) => {
+          if (error.code === 'auth/email-already-in-use') {
+            setAuthError('อีเมลนี้ถูกใช้งานในระบบ Firebase Auth แล้ว');
+          } else {
+            setAuthError('เกิดข้อผิดพลาดในการสร้างบัญชีสมาชิก: ' + error.message);
+          }
+        });
+    }
+  };
+
   const [activeTab, setActiveTab] = useState('shop');
   const [gameCategory, setGameCategory] = useState('all');
   const [selectedGame, setSelectedGame] = useState(null);
@@ -738,7 +1206,8 @@ export default function App() {
       set(targetRef, null);
     }
   };
-const [newCodeName, setNewCodeName] = useState('');
+
+  const [newCodeName, setNewCodeName] = useState('');
   const [newCodeGame, setNewCodeGame] = useState('VALORANT');
   const [newCodeReward, setNewCodeReward] = useState('125 VP');
   const [newCodeMaxUses, setNewCodeMaxUses] = useState(10);
@@ -1053,7 +1522,927 @@ const [newCodeName, setNewCodeName] = useState('');
     }
     return () => clearInterval(timer);
   }, [showTopupWalletModal, walletStep, walletPaymentMethod, isWalletQrExpired]);
-return (
+
+  const handleLogout = () => {
+    signOut(auth).catch(() => {});
+    setUser(null);
+    localStorage.removeItem('cyber_current_logged_user');
+    setIsAdminLoggedIn(false);
+    localStorage.removeItem('cyber_is_admin_logged');
+    setPasswordInput('');
+    setShowLoginPassword(false);
+    setRegPasswordInput('');
+    setConfirmPasswordInput('');
+    setEmailInput('');
+    setActiveTab('shop');
+  };
+
+  const handleAdminLogin = (e) => {
+    e.preventDefault();
+    setAdminPinError('');
+    if (inputAdminPin === adminPin) {
+      setIsAdminLoggedIn(true);
+      setInputAdminPin('');
+    } else {
+      setAdminPinError('รหัส PIN ไม่ถูกต้อง');
+    }
+  };
+
+  const handleChangePinSubmit = (e) => {
+    e.preventDefault();
+    setChangePinMessage({ text: '', type: '' });
+
+    if (oldPinInput !== adminPin) {
+      setChangePinMessage({ text: 'รหัส PIN เดิมไม่ถูกต้อง', type: 'error' });
+      return;
+    }
+    if (newPinInput.length !== 6) {
+      setChangePinMessage({ text: 'รหัส PIN ใหม่ต้องมี 6 หลัก', type: 'error' });
+      return;
+    }
+    if (newPinInput !== confirmNewPinInput) {
+      setChangePinMessage({ text: 'รหัส PIN ใหม่และยืนยันรหัส PIN ไม่ตรงกัน', type: 'error' });
+      return;
+    }
+
+    setAdminPin(newPinInput);
+    localStorage.setItem('cyber_admin_pin', newPinInput);
+    setChangePinMessage({ text: 'เปลี่ยนรหัส PIN สำเร็จเรียบร้อย!', type: 'success' });
+    setOldPinInput('');
+    setNewPinInput('');
+    setConfirmNewPinInput('');
+  };
+
+  const handleCreateGiftCode = (e) => {
+    e.preventDefault();
+    setAdminCodeMsg({ text: '', type: '' });
+
+    if (!newCodeName.trim() || !newCodeReward.trim() || newCodeMaxUses <= 0) {
+      setAdminCodeMsg({ text: 'กรุณากรอกข้อมูลโค้ดและจำนวนสิทธิ์ให้ถูกต้อง', type: 'error' });
+      return;
+    }
+
+    const cleanCode = newCodeName.trim().toUpperCase();
+    if (giftCodes.some(c => c.code === cleanCode)) {
+      setAdminCodeMsg({ text: 'โค้ดนี้มีอยู่ในระบบแล้ว กรุณาใช้ชื่อโค้ดอื่น', type: 'error' });
+      return;
+    }
+
+    const selectedRankObj = rankTiers.find(r => r.level === Number(newCodeMinRank)) || rankTiers[0];
+    const newCodeObj = {
+      code: cleanCode,
+      game: newCodeGame,
+      reward: newCodeReward,
+      maxUses: parseInt(newCodeMaxUses),
+      minRankLevel: Number(newCodeMinRank) || 0,
+      minRankName: selectedRankObj.name,
+      usedCount: 0,
+      timestamp: Date.now()
+    };
+
+    const giftCodesRef = ref(db, 'giftCodes');
+    push(giftCodesRef, newCodeObj)
+      .then(() => {
+        setAdminCodeMsg({ text: `สร้างโค้ด ${cleanCode} สำเร็จเรียบร้อย!`, type: 'success' });
+        setNewCodeName('');
+        setNewCodeMaxUses(10);
+      })
+      .catch(() => {
+        setAdminCodeMsg({ text: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', type: 'error' });
+      });
+  };
+
+  const handleDeleteGiftCode = (codeItem) => {
+    if (codeItem.firebaseKey) {
+      const targetRef = ref(db, `giftCodes/${codeItem.firebaseKey}`);
+      set(targetRef, null);
+    }
+  };
+
+  const handleResetAllRedeemRights = () => {
+    setGlobalRedeemedPlayers([]);
+  };
+
+  const handleRedeemEventCode = (e) => {
+    e.preventDefault();
+    setEventMsg({ text: '', type: '' });
+
+    if (!eventPlayerId.trim() || !eventGiftCode.trim()) {
+      setEventMsg({ text: 'กรุณากรอก ID/ชื่อในเกม และโค้ดกิจกรรมให้ครบถ้วน', type: 'error' });
+      return;
+    }
+
+    const cleanPlayerId = eventPlayerId.trim().toLowerCase();
+    const targetCode = eventGiftCode.trim().toUpperCase();
+    const foundCode = giftCodes.find(c => c.code === targetCode && c.game === eventGame);
+
+    if (!foundCode) {
+      setEventMsg({ text: `ไม่พบโค้ด "${targetCode}" สำหรับเกม ${eventGame}`, type: 'error' });
+      return;
+    }
+
+    if (globalRedeemedPlayers.includes(cleanPlayerId)) {
+      setEventMsg({ text: `❌ ID เกม "${eventPlayerId.trim()}" เคยใช้สิทธิ์กรอกโค้ดไปแล้ว`, type: 'error' });
+      return;
+    }
+
+    if (foundCode.usedCount >= foundCode.maxUses) {
+      setEventMsg({ text: `โค้ด "${targetCode}" ถูกใช้งานครบจำนวนสิทธิ์เต็มแล้ว`, type: 'error' });
+      return;
+    }
+
+    const requiredRankLevel = Number(foundCode.minRankLevel) || 0;
+    if (currentUserRank.level < requiredRankLevel) {
+      const reqTier = rankTiers.find(r => r.level === requiredRankLevel) || rankTiers[0];
+      setEventMsg({
+        text: `🔒 โค้ด "${targetCode}" จำกัดเฉพาะสมาชิกระดับ ${reqTier.icon} ${reqTier.name} ขึ้นไป (ยอดเติมเกมสะสม ฿${reqTier.minSpend.toLocaleString()}+ | ยอดสะสมปัจจุบันของคุณ: ฿${userTotalTopup.toLocaleString()})`,
+        type: 'error'
+      });
+      return;
+    }
+
+    setGlobalRedeemedPlayers([...globalRedeemedPlayers, cleanPlayerId]);
+
+    if (foundCode.firebaseKey) {
+      const codeUsedRef = ref(db, `giftCodes/${foundCode.firebaseKey}/usedCount`);
+      set(codeUsedRef, foundCode.usedCount + 1);
+    }
+
+    const newOrderId = 'ORD-EVT-' + Math.floor(10000 + Math.random() * 90000);
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+    const dateKey = `${year}-${month}-${day}`;
+
+    const newEventOrder = {
+      id: newOrderId,
+      game: `กิจกรรม (${eventGame})`,
+      package: `โค้ด: ${foundCode.code} (${foundCode.reward})`,
+      price: 0,
+      profit: 0,
+      player: user ? user.username : eventPlayerId.trim(),
+      gameChar: eventPlayerId.trim(),
+      paymentMethod: '🎁 โค้ดกิจกรรมฟรี',
+      status: 'รอตรวจสอบ',
+      type: 'event',
+      time: thaiTime,
+      dateKey: dateKey,
+      timestamp: Date.now()
+    };
+
+    const insertedKey = createRealtimeOrder(newEventOrder);
+    setFloatingTimer(10);
+    setActiveOrderFirebaseKey(insertedKey);
+
+    setEventMsg({ text: `🎉 ใช้โค้ด ${foundCode.code} สำเร็จ! ได้รับ: ${foundCode.reward} (เลขออร์เดอร์: ${newOrderId})`, type: 'success' });
+    setEventGiftCode('');
+    setEventPlayerId('');
+  };
+
+  const handleWalletNextStep = () => {
+    const amt = parseFloat(topupAmount);
+    if (isNaN(amt) || amt <= 0) {
+      return;
+    }
+
+    if (walletPaymentMethod === 'true') {
+      if (!truemoneyPhone || truemoneyPhone.length < 10) {
+        return;
+      }
+      setTrueMoneyOtpStep(true);
+      setTrueMoneyOtpCode('');
+      setTrueMoneyOtpError('');
+      return;
+    } else if (walletPaymentMethod === 'truemoneycard' && (!truemoneyCard14 || truemoneyCard14.length < 14)) {
+      return;
+    } else if (walletPaymentMethod === 'credit' && (creditCardNum.replace(/\s/g, '').length < 16 || !creditCardExp || !creditCardCvv)) {
+      return;
+    }
+
+    setWalletTimeLeft(180);
+    setIsWalletQrExpired(false);
+    
+    if (walletPaymentMethod === 'qrcode') {
+      setWalletStep(2);
+    } else {
+      handleWalletConfirmPayment();
+    }
+  };
+
+  // ฟังก์ชันยิงสัญญาณแจ้งเตือนไปยัง api/line-webhook.js
+  const sendLineOrderNotification = async (orderData) => {
+    try {
+      const endpoint = ['/api', 'line-webhook'].join('/');
+      await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+    } catch (err) {
+      console.warn('Line notification trigger note:', err);
+    }
+  };
+
+  const handleTrueMoneyOtpSubmit = (e) => {
+    e.preventDefault();
+    setTrueMoneyOtpError('');
+
+    if (!trueMoneyOtpCode || trueMoneyOtpCode.length !== 6) {
+      setTrueMoneyOtpError('กรุณากรอกรหัส OTP 6 หลักให้ถูกต้อง');
+      return;
+    }
+
+    setTrueMoneyOtpStep(false);
+
+    if (showCheckoutModal) {
+      handleFinalPaymentSubmit();
+    } else {
+      handleWalletConfirmPayment();
+    }
+  };
+
+  const handleWalletConfirmPayment = () => {
+    const amt = parseFloat(topupAmount) || 0;
+    const newOrderId = 'ORD-W-' + Math.floor(10000 + Math.random() * 90000);
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+    const dateKey = `${year}-${month}-${day}`;
+
+    const paymentLabelMap = {
+      qrcode: 'QR PromptPay (เติมเครดิต)',
+      true: 'TrueMoney Wallet (เติมเครดิต)',
+      truemoneycard: 'บัตรทรูมันนี่ (เติมเครดิต)',
+      credit: 'บัตรเครดิต/เดบิต (เติมเครดิต)'
+    };
+
+    const newWalletOrder = {
+      id: newOrderId,
+      game: `เติมเครดิตร้าน`,
+      package: `+฿${amt.toLocaleString()}`,
+      price: amt,
+      profit: 0,
+      player: user ? user.username : 'user11',
+      gameChar: 'เติมเครดิตร้าน',
+      paymentMethod: paymentLabelMap[walletPaymentMethod] || walletPaymentMethod.toUpperCase(),
+      status: 'รอตรวจสอบ',
+      type: 'wallet',
+      time: thaiTime,
+      dateKey: dateKey,
+      timestamp: Date.now()
+    };
+
+    const insertedKey = createRealtimeOrder(newWalletOrder);
+    setFloatingTimer(10);
+    setActiveOrderFirebaseKey(insertedKey);
+
+    setShowTopupWalletModal(false);
+    setWalletStep(1);
+    setTopupAmount('');
+    setTruemoneyPhone('');
+    setTrueMoneyOtpStep(false);
+    setTrueMoneyOtpCode('');
+    setTruemoneyCard14('');
+    setCreditCardNum('');
+    setCreditCardExp('');
+    setCreditCardCvv('');
+  };
+
+  const resetWalletModal = () => {
+    setShowTopupWalletModal(false);
+    setWalletStep(1);
+    setTopupAmount('');
+    setWalletTimeLeft(180);
+    setIsWalletQrExpired(false);
+    setTruemoneyPhone('');
+    setTrueMoneyOtpStep(false);
+    setTrueMoneyOtpCode('');
+    setTrueMoneyOtpError('');
+    setTruemoneyCard14('');
+    setCreditCardNum('');
+    setCreditCardExp('');
+    setCreditCardCvv('');
+  };
+
+  const handleStartGamePayment = () => {
+    if (!playerId.trim()) {
+      return;
+    }
+    setCheckoutPasswordError('');
+    
+    const totalPrice = selectedPackage.price * packageQuantity;
+    if (selectedPayment.id === 'wallet' && user.balance < totalPrice) {
+      return;
+    }
+
+    if (selectedPayment.id === 'true') {
+      if (!truemoneyPhone || truemoneyPhone.length < 10) {
+        return;
+      }
+      setTrueMoneyOtpStep(true);
+      setTrueMoneyOtpCode('');
+      setTrueMoneyOtpError('');
+      return;
+    } else if (selectedPayment.id === 'qrcode' || selectedPayment.id === 'wallet') {
+      setTimeLeft(180);
+      setIsQrExpired(false);
+      setCheckoutStep(1);
+      setShowCheckoutModal(true);
+    } else {
+      handleFinalPaymentSubmit();
+    }
+  };
+
+  const handleVerifyPasswordStep = (e) => {
+    e.preventDefault();
+    setCheckoutPasswordError('');
+
+    if (checkoutPassword !== user.password) {
+      setCheckoutPasswordError('รหัสผ่านบัญชีไม่ถูกต้อง');
+      return;
+    }
+
+    if (selectedPayment.id === 'qrcode') {
+      setCheckoutStep(2);
+    } else {
+      handleFinalPaymentSubmit();
+    }
+  };
+
+  const handleFinalPaymentSubmit = () => {
+    const totalPrice = selectedPackage.price * packageQuantity;
+    const totalProfit = (selectedPackage.profit || Math.round(selectedPackage.price * 0.15)) * packageQuantity;
+
+    if (selectedPayment.id === 'wallet' && user && user.firebaseKey) {
+      if ((user.balance || 0) < totalPrice) {
+        return;
+      }
+      const newBalance = user.balance - totalPrice;
+      const userRef = ref(db, `users/${user.firebaseKey}/balance`);
+      set(userRef, newBalance);
+      const updatedUser = { ...user, balance: newBalance };
+      setUser(updatedUser);
+      try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUser)); } catch (e) {}
+    }
+
+    setIsProcessing(true);
+
+    setTimeout(() => {
+      const newOrderId = 'ORD-' + Math.floor(10000 + Math.random() * 90000);
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+      const dateKey = `${year}-${month}-${day}`;
+
+      const targetGameChar = playerId.trim();
+      const pkgSummary = `${selectedPackage.name} (x${packageQuantity} แพ็ก)`;
+
+      const newOrder = {
+        id: newOrderId,
+        game: selectedGame.name,
+        package: pkgSummary,
+        price: totalPrice,
+        profit: totalProfit,
+        player: user ? user.username : 'user11',
+        gameChar: targetGameChar,
+        paymentMethod: selectedPayment.name,
+        status: 'รอตรวจสอบ',
+        deliveryType: 'DIRECT_UID_AUTO_100',
+        deliveredCode: null,
+        type: 'game',
+        time: thaiTime,
+        dateKey: dateKey,
+        timestamp: Date.now(),
+      };
+
+      const insertedKey = createRealtimeOrder(newOrder);
+      setFloatingTimer(10);
+      setActiveOrderFirebaseKey(insertedKey);
+
+      sendLineOrderNotification({
+        orderId: newOrderId,
+        game: selectedGame.name,
+        packageName: pkgSummary,
+        price: totalPrice,
+        player: user ? user.username : 'user11',
+        gameChar: targetGameChar,
+        paymentMethod: selectedPayment.name,
+        deliveredCode: null,
+      });
+
+      setIsProcessing(false);
+      setShowCheckoutModal(false);
+      setCheckoutStep(1);
+      setCheckoutPassword('');
+      setPackageQuantity(1);
+      setTruemoneyPhone('');
+      setTruemoneyCard14('');
+      setCreditCardNum('');
+      setCreditCardExp('');
+      setCreditCardCvv('');
+      setSlipFile(null);
+      setSlipPreview(null);
+      setSlipVerifying(false);
+    }, 900);
+  };
+
+  const handleSimulateSlipScan = () => {
+    setSlipVerifying(true);
+    setSlipVerifyError('');
+    setSlipVerifyStepText('🔍 กำลังเชื่อมต่อ API สแกน Mini-QR บนสลิป...');
+
+    setTimeout(() => {
+      setSlipVerifyStepText('💳 ตรวจสอบข้อมูลผู้รับ: บัญชี CYBER TOPUP (ยอดเงินถูกต้อง)...');
+      setTimeout(() => {
+        setSlipVerifyStepText('✅ ตรวจสอบสลิปสำเร็จ! กำลังส่งรายการเติมแพ็กเกจเข้า UID อัตโนมัติ...');
+        setTimeout(() => {
+          handleFinalPaymentSubmit();
+        }, 800);
+      }, 900);
+    }, 900);
+  };
+
+  const handleAdminApproveOrder = (order) => {
+    if (order.firebaseKey) {
+      if (order.type === 'wallet' && !order.status.includes('สำเร็จ')) {
+        creditUserWallet(order.player, order.price);
+      }
+      updateRealtimeOrderStatus(order.firebaseKey, '✅ สำเร็จ (แอดมินอนุมัติแล้ว)');
+      if (order.firebaseKey === activeOrderFirebaseKey) {
+        setFloatingTimer(0);
+        setActiveOrderFirebaseKey(null);
+      }
+    }
+  };
+
+  const handleAdminRejectOrder = (order) => {
+    if (order.firebaseKey) {
+      updateRealtimeOrderStatus(order.firebaseKey, '❌ ยกเลิก (ไม่พบยอดโอนเงิน)');
+      if (order.firebaseKey === activeOrderFirebaseKey) {
+        setFloatingTimer(0);
+        setActiveOrderFirebaseKey(null);
+      }
+    }
+  };
+
+  const resetCheckoutModal = () => {
+    setShowCheckoutModal(false);
+    setCheckoutStep(1);
+    setCheckoutPassword('');
+    setShowCheckoutPassword(false);
+    setCheckoutPasswordError('');
+    setTimeLeft(180);
+    setIsQrExpired(false);
+    setPackageQuantity(1);
+    setTruemoneyPhone('');
+    setTruemoneyCard14('');
+    setCreditCardNum('');
+    setCreditCardExp('');
+    setCreditCardCvv('');
+  };
+
+  const filteredGames = gamesData.filter((game) => {
+    const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = gameCategory === 'all' || game.category === gameCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const filteredOrders = orders.filter((ord) => {
+    const q = adminSearchQuery.trim();
+    if (!q) return true;
+
+    const lowerQ = q.toLowerCase();
+    const isOrderQuery = lowerQ.startsWith('ord');
+
+    if (isOrderQuery) {
+      return ord.id.toLowerCase() === lowerQ;
+    } else {
+      return ord.player.toLowerCase().includes(lowerQ);
+    }
+  });
+
+  const adminItemsPerPage = 10;
+  const totalAdminPages = Math.ceil(filteredOrders.length / adminItemsPerPage) || 1;
+  const paginatedAdminOrders = filteredOrders.slice((adminOrdersPage - 1) * adminItemsPerPage, adminOrdersPage * adminItemsPerPage);
+
+  const isUserAdmin = user && (user.username.toLowerCase() === 'thanphooms' || user.email?.toLowerCase() === 'thanphooms@gmail.com');
+
+  const userTotalTopup = React.useMemo(() => {
+    if (!user || !user.username) return 0;
+    return orders.reduce((sum, ord) => {
+      const isSameUser = ord.player && ord.player.toLowerCase() === user.username.toLowerCase();
+      const isSuccess = ord.status && ord.status.includes('สำเร็จ');
+      const isGameTopup = ord.type === 'game';
+      return (isSameUser && isSuccess && isGameTopup) ? sum + (parseFloat(ord.price) || 0) : sum;
+    }, 0);
+  }, [orders, user]);
+
+  const currentUserRank = React.useMemo(() => {
+    let current = rankTiers[0];
+    for (const tier of rankTiers) {
+      if (userTotalTopup >= tier.minSpend) {
+        current = tier;
+      }
+    }
+    return current;
+  }, [userTotalTopup]);
+
+  const nextUserRank = React.useMemo(() => {
+    return rankTiers.find(t => t.level === currentUserRank.level + 1) || null;
+  }, [currentUserRank]);
+
+  const rankProgressPercent = React.useMemo(() => {
+    if (!nextUserRank) return 100;
+    const prevMin = currentUserRank.minSpend;
+    const targetMin = nextUserRank.minSpend;
+    const pct = ((userTotalTopup - prevMin) / (targetMin - prevMin)) * 100;
+    return Math.min(100, Math.max(0, Math.round(pct)));
+  }, [userTotalTopup, currentUserRank, nextUserRank]);
+
+  const nowObj = new Date();
+  const currentDayStr = `${nowObj.getFullYear()}-${String(nowObj.getMonth() + 1).padStart(2, '0')}-${String(nowObj.getDate()).padStart(2, '0')}`;
+
+  const searchedOrders = orders.filter(o => {
+    let matchUser = false;
+    if (!isUserAdmin) {
+      matchUser = user && (o.player.toLowerCase() === user.username.toLowerCase());
+    } else {
+      const q = exactSearchQuery.trim().toLowerCase();
+      matchUser = !q || (o.player.toLowerCase() === q) || (o.id.toLowerCase() === q);
+    }
+
+    const orderQuery = customerOrderSearch.trim();
+    const matchOrder = !orderQuery || (orderQuery.toUpperCase().startsWith('ORD') ? o.id.toLowerCase() === orderQuery.toLowerCase() : o.id.toLowerCase().includes(orderQuery.toLowerCase()));
+    const matchGame = selectedGameFilter === 'all' || o.game.toLowerCase() === selectedGameFilter.toLowerCase();
+
+    return matchUser && matchOrder && matchGame;
+  });
+
+  const todayOrders = searchedOrders.filter(o => o.dateKey === currentDayStr);
+  const pastOrders = searchedOrders.filter(o => o.dateKey !== currentDayStr);
+
+  const customerItemsPerPage = 10;
+  const totalCustomerTodayPages = Math.ceil(todayOrders.length / customerItemsPerPage) || 1;
+  const paginatedTodayOrders = todayOrders.slice((customerOrdersPage - 1) * customerItemsPerPage, customerOrdersPage * customerItemsPerPage);
+
+  const totalSpentInSearch = searchedOrders.reduce((sum, ord) => sum + ord.price, 0);
+  const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);
+
+  const [selectedHistoryDate, setSelectedHistoryDate] = useState('all');
+  const [historyPage, setHistoryPage] = useState(1);
+
+  const groupedPastOrders = React.useMemo(() => {
+    const groups = {};
+    pastOrders.forEach((ord) => {
+      const dateStr = ord.time ? ord.time.split(' ')[0] : (ord.dateKey || 'อื่นๆ');
+      if (!groups[dateStr]) {
+        groups[dateStr] = [];
+      }
+      groups[dateStr].push(ord);
+    });
+    return groups;
+  }, [pastOrders]);
+
+  const availableHistoryDates = Object.keys(groupedPastOrders);
+
+  const filteredPastOrdersByDate = React.useMemo(() => {
+    if (selectedHistoryDate === 'all') {
+      return pastOrders;
+    }
+    return groupedPastOrders[selectedHistoryDate] || [];
+  }, [pastOrders, groupedPastOrders, selectedHistoryDate]);
+
+  const historyItemsPerPage = 5;
+  const totalHistoryPages = Math.ceil(filteredPastOrdersByDate.length / historyItemsPerPage) || 1;
+
+  const paginatedPastOrders = React.useMemo(() => {
+    const startIndex = (historyPage - 1) * historyItemsPerPage;
+    return filteredPastOrdersByDate.slice(startIndex, startIndex + historyItemsPerPage);
+  }, [filteredPastOrdersByDate, historyPage]);
+
+  const handleHistoryDateChange = (e) => {
+    setSelectedHistoryDate(e.target.value);
+    setHistoryPage(1);
+  };
+
+  if (!user) {
+    return (
+      <div style={{
+        backgroundColor: '#070a12',
+        backgroundImage: `linear-gradient(to bottom, rgba(7, 10, 18, 0.85), rgba(7, 10, 18, 0.95)), url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1920&q=80')`,
+        backgroundSize: 'cover', backgroundPosition: 'center',
+        color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+      }}>
+        <style>{cyberGlobalStyles}</style>
+        <div style={{
+          backgroundColor: 'rgba(17, 24, 39, 0.95)', backdropFilter: 'blur(16px)',
+          border: '1.5px solid rgba(168, 85, 247, 0.5)', borderRadius: '24px',
+          padding: '40px 30px', maxWidth: '420px', width: '100%',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 35px rgba(147,51,234,0.4)', textAlign: 'center'
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' }}>
+            <div style={{ 
+              position: 'relative', width: '65px', height: '65px', borderRadius: '18px', 
+              background: 'linear-gradient(135deg, #a855f7 0%, #3b82f6 50%, #1d4ed8 100%)', 
+              border: '2px solid #c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+              boxShadow: '0 0 30px rgba(168,85,247,0.9), 0 0 15px rgba(56,189,248,0.7)', 
+              marginBottom: '12px'
+            }}>
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#38bdf8" stroke="#ffffff" strokeWidth="1"></polygon>
+              </svg>
+            </div>
+            <div style={{ fontSize: '24px', fontWeight: '900', color: '#ffffff', letterSpacing: '3px', textShadow: '0 0 15px rgba(168,85,247,0.8)' }}>CYBER TOPUP</div>
+            <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#38bdf8', letterSpacing: '2px', marginTop: '2px' }}>FAST & SECURE GAMING</div>
+          </div>
+
+          <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 20px 0' }}>
+            {authMode === 'login' && 'เข้าสู่ระบบด้วยชื่อผู้ใช้งานอัตโนมัติ 24 ชม.'}
+            {authMode === 'register' && 'สมัครสมาชิกใหม่ (กรอกอีเมลกู้คืนขึ้นก่อน แล้วตามด้วยชื่อผู้ใช้งาน)'}
+          </p>
+
+          <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {authError && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authError}</div>}
+            {authSuccessMsg && <div style={{ backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '1px solid #34d399', color: '#34d399', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authSuccessMsg}</div>}
+
+            {authMode === 'login' ? (
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ชื่อผู้ใช้งาน (Username)</label>
+                <input type="text" placeholder="กรอกชื่อผู้ใช้งานของคุณ..." value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+            ) : (
+              <>
+                <div style={{ textAlign: 'left' }}>
+                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>1. อีเมลกู้คืนรหัสผ่าน (Email)</label>
+                  <input type="email" placeholder="example@gmail.com (ใช้ยืนยันตอนลืมรหัส)" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+
+                <div style={{ textAlign: 'left' }}>
+                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. ชื่อผู้ใช้งาน (Username / Display Name)</label>
+                  <input type="text" placeholder="ตั้งชื่อผู้ใช้งาน..." value={regUsernameInput} onChange={(e) => setRegUsernameInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              </>
+            )}
+
+            <div style={{ textAlign: 'left' }}>
+              <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
+                {authMode === 'register' ? '3. รหัสผ่าน (Password อย่างน้อย 6 ตัว)' : 'รหัสผ่าน (Password)'}
+              </label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input 
+                  type={authMode === 'login' ? (showLoginPassword ? 'text' : 'password') : (showRegPassword ? 'text' : 'password')} 
+                  placeholder="กรอกรหัสผ่าน..." 
+                  value={authMode === 'login' ? passwordInput : regPasswordInput} 
+                  onChange={(e) => authMode === 'login' ? setPasswordInput(e.target.value) : setRegPasswordInput(e.target.value)} 
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => authMode === 'login' ? setShowLoginPassword(!showLoginPassword) : setShowRegPassword(!showRegPassword)} 
+                  style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                >
+                  <EyeIcon show={authMode === 'login' ? showLoginPassword : showRegPassword} />
+                </button>
+              </div>
+            </div>
+
+            {authMode === 'register' && (
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>4. ยืนยันรหัสผ่าน (Confirm Password)</label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input 
+                    type={showConfirmPassword ? 'text' : 'password'} 
+                    placeholder="กรอกรหัสผ่านอีกครั้ง..." 
+                    value={confirmPasswordInput} 
+                    onChange={(e) => setConfirmPasswordInput(e.target.value)} 
+                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                    style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                  >
+                    <EyeIcon show={showConfirmPassword} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {authMode === 'login' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#9ca3af' }}>
+                  <input type="checkbox" id="remember" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ cursor: 'pointer' }} />
+                  <label htmlFor="remember" style={{ cursor: 'pointer' }}>จดจำไอดีไว้</label>
+                </div>
+                <span onClick={() => { setForgotModalOpen(true); resetForgotState(); }} style={{ color: '#f472b6', cursor: 'pointer', fontWeight: 'bold' }}>ลืมรหัสผ่าน?</span>
+              </div>
+            )}
+
+            <button 
+              type="submit" 
+              style={{ 
+                backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', 
+                fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', 
+                boxShadow: '0 0 15px rgba(147,51,234,0.5)', transition: 'all 0.25s ease', transform: 'scale(1)' 
+              }}
+            >
+              {authMode === 'login' && 'เข้าสู่ระบบ (Login)'}
+              {authMode === 'register' && 'สมัครสมาชิก'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: '15px', fontSize: '13px', color: '#9ca3af' }}>
+            {authMode === 'login' && <>ยังไม่มีบัญชี? <span onClick={() => { setAuthMode('register'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>สมัครสมาชิก</span></>}
+            {authMode === 'register' && <>มีบัญชีแล้ว? <span onClick={() => { setAuthMode('login'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>เข้าสู่ระบบ</span></>}
+          </div>
+        </div>
+
+        {forgotModalOpen && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+            <div style={{ backgroundColor: '#111827', border: '1.5px solid #a855f7', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '28px', textAlign: 'center', boxShadow: '0 0 40px rgba(168,85,247,0.45)', position: 'relative' }}>
+              <button 
+                type="button" 
+                onClick={() => { setForgotModalOpen(false); resetForgotState(); }} 
+                style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#9ca3af', fontSize: '20px', cursor: 'pointer', padding: '4px 8px' }}
+              >
+                ✕
+              </button>
+
+              <div style={{ width: '54px', height: '54px', margin: '0 auto 12px auto', borderRadius: '50%', backgroundColor: 'rgba(168,85,247,0.15)', border: '2px solid #c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+                {forgotStep === 1 ? '🔐' : forgotStep === 2 ? '🔢' : '✨'}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginBottom: '16px' }}>
+                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold', backgroundColor: forgotStep === 1 ? '#9333ea' : 'rgba(55,65,81,0.5)', color: '#ffffff' }}>1. ขอรหัส OTP</span>
+                <span style={{ color: '#4b5563', fontSize: '11px' }}>➔</span>
+                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold', backgroundColor: forgotStep === 2 ? '#9333ea' : 'rgba(55,65,81,0.5)', color: '#ffffff' }}>2. ยืนยัน OTP</span>
+                <span style={{ color: '#4b5563', fontSize: '11px' }}>➔</span>
+                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold', backgroundColor: forgotStep === 3 ? '#9333ea' : 'rgba(55,65,81,0.5)', color: '#ffffff' }}>3. ตั้งรหัสใหม่</span>
+              </div>
+
+              <h3 style={{ fontSize: '19px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#ffffff' }}>
+                {forgotStep === 1 && 'กู้คืนรหัสผ่านด้วยรหัส OTP'}
+                {forgotStep === 2 && 'กรอกรหัสยืนยัน OTP 6 หลัก'}
+                {forgotStep === 3 && 'ตั้งรหัสผ่านใหม่บนหน้าเว็บ'}
+              </h3>
+              
+              <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '16px', lineHeight: '1.4' }}>
+                {forgotStep === 1 && 'กรอกอีเมล หรือ ชื่อผู้ใช้งานของคุณ เพื่อรับรหัส OTP 6 หลัก'}
+                {forgotStep === 2 && (
+                  <>
+                    รหัส OTP ถูกส่งไปที่: <b style={{ color: '#38bdf8' }}>{forgotTargetUser?.email || forgotTargetUser?.username}</b>
+                  </>
+                )}
+                {forgotStep === 3 && (
+                  <>
+                    ตั้งรหัสผ่านใหม่สำหรับบัญชี: <b style={{ color: '#c084fc' }}>{forgotTargetUser?.username}</b>
+                  </>
+                )}
+              </p>
+
+              {forgotStatusMsg.text && (
+                <div style={{ backgroundColor: forgotStatusMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${forgotStatusMsg.type === 'success' ? '#34d399' : '#ef4444'}`, color: forgotStatusMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '12px', borderRadius: '12px', fontSize: '12px', marginBottom: '16px', textAlign: 'left', lineHeight: '1.4' }}>
+                  {forgotStatusMsg.text}
+                </div>
+              )}
+
+              {forgotStep === 1 && (
+                <form onSubmit={handleRequestOtpSubmit}>
+                  <div style={{ textAlign: 'left', marginBottom: '16px' }}>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '5px' }}>อีเมล หรือ ชื่อผู้ใช้งาน (Username)</label>
+                    <input 
+                      type="text" 
+                      placeholder="เช่น user@example.com หรือชื่อผู้ใช้งาน" 
+                      value={forgotEmailInput} 
+                      onChange={(e) => setForgotEmailInput(e.target.value)} 
+                      style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                      autoFocus
+                    />
+                  </div>
+
+                  <div style={{ backgroundColor: 'rgba(55, 65, 81, 0.35)', borderRadius: '10px', padding: '10px 12px', fontSize: '11px', color: '#9ca3af', marginBottom: '18px', textAlign: 'left', border: '1px dashed #4b5563', lineHeight: '1.5' }}>
+                    💡 <b>ปลอดภัย 100% ส่งรหัส OTP เข้าอีเมลโดยตรง:</b><br/>
+                    ระบบจะจัดส่ง<b>รหัสยืนยัน OTP 6 หลัก</b>ไปยังกล่องข้อความอีเมลของคุณเท่านั้น (ไม่แสดงรหัสบนหน้าจอเว็บ) กรุณาเปิดอีเมลเพื่อนำรหัสมากรอกในขั้นตอนถัดไป
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button type="button" onClick={() => { setForgotModalOpen(false); resetForgotState(); }} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
+                    <button type="submit" style={{ flex: 1.5, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(147,51,234,0.5)' }}>ขอรับรหัส OTP ➔</button>
+                  </div>
+                </form>
+              )}
+
+              {forgotStep === 2 && (
+                <form onSubmit={handleVerifyOtpSubmit}>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>กรอกรหัสยืนยัน OTP 6 หลัก</label>
+                    <input 
+                      type="text" 
+                      inputMode="numeric" 
+                      maxLength={6} 
+                      placeholder="• • • • • •" 
+                      value={forgotOtpInput} 
+                      onChange={(e) => setForgotOtpInput(e.target.value.replace(/[^0-9]/g, ''))} 
+                      style={{ width: '100%', maxWidth: '240px', margin: '0 auto', backgroundColor: '#030712', border: '2px solid #a855f7', borderRadius: '12px', padding: '12px', color: '#ffffff', fontSize: '24px', fontWeight: '900', letterSpacing: '8px', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} 
+                      autoFocus
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', marginBottom: '18px', padding: '0 6px' }}>
+                    <div style={{ color: otpCountdown > 60 ? '#38bdf8' : '#ef4444', fontWeight: 'bold' }}>
+                      ⏳ หมดอายุใน: {formatOtpTime(otpCountdown)}
+                    </div>
+                    <button 
+                      type="button" 
+                      disabled={otpResendCountdown > 0} 
+                      onClick={handleResendOtp} 
+                      style={{ background: 'none', border: 'none', color: otpResendCountdown > 0 ? '#6b7280' : '#38bdf8', cursor: otpResendCountdown > 0 ? 'not-allowed' : 'pointer', fontSize: '12px', textDecoration: 'underline' }}
+                    >
+                      {otpResendCountdown > 0 ? `ขอรหัสใหม่ใน (${otpResendCountdown}s)` : '🔄 ขอรหัสใหม่อีกครั้ง'}
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button type="button" onClick={() => setForgotStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ย้อนกลับ</button>
+                    <button type="submit" style={{ flex: 1.5, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(52,211,153,0.5)' }}>ยืนยันรหัส OTP ➔</button>
+                  </div>
+                </form>
+              )}
+
+              {forgotStep === 3 && (
+                <form onSubmit={handleSetNewPasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>1. รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)</label>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <input 
+                        type={showForgotNewPassword ? 'text' : 'password'} 
+                        placeholder="กรอกรหัสผ่านใหม่..." 
+                        value={forgotNewPassword} 
+                        onChange={(e) => setForgotNewPassword(e.target.value)} 
+                        style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                        autoFocus
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowForgotNewPassword(!showForgotNewPassword)} 
+                        style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                      >
+                        <EyeIcon show={showForgotNewPassword} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. ยืนยันรหัสผ่านใหม่อีกครั้ง</label>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <input 
+                        type={showForgotConfirmPassword ? 'text' : 'password'} 
+                        placeholder="กรอกรหัสผ่านใหม่อีกครั้ง..." 
+                        value={forgotConfirmPassword} 
+                        onChange={(e) => setForgotConfirmPassword(e.target.value)} 
+                        style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowForgotConfirmPassword(!showForgotConfirmPassword)} 
+                        style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                      >
+                        <EyeIcon show={showForgotConfirmPassword} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    style={{ 
+                      backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', 
+                      fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', 
+                      boxShadow: '0 0 20px rgba(147,51,234,0.6)' 
+                    }}
+                  >
+                    💾 บันทึกรหัสผ่านใหม่ทันที
+                  </button>
+                </form>
+              )}
+
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
     <div style={{
       backgroundColor: '#070a12',
       backgroundImage: `linear-gradient(to bottom, rgba(7, 10, 18, 0.85), rgba(7, 10, 18, 0.95)), url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1920&q=80')`,
