@@ -1,96 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, push } from 'firebase/database';
-
-// ตั้งค่า Firebase Config
-const firebaseConfig = {
-  apiKey: "AIzaSyD-dgpKK9S2oLfLawJ8MKYHi-NWB4GQv7u",
-  authDomain: "cyber-topup-game.firebaseapp.com",
-  databaseURL: "https://cyber-topup-game-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "cyber-topup-game",
-  storageBucket: "cyber-topup-game.appspot.com",
-  messagingSenderId: "191687954752",
-  appId: "1:191687954752:web:063d8ce34df50b182feaa5",
-  measurementId: "G-2VQP0N3PVZ"
-};
-
-const app = initializeApp(firebaseConfig);
+import { getAuth, sendPasswordResetEmail } from 'firebase/auth';const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
-export default function GameTopupApp() {
-  const [registeredUsers, setRegisteredUsers] = useState([]);
-  const [forgotModalOpen, setForgotModalOpen] = useState(false);
-  const [forgotEmailInput, setForgotEmailInput] = useState('');
-  const [forgotStatusMsg, setForgotStatusMsg] = useState({ text: '', type: '' });
-
-  // โหลดข้อมูลผู้ใช้งานแบบ Realtime จาก Firebase Database
-  useEffect(() => {
-    const usersRef = ref(db, 'users');
-    const unsubscribe = onValue(usersRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const userList = Object.keys(data).map(key => ({
-          firebaseKey: key,
-          ...data[key]
-        }));
-        setRegisteredUsers(userList);
-      } else {
-        const defaultUsers = [
-          { username: 'thanphooms', email: 'thanphooms@gmail.com', password: '0638801739Ss_@1', balance: 99999 },
-          { username: 'user11', email: 'user11@example.com', password: '11', balance: 1800 },
-          { username: 'user22', email: 'user22@example.com', password: '22', balance: 1500 }
-        ];
-        defaultUsers.forEach(u => {
-          push(usersRef, u);
-        });
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('cyber_current_logged_user');
-    if (savedUser) {
-      try { return JSON.parse(savedUser); } catch (e) {}
-    }
-    return null;
-  });
-
-  useEffect(() => {
-    if (user) {
-      const latestUser = registeredUsers.find(u => 
-        (u.email && u.email.toLowerCase() === user.email?.toLowerCase()) || 
-        (u.username && u.username.toLowerCase() === user.username?.toLowerCase())
-      );
-      if (latestUser) {
-        setUser(latestUser);
-        localStorage.setItem('cyber_current_logged_user', JSON.stringify(latestUser));
-      }
-    } else {
-      localStorage.removeItem('cyber_current_logged_user');
-    }
-  }, [registeredUsers]);
-
-  const [authMode, setAuthMode] = useState('login');
-  const [rememberMe, setRememberMe] = useState(false);
-  
-  const [usernameInput, setUsernameInput] = useState(() => {
-    return localStorage.getItem('cyber_remembered_user') || '';
-  });
-  const [passwordInput, setPasswordInput] = useState('');
-  const [showLoginPassword, setShowLoginPassword] = useState(false);
-  
-  const [emailInput, setEmailInput] = useState('');
-  const [regUsernameInput, setRegUsernameInput] = useState(''); 
-  const [regPasswordInput, setRegPasswordInput] = useState('');
-  const [showRegPassword, setShowRegPassword] = useState(false);
-  const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const [authError, setAuthError] = useState('');
-  const [authSuccessMsg, setAuthSuccessMsg] = useState('');
-
-  // ฟังก์ชันลืมรหัสผ่าน ส่งคำขอกู้คืนผ่านอีเมล
+const auth = getAuth(app);// ฟังก์ชันลืมรหัสผ่าน ส่งคำขอกู้คืนผ่านอีเมลจริงด้วย Firebase Auth
   const handleForgotPasswordSubmit = (e) => {
     e.preventDefault();
     setForgotStatusMsg({ text: '', type: '' });
@@ -100,24 +13,25 @@ export default function GameTopupApp() {
       return;
     }
 
-    const foundUser = registeredUsers.find(u => u.email && u.email.toLowerCase() === forgotEmailInput.trim().toLowerCase());
-    
-    if (foundUser) {
-      setForgotStatusMsg({ 
-        text: `📧 ส่งลิงก์กู้คืนรหัสผ่านไปยัง ${forgotEmailInput.trim()} เรียบร้อยแล้ว! (บัญชีผู้ใช้ของคุณคือ: ${foundUser.username}) กรุณาเช็คใน Inbox หรือ Junk Mail`, 
-        type: 'success' 
+    sendPasswordResetEmail(auth, forgotEmailInput.trim())
+      .then(() => {
+        setForgotStatusMsg({ 
+          text: `📧 ส่งลิงก์กู้คืนรหัสผ่านไปยัง ${forgotEmailInput.trim()} เรียบร้อยแล้ว! กรุณาตรวจสอบใน Inbox หรือ Junk Mail`, 
+          type: 'success' 
+        });
+        setTimeout(() => {
+          setForgotModalOpen(false);
+          setForgotEmailInput('');
+          setForgotStatusMsg({ text: '', type: '' });
+        }, 5000);
+      })
+      .catch((error) => {
+        setForgotStatusMsg({ 
+          text: 'ไม่พบบัญชีที่ใช้อีเมลนี้ หรือเกิดข้อผิดพลาดในการส่งอีเมล', 
+          type: 'error' 
+        });
       });
-      setTimeout(() => {
-        setForgotModalOpen(false);
-        setForgotEmailInput('');
-        setForgotStatusMsg({ text: '', type: '' });
-      }, 4000);
-    } else {
-      setForgotStatusMsg({ text: 'ไม่พบบัญชีที่ใช้อีเมลนี้ในระบบ', type: 'error' });
-    }
-  };
-
-  // จัดการการล็อกอิน และ สมัครสมาชิก
+  };// จัดการการล็อกอิน และ สมัครสมาชิก
   const handleAuthSubmit = (e) => {
     e.preventDefault();
     setAuthError('');
@@ -205,7 +119,9 @@ export default function GameTopupApp() {
           setAuthError('เกิดข้อผิดพลาดในการบันทึกข้อมูลเข้าฐานข้อมูล');
         });
     }
-  };const [activeTab, setActiveTab] = useState('shop');
+  };
+
+  const [activeTab, setActiveTab] = useState('shop');
   const [gameCategory, setGameCategory] = useState('all');
   const [selectedGame, setSelectedGame] = useState(null);
   const [playerId, setPlayerId] = useState('');
@@ -495,7 +411,9 @@ export default function GameTopupApp() {
   const updateRealtimeOrderStatus = (firebaseKey, newStatus) => {
     const orderRef = ref(db, `orders/${firebaseKey}/status`);
     set(orderRef, newStatus);
-  };useEffect(() => {
+  };
+
+  useEffect(() => {
     const interval = setInterval(() => {
       const nowTs = Date.now();
       orders.forEach((ord) => {
@@ -1213,7 +1131,9 @@ export default function GameTopupApp() {
   const handleHistoryDateChange = (e) => {
     setSelectedHistoryDate(e.target.value);
     setHistoryPage(1);
-  };// หากยังไม่ได้เข้าสู่ระบบ
+  };
+
+  // หากยังไม่ได้เข้าสู่ระบบ
   if (!user) {
     return (
       <div style={{
