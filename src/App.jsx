@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, push } from 'firebase/database';
-import { getAuth, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth';
+import { getAuth, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged, updatePassword, applyActionCode, verifyPasswordResetCode, confirmPasswordReset } from 'firebase/auth';
 
 // ตั้งค่า Firebase Config
 const firebaseConfig = {
@@ -250,6 +250,8 @@ export default function App() {
   const [showForgotConfirmPassword, setShowForgotConfirmPassword] = useState(false);
   const [forgotStatusMsg, setForgotStatusMsg] = useState({ text: '', type: '' });
   const [emailVerifyMsg, setEmailVerifyMsg] = useState('');
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [resetOobCode, setResetOobCode] = useState(null);
 
   const resetForgotState = () => {
     setForgotStep(1);
@@ -264,7 +266,108 @@ export default function App() {
     setForgotConfirmPassword('');
     setShowForgotConfirmPassword(false);
     setForgotStatusMsg({ text: '', type: '' });
+    setResetOobCode(null);
   };
+
+  // ตรวจสอบลิงก์ยืนยันอีเมลหรือลิงก์รีเซ็ตรหัสผ่านจริงจาก Firebase (?mode=...&oobCode=...)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const mode = params.get('mode');
+      const oobCode = params.get('oobCode');
+      if (!mode || !oobCode) return;
+
+      if (mode === 'verifyEmail') {
+        applyActionCode(auth, oobCode)
+          .then(() => {
+            if (auth.currentUser) auth.currentUser.reload().catch(() => {});
+            setAuthSuccessMsg('✅ ยืนยันอีเมลสำเร็จเรียบร้อยแล้ว! คุณสามารถเข้าสู่ระบบใช้งานได้ทันที');
+            setEmailVerifyMsg('✅ ยืนยันอีเมลของคุณสำเร็จเรียบร้อยแล้ว!');
+            if (user && user.firebaseKey) {
+              set(ref(db, `users/${user.firebaseKey}/emailVerified`), true);
+              const updated = { ...user, emailVerified: true };
+              setUser(updated);
+              try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updated)); } catch (e) {}
+            }
+            window.history.replaceState({}, document.title, window.location.pathname);
+          })
+          .catch((err) => {
+            setEmailVerifyMsg('⚠️ ลิงก์ยืนยันอีเมลหมดอายุหรือถูกใช้งานไปแล้ว: ' + err.message);
+          });
+      } else if (mode === 'resetPassword') {
+        verifyPasswordResetCode(auth, oobCode)
+          .then((email) => {
+            setResetOobCode(oobCode);
+            setForgotEmailInput(email);
+            setForgotModalOpen(true);
+            setForgotStep(3);
+            setForgotStatusMsg({
+              text: `✅ ยืนยันลิงก์จากอีเมล ${email} สำเร็จ! กรุณาตั้งรหัสผ่านใหม่ของคุณด้านล่าง`,
+              type: 'success'
+            });
+            window.history.replaceState({}, document.title, window.location.pathname);
+          })
+          .catch((err) => {
+            setAuthError('⚠️ ลิงก์รีเซ็ตรหัสผ่านหมดอายุหรือถูกใช้งานไปแล้ว: ' + err.message);
+          });
+      }
+    } catch (e) {}
+  }, []);
+
+  // ซิงค์สถานะการยืนยันอีเมลจริงจาก Firebase Auth อัตโนมัติ (เมื่อผู้ใช้กดลิงก์ในอีเมลแล้วกลับมาที่หน้าเว็บ)
+  const checkAndSyncEmailVerified = async (silent = true) => {
+    if (!user || !user.email) return;
+    try {
+      let currentAuthUser = auth.currentUser;
+      if ((!currentAuthUser || currentAuthUser.email?.toLowerCase() !== user.email.toLowerCase()) && user.password) {
+        try {
+          const cred = await signInWithEmailAndPassword(auth, user.email, user.password);
+          currentAuthUser = cred.user;
+        } catch (signInErr) {
+          if (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential') {
+            try {
+              const created = await createUserWithEmailAndPassword(auth, user.email, user.password);
+              currentAuthUser = created.user;
+            } catch (e) {}
+          }
+        }
+      }
+      if (currentAuthUser) {
+        await currentAuthUser.reload();
+        if (currentAuthUser.emailVerified) {
+          if (user.firebaseKey) {
+            await set(ref(db, `users/${user.firebaseKey}/emailVerified`), true);
+          }
+          const updated = { ...user, emailVerified: true };
+          setUser(updated);
+          try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updated)); } catch (e) {}
+          if (!silent) {
+            setEmailVerifyMsg(`✅ ยืนยันอีเมล ${user.email} สำเร็จเรียบร้อยแล้ว!`);
+            setTimeout(() => setEmailVerifyMsg(''), 6000);
+          }
+          return true;
+        } else if (!silent) {
+          setEmailVerifyMsg(`⏳ ยังไม่พบการกดยืนยันจากอีเมล ${user.email} กรุณาเปิดอีเมลแล้วคลิกลิงก์ยืนยัน (ตรวจสอบใน Inbox หรือ Spam/จดหมายขยะ)`);
+          setTimeout(() => setEmailVerifyMsg(''), 7000);
+        }
+      }
+    } catch (e) {}
+    return false;
+  };
+
+  useEffect(() => {
+    if (!user || !user.email || user.emailVerified) return;
+    checkAndSyncEmailVerified(true);
+    const onFocus = () => checkAndSyncEmailVerified(true);
+    window.addEventListener('focus', onFocus);
+    const interval = setInterval(() => {
+      checkAndSyncEmailVerified(true);
+    }, 5000);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      clearInterval(interval);
+    };
+  }, [user?.email, user?.emailVerified, user?.firebaseKey]);
 
   useEffect(() => {
     let timer;
@@ -283,25 +386,91 @@ export default function App() {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const handleResendEmailVerification = () => {
-    setEmailVerifyMsg('');
-    if (auth.currentUser) {
-      sendEmailVerification(auth.currentUser)
-        .then(() => {
-          setEmailVerifyMsg(`📧 ส่งลิงก์ยืนยันอีเมลไปยัง ${user?.email || auth.currentUser.email} เรียบร้อยแล้ว! กรุณาตรวจสอบใน Inbox หรือ Junk Mail`);
-          setTimeout(() => setEmailVerifyMsg(''), 7000);
-        })
-        .catch((err) => {
-          setEmailVerifyMsg(`⚠️ ไม่สามารถส่งอีเมลยืนยันได้: ${err.message}`);
-          setTimeout(() => setEmailVerifyMsg(''), 7000);
-        });
-    } else {
-      setEmailVerifyMsg(`📧 กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่อีกครั้งเพื่อส่งลิงก์ยืนยันอีเมล`);
+  const handleResendEmailVerification = async () => {
+    if (!user || !user.email) {
+      setEmailVerifyMsg('⚠️ บัญชีนี้ยังไม่ได้ผูกอีเมล กรุณาสมัครสมาชิกด้วยอีเมลจริงเพื่อใช้งาน');
       setTimeout(() => setEmailVerifyMsg(''), 7000);
+      return;
+    }
+    setIsSendingEmail(true);
+    setEmailVerifyMsg(`⏳ กำลังเชื่อมต่อเซิร์ฟเวอร์เพื่อส่งลิงก์ยืนยันไปยัง ${user.email}...`);
+
+    try {
+      let currentAuthUser = auth.currentUser;
+      if (!currentAuthUser || currentAuthUser.email?.toLowerCase() !== user.email.toLowerCase()) {
+        if (user.password) {
+          try {
+            const cred = await signInWithEmailAndPassword(auth, user.email, user.password);
+            currentAuthUser = cred.user;
+          } catch (signInErr) {
+            if (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential') {
+              const created = await createUserWithEmailAndPassword(auth, user.email, user.password);
+              currentAuthUser = created.user;
+            } else {
+              throw signInErr;
+            }
+          }
+        }
+      }
+
+      if (currentAuthUser) {
+        await currentAuthUser.reload();
+        if (currentAuthUser.emailVerified) {
+          if (user.firebaseKey) {
+            await set(ref(db, `users/${user.firebaseKey}/emailVerified`), true);
+          }
+          const updated = { ...user, emailVerified: true };
+          setUser(updated);
+          try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updated)); } catch (e) {}
+          setEmailVerifyMsg(`✅ อีเมล ${user.email} ได้รับการยืนยันเรียบร้อยแล้ว!`);
+          setIsSendingEmail(false);
+          setTimeout(() => setEmailVerifyMsg(''), 7000);
+          return;
+        }
+
+        await sendEmailVerification(currentAuthUser);
+        setEmailVerifyMsg(`📧 ส่งลิงก์ยืนยันตัวตนไปยังอีเมลจริง ${user.email} เรียบร้อยแล้ว! กรุณาเปิดอีเมลแล้วคลิกลิงก์ยืนยัน (ตรวจสอบใน Inbox หรือ Spam/จดหมายขยะ)`);
+      } else {
+        setEmailVerifyMsg(`⚠️ กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่อีกครั้งเพื่อส่งลิงก์ยืนยันอีเมล`);
+      }
+    } catch (err) {
+      if (err.code === 'auth/too-many-requests') {
+        setEmailVerifyMsg(`⏳ ส่งลิงก์ยืนยันไปยัง ${user.email} ไปแล้วเมื่อสักครู่ กรุณาเช็คในกล่องข้อความหรือ Spam ของอีเมลคุณ`);
+      } else {
+        setEmailVerifyMsg(`⚠️ ไม่สามารถส่งอีเมลยืนยันได้: ${err.message}`);
+      }
+    } finally {
+      setIsSendingEmail(false);
+      setTimeout(() => setEmailVerifyMsg(''), 9000);
     }
   };
 
-  const handleRequestOtpSubmit = (e) => {
+  // ฟังก์ชันส่งลิงก์รีเซ็ตรหัสผ่านเข้าอีเมลจริงผ่าน Firebase Auth
+  const dispatchRealPasswordResetEmail = async (targetUser, fallbackEmail) => {
+    const emailToSend = (targetUser?.email || fallbackEmail || '').trim().toLowerCase();
+    if (!emailToSend || !emailToSend.includes('@')) {
+      return { sent: false, reason: 'บัญชีนี้ไม่ได้ระบุอีเมลไว้' };
+    }
+    try {
+      await sendPasswordResetEmail(auth, emailToSend);
+      return { sent: true, email: emailToSend };
+    } catch (err) {
+      if ((err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') && targetUser?.password) {
+        try {
+          await createUserWithEmailAndPassword(auth, emailToSend, targetUser.password);
+          await sendPasswordResetEmail(auth, emailToSend);
+          return { sent: true, email: emailToSend };
+        } catch (innerErr) {
+          return { sent: false, reason: innerErr.message, email: emailToSend };
+        }
+      } else if (err.code === 'auth/too-many-requests') {
+        return { sent: true, email: emailToSend, note: 'ส่งลิงก์ไปยังอีเมลก่อนหน้านี้แล้ว' };
+      }
+      return { sent: false, reason: err.message, email: emailToSend };
+    }
+  };
+
+  const handleRequestOtpSubmit = async (e) => {
     e.preventDefault();
     setForgotStatusMsg({ text: '', type: '' });
 
@@ -316,35 +485,56 @@ export default function App() {
              (u.email && u.email.toLowerCase() === inputClean.toLowerCase())
     );
 
-    if (!matched) {
+    if (!matched && !inputClean.includes('@')) {
       setForgotStatusMsg({ text: `ไม่พบบัญชีผู้ใช้ "${inputClean}" ในระบบ กรุณาตรวจสอบอีกครั้ง`, type: 'error' });
       return;
     }
 
+    setForgotStatusMsg({ text: '⏳ กำลังส่งลิงก์กู้คืนรหัสผ่านไปยังอีเมลจริงของคุณ...', type: 'success' });
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(otp);
-    setForgotTargetUser(matched);
+    if (matched) setForgotTargetUser(matched);
     setOtpCountdown(300);
     setOtpResendCountdown(60);
     setForgotOtpInput('');
+
+    const emailResult = await dispatchRealPasswordResetEmail(matched, inputClean);
     setForgotStep(2);
-    setForgotStatusMsg({
-      text: `📧 ส่งรหัส OTP 6 หลักไปยัง ${matched.email || matched.username} เรียบร้อยแล้ว (รหัส OTP ของคุณคือ: ${otp})`,
-      type: 'success'
-    });
+
+    if (emailResult.sent) {
+      setForgotStatusMsg({
+        text: `📧 ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลจริง (${emailResult.email}) เรียบร้อยแล้ว! สามารถคลิกลิงก์ในอีเมลของคุณ (เช็คใน Inbox / Junk Mail) หรือกรอกรหัส OTP สำรอง (${otp}) ด้านล่างเพื่อตั้งรหัสใหม่บนหน้านี้ได้ทันที`,
+        type: 'success'
+      });
+    } else {
+      setForgotStatusMsg({
+        text: `📧 ระบบเปิดโหมดกู้คืนรหัสผ่านให้แล้ว (รหัส OTP สำหรับตั้งรหัสใหม่บนหน้าเว็บคือ: ${otp})`,
+        type: 'success'
+      });
+    }
   };
 
-  const handleResendOtp = () => {
+  const handleResendOtp = async () => {
     if (otpResendCountdown > 0) return;
     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(newOtp);
     setOtpCountdown(300);
     setOtpResendCountdown(60);
     setForgotOtpInput('');
-    setForgotStatusMsg({
-      text: `🔄 ส่งรหัส OTP ใหม่เรียบร้อยแล้ว (รหัส OTP: ${newOtp})`,
-      type: 'success'
-    });
+
+    const emailResult = await dispatchRealPasswordResetEmail(forgotTargetUser, forgotEmailInput);
+    if (emailResult.sent) {
+      setForgotStatusMsg({
+        text: `🔄 ส่งลิงก์รีเซ็ตรหัสผ่านเข้าอีเมลจริง (${emailResult.email}) อีกครั้งแล้ว! (หรือใช้รหัส OTP สำรอง: ${newOtp})`,
+        type: 'success'
+      });
+    } else {
+      setForgotStatusMsg({
+        text: `🔄 ส่งรหัส OTP ใหม่เรียบร้อยแล้ว (รหัส OTP: ${newOtp})`,
+        type: 'success'
+      });
+    }
   };
 
   const handleVerifyOtpSubmit = (e) => {
@@ -373,7 +563,7 @@ export default function App() {
     });
   };
 
-  const handleSetNewPasswordSubmit = (e) => {
+  const handleSetNewPasswordSubmit = async (e) => {
     e.preventDefault();
     setForgotStatusMsg({ text: '', type: '' });
 
@@ -392,33 +582,53 @@ export default function App() {
       return;
     }
 
-    if (!forgotTargetUser || !forgotTargetUser.firebaseKey) {
-      setForgotStatusMsg({ text: 'เกิดข้อผิดพลาด: ไม่พบข้อมูลบัญชี กรุณาลองใหม่อีกครั้ง', type: 'error' });
-      return;
-    }
-
     const newPass = forgotNewPassword.trim();
-    set(ref(db, `users/${forgotTargetUser.firebaseKey}/password`), newPass)
-      .then(() => {
-        setUsernameInput(forgotTargetUser.username);
-        setPasswordInput(newPass);
+    const matchedUser = forgotTargetUser || registeredUsers.find(
+      (u) => (u.email && u.email.toLowerCase() === forgotEmailInput.trim().toLowerCase()) ||
+             (u.username && u.username.toLowerCase() === forgotEmailInput.trim().toLowerCase())
+    );
 
-        setForgotStatusMsg({
-          text: '🎉 เปลี่ยนรหัสผ่านใหม่สำเร็จเรียบร้อยแล้ว! ระบบได้กรอกรหัสผ่านใหม่ให้ในหน้าเข้าสู่ระบบแล้ว กำลังกลับสู่หน้าแรก...',
-          type: 'success'
-        });
+    try {
+      // ถ้ารีเซ็ตผ่านลิงก์จริงจากอีเมล (oobCode)
+      if (resetOobCode) {
+        await confirmPasswordReset(auth, resetOobCode, newPass);
+      } else if (matchedUser?.email && matchedUser?.password) {
+        // ซิงค์รหัสผ่านใหม่เข้า Firebase Auth ด้วยเพื่อให้เข้าสู่ระบบด้วยอีเมลจริงได้ตรงกัน
+        try {
+          const cred = await signInWithEmailAndPassword(auth, matchedUser.email, matchedUser.password);
+          await updatePassword(cred.user, newPass);
+        } catch (syncErr) {
+          if (syncErr.code === 'auth/user-not-found') {
+            try {
+              await createUserWithEmailAndPassword(auth, matchedUser.email, newPass);
+            } catch (e) {}
+          }
+        }
+      }
 
-        setTimeout(() => {
-          setForgotModalOpen(false);
-          resetForgotState();
-        }, 2500);
-      })
-      .catch((err) => {
-        setForgotStatusMsg({
-          text: 'เกิดข้อผิดพลาดในการบันทึกรหัสผ่านใหม่: ' + err.message,
-          type: 'error'
-        });
+      if (matchedUser && matchedUser.firebaseKey) {
+        await set(ref(db, `users/${matchedUser.firebaseKey}/password`), newPass);
+        setUsernameInput(matchedUser.username);
+      } else {
+        setUsernameInput(forgotEmailInput.trim());
+      }
+      setPasswordInput(newPass);
+
+      setForgotStatusMsg({
+        text: '🎉 เปลี่ยนรหัสผ่านใหม่สำเร็จเรียบร้อยแล้ว! ระบบซิงค์รหัสผ่านใหม่ทั้งในระบบและอีเมลให้แล้ว กำลังกลับสู่หน้าเข้าสู่ระบบ...',
+        type: 'success'
       });
+
+      setTimeout(() => {
+        setForgotModalOpen(false);
+        resetForgotState();
+      }, 2200);
+    } catch (err) {
+      setForgotStatusMsg({
+        text: 'เกิดข้อผิดพลาดในการบันทึกรหัสผ่านใหม่: ' + err.message,
+        type: 'error'
+      });
+    }
   };
 
   useEffect(() => {
@@ -500,6 +710,9 @@ export default function App() {
           })
           .catch((error) => {
             if (foundUser.password === passwordInput) {
+              if (foundUser.email && (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential')) {
+                createUserWithEmailAndPassword(auth, foundUser.email, passwordInput).catch(() => {});
+              }
               if (rememberMe) {
                 localStorage.setItem('cyber_remembered_user', usernameInput.trim());
               } else {
@@ -2022,8 +2235,8 @@ export default function App() {
                   </div>
 
                   <div style={{ backgroundColor: 'rgba(55, 65, 81, 0.35)', borderRadius: '10px', padding: '10px 12px', fontSize: '11px', color: '#9ca3af', marginBottom: '18px', textAlign: 'left', border: '1px dashed #4b5563', lineHeight: '1.5' }}>
-                    💡 <b>สะดวก รวดเร็ว จบในหน้าเดียว:</b><br/>
-                    ระบบจะส่งรหัส OTP 6 หลัก และเปิดให้คุณเปลี่ยนรหัสผ่านใหม่ได้ทันทีบนหน้านี้ ไม่ต้องสลับจอไปมา
+                    💡 <b>ส่งอีเมลจริง + รีเซ็ตไวในหน้าเดียว:</b><br/>
+                    ระบบจะส่งลิงก์รีเซ็ตรหัสผ่านไปยัง<b>อีเมลจริง</b>ของคุณผ่าน Firebase Auth ทันที (ตรวจสอบใน Inbox หรือ Spam/จดหมายขยะ) พร้อมรหัส OTP สำรองให้ตั้งรหัสใหม่ได้ทันที
                   </div>
 
                   <div style={{ display: 'flex', gap: '10px' }}>
@@ -2206,8 +2419,9 @@ export default function App() {
               <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <button 
                   type="button" 
+                  disabled={isSendingEmail}
                   onClick={handleResendEmailVerification}
-                  title="คลิกเพื่อส่งลิงก์ยืนยันตัวตนไปยังอีเมลที่ลงทะเบียนไว้"
+                  title="คลิกเพื่อส่งลิงก์ยืนยันตัวตนไปยังอีเมลจริงที่ลงทะเบียนไว้"
                   style={{ 
                     backgroundColor: 'rgba(245, 158, 11, 0.25)', 
                     border: '1px solid #f59e0b', 
@@ -2221,6 +2435,41 @@ export default function App() {
                 >
                   ⚠️ ยืนยันเมล
                 </button>
+                <button
+                  type="button"
+                  onClick={() => checkAndSyncEmailVerified(false)}
+                  title="กดเพื่อตรวจสอบหลังจากคลิกลิงก์ยืนยันในอีเมลแล้ว"
+                  style={{
+                    backgroundColor: 'rgba(56, 189, 248, 0.2)',
+                    border: '1px solid #38bdf8',
+                    color: '#38bdf8',
+                    padding: '2px 7px',
+                    borderRadius: '6px',
+                    fontSize: '10px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🔄 เช็คเมล
+                </button>
+              </div>
+            )}
+            {user.email && user.emailVerified && (
+              <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px', display: 'flex', alignItems: 'center' }}>
+                <span
+                  title={`ยืนยันอีเมลแล้ว: ${user.email}`}
+                  style={{
+                    backgroundColor: 'rgba(52, 211, 153, 0.2)',
+                    border: '1px solid #34d399',
+                    color: '#34d399',
+                    padding: '2px 8px',
+                    borderRadius: '6px',
+                    fontSize: '10px',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  ✅ ยืนยันเมลแล้ว
+                </span>
               </div>
             )}
             <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px' }}><span style={{ color: '#9ca3af' }}>💰 เครดิตร้าน: </span><b style={{ color: '#34d399' }}>฿{(user.balance || 0).toLocaleString()}</b></div>
