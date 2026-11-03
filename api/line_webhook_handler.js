@@ -23,15 +23,15 @@ export default async function handler(req, res) {
   try {
     const { orderId, game, packageName, price, player, gameChar, paymentMethod, deliveredCode } = req.body;
 
-    // ดึงค่า Token และ User ID จาก Environment Variables หรือใส่ค่าตรงนี้
-    const LINE_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || "";
-    const TARGET_USER_ID = process.env.LINE_ADMIN_USER_ID || "";
+    // 👉 ใส่ Token และ User ID จาก LINE Developers ของคุณเรียบร้อยแล้ว
+    const LINE_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || "9cStmt35M+TLQvjPu4x03AUkf1scR00IuXaEcmtDQFfZAtkKyZTUUFYKhLCgOQL/FDvEVJ1/js9VwITmdEL8KilZN6pJdkq+FyvTuxjs2pii6irmjbJa84+7A/JG5Di+EqeazToW1wZ01oX91ItM9QdB04t89/1O/w1cDnyilFU=";
+    const TARGET_USER_ID = process.env.LINE_ADMIN_USER_ID || "U04dd8c6f41cf65e939e9843bee1f6223";
 
     if (!LINE_ACCESS_TOKEN || !TARGET_USER_ID) {
-      console.warn("LINE Token หรือ Target User ID ยังไม่ได้ตั้งค่าใน Environment Variables");
-      return res.status(200).json({ 
+      console.warn("⚠️ [LINE Webhook] ไม่พบ LINE_ACCESS_TOKEN หรือ TARGET_USER_ID กรุณาตรวจสอบการตั้งค่า");
+      return res.status(400).json({ 
         success: false, 
-        message: 'Order recorded but LINE credentials not configured yet.' 
+        message: 'กรุณาใส่ LINE_CHANNEL_ACCESS_TOKEN และ TARGET_USER_ID (ขึ้นต้นด้วย U...)' 
       });
     }
 
@@ -56,10 +56,10 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${LINE_ACCESS_TOKEN}`
+        'Authorization': `Bearer ${LINE_ACCESS_TOKEN.trim()}`
       },
       body: JSON.stringify({
-        to: TARGET_USER_ID,
+        to: TARGET_USER_ID.trim(),
         messages: [
           {
             type: 'text',
@@ -69,8 +69,19 @@ export default async function handler(req, res) {
       })
     });
 
-    const result = await lineResponse.json();
+    const result = await lineResponse.json().catch(() => ({}));
 
+    // หาก LINE API ตอบกลับว่า Error (เช่น Token ผิด หรือ ID ผิด)
+    if (!lineResponse.ok) {
+      console.error('❌ [LINE API Error Details]:', result);
+      return res.status(lineResponse.status).json({
+        success: false,
+        error: 'LINE API Rejected',
+        details: result
+      });
+    }
+
+    console.log('✅ [LINE Sent Success]:', result);
     return res.status(200).json({ 
       success: true, 
       message: 'LINE notification sent successfully!', 
@@ -78,7 +89,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error('Error sending LINE notification:', error);
+    console.error('❌ [Server Error sending LINE]:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 }
