@@ -3,13 +3,15 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, push } from 'firebase/database';
 import { getAuth, sendPasswordResetEmail, createUserWithEmailAndPassword } from 'firebase/auth';
 
-// ตั้งค่า Firebase Config
+// ----------------------------------------------------
+// ตั้งค่า Firebase Config ของคุณ
+// ----------------------------------------------------
 const firebaseConfig = {
-  apiKey: "AIzaSyD-dgpKK9S2oLfLawJ8MKYHi-NWB4GQv7u",
+  apiKey: "AIzaSyD-dgpKK9S2olFLawJ8MKYHi-NWB4GQv7U",
   authDomain: "cyber-topup-game.firebaseapp.com",
   databaseURL: "https://cyber-topup-game-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "cyber-topup-game",
-  storageBucket: "cyber-topup-game.appspot.com",
+  storageBucket: "cyber-topup-game.firebasestorage.app",
   messagingSenderId: "191687954752",
   appId: "1:191687954752:web:063d8ce34df50b182feaa5",
   measurementId: "G-2VQP0N3PVZ"
@@ -18,6 +20,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
+
 export default function App() {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('cyber_current_logged_user');
@@ -47,11 +50,12 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [authSuccessMsg, setAuthSuccessMsg] = useState('');
 
+  // สเตตระบบลืมรหัสผ่าน
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
   const [forgotEmailInput, setForgotEmailInput] = useState('');
   const [forgotStatusMsg, setForgotStatusMsg] = useState({ text: '', type: '' });
 
-  // ฟังก์ชันลืมรหัสผ่าน ส่งคำขอกู้คืนผ่านอีเมลจริงด้วย Firebase Auth
+  // ฟังก์ชันลืมรหัสผ่าน ส่งอีเมลรีเซ็ตรหัสผ่านจริงผ่าน Firebase Auth
   const handleForgotPasswordSubmit = (e) => {
     e.preventDefault();
     setForgotStatusMsg({ text: '', type: '' });
@@ -64,7 +68,7 @@ export default function App() {
     sendPasswordResetEmail(auth, forgotEmailInput.trim())
       .then(() => {
         setForgotStatusMsg({ 
-          text: `📧 ส่งลิงก์กู้คืนรหัสผ่านไปยัง ${forgotEmailInput.trim()} เรียบร้อยแล้ว! กรุณาตรวจสอบใน Inbox หรือ Junk Mail`, 
+          text: `📧 ส่งลิงก์รีเซ็ตรหัสผ่านไปยัง ${forgotEmailInput.trim()} แล้ว! ตรวจสอบ Inbox หรือโฟลเดอร์ Junk Mail ได้เลยครับ`, 
           type: 'success' 
         });
         setTimeout(() => {
@@ -74,13 +78,15 @@ export default function App() {
         }, 5000);
       })
       .catch((error) => {
-        setForgotStatusMsg({ 
-          text: 'ไม่พบบัญชีที่ใช้อีเมลนี้ หรือเกิดข้อผิดพลาดในการส่งอีเมล', 
-          type: 'error' 
-        });
+        if (error.code === 'auth/user-not-found') {
+          setForgotStatusMsg({ text: 'ไม่พบบัญชีที่ผูกกับอีเมลนี้ในระบบ', type: 'error' });
+        } else {
+          setForgotStatusMsg({ text: 'เกิดข้อผิดพลาดในการส่งอีเมล: ' + error.message, type: 'error' });
+        }
       });
   };
 
+  // ดึงข้อมูล Users จาก Realtime Database
   useEffect(() => {
     const usersRef = ref(db, 'users');
     const unsubscribe = onValue(usersRef, (snapshot) => {
@@ -97,6 +103,8 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  // ฟังก์ชัน Login & Register
   const handleAuthSubmit = (e) => {
     e.preventDefault();
     setAuthError('');
@@ -133,12 +141,12 @@ export default function App() {
       const emailClean = emailInput.trim().toLowerCase();
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(emailClean)) {
-        setAuthError('รูปแบบ Email สำหรับกู้คืนรหัสผ่านไม่ถูกต้อง (เช่น name@domain.com)');
+        setAuthError('รูปแบบ Email ไม่ถูกต้อง (ตัวอย่าง: name@gmail.com)');
         return;
       }
 
       if (regPasswordInput.length < 6) {
-        setAuthError('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+        setAuthError('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษรขึ้นไป');
         return;
       }
 
@@ -160,7 +168,7 @@ export default function App() {
         return;
       }
 
-      // สร้างบัญชีในระบบ Firebase Authentication ควบคู่ไปด้วยเพื่อให้กดลืมรหัสผ่านได้
+      // สร้าง Account ใน Firebase Auth เพื่อรองรับ Reset Password ทาง Email
       createUserWithEmailAndPassword(auth, emailClean, regPasswordInput)
         .then(() => {
           const newUser = { 
@@ -181,14 +189,14 @@ export default function App() {
           setRegUsernameInput('');
           setRegPasswordInput('');
           setConfirmPasswordInput('');
-          setAuthSuccessMsg('🎉 สมัครสมาชิกสำเร็จ! สามารถเข้าสู่ระบบและใช้อีเมลนี้กู้คืนรหัสผ่านได้ทันที');
+          setAuthSuccessMsg('🎉 สมัครสมาชิกสำเร็จ! เข้าสู่ระบบและใช้อีเมลนี้รีเซ็ตรหัสผ่านได้ทันที');
           setAuthMode('login');
         })
         .catch((error) => {
           if (error.code === 'auth/email-already-in-use') {
-            setAuthError('อีเมลนี้ถูกใช้งานในระบบ Firebase Auth แล้ว');
+            setAuthError('อีเมลนี้ถูกลงทะเบียนไว้ใน Firebase แล้ว');
           } else {
-            setAuthError('เกิดข้อผิดพลาดในการสร้างบัญชีสมาชิก: ' + error.message);
+            setAuthError('สมัครสมาชิกล้มเหลว: ' + error.message);
           }
         });
     }
@@ -384,6 +392,7 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
+
   const [newCodeName, setNewCodeName] = useState('');
   const [newCodeGame, setNewCodeGame] = useState('VALORANT');
   const [newCodeReward, setNewCodeReward] = useState('125 VP');
@@ -618,12 +627,10 @@ export default function App() {
 
   const totalAdminSales = orders.reduce((sum, ord) => sum + (ord.type === 'game' ? ord.price : 0), 0);
   const totalAdminProfits = orders.reduce((sum, ord) => sum + (ord.profit || 0), 0);
-
   const netProfitAfterAd = Math.max(0, totalAdminProfits - (parseFloat(adExpense) || 0));
 
   const isVatThresholdReached = totalAdminSales >= 1800000;
   const totalAdminVat = isVatThresholdReached ? Math.round(netProfitAfterAd * 0.07) : 0;
-
   const profitForTaxCalculation = netProfitAfterAd - totalAdminVat;
   const taxableIncome = Math.max(0, profitForTaxCalculation - 150000);
 
@@ -1205,7 +1212,9 @@ export default function App() {
     setHistoryPage(1);
   };
 
-  // หากยังไม่ได้เข้าสู่ระบบ
+  // ====================================================
+  // จอเข้าสู่ระบบ / สมัครสมาชิก
+  // ====================================================
   if (!user) {
     return (
       <div style={{
@@ -1215,6 +1224,22 @@ export default function App() {
         color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
       }}>
+        {/* Style Tag สำหรับ Hover / Active Effect ทุกปุ่ม */}
+        <style>{`
+          button {
+            transition: all 0.25s ease !important;
+          }
+          button:hover {
+            transform: translateY(-2px) scale(1.02) !important;
+            filter: brightness(1.15) !important;
+            box-shadow: 0 8px 20px rgba(168, 85, 247, 0.4) !important;
+          }
+          button:active {
+            transform: translateY(1px) scale(0.97) !important;
+            filter: brightness(0.9) !important;
+          }
+        `}</style>
+
         <div style={{
           backgroundColor: 'rgba(17, 24, 39, 0.95)', backdropFilter: 'blur(16px)',
           border: '1.5px solid rgba(168, 85, 247, 0.5)', borderRadius: '24px',
@@ -1240,7 +1265,7 @@ export default function App() {
 
           <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 20px 0' }}>
             {authMode === 'login' && 'เข้าสู่ระบบด้วยชื่อผู้ใช้งานอัตโนมัติ 24 ชม.'}
-            {authMode === 'register' && 'สมัครสมาชิกใหม่ (กรอกอีเมลกู้คืนขึ้นก่อน แล้วตามด้วยชื่อผู้ใช้งาน)'}
+            {authMode === 'register' && 'สมัครสมาชิกใหม่ (กรอกอีเมลสำหรับกู้คืนรหัสผ่าน)'}
           </p>
 
           <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -1325,7 +1350,7 @@ export default function App() {
               style={{ 
                 backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', 
                 fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', 
-                boxShadow: '0 0 15px rgba(147,51,234,0.5)', transition: 'all 0.25s ease', transform: 'scale(1)' 
+                boxShadow: '0 0 15px rgba(147,51,234,0.5)'
               }}
             >
               {authMode === 'login' && 'เข้าสู่ระบบ (Login)'}
@@ -1339,11 +1364,12 @@ export default function App() {
           </div>
         </div>
 
+        {/* Modal ลืมรหัสผ่าน */}
         {forgotModalOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
             <div style={{ backgroundColor: '#111827', border: '1.5px solid #ec4899', borderRadius: '24px', maxWidth: '400px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 35px rgba(236,72,153,0.4)' }}>
               <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#f472b6' }}>📧 กู้คืนรหัสผ่านด้วยอีเมล</h3>
-              <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรอกอีเมลที่คุณใช้สมัครสมาชิก เพื่อรับแจ้งชื่อผู้ใช้และลิงก์ตั้งรหัสผ่านใหม่</p>
+              <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรอกอีเมลที่คุณใช้สมัครสมาชิก เพื่อรับลิงก์ตั้งรหัสผ่านใหม่ทางอีเมล</p>
 
               {forgotStatusMsg.text && (
                 <div style={{ backgroundColor: forgotStatusMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${forgotStatusMsg.type === 'success' ? '#34d399' : '#ef4444'}`, color: forgotStatusMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px', textAlign: 'left' }}>
@@ -1365,7 +1391,9 @@ export default function App() {
     );
   }
 
-  // หากเข้าสู่ระบบแล้ว
+  // ====================================================
+  // จอเมื่อเข้าสู่ระบบแล้ว (Dashboard / Shop / Admin)
+  // ====================================================
   return (
     <div style={{
       backgroundColor: '#070a12',
@@ -1373,6 +1401,32 @@ export default function App() {
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
       color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '60px', position: 'relative'
     }}>
+      {/* Global Button & Card Hover/Active Effects */}
+      <style>{`
+        button {
+          transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+        button:hover {
+          transform: translateY(-2px) scale(1.02) !important;
+          filter: brightness(1.15) !important;
+          box-shadow: 0 6px 18px rgba(168, 85, 247, 0.45) !important;
+        }
+        button:active {
+          transform: translateY(1px) scale(0.96) !important;
+          filter: brightness(0.9) !important;
+        }
+        .cyber-card {
+          transition: all 0.3s ease !important;
+        }
+        .cyber-card:hover {
+          transform: translateY(-6px) scale(1.01) !important;
+          border-color: #a855f7 !important;
+          box-shadow: 0 12px 30px rgba(147, 51, 234, 0.35) !important;
+        }
+        .cyber-card:active {
+          transform: scale(0.98) !important;
+        }
+      `}</style>
       
       {floatingTimer > 0 && (
         <div style={{
@@ -1389,6 +1443,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Header */}
       <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(147, 51, 234, 0.3)', padding: '12px 30px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
           <div style={{ 
@@ -1433,6 +1488,7 @@ export default function App() {
         </div>
       </header>
 
+      {/* ปุ่มติดต่อ LINE */}
       <a 
         href="https://lin.ee/Nn1UeBC" 
         target="_blank" 
@@ -1451,6 +1507,7 @@ export default function App() {
         ติดต่อแอดมิน (LINE)
       </a>
 
+      {/* เนื้อหาหลัก */}
       <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px', position: 'relative', zIndex: 1 }}>
         {activeTab === 'shop' && !selectedGame && (
           <div>
@@ -1460,8 +1517,7 @@ export default function App() {
               borderRadius: '24px', 
               padding: '40px', 
               marginBottom: '35px', 
-              boxShadow: '0 0 50px rgba(168, 85, 247, 0.4), inset 0 0 30px rgba(56, 189, 248, 0.2)',
-              position: 'hidden'
+              boxShadow: '0 0 50px rgba(168, 85, 247, 0.4), inset 0 0 30px rgba(56, 189, 248, 0.2)'
             }}>
               <span style={{ backgroundColor: 'rgba(168, 85, 247, 0.3)', color: '#c084fc', border: '1px solid #c084fc', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}>
                 ⚡ ระบบเติมเกมอัตโนมัติออนไลน์ 24 ชั่วโมง
@@ -1510,6 +1566,7 @@ export default function App() {
               {filteredGames.map((game) => (
                 <div 
                   key={game.id} 
+                  className="cyber-card"
                   onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPackageQuantity(1); setPlayerId(''); }} 
                   style={{ 
                     backgroundColor: 'rgba(17, 24, 39, 0.85)', 
@@ -1534,6 +1591,7 @@ export default function App() {
               ))}
             </div>
 
+            {/* โค้ดกิจกรรม Realtime */}
             <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(56, 189, 248, 0.6)', borderRadius: '20px', padding: '25px 30px', marginBottom: '35px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 15px 0' }}>📊 สถานะโค้ดกิจกรรมคงเหลือแยกตามเกม (Realtime)</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
@@ -1552,6 +1610,7 @@ export default function App() {
               </div>
             </div>
 
+            {/* ส่วนกรอกโค้ดกิจกรรม */}
             <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(56, 189, 248, 0.6)', borderRadius: '20px', padding: '25px 30px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 15px 0' }}>🎁 กรอกโค้ดของขวัญ / โค้ดกิจกรรมจากแอดมิน</h3>
               {eventMsg.text && (
@@ -1586,6 +1645,7 @@ export default function App() {
           </div>
         )}
 
+        {/* หน้าสั่งซื้อเกม */}
         {activeTab === 'shop' && selectedGame && (
           <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '24px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.5)' }}>
             <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: 'transparent', border: '1px solid #374151', color: '#9ca3af', padding: '8px 16px', borderRadius: '10px', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold' }}>
@@ -1611,6 +1671,7 @@ export default function App() {
                 {selectedGame.packages.map((pkg) => (
                   <div 
                     key={pkg.id} 
+                    className="cyber-card"
                     onClick={() => { setSelectedPackage(pkg); setPackageQuantity(1); }} 
                     style={{ 
                       backgroundColor: selectedPackage?.id === pkg.id ? 'rgba(147, 51, 234, 0.3)' : '#030712', 
@@ -1653,6 +1714,7 @@ export default function App() {
                 {paymentMethods.map((pm) => (
                   <div 
                     key={pm.id} 
+                    className="cyber-card"
                     onClick={() => setSelectedPayment(pm)} 
                     style={{ 
                       backgroundColor: selectedPayment?.id === pm.id ? 'rgba(56, 189, 248, 0.2)' : '#030712', 
@@ -1727,6 +1789,7 @@ export default function App() {
           </div>
         )}
 
+        {/* ตรวจสอบประวัติคำสั่งซื้อ */}
         {activeTab === 'track' && (
           <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 0 35px rgba(0,0,0,0.7)' }}>
             <div style={{ borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '20px' }}>
@@ -1880,6 +1943,7 @@ export default function App() {
           </div>
         )}
 
+        {/* แดชบอร์ดแอดมิน */}
         {activeTab === 'admin' && isUserAdmin && (
           <div style={{ maxWidth: '950px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '25px' }}>
             {!isAdminLoggedIn ? (
@@ -2074,6 +2138,7 @@ export default function App() {
                   )}
                 </div>
 
+                {/* ส่วนสร้างโค้ดกิจกรรม */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🎁 สร้างและจัดการโค้ดของขวัญ / โค้ดกิจกรรม (Realtime Cloud)</h3>
@@ -2145,6 +2210,7 @@ export default function App() {
         )}
       </main>
 
+      {/* Modal ชำระเงิน / ยืนยันรหัสผ่าน */}
       {showCheckoutModal && selectedGame && selectedPackage && selectedPayment && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
@@ -2202,13 +2268,14 @@ export default function App() {
         </div>
       )}
 
+      {/* Modal เติมเครดิต Cyber Wallet / OTP */}
       {(showTopupWalletModal || trueMoneyOtpStep) && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
             {trueMoneyOtpStep ? (
               <form onSubmit={handleTrueMoneyOtpSubmit}>
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#38bdf8' }}>🔐 กรอกรหัส OTP</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>ระบบได้ส่งรหัส OTP ไปยังเบอร์ <b style={{ color: '#ffffff' }}>{truemoneyPhone}</b> แล้ว (ลองกรอกตัวเลข 6 หลัก)</p>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '15px' }}>ระบบได้ส่งรหัส OTP ไปยังเบอร์ <b style={{ color: '#ffffff' }}>{truemoneyPhone}</b> แล้ว</p>
                 {trueMoneyOtpError && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px', borderRadius: '8px', fontSize: '12px', marginBottom: '15px' }}>{trueMoneyOtpError}</div>}
                 <input type="text" inputMode="numeric" maxLength={6} placeholder="------" value={trueMoneyOtpCode} onChange={(e) => setTrueMoneyOtpCode(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '12px', padding: '14px', color: '#ffffff', fontSize: '24px', textAlign: 'center', fontWeight: 'bold', letterSpacing: '8px', outline: 'none', marginBottom: '20px', boxSizing: 'border-box' }} />
                 <div style={{ display: 'flex', gap: '10px' }}>
@@ -2288,6 +2355,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Footer */}
       <footer style={{ textAlign: 'center', marginTop: '50px', padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', color: '#9ca3af', fontSize: '13px' }}>
         <p style={{ margin: 0 }}>⚡ <b>CYBER TOPUP</b> - บริการเติมเกมออนไลน์ ตลอด 24 ชั่วโมง</p>
       </footer>
