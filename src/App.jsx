@@ -1325,6 +1325,21 @@ export default function App() {
     }
   };
 
+  // ฟังก์ชันยิงสัญญาณแจ้งเตือนไปยัง api/line-webhook.js
+  const sendLineOrderNotification = async (orderData) => {
+    try {
+      await fetch('/api/line-webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+    } catch (err) {
+      console.warn('Line notification trigger note:', err);
+    }
+  };
+
   const handleTrueMoneyOtpSubmit = (e) => {
     e.preventDefault();
     setTrueMoneyOtpError('');
@@ -1520,6 +1535,18 @@ export default function App() {
 
       createRealtimeOrder(newOrder);
 
+      // ส่งสัญญาณแจ้งเตือนเข้า LINE ทันที (จำลองหรือจริงก็ส่ง)
+      sendLineOrderNotification({
+        orderId: newOrderId,
+        game: selectedGame.name,
+        packageName: `${selectedPackage.name} (x${packageQuantity} แพ็ก)`,
+        price: totalPrice,
+        player: user ? user.username : 'user11',
+        gameChar: playerId.trim(),
+        paymentMethod: selectedPayment.name,
+        deliveredCode: deliveredCode,
+      });
+
       setIsProcessing(false);
       setShowCheckoutModal(false);
       setCheckoutStep(1);
@@ -1533,6 +1560,28 @@ export default function App() {
       setSlipFile(null);
       setSlipPreview(null);
       setSlipVerifying(false);
+
+      // 🔔 ส่งข้อมูลแจ้งเตือนไปยัง LINE อัตโนมัติทันทีที่มีคำสั่งซื้อ
+      try {
+        fetch('/api/line-webhook', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: newOrderId,
+            game: selectedGame.name,
+            packageName: `${selectedPackage.name} (x${packageQuantity})`,
+            price: totalPrice,
+            player: user ? user.username : 'user11',
+            gameChar: playerId.trim(),
+            paymentMethod: selectedPayment.name,
+            deliveredCode: deliveredCode,
+          }),
+        }).catch((err) => console.log('LINE webhook notification dispatch note:', err));
+      } catch (err) {
+        console.log('Error triggering LINE notification:', err);
+      }
 
       if (deliveredCode) {
         setDeliveredStockModal({
