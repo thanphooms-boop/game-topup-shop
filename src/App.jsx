@@ -53,71 +53,111 @@ const cyberGlobalStyles = `
   input[type="submit"]:active,
   input[type="button"]:active,
   .cyber-btn:active {
-    transform: translateY(1.5px) scale(0.96) !important;
-    filter: brightness(0.92) !important;
-    box-shadow: 0 2px 10px rgba(168, 85, 247, 0.3) !important;
-    transition: all 0.08s ease !important;
+    transform: translateY(1px) scale(0.97) !important;
+    filter: brightness(0.95) !important;
+    box-shadow: 0 2px 8px rgba(168, 85, 247, 0.3) !important;
   }
 
-  /* ประกายแสงชิมเมอร์วิ่งผ่านปุ่มเมื่อเมาส์ผ่าน (Shimmer Sweep) */
-  button:not(.no-shimmer):not([style*="position: absolute"]):not([style*="background: none"])::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -120%;
-    width: 50%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-    transform: skewX(-25deg);
-    transition: none;
-    pointer-events: none;
+  /* ปรับแต่ง Scrollbar สวยงามแบบ Cyberpunk (Request 5: ปรับลูกศรเลื่อนขึ้นลงสวยๆ) */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #090d16;
+    border-radius: 8px;
+    border: 1px solid #1f2937;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #9333ea, #38bdf8);
+    border-radius: 8px;
+    border: 2px solid #090d16;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #c084fc, #0284c7);
   }
 
-  button:not(.no-shimmer):not([style*="position: absolute"]):not([style*="background: none"]):hover::after {
-    left: 170%;
-    transition: left 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  /* ลูกศรเลื่อนขึ้น (Scroll Up Arrow Button) สไตล์ Cyber Neon สวยงาม คมชัด */
+  ::-webkit-scrollbar-button:single-button:vertical:decrement {
+    height: 16px;
+    width: 10px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #111827;
+    border: 1px solid #38bdf8;
+    border-radius: 4px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='18 15 12 9 6 15'%3e%3c/polyline%3e%3c/svg%3e");
+    cursor: pointer;
+  }
+  ::-webkit-scrollbar-button:single-button:vertical:decrement:hover {
+    background-color: #1f2937;
+    border-color: #f472b6;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f472b6' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='18 15 12 9 6 15'%3e%3c/polyline%3e%3c/svg%3e");
   }
 
-  /* ปุ่มไอคอน เช่น ปุ่มลูกตาดูรหัสผ่าน */
-  button[style*="position: absolute"],
-  button[style*="background: none"] {
-    overflow: visible !important;
-    box-shadow: none !important;
+  /* ลูกศรเลื่อนลง (Scroll Down Arrow Button) สไตล์ Cyber Neon สวยงาม คมชัด */
+  ::-webkit-scrollbar-button:single-button:vertical:increment {
+    height: 16px;
+    width: 10px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #111827;
+    border: 1px solid #38bdf8;
+    border-radius: 4px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    cursor: pointer;
   }
-  button[style*="position: absolute"]:hover,
-  button[style*="background: none"]:hover {
-    transform: scale(1.22) !important;
-    box-shadow: none !important;
-    filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.9)) !important;
-  }
-  button[style*="position: absolute"]:active,
-  button[style*="background: none"]:active {
-    transform: scale(0.9) !important;
-  }
-
-  /* การ์ดเกม การ์ดแพ็กเกจ และการ์ดช่องทางชำระเงิน */
-  .cyber-card-clickable {
-    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-    cursor: pointer !important;
-  }
-  .cyber-card-clickable:hover {
-    transform: translateY(-4px) scale(1.02) !important;
-    border-color: #c084fc !important;
-    box-shadow: 0 10px 30px rgba(168, 85, 247, 0.5), 0 0 15px rgba(56, 189, 248, 0.4) !important;
-    filter: brightness(1.08) !important;
-  }
-  .cyber-card-clickable:active {
-    transform: translateY(1px) scale(0.98) !important;
+  ::-webkit-scrollbar-button:single-button:vertical:increment:hover {
+    background-color: #1f2937;
+    border-color: #f472b6;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f472b6' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   }
 
-  /* ปุ่มที่ปิดใช้งาน (Disabled) */
-  button:disabled,
-  button[disabled] {
-    opacity: 0.45 !important;
-    cursor: not-allowed !important;
-    transform: none !important;
-    box-shadow: none !important;
-    filter: grayscale(0.8) !important;
+  /* ซ่อนปุ่มแนวนอนที่ไม่จำเป็น */
+  ::-webkit-scrollbar-button:single-button:horizontal:decrement,
+  ::-webkit-scrollbar-button:single-button:horizontal:increment {
+    display: none;
+  }
+
+  /* ซ่อน Spin Button เดิมของบราวเซอร์สำหรับ Input Number (Request 2) */
+  .no-native-spin::-webkit-inner-spin-button,
+  .no-native-spin::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .no-native-spin {
+    -moz-appearance: textfield;
+  }
+
+  /* ลูกศร Dropdown Select สไตล์โมเดิร์น สวยงาม พรีเมียม (Request 2) */
+  .cyber-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    background-size: 14px !important;
+    padding-right: 36px !important;
+    cursor: pointer;
+  }
+  .cyber-select-pink {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23f472b6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  }
+  .cyber-select-cyan {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  }
+  .cyber-select-purple {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c084fc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  }
+
+  /* สไตล์ Textarea เฉพาะพร้อม Scrollbar และลูกศรเลื่อนขึ้นลงสวยงาม (Request 5) */
+  .cyber-textarea {
+    scrollbar-color: #38bdf8 #090d16;
+    scrollbar-width: thin;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .cyber-textarea:focus {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.35) !important;
   }
 `;
 
@@ -713,6 +753,80 @@ export default function App() {
     return () => unsubscribe();
   }, []);
   const [newCodeName, setNewCodeName] = useState('');
+  // ระบบสต็อกสินค้าหลังบ้าน (Stock Management - Request 5)
+  const [stockList, setStockList] = useState([]);
+  const [stockGame, setStockGame] = useState('VALORANT');
+  const [stockPackage, setStockPackage] = useState('125 VP');
+  const [stockCodesInput, setStockCodesInput] = useState('');
+  const [stockMsg, setStockMsg] = useState({ text: '', type: '' });
+  const [stockFilterGame, setStockFilterGame] = useState('all');
+  const [stockFilterStatus, setStockFilterStatus] = useState('all');
+  const [stockPage, setStockPage] = useState(1);
+  const [deliveredStockModal, setDeliveredStockModal] = useState(null);
+
+  // ดึงข้อมูลสต็อกสินค้าแบบ Realtime Cloud
+  useEffect(() => {
+    const stockRef = ref(db, 'stock');
+    const unsubscribe = onValue(stockRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const list = Object.keys(data).map(key => ({
+          firebaseKey: key,
+          ...data[key]
+        }));
+        setStockList(list.reverse());
+      } else {
+        setStockList([]);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // ฟังก์ชันเพิ่มรหัสสินค้าเข้าสต็อกหลังบ้าน (รองรับทั้งแบบเดี่ยว และแบบหลายบรรทัด)
+  const handleAddStock = (e) => {
+    e.preventDefault();
+    setStockMsg({ text: '', type: '' });
+
+    if (!stockPackage) {
+      setStockMsg({ text: 'กรุณาเลือกแพ็กเกจที่ต้องการเพิ่มสต็อก', type: 'error' });
+      return;
+    }
+
+    const lines = stockCodesInput.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length === 0) {
+      setStockMsg({ text: 'กรุณากรอกรหัส/โค้ดสินค้าอย่างน้อย 1 รายการ', type: 'error' });
+      return;
+    }
+
+    const now = new Date();
+    const thaiTime = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+
+    const stockRef = ref(db, 'stock');
+    lines.forEach(code => {
+      push(stockRef, {
+        game: stockGame,
+        package: stockPackage,
+        code: code,
+        status: 'available',
+        createdAt: thaiTime,
+        deliveredTo: null,
+        orderId: null,
+        deliveredAt: null
+      });
+    });
+
+    setStockCodesInput('');
+    setStockMsg({ text: `✅ เพิ่มรหัสเข้าสต็อกสำเร็จ ${lines.length} รายการ เรียบร้อยแล้ว!`, type: 'success' });
+  };
+
+  // ฟังก์ชันลบรายการสต็อกที่ยังไม่ได้ใช้งาน
+  const handleDeleteStock = (item) => {
+    if (item.firebaseKey) {
+      const targetRef = ref(db, `stock/${item.firebaseKey}`);
+      set(targetRef, null);
+    }
+  };
+
   const [newCodeGame, setNewCodeGame] = useState('VALORANT');
   const [newCodeReward, setNewCodeReward] = useState('125 VP');
   const [newCodeMaxUses, setNewCodeMaxUses] = useState(10);
@@ -1898,32 +2012,29 @@ export default function App() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <div style={{ fontSize: '12px' }}><span style={{ color: '#9ca3af' }}>👤 ผู้ใช้: </span><b style={{ color: '#c084fc' }}>{user.username}</b></div>
-            {user.email && (
+            <div style={{ fontSize: '12px' }}>
+              <span style={{ color: '#9ca3af' }}>👤 ผู้ใช้: </span>
+              <b style={{ color: '#c084fc' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
+            </div>
+            {user.email && !user.emailVerified && (
               <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ color: '#9ca3af' }}>✉️ </span>
-                <span style={{ color: '#e5e7eb', fontSize: '11px' }}>{user.email}</span>
-                {user.emailVerified ? (
-                  <span style={{ color: '#34d399', fontSize: '11px', fontWeight: 'bold' }}>✅ ยืนยันแล้ว</span>
-                ) : (
-                  <button 
-                    type="button" 
-                    onClick={handleResendEmailVerification}
-                    title="คลิกเพื่อส่งลิงก์ยืนยันตัวตนไปยังอีเมลนี้"
-                    style={{ 
-                      backgroundColor: 'rgba(245, 158, 11, 0.25)', 
-                      border: '1px solid #f59e0b', 
-                      color: '#fbbf24', 
-                      padding: '2px 8px', 
-                      borderRadius: '6px', 
-                      fontSize: '10px', 
-                      fontWeight: 'bold',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    ⚠️ ยืนยันเมล
-                  </button>
-                )}
+                <button 
+                  type="button" 
+                  onClick={handleResendEmailVerification}
+                  title="คลิกเพื่อส่งลิงก์ยืนยันตัวตนไปยังอีเมลที่ลงทะเบียนไว้"
+                  style={{ 
+                    backgroundColor: 'rgba(245, 158, 11, 0.25)', 
+                    border: '1px solid #f59e0b', 
+                    color: '#fbbf24', 
+                    padding: '2px 8px', 
+                    borderRadius: '6px', 
+                    fontSize: '10px', 
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ⚠️ ยืนยันเมล
+                </button>
               </div>
             )}
             <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px' }}><span style={{ color: '#9ca3af' }}>💰 เครดิตร้าน: </span><b style={{ color: '#34d399' }}>฿{(user.balance || 0).toLocaleString()}</b></div>
@@ -2055,14 +2166,14 @@ export default function App() {
 
             <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(56, 189, 248, 0.6)', borderRadius: '20px', padding: '25px 30px', marginBottom: '35px' }}>
               <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 15px 0' }}>📊 สถานะโค้ดกิจกรรมคงเหลือแยกตามเกม (Realtime)</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '14px' }}>
                 {gamesData.map((g) => {
                   const codesForGame = giftCodes.filter(c => c.game === g.name);
                   const totalRemainingForGame = codesForGame.reduce((sum, c) => sum + Math.max(0, c.maxUses - c.usedCount), 0);
                   return (
-                    <div key={g.id} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>{g.name}</span>
-                      <span style={{ backgroundColor: totalRemainingForGame > 0 ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)', color: totalRemainingForGame > 0 ? '#34d399' : '#fca5a5', border: `1px solid ${totalRemainingForGame > 0 ? '#34d399' : '#ef4444'}`, padding: '4px 10px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold' }}>
+                    <div key={g.id} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: '52px', boxSizing: 'border-box' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', marginRight: '10px', lineHeight: '1.3', flex: 1 }}>{g.name}</span>
+                      <span style={{ backgroundColor: totalRemainingForGame > 0 ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)', color: totalRemainingForGame > 0 ? '#34d399' : '#fca5a5', border: `1px solid ${totalRemainingForGame > 0 ? '#34d399' : '#ef4444'}`, padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0, textAlign: 'center' }}>
                         {totalRemainingForGame > 0 ? `เหลือ ${totalRemainingForGame} โค้ด` : 'หมดแล้ว'}
                       </span>
                     </div>
@@ -2249,7 +2360,7 @@ export default function App() {
               <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>📋 เช็คสถานะคำสั่งซื้อและประวัติการทำรายการ</h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#c084fc' }}>
                 <span>👤 บัญชีผู้ใช้งาน:</span>
-                <b style={{ color: '#ffffff', backgroundColor: 'rgba(147,51,234,0.3)', padding: '2px 10px', borderRadius: '6px', border: '1px solid #9333ea' }}>{user.username}</b>
+                <b style={{ color: '#ffffff', backgroundColor: 'rgba(147,51,234,0.3)', padding: '2px 10px', borderRadius: '6px', border: '1px solid #9333ea' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
                 {!isUserAdmin && <span style={{ fontSize: '11px', color: '#38bdf8', marginLeft: '6px' }}>(แสดงเฉพาะประวัติคำสั่งซื้อของคุณเอง)</span>}
               </div>
             </div>
@@ -2258,7 +2369,7 @@ export default function App() {
               <input 
                 type="text" 
                 placeholder={isUserAdmin ? "🔍 ค้นหาชื่อบัญชีลูกค้า..." : user.username}
-                value={isUserAdmin ? exactSearchQuery : user.username} 
+                value={isUserAdmin ? exactSearchQuery : (user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username)} 
                 disabled={!isUserAdmin}
                 onChange={(e) => isUserAdmin && setExactSearchQuery(e.target.value)} 
                 style={{ flex: 1, minWidth: '180px', backgroundColor: isUserAdmin ? '#030712' : '#1f2937', border: '1.5px solid #a855f7', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', cursor: isUserAdmin ? 'text' : 'not-allowed', fontWeight: 'bold', boxSizing: 'border-box' }} 
@@ -2276,10 +2387,7 @@ export default function App() {
                   <option key={g.id} value={g.name}>{g.name}</option>
                 ))}
               </select>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '0 12px' }}>
-                <span style={{ fontSize: '13px', color: '#9ca3af' }}>📅 ปฏิทิน:</span>
-                <input type="date" value={selectedDateFilter} onChange={(e) => setSelectedDateFilter(e.target.value)} style={{ backgroundColor: 'transparent', border: 'none', color: '#ffffff', fontSize: '13px', outline: 'none', padding: '10px 0', cursor: 'pointer', colorScheme: 'dark' }} />
-              </div>
+
             </div>
 
             <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '12px', padding: '12px 18px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2450,7 +2558,12 @@ export default function App() {
                   <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #ec4899', boxShadow: '0 0 25px rgba(236,72,153,0.2)' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#f472b6', margin: '0 0 12px 0' }}>📢 บันทึกรายการโปรโมทเว็บ / ค่าโฆษณา</h3>
                     <form onSubmit={handleAddAdPromotion} style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr auto', gap: '8px', marginBottom: '15px' }}>
-                      <select value={adPlatform} onChange={(e) => setAdPlatform(e.target.value)} style={{ backgroundColor: '#030712', border: '1px solid #ec4899', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '12px', outline: 'none' }}>
+                      <select 
+                        value={adPlatform} 
+                        onChange={(e) => setAdPlatform(e.target.value)} 
+                        className="cyber-select cyber-select-pink"
+                        style={{ backgroundColor: '#030712', border: '1px solid #ec4899', borderRadius: '10px', padding: '10px 36px 10px 12px', color: '#ffffff', fontSize: '12px', outline: 'none' }}
+                      >
                         <option value="Facebook Ads">Facebook Ads</option>
                         <option value="TikTok Ads">TikTok Ads</option>
                         <option value="Google / YouTube Ads">Google / YouTube Ads</option>
@@ -2458,7 +2571,34 @@ export default function App() {
                         <option value="LINE Official Account">LINE Official Account</option>
                         <option value="อื่นๆ (Custom)">อื่นๆ (Custom)</option>
                       </select>
-                      <input type="number" placeholder="ยอดเงิน (บาท)" value={adAmountInput} onChange={(e) => setAdAmountInput(e.target.value)} style={{ backgroundColor: '#030712', border: '1px solid #ec4899', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <input 
+                          type="number" 
+                          placeholder="ยอดเงิน (บาท)" 
+                          value={adAmountInput} 
+                          onChange={(e) => setAdAmountInput(e.target.value)} 
+                          className="no-native-spin"
+                          style={{ backgroundColor: '#030712', border: '1px solid #ec4899', borderRadius: '10px', padding: '10px 28px 10px 12px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box', width: '100%' }} 
+                        />
+                        <div style={{ position: 'absolute', right: '5px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <button 
+                            type="button" 
+                            onClick={() => setAdAmountInput(prev => String(Math.max(0, (parseFloat(prev) || 0) + 100)))}
+                            title="เพิ่มยอดเงิน"
+                            style={{ background: 'rgba(236,72,153,0.25)', border: '1px solid #ec4899', borderRadius: '3px', width: '18px', height: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f472b6', fontSize: '8px', cursor: 'pointer', padding: 0, lineHeight: 1 }}
+                          >
+                            ▲
+                          </button>
+                          <button 
+                            type="button" 
+                            onClick={() => setAdAmountInput(prev => String(Math.max(0, (parseFloat(prev) || 0) - 100)))}
+                            title="ลดยอดเงิน"
+                            style={{ background: 'rgba(236,72,153,0.25)', border: '1px solid #ec4899', borderRadius: '3px', width: '18px', height: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f472b6', fontSize: '8px', cursor: 'pointer', padding: 0, lineHeight: 1 }}
+                          >
+                            ▼
+                          </button>
+                        </div>
+                      </div>
                       <button type="submit" style={{ backgroundColor: '#ec4899', color: '#ffffff', border: 'none', padding: '10px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>+ เพิ่ม</button>
                     </form>
                     <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '10px', minHeight: '165px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
@@ -2588,6 +2728,163 @@ export default function App() {
                       )}
                     </div>
                   )}
+                </div>
+
+                
+                {/* 1. ระบบจัดการสต็อกสินค้าและโค้ดส่งมอบอัตโนมัติ (Realtime Cloud Stock - Request 5) */}
+                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #10b981', boxShadow: '0 0 30px rgba(16, 185, 129, 0.25)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#34d399', margin: 0 }}>📦 ระบบจัดการสต็อกสินค้า & โค้ดส่งมอบอัตโนมัติ (Realtime Stock)</h3>
+                      <p style={{ fontSize: '11px', color: '#9ca3af', margin: '4px 0 0 0' }}>เมื่อลูกค้าเติมเงิน ระบบจะดึงโค้ดส่งมอบให้ลูกค้าทันที 1 วินาที</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <span style={{ backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '1px solid #34d399', color: '#34d399', padding: '4px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold' }}>
+                        🟢 สต็อกพร้อมส่ง: {stockList.filter(s => s.status === 'available').length} ชิ้น
+                      </span>
+                      <span style={{ backgroundColor: 'rgba(156, 163, 175, 0.2)', border: '1px solid #6b7280', color: '#9ca3af', padding: '4px 10px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold' }}>
+                        ⚪ ส่งมอบแล้ว: {stockList.filter(s => s.status === 'used').length} ชิ้น
+                      </span>
+                    </div>
+                  </div>
+
+                  {stockMsg.text && (
+                    <div style={{ backgroundColor: stockMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: stockMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px 14px', borderRadius: '10px', fontSize: '12px', marginBottom: '16px' }}>
+                      {stockMsg.text}
+                    </div>
+                  )}
+
+                  {/* ฟอร์มเพิ่มโค้ดเข้าสต็อก (Capture3.JPG) */}
+                  <form onSubmit={handleAddStock} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '16px', padding: '20px', marginBottom: '22px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '12px' }}>➕ เพิ่มรหัส/โค้ดสินค้าใหม่เข้าสต็อก</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                      <div>
+                        <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. เลือกเกม</label>
+                        <select 
+                          value={stockGame} 
+                          onChange={(e) => {
+                            setStockGame(e.target.value);
+                            const g = gamesData.find(gm => gm.name === e.target.value);
+                            if (g && g.packages.length > 0) setStockPackage(g.packages[0].name);
+                          }} 
+                          className="cyber-select cyber-select-cyan"
+                          style={{ width: '100%', backgroundColor: '#111827', border: '1.5px solid #38bdf8', borderRadius: '10px', padding: '10px 38px 10px 12px', color: '#ffffff', outline: 'none', cursor: 'pointer', fontWeight: 'bold', boxSizing: 'border-box' }}
+                        >
+                          {gamesData.map((g) => (
+                            <option key={g.id} value={g.name}>{g.name}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. เลือกแพ็กเกจของเกม</label>
+                        <select 
+                          value={stockPackage} 
+                          onChange={(e) => setStockPackage(e.target.value)} 
+                          className="cyber-select cyber-select-purple"
+                          style={{ width: '100%', backgroundColor: '#111827', border: '1.5px solid #a855f7', borderRadius: '10px', padding: '10px 38px 10px 12px', color: '#c084fc', fontWeight: 'bold', outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}
+                        >
+                          {(gamesData.find(g => g.name === stockGame)?.packages || []).map((pkg) => (
+                            <option key={pkg.id} value={pkg.name}>{pkg.name} (฿{pkg.price})</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ marginBottom: '14px' }}>
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
+                        3. กรอกรหัส/โค้ดสินค้า (วางหลายรหัสได้ แยกบรรทัดละ 1 โค้ด)
+                      </label>
+                      <textarea 
+                        rows={3} 
+                        placeholder={"เช่น:\nVAL-A1B2-C3D4-E5F6\nVAL-G7H8-I9J0-K1L2\nVAL-M3N4-O5P6-Q7R8"} 
+                        value={stockCodesInput} 
+                        onChange={(e) => setStockCodesInput(e.target.value)} 
+                        className="cyber-textarea"
+                        style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px 12px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box', fontFamily: 'monospace', resize: 'vertical' }} 
+                      />
+                    </div>
+
+                    <button type="submit" style={{ width: '100%', backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', boxShadow: '0 0 15px rgba(16,185,129,0.4)' }}>
+                      + บันทึกรหัสเข้าสต็อกเรียลไทม์
+                    </button>
+                  </form>
+
+                  {/* สรุปสต็อกคงเหลือแยกตามแพ็กเกจ */}
+                  <div style={{ marginBottom: '20px' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', marginBottom: '10px' }}>📊 สถานะสต็อกคงเหลือแยกตามเกม</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
+                      {gamesData.map((g) => {
+                        const inStockCount = stockList.filter(s => s.game === g.name && s.status === 'available').length;
+                        return (
+                          <div key={g.id} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '8px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '11px', color: '#9ca3af' }}>{g.name}</span>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: inStockCount > 0 ? '#34d399' : '#ef4444' }}>
+                              {inStockCount > 0 ? `🟢 พร้อมส่ง ${inStockCount} ชิ้น` : '🔴 สต็อกหมด'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* รายการสต็อกทั้งหมด */}
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>📋 รายการรหัสในสต็อกทั้งหมด ({stockList.length} ชิ้น)</div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <select 
+                          value={stockFilterGame} 
+                          onChange={(e) => { setStockFilterGame(e.target.value); setStockPage(1); }} 
+                          className="cyber-select cyber-select-cyan"
+                          style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '8px', padding: '6px 30px 6px 10px', color: '#ffffff', fontSize: '11px', outline: 'none' }}
+                        >
+                          <option value="all">ทุกเกม</option>
+                          {gamesData.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
+                        </select>
+                        <select 
+                          value={stockFilterStatus} 
+                          onChange={(e) => { setStockFilterStatus(e.target.value); setStockPage(1); }} 
+                          className="cyber-select cyber-select-purple"
+                          style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '8px', padding: '6px 30px 6px 10px', color: '#ffffff', fontSize: '11px', outline: 'none' }}
+                        >
+                          <option value="all">ทุกสถานะ</option>
+                          <option value="available">พร้อมส่ง</option>
+                          <option value="used">ส่งมอบแล้ว</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {stockList
+                        .filter(s => stockFilterGame === 'all' || s.game === stockFilterGame)
+                        .filter(s => stockFilterStatus === 'all' || s.status === stockFilterStatus)
+                        .slice((stockPage - 1) * 8, stockPage * 8)
+                        .map((item) => (
+                          <div key={item.firebaseKey} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                            <div>
+                              <span style={{ backgroundColor: item.status === 'available' ? 'rgba(52,211,153,0.2)' : 'rgba(107,114,128,0.2)', color: item.status === 'available' ? '#34d399' : '#9ca3af', border: `1px solid ${item.status === 'available' ? '#34d399' : '#6b7280'}`, padding: '2px 6px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', marginRight: '8px' }}>
+                                {item.status === 'available' ? 'พร้อมส่ง' : 'ส่งมอบแล้ว'}
+                              </span>
+                              <b style={{ color: '#38bdf8', marginRight: '6px' }}>[{item.game}]</b>
+                              <span style={{ color: '#c084fc', marginRight: '10px' }}>{item.package}</span>
+                              <code style={{ backgroundColor: '#111827', color: '#ffffff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #374151' }}>{item.code}</code>
+                              {item.deliveredTo && (
+                                <span style={{ color: '#9ca3af', marginLeft: '10px', fontSize: '11px' }}>ส่งให้: <b style={{ color: '#f472b6' }}>{item.deliveredTo}</b> ({item.deliveredAt})</span>
+                              )}
+                            </div>
+                            <div>
+                              {item.status === 'available' && (
+                                <button onClick={() => handleDeleteStock(item)} style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}>ลบ</button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      {stockList.length === 0 && (
+                        <div style={{ textAlign: 'center', color: '#9ca3af', padding: '20px 0', fontSize: '12px' }}>ยังไม่มีรายการรหัสในสต็อก</div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8' }}>
