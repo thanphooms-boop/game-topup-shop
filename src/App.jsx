@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, push } from 'firebase/database';
-import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
+import { getAuth, sendPasswordResetEmail, createUserWithEmailAndPassword } from 'firebase/auth';
 
 // ตั้งค่า Firebase Config
 const firebaseConfig = {
@@ -160,16 +160,20 @@ export default function App() {
         return;
       }
 
-      const newUser = { 
-        username: usernameClean, 
-        email: emailClean, 
-        password: regPasswordInput, 
-        balance: 0,
-        createdAt: new Date().toISOString()
-      };
+      // สร้างบัญชีในระบบ Firebase Authentication ควบคู่ไปด้วยเพื่อให้กดลืมรหัสผ่านได้
+      createUserWithEmailAndPassword(auth, emailClean, regPasswordInput)
+        .then(() => {
+          const newUser = { 
+            username: usernameClean, 
+            email: emailClean, 
+            password: regPasswordInput, 
+            balance: 0,
+            createdAt: new Date().toISOString()
+          };
 
-      const usersRef = ref(db, 'users');
-      push(usersRef, newUser)
+          const usersRef = ref(db, 'users');
+          return push(usersRef, newUser);
+        })
         .then(() => {
           setUsernameInput(usernameClean);
           setPasswordInput(regPasswordInput);
@@ -177,11 +181,15 @@ export default function App() {
           setRegUsernameInput('');
           setRegPasswordInput('');
           setConfirmPasswordInput('');
-          setAuthSuccessMsg('🎉 สมัครสมาชิกสำเร็จ! สามารถเข้าสู่ระบบได้ทันที');
+          setAuthSuccessMsg('🎉 สมัครสมาชิกสำเร็จ! สามารถเข้าสู่ระบบและใช้อีเมลนี้กู้คืนรหัสผ่านได้ทันที');
           setAuthMode('login');
         })
-        .catch(() => {
-          setAuthError('เกิดข้อผิดพลาดในการบันทึกข้อมูลเข้าฐานข้อมูล');
+        .catch((error) => {
+          if (error.code === 'auth/email-already-in-use') {
+            setAuthError('อีเมลนี้ถูกใช้งานในระบบ Firebase Auth แล้ว');
+          } else {
+            setAuthError('เกิดข้อผิดพลาดในการสร้างบัญชีสมาชิก: ' + error.message);
+          }
         });
     }
   };
