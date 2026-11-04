@@ -134,6 +134,143 @@ const cyberGlobalStyles = `
   }
 `;
 
+// การตั้งค่าระดับแรงค์ลูกค้า (VIP Rank Tiers) ตามยอดเงินเติมแพ็กเกจเกมสะสม
+const RANK_TIERS = [
+  {
+    tier: 'CHALLENGER',
+    name: 'Challenger VIP 🏆',
+    badge: '🏆 CHALLENGER VIP',
+    shortName: 'CHALLENGER',
+    icon: '🏆',
+    minSpend: 50000,
+    maxSpend: Infinity,
+    rateText: '฿50,000 ขึ้นไป',
+    color: '#ff0055',
+    border: '#ff0055',
+    bg: 'linear-gradient(135deg, rgba(255, 0, 85, 0.25) 0%, rgba(245, 158, 11, 0.3) 100%)',
+    glow: '0 0 15px rgba(255, 0, 85, 0.75), 0 0 25px rgba(245, 158, 11, 0.4)',
+    perks: 'สิทธิ์รับโค้ดระดับตำนาน (Legendary Gift Codes) และการดูแลระดับสูงสุด'
+  },
+  {
+    tier: 'MASTER',
+    name: 'Master VIP 👑',
+    badge: '👑 MASTER VIP',
+    shortName: 'MASTER',
+    icon: '👑',
+    minSpend: 25000,
+    maxSpend: 49999,
+    rateText: '฿25,000 - ฿49,999',
+    color: '#ec4899',
+    border: '#ec4899',
+    bg: 'linear-gradient(135deg, rgba(236, 72, 153, 0.22) 0%, rgba(168, 85, 247, 0.25) 100%)',
+    glow: '0 0 12px rgba(236, 72, 153, 0.65)',
+    perks: 'สิทธิ์รับโค้ดระดับมาสเตอร์ และกิจกรรมลับพิเศษ'
+  },
+  {
+    tier: 'DIAMOND',
+    name: 'Diamond VIP 💠',
+    badge: '💠 DIAMOND VIP',
+    shortName: 'DIAMOND',
+    icon: '💠',
+    minSpend: 10000,
+    maxSpend: 24999,
+    rateText: '฿10,000 - ฿24,999',
+    color: '#c084fc',
+    border: '#a855f7',
+    bg: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(56, 189, 248, 0.2) 100%)',
+    glow: '0 0 12px rgba(168, 85, 247, 0.55)',
+    perks: 'สิทธิ์รับโค้ดเพชรหายาก (Rare Gift Codes)'
+  },
+  {
+    tier: 'PLATINUM',
+    name: 'Platinum VIP 💎',
+    badge: '💎 PLATINUM VIP',
+    shortName: 'PLATINUM',
+    icon: '💎',
+    minSpend: 5000,
+    maxSpend: 9999,
+    rateText: '฿5,000 - ฿9,999',
+    color: '#38bdf8',
+    border: '#0284c7',
+    bg: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(45, 212, 191, 0.2) 100%)',
+    glow: '0 0 10px rgba(56, 189, 248, 0.5)',
+    perks: 'สิทธิ์รับโค้ดแพ็กเกจพรีเมียม'
+  },
+  {
+    tier: 'GOLD',
+    name: 'Gold VIP 🥇',
+    badge: '🥇 GOLD VIP',
+    shortName: 'GOLD',
+    icon: '🥇',
+    minSpend: 2000,
+    maxSpend: 4999,
+    rateText: '฿2,000 - ฿4,999',
+    color: '#fbbf24',
+    border: '#f59e0b',
+    bg: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%)',
+    glow: '0 0 10px rgba(245, 158, 11, 0.45)',
+    perks: 'สิทธิ์รับโค้ดของขวัญระดับโกลด์'
+  },
+  {
+    tier: 'SILVER',
+    name: 'Silver VIP 🥈',
+    badge: '🥈 SILVER VIP',
+    shortName: 'SILVER',
+    icon: '🥈',
+    minSpend: 500,
+    maxSpend: 1999,
+    rateText: '฿500 - ฿1,999',
+    color: '#cbd5e1',
+    border: '#94a3b8',
+    bg: 'linear-gradient(135deg, rgba(148, 163, 184, 0.2) 0%, rgba(203, 213, 225, 0.15) 100%)',
+    glow: '0 0 8px rgba(148, 163, 184, 0.35)',
+    perks: 'สิทธิ์รับโค้ดของขวัญระดับซิลเวอร์'
+  },
+  {
+    tier: 'BRONZE',
+    name: 'Bronze Member 🥉',
+    badge: '🥉 BRONZE',
+    shortName: 'BRONZE',
+    icon: '🥉',
+    minSpend: 0,
+    maxSpend: 499,
+    rateText: '฿0 - ฿499',
+    color: '#d97706',
+    border: '#b45309',
+    bg: 'linear-gradient(135deg, rgba(217, 119, 6, 0.15) 0%, rgba(180, 83, 9, 0.15) 100%)',
+    glow: '0 0 6px rgba(217, 119, 6, 0.3)',
+    perks: 'ระดับเริ่มต้น สิทธิ์รับโค้ดกิจกรรมทั่วไป'
+  }
+];
+
+const getCustomerRank = (spending) => {
+  const spend = Number(spending) || 0;
+  for (let i = 0; i < RANK_TIERS.length; i++) {
+    const tier = RANK_TIERS[i];
+    if (spend >= tier.minSpend) {
+      const prevTier = i > 0 ? RANK_TIERS[i - 1] : null;
+      return {
+        ...tier,
+        currentSpend: spend,
+        nextTier: prevTier ? prevTier.name : null,
+        nextSpend: prevTier ? prevTier.minSpend : null,
+        remainingToNext: prevTier ? Math.max(0, prevTier.minSpend - spend) : 0,
+        progressPercent: prevTier 
+          ? Math.min(100, Math.round(((spend - tier.minSpend) / (prevTier.minSpend - tier.minSpend)) * 100))
+          : 100
+      };
+    }
+  }
+  return {
+    ...RANK_TIERS[RANK_TIERS.length - 1],
+    currentSpend: 0,
+    nextTier: RANK_TIERS[RANK_TIERS.length - 2].name,
+    nextSpend: RANK_TIERS[RANK_TIERS.length - 2].minSpend,
+    remainingToNext: RANK_TIERS[RANK_TIERS.length - 2].minSpend,
+    progressPercent: 0
+  };
+};
+
 export default function App() {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('cyber_current_logged_user');
@@ -825,6 +962,8 @@ export default function App() {
   const [copiedCodeKey, setCopiedCodeKey] = useState(null);
   const [confirmDeleteCodeKey, setConfirmDeleteCodeKey] = useState(null);
   const [confirmClearAllGiftCodes, setConfirmClearAllGiftCodes] = useState(false);
+  const [rankTooltipOpen, setRankTooltipOpen] = useState(false);
+  const [adminAnalyticsTab, setAdminAnalyticsTab] = useState('all');
 
   useEffect(() => {
     const found = gamesData.find(g => g.name === newCodeGame);
@@ -1739,6 +1878,107 @@ export default function App() {
   const totalSpentInSearch = searchedOrders.reduce((sum, ord) => sum + ord.price, 0);
   const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);
 
+  // คำนวณยอดเงินเติมแพ็กเกจเกมสะสมของลูกค้าปัจจุบัน และระดับแรงค์
+  const currentUserSpending = React.useMemo(() => {
+    if (!user || !user.username) return 0;
+    const uname = user.username.trim().toLowerCase();
+    return orders
+      .filter(o => o.type === 'game' && !o.status?.includes('ยกเลิก') && o.player && o.player.trim().toLowerCase() === uname)
+      .reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+  }, [orders, user]);
+
+  const currentUserRank = React.useMemo(() => {
+    return getCustomerRank(currentUserSpending);
+  }, [currentUserSpending]);
+
+  // สถิติหลังบ้าน: อันดับเกมที่ลูกค้าเติมเยอะสุด
+  const topGamesStats = React.useMemo(() => {
+    const gameMap = {};
+    orders.forEach(o => {
+      if (o.type === 'game' && !o.status?.includes('ยกเลิก')) {
+        const gName = o.game || 'ไม่ระบุเกม';
+        if (!gameMap[gName]) {
+          gameMap[gName] = { name: gName, totalSpent: 0, orderCount: 0, totalProfit: 0 };
+        }
+        gameMap[gName].totalSpent += (Number(o.price) || 0);
+        gameMap[gName].orderCount += 1;
+        gameMap[gName].totalProfit += (Number(o.profit) || 0);
+      }
+    });
+    return Object.values(gameMap).sort((a, b) => b.totalSpent - a.totalSpent);
+  }, [orders]);
+
+  // สถิติหลังบ้าน: อันดับแพ็กเกจที่ลูกค้าเติมเยอะสุด
+  const topPackagesStats = React.useMemo(() => {
+    const pkgMap = {};
+    orders.forEach(o => {
+      if (o.type === 'game' && !o.status?.includes('ยกเลิก')) {
+        const pName = o.package || 'ไม่ระบุแพ็กเกจ';
+        const gName = o.game || 'ไม่ระบุเกม';
+        const key = `${gName} - ${pName}`;
+        if (!pkgMap[key]) {
+          pkgMap[key] = {
+            key,
+            game: gName,
+            package: pName,
+            totalSpent: 0,
+            orderCount: 0
+          };
+        }
+        pkgMap[key].totalSpent += (Number(o.price) || 0);
+        pkgMap[key].orderCount += 1;
+      }
+    });
+    return Object.values(pkgMap).sort((a, b) => b.orderCount - a.orderCount || b.totalSpent - a.totalSpent);
+  }, [orders]);
+
+  // สถิติหลังบ้าน: จัดอันดับและคำนวณแรงค์ลูกค้าทั้งหมด (Customer VIP Leaderboard)
+  const customerRankStats = React.useMemo(() => {
+    const customerMap = {};
+    orders.forEach(o => {
+      if (o.type === 'game' && !o.status?.includes('ยกเลิก') && o.player) {
+        const p = o.player.trim().toLowerCase();
+        if (!customerMap[p]) {
+          customerMap[p] = { username: o.player.trim(), totalSpent: 0, orderCount: 0 };
+        }
+        customerMap[p].totalSpent += (Number(o.price) || 0);
+        customerMap[p].orderCount += 1;
+      }
+    });
+    registeredUsers.forEach(u => {
+      if (u.username) {
+        const p = u.username.trim().toLowerCase();
+        if (!customerMap[p]) {
+          customerMap[p] = { username: u.username.trim(), totalSpent: 0, orderCount: 0 };
+        }
+      }
+    });
+
+    const list = Object.values(customerMap).map(c => ({
+      ...c,
+      rank: getCustomerRank(c.totalSpent)
+    }));
+    return list.sort((a, b) => b.totalSpent - a.totalSpent);
+  }, [orders, registeredUsers]);
+
+  const customerRankCounts = React.useMemo(() => {
+    const counts = {
+      CHALLENGER: 0,
+      MASTER: 0,
+      DIAMOND: 0,
+      PLATINUM: 0,
+      GOLD: 0,
+      SILVER: 0,
+      BRONZE: 0
+    };
+    customerRankStats.forEach(c => {
+      if (counts[c.rank.tier] !== undefined) {
+        counts[c.rank.tier] += 1;
+      }
+    });
+    return counts;
+  }, [customerRankStats]);
+
   const filteredGiftCodes = giftCodes.filter(c => {
     const matchGame = adminGiftCodeFilterGame === 'all' || c.game === adminGiftCodeFilterGame;
     const q = adminGiftCodeSearch.trim().toLowerCase();
@@ -2139,10 +2379,171 @@ export default function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            <div style={{ fontSize: '12px' }}>
+          <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', position: 'relative' }}>
+            <div style={{ fontSize: '12px', display: 'flex', alignItems: 'center' }}>
+              {/* RANK BADGE WITH '!' ICON & HOVER TOOLTIP */}
+              <div 
+                style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', marginRight: '8px' }}
+                onMouseEnter={() => setRankTooltipOpen(true)}
+                onMouseLeave={() => setRankTooltipOpen(false)}
+              >
+                <div
+                  onClick={() => setRankTooltipOpen(prev => !prev)}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    background: currentUserRank.bg,
+                    border: `1.5px solid ${currentUserRank.border}`,
+                    color: currentUserRank.color,
+                    padding: '3px 8px',
+                    borderRadius: '14px',
+                    fontSize: '11px',
+                    fontWeight: '900',
+                    boxShadow: currentUserRank.glow,
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    letterSpacing: '0.5px'
+                  }}
+                  title="คลิกหรือชี้เมาส์เพื่อดูเรทเติมของแต่ละแรงค์"
+                >
+                  <span>{currentUserRank.icon}</span>
+                  <span>{currentUserRank.shortName}</span>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '14px',
+                      height: '14px',
+                      borderRadius: '50%',
+                      backgroundColor: currentUserRank.border,
+                      color: '#030712',
+                      fontSize: '10px',
+                      fontWeight: '900',
+                      marginLeft: '2px',
+                      boxShadow: '0 0 6px rgba(255,255,255,0.6)'
+                    }}
+                  >
+                    !
+                  </span>
+                </div>
+
+                {/* THE TOOLTIP */}
+                {rankTooltipOpen && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 12px)',
+                      left: '0',
+                      zIndex: 9999,
+                      width: '340px',
+                      backgroundColor: 'rgba(11, 15, 25, 0.98)',
+                      border: '1.5px solid #a855f7',
+                      borderRadius: '16px',
+                      padding: '16px',
+                      boxShadow: '0 15px 45px rgba(0,0,0,0.95), 0 0 25px rgba(168, 85, 247, 0.5)',
+                      backdropFilter: 'blur(20px)',
+                      color: '#ffffff',
+                      animation: 'fadeIn 0.2s ease-in-out'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#c084fc', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span>🏆 ระดับแรงค์ลูกค้า (VIP Rank Tiers)</span>
+                        </div>
+                        <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>
+                          คำนวณตามยอดเงินเติมแพ็กเกจเกมสะสม
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setRankTooltipOpen(false); }}
+                        style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '12px', padding: '2px 6px' }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* CURRENT USER STATUS BOX */}
+                    <div style={{ backgroundColor: '#030712', border: `1px solid ${currentUserRank.border}`, borderRadius: '12px', padding: '10px', marginBottom: '12px', background: currentUserRank.bg }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '11px', color: '#d1d5db' }}>แรงค์ของคุณ:</span>
+                        <span style={{ fontSize: '12px', fontWeight: '900', color: currentUserRank.color }}>
+                          {currentUserRank.name}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>ยอดเติมแพ็กสะสม:</span>
+                        <span style={{ fontSize: '13px', fontWeight: '900', color: '#34d399' }}>
+                          ฿{currentUserSpending.toLocaleString()}
+                        </span>
+                      </div>
+                      {currentUserRank.nextTier ? (
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#38bdf8', marginBottom: '3px' }}>
+                            <span>ไปสู่ {currentUserRank.nextTier}:</span>
+                            <span>ขาดอีก ฿{currentUserRank.remainingToNext.toLocaleString()}</span>
+                          </div>
+                          <div style={{ width: '100%', height: '5px', backgroundColor: '#1f2937', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ width: `${currentUserRank.progressPercent}%`, height: '100%', backgroundColor: currentUserRank.border, transition: 'width 0.3s ease' }} />
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '10px', color: '#f59e0b', fontWeight: 'bold', textAlign: 'center', marginTop: '2px' }}>
+                          ⭐ ระดับสูงสุด! รับสิทธิพิเศษและโค้ดของขวัญสูงสุด
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ALL TIERS RATE TABLE */}
+                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '6px' }}>
+                      📋 เกณฑ์เรทเติมแต่ละระดับแรงค์:
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '220px', overflowY: 'auto' }}>
+                      {RANK_TIERS.map(tier => {
+                        const isCurrent = currentUserRank.tier === tier.tier;
+                        return (
+                          <div
+                            key={tier.tier}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              backgroundColor: isCurrent ? 'rgba(168, 85, 247, 0.2)' : '#030712',
+                              border: isCurrent ? `1.5px solid ${tier.border}` : '1px solid #1f2937',
+                              borderRadius: '8px',
+                              padding: '5px 8px',
+                              fontSize: '11px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                              <span>{tier.icon}</span>
+                              <span style={{ fontWeight: 'bold', color: tier.color }}>{tier.shortName}</span>
+                              {isCurrent && (
+                                <span style={{ fontSize: '9px', backgroundColor: tier.border, color: '#030712', padding: '1px 5px', borderRadius: '4px', fontWeight: '900' }}>
+                                  คุณอยู่ที่นี่
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <span style={{ fontWeight: 'bold', color: '#ffffff', fontSize: '11px' }}>{tier.rateText}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '10px', textAlign: 'center', borderTop: '1px solid #1f2937', paddingTop: '8px' }}>
+                      🎁 ในอนาคตระบบจะใช้ระดับแรงค์นี้เพื่อแจกโค้ดของขวัญตามแรงค์ลูกค้า
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <span style={{ color: '#9ca3af' }}>👤 ผู้ใช้: </span>
-              <b style={{ color: '#c084fc' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
+              <b style={{ color: '#c084fc', marginLeft: '4px' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
             </div>
             {user.email && !user.emailVerified && (
               <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -2521,10 +2922,26 @@ export default function App() {
           <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 0 35px rgba(0,0,0,0.7)' }}>
             <div style={{ borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>📋 เช็คสถานะคำสั่งซื้อและประวัติการทำรายการ</h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#c084fc' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#c084fc', flexWrap: 'wrap' }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  background: currentUserRank.bg,
+                  border: `1.5px solid ${currentUserRank.border}`,
+                  color: currentUserRank.color,
+                  padding: '2px 9px',
+                  borderRadius: '14px',
+                  fontSize: '11px',
+                  fontWeight: '900',
+                  boxShadow: currentUserRank.glow
+                }}>
+                  {currentUserRank.icon} {currentUserRank.name}
+                </span>
                 <span>👤 บัญชีผู้ใช้งาน:</span>
                 <b style={{ color: '#ffffff', backgroundColor: 'rgba(147,51,234,0.3)', padding: '2px 10px', borderRadius: '6px', border: '1px solid #9333ea' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
-                {!isUserAdmin && <span style={{ fontSize: '11px', color: '#38bdf8', marginLeft: '6px' }}>(แสดงเฉพาะประวัติคำสั่งซื้อของคุณเอง)</span>}
+                <span style={{ fontSize: '11px', color: '#38bdf8' }}>(ยอดเติมแพ็กเกจสะสม: ฿{currentUserSpending.toLocaleString()})</span>
+                {!isUserAdmin && <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '4px' }}>| แสดงเฉพาะประวัติของคุณ</span>}
               </div>
             </div>
 
@@ -2842,6 +3259,327 @@ export default function App() {
                     <div style={{ fontSize: totalAdminTax > 0 ? '18px' : '12px', fontWeight: '900', color: '#f59e0b', marginTop: totalAdminTax > 0 ? '0' : '4px' }}>
                       {totalAdminTax > 0 ? `-฿${totalAdminTax.toLocaleString()}` : '฿0 (ยกเว้น 150k แรก)'}
                     </div>
+                  </div>
+                </div>
+
+                {/* ส่วนสรุปสถิติหลังบ้าน: เกมที่ลูกค้าเติมเยอะสุด, แพ็กเกจที่เติมเยอะสุด, และระบบแรงค์ลูกค้า VIP */}
+                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 30px rgba(56, 189, 248, 0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                    <div>
+                      <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>📊 สรุปสถิติเกม & แพ็กเกจยอดนิยม + ระบบแรงค์ลูกค้า (VIP Leaderboard)</span>
+                      </h2>
+                      <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0 0' }}>
+                        วิเคราะห์ว่าเกมไหนขายดีสุด แพ็กเกจไหนลูกค้าเติมเยอะสุด และคำนวณระดับแรงค์ของลูกค้าเพื่อเตรียมแจกโค้ดของขวัญตามแรงค์
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '6px', backgroundColor: '#030712', padding: '4px', borderRadius: '12px', border: '1px solid #374151' }}>
+                      <button
+                        type="button"
+                        onClick={() => setAdminAnalyticsTab('all')}
+                        style={{
+                          backgroundColor: adminAnalyticsTab === 'all' ? '#0284c7' : 'transparent',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '6px 14px',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🌟 ดูทั้งหมด
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAdminAnalyticsTab('games')}
+                        style={{
+                          backgroundColor: adminAnalyticsTab === 'games' ? '#0284c7' : 'transparent',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '6px 14px',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🎮 เกมยอดนิยม
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAdminAnalyticsTab('packages')}
+                        style={{
+                          backgroundColor: adminAnalyticsTab === 'packages' ? '#0284c7' : 'transparent',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '6px 14px',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        📦 แพ็กเกจขายดี
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAdminAnalyticsTab('ranks')}
+                        style={{
+                          backgroundColor: adminAnalyticsTab === 'ranks' ? '#0284c7' : 'transparent',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '6px 14px',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        🏆 แรงค์ลูกค้า VIP
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* HIGHLIGHT BANNER: ยอดนิยมอันดับ 1 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', marginBottom: '22px' }}>
+                    {/* TOP GAME BANNER */}
+                    <div style={{ backgroundColor: '#030712', border: '1.5px solid #f59e0b', borderRadius: '16px', padding: '16px', position: 'relative', overflow: 'hidden', boxShadow: '0 0 20px rgba(245, 158, 11, 0.2)' }}>
+                      <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '64px', opacity: 0.12 }}>👑</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <span style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '1px solid #f59e0b', color: '#fbbf24', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}>
+                          👑 เกมที่เติมเยอะที่สุด อันดับ 1
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '20px', fontWeight: '900', color: '#ffffff', marginBottom: '6px' }}>
+                        {topGamesStats.length > 0 ? topGamesStats[0].name : 'ยังไม่มีข้อมูลการเติม'}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                        <span style={{ color: '#9ca3af' }}>ยอดเติมสะสม:</span>
+                        <b style={{ color: '#38bdf8', fontSize: '16px' }}>฿{topGamesStats.length > 0 ? topGamesStats[0].totalSpent.toLocaleString() : 0}</b>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
+                        <span>จำนวนออเดอร์:</span>
+                        <b style={{ color: '#34d399' }}>{topGamesStats.length > 0 ? topGamesStats[0].orderCount : 0} รายการ</b>
+                      </div>
+                    </div>
+
+                    {/* TOP PACKAGE BANNER */}
+                    <div style={{ backgroundColor: '#030712', border: '1.5px solid #ec4899', borderRadius: '16px', padding: '16px', position: 'relative', overflow: 'hidden', boxShadow: '0 0 20px rgba(236, 72, 153, 0.2)' }}>
+                      <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '64px', opacity: 0.12 }}>🔥</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <span style={{ backgroundColor: 'rgba(236, 72, 153, 0.2)', border: '1px solid #ec4899', color: '#f472b6', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}>
+                          🔥 แพ็กเกจที่เติมเยอะที่สุด อันดับ 1
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '18px', fontWeight: '900', color: '#ffffff', marginBottom: '6px' }}>
+                        {topPackagesStats.length > 0 ? topPackagesStats[0].package : 'ยังไม่มีข้อมูลการเติม'}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                        <span style={{ color: '#9ca3af' }}>จากเกม: <b style={{ color: '#ffffff' }}>{topPackagesStats.length > 0 ? topPackagesStats[0].game : '-'}</b></span>
+                        <b style={{ color: '#f472b6', fontSize: '16px' }}>เติมแล้ว {topPackagesStats.length > 0 ? topPackagesStats[0].orderCount : 0} ครั้ง</b>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
+                        <span>ยอดขายรวมแพ็กนี้:</span>
+                        <b style={{ color: '#38bdf8' }}>฿{topPackagesStats.length > 0 ? topPackagesStats[0].totalSpent.toLocaleString() : 0}</b>
+                      </div>
+                    </div>
+
+                    {/* TOP VIP SPENDER BANNER */}
+                    <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '16px', position: 'relative', overflow: 'hidden', boxShadow: '0 0 20px rgba(168, 85, 247, 0.2)' }}>
+                      <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '64px', opacity: 0.12 }}>🏆</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <span style={{ backgroundColor: 'rgba(168, 85, 247, 0.2)', border: '1px solid #a855f7', color: '#c084fc', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}>
+                          🏆 ลูกค้ายอดเติมสูงสุด (Top VIP Spender)
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '18px', fontWeight: '900', color: '#ffffff', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {customerRankStats.length > 0 ? (
+                          <>
+                            <span>{customerRankStats[0].username}</span>
+                            <span style={{ fontSize: '10px', background: customerRankStats[0].rank.bg, border: `1px solid ${customerRankStats[0].rank.border}`, color: customerRankStats[0].rank.color, padding: '2px 6px', borderRadius: '6px' }}>
+                              {customerRankStats[0].rank.shortName}
+                            </span>
+                          </>
+                        ) : 'ยังไม่มีข้อมูลลูกค้า'}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                        <span style={{ color: '#9ca3af' }}>ยอดเติมแพ็กสะสม:</span>
+                        <b style={{ color: '#34d399', fontSize: '16px' }}>฿{customerRankStats.length > 0 ? customerRankStats[0].totalSpent.toLocaleString() : 0}</b>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
+                        <span>จำนวนครั้งที่เติม:</span>
+                        <b style={{ color: '#c084fc' }}>{customerRankStats.length > 0 ? customerRankStats[0].orderCount : 0} ครั้ง</b>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SUMMARY TABLES GRID */}
+                  <div style={{ display: 'grid', gridTemplateColumns: adminAnalyticsTab === 'all' ? 'repeat(auto-fit, minmax(320px, 1fr))' : '1fr', gap: '18px' }}>
+                    {/* TABLE 1: สรุปอันดับเกมที่ลูกค้าเติมเยอะสุด */}
+                    {(adminAnalyticsTab === 'all' || adminAnalyticsTab === 'games') && (
+                      <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '16px', padding: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                          <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>
+                            🎮 อันดับเกมที่ลูกค้าเติมเยอะที่สุด
+                          </h4>
+                          <span style={{ fontSize: '11px', color: '#9ca3af' }}>{topGamesStats.length} เกมที่มีการเติม</span>
+                        </div>
+
+                        {topGamesStats.length === 0 ? (
+                          <div style={{ textAlign: 'center', color: '#9ca3af', padding: '30px', fontSize: '12px' }}>ยังไม่มีประวัติการเติมเกม</div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {topGamesStats.map((item, idx) => {
+                              const maxSpend = topGamesStats[0].totalSpent || 1;
+                              const pct = Math.round((item.totalSpent / maxSpend) * 100);
+                              return (
+                                <div key={item.name} style={{ backgroundColor: '#111827', border: '1px solid ' + (idx === 0 ? '#f59e0b' : '#1f2937'), borderRadius: '10px', padding: '10px 12px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span style={{
+                                        width: '22px', height: '22px', borderRadius: '50%',
+                                        backgroundColor: idx === 0 ? '#f59e0b' : idx === 1 ? '#94a3b8' : idx === 2 ? '#b45309' : '#374151',
+                                        color: '#030712', fontWeight: '900', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                      }}>
+                                        {idx + 1}
+                                      </span>
+                                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>{item.name}</span>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                      <b style={{ color: '#38bdf8', fontSize: '13px' }}>฿{item.totalSpent.toLocaleString()}</b>
+                                      <span style={{ fontSize: '10px', color: '#9ca3af', marginLeft: '6px' }}>({item.orderCount} ออเดอร์)</span>
+                                    </div>
+                                  </div>
+                                  <div style={{ width: '100%', height: '5px', backgroundColor: '#030712', borderRadius: '3px', overflow: 'hidden' }}>
+                                    <div style={{ width: `${pct}%`, height: '100%', backgroundColor: idx === 0 ? '#f59e0b' : '#38bdf8', borderRadius: '3px' }} />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* TABLE 2: สรุปอันดับแพ็กเกจที่ลูกค้าเติมเยอะสุด */}
+                    {(adminAnalyticsTab === 'all' || adminAnalyticsTab === 'packages') && (
+                      <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '16px', padding: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                          <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#ec4899', margin: 0 }}>
+                            📦 อันดับแพ็กเกจที่ลูกค้าเติมเยอะที่สุด
+                          </h4>
+                          <span style={{ fontSize: '11px', color: '#9ca3af' }}>{topPackagesStats.length} รายการ</span>
+                        </div>
+
+                        {topPackagesStats.length === 0 ? (
+                          <div style={{ textAlign: 'center', color: '#9ca3af', padding: '30px', fontSize: '12px' }}>ยังไม่มีประวัติการเติมแพ็กเกจ</div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {topPackagesStats.slice(0, 10).map((item, idx) => {
+                              const maxCount = topPackagesStats[0].orderCount || 1;
+                              const pct = Math.round((item.orderCount / maxCount) * 100);
+                              return (
+                                <div key={item.key} style={{ backgroundColor: '#111827', border: '1px solid ' + (idx === 0 ? '#ec4899' : '#1f2937'), borderRadius: '10px', padding: '10px 12px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                      <span style={{
+                                        width: '22px', height: '22px', borderRadius: '50%',
+                                        backgroundColor: idx === 0 ? '#ec4899' : idx === 1 ? '#c084fc' : idx === 2 ? '#38bdf8' : '#374151',
+                                        color: '#ffffff', fontWeight: '900', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                      }}>
+                                        {idx + 1}
+                                      </span>
+                                      <div>
+                                        <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#ffffff' }}>{item.package}</div>
+                                        <div style={{ fontSize: '10px', color: '#9ca3af' }}>🎮 {item.game}</div>
+                                      </div>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                      <b style={{ color: '#f472b6', fontSize: '13px' }}>เติม {item.orderCount} ครั้ง</b>
+                                      <div style={{ fontSize: '10px', color: '#38bdf8' }}>รวม ฿{item.totalSpent.toLocaleString()}</div>
+                                    </div>
+                                  </div>
+                                  <div style={{ width: '100%', height: '5px', backgroundColor: '#030712', borderRadius: '3px', overflow: 'hidden' }}>
+                                    <div style={{ width: `${pct}%`, height: '100%', backgroundColor: idx === 0 ? '#ec4899' : '#c084fc', borderRadius: '3px' }} />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* TABLE 3: สรุปแรงค์ลูกค้าทั้งหมด (Customer VIP Leaderboard & Tier Distribution) */}
+                    {(adminAnalyticsTab === 'all' || adminAnalyticsTab === 'ranks') && (
+                      <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '16px', padding: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                          <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#a855f7', margin: 0 }}>
+                            🏆 อันดับแรงค์ลูกค้า VIP ทั้งหมด (พร้อมแจกโค้ด)
+                          </h4>
+                          <span style={{ fontSize: '11px', color: '#9ca3af' }}>{customerRankStats.length} บัญชี</span>
+                        </div>
+
+                        {/* RANK DISTRIBUTION CHIPS */}
+                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                          {RANK_TIERS.map(t => (
+                            <span
+                              key={t.tier}
+                              style={{
+                                fontSize: '10px',
+                                background: t.bg,
+                                border: `1px solid ${t.border}`,
+                                color: t.color,
+                                padding: '2px 6px',
+                                borderRadius: '6px',
+                                fontWeight: 'bold'
+                              }}
+                            >
+                              {t.icon} {t.shortName}: <b>{customerRankCounts[t.tier] || 0}</b> คน
+                            </span>
+                          ))}
+                        </div>
+
+                        {customerRankStats.length === 0 ? (
+                          <div style={{ textAlign: 'center', color: '#9ca3af', padding: '30px', fontSize: '12px' }}>ยังไม่มีข้อมูลลูกค้า</div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '350px', overflowY: 'auto' }}>
+                            {customerRankStats.slice(0, 15).map((item, idx) => (
+                              <div key={item.username} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111827', border: `1px solid ${item.rank.border}`, borderRadius: '10px', padding: '8px 12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ color: '#9ca3af', fontWeight: 'bold', fontSize: '11px', width: '16px' }}>#{idx + 1}</span>
+                                  <div>
+                                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>{item.username}</div>
+                                    <div style={{ fontSize: '10px', color: '#9ca3af' }}>เติมไปแล้ว {item.orderCount} ออเดอร์</div>
+                                  </div>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                  <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '13px', fontWeight: '900', color: '#34d399' }}>฿{item.totalSpent.toLocaleString()}</div>
+                                    <div style={{ fontSize: '9px', color: '#9ca3af' }}>ยอดเติมสะสม</div>
+                                  </div>
+                                  <span style={{
+                                    fontSize: '10px',
+                                    fontWeight: '900',
+                                    background: item.rank.bg,
+                                    border: `1.5px solid ${item.rank.border}`,
+                                    color: item.rank.color,
+                                    padding: '3px 8px',
+                                    borderRadius: '10px',
+                                    boxShadow: item.rank.glow,
+                                    whiteSpace: 'nowrap'
+                                  }}>
+                                    {item.rank.icon} {item.rank.shortName}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
