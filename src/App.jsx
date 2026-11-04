@@ -2440,20 +2440,85 @@ export default function App() {
       setActiveTab('track');
     }, 900);
   };
-  const handleSimulateSlipScan = () => {
+  // ฟังก์ชันตรวจสอบสลิปจริง โดยส่งข้อมูลไปยัง /api/verify-slip บนเซิร์ฟเวอร์
+  const handleSimulateSlipScan = async (uploadedFile = null) => {
+    const file = uploadedFile || slipFile;
+    if (!file && !slipPreview) {
+      setSlipVerifyError('กรุณาเลือกรูปภาพสลิปโอนเงินก่อนทำการตรวจสอบ');
+      return;
+    }
+
     setSlipVerifying(true);
     setSlipVerifyError('');
-    setSlipVerifyStepText('🔍 กำลังเชื่อมต่อ API สแกน Mini-QR บนสลิปอัตโนมัติ...');
+    setSlipVerifyStepText('🔍 กำลังเชื่อมต่อระบบเซิร์ฟเวอร์ตรวจสอบสลิป (/api/verify-slip)...');
 
-    setTimeout(() => {
-      setSlipVerifyStepText('💳 ยืนยันยอดโอนถูกต้อง! กำลังเชื่อมต่อเซิร์ฟเวอร์เกม ' + (selectedGame?.name || '') + '...');
-      setTimeout(() => {
-        setSlipVerifyStepText('⚡ แนบสลิปถูกต้องแล้ว! กำลังส่งข้อมูลเข้าสู่ระบบตรวจสอบ...');
-        setTimeout(() => {
-          handleFinalPaymentSubmit();
-        }, 700);
-      }, 800);
-    }, 800);
+    const expectedAmount = selectedPackage ? (selectedPackage.price * packageQuantity) : 0;
+    const generatedOrderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+
+    // ฟังก์ชันแปลง File เป็น Base64
+    const fileToBase64 = (f) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(f);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (err) => reject(err);
+      });
+    };
+
+    try {
+      let imageBase64Data = '';
+      if (file instanceof File || file instanceof Blob) {
+        imageBase64Data = await fileToBase64(file);
+      } else if (typeof slipPreview === 'string' && slipPreview.startsWith('data:')) {
+        imageBase64Data = slipPreview;
+      }
+
+      setSlipVerifyStepText('🏦 กำลังส่งภาพสลิปให้ระบบตรวจสอบกับธนาคารและตัดยอด...');
+
+      const response = await fetch('/api/verify-slip', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageBase64: imageBase64Data,
+          expectedAmount: expectedAmount,
+          orderId: generatedOrderId,
+          userId: user?.firebaseKey || (user?.username ? user.username : 'guest_user'),
+          game: selectedGame?.name || 'เกม',
+          packageItem: selectedPackage?.name || 'แพ็กเกจ',
+          playerId: playerId.trim() || 'UID',
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setSlipVerifyStepText('✅ ตรวจสอบสลิปสำเร็จ! ยอดเงินถูกต้อง กำลังส่งมอบแพ็กเกจเข้าไอดีเกม...');
+          setTimeout(() => {
+            handleFinalPaymentSubmit();
+          }, 600);
+          return;
+        } else {
+          setSlipVerifying(false);
+          setSlipVerifyError(`❌ ${result.message || 'สลิปไม่ถูกต้อง หรือยอดเงินไม่ตรงกับราคาแพ็กเกจ'}`);
+          return;
+        }
+      } else {
+        let errMsg = 'เกิดข้อผิดพลาดในการตรวจสอบสลิปจากเซิร์ฟเวอร์';
+        try {
+          const errData = await response.json();
+          if (errData.message) errMsg = errData.message;
+        } catch (e) {}
+
+        setSlipVerifying(false);
+        setSlipVerifyError(`❌ ${errMsg}`);
+      }
+    } catch (err) {
+      console.warn('Call /api/verify-slip encountered network error:', err);
+      setSlipVerifying(false);
+      setSlipVerifyError(`⚠️ ไม่สามารถเชื่อมต่อกับ /api/verify-slip ได้ (${err.message || 'Network Error'}) กรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดใช้งานแล้ว`);
+    }
   };
 
   // ฟังก์ชันรีเซ็ตเครดิตและประวัติคำสั่งซื้อทุกไอดีให้เหลือ 0 แต่ยังคงบัญชีไว้ และลบ nattapong ให้สมัครใหม่
@@ -5747,7 +5812,13 @@ export default function App() {
 
                 <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '14px', marginBottom: '16px', textAlign: 'left' }}>
                   <div style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 'bold', marginBottom: '4px' }}>📸 แนบสลิปโอนเงิน (ตรวจสอบสลิปและเติมเข้า UID)</div>
-                  <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 10px 0' }}>แนบรูปสลิปแล้วระบบจะตรวจสอบและเติมแพ็กเกจเข้าไอดีเกมของคุณโดยตรงทันที</p>
+                  <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 10px 0' }}>แนบรูปสลิปแล้วระบบจะส่งไปตรวจสอบที่ /api/verify-slip และเติมแพ็กเกจเข้าไอดีเกมของคุณโดยตรงทันที</p>
+
+                  {slipVerifyError && (
+                    <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '10px 12px', borderRadius: '10px', fontSize: '12px', marginBottom: '12px', lineHeight: '1.4' }}>
+                      {slipVerifyError}
+                    </div>
+                  )}
 
                   {slipVerifying ? (
                     <div style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', border: '1px solid #38bdf8', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
@@ -5765,9 +5836,10 @@ export default function App() {
                           style={{ display: 'none' }} 
                           onChange={(e) => {
                             if (e.target.files && e.target.files[0]) {
-                              setSlipFile(e.target.files[0]);
-                              setSlipPreview(URL.createObjectURL(e.target.files[0]));
-                              handleSimulateSlipScan();
+                              const chosenFile = e.target.files[0];
+                              setSlipFile(chosenFile);
+                              setSlipPreview(URL.createObjectURL(chosenFile));
+                              handleSimulateSlipScan(chosenFile);
                             }
                           }} 
                         />
