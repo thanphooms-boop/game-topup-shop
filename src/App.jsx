@@ -1890,7 +1890,7 @@ export default function App() {
 
   const paymentMethods = [
     { id: 'wallet', name: 'Cyber Wallet (เครดิตร้าน)', desc: 'หักจากยอดเงินในบัญชีทันที' },
-    { id: 'qrcode', name: 'QR PromptPay', desc: 'ฟรีค่าธรรมเนียม อัตโนมัติ 24 ชม.' },
+    { id: 'qrcode', name: 'โอนเงินผ่านธนาคาร (กสิกรไทย)', desc: 'ฟรีค่าธรรมเนียม ตรวจสลิปอัตโนมัติ 24 ชม.' },
     { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนผ่านเบอร์วอลเล็ต 10 หลัก' },
     { id: 'truemoneycard', name: 'บัตรเติมเงินทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก' },
     { id: 'credit', name: 'บัตรเครดิต / เดบิต', desc: 'ชำระผ่านบัตรปลอดภัย' }
@@ -5808,60 +5808,71 @@ export default function App() {
 
             {checkoutStep === 2 && selectedPayment?.id === 'qrcode' && (
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#38bdf8' }}>📱 สแกน QR PromptPay ชำระเงิน</h3>
-                  <span style={{ fontSize: '11px', color: isQrExpired ? '#ef4444' : '#34d399', fontWeight: 'bold', backgroundColor: 'rgba(52,211,153,0.15)', padding: '2px 8px', borderRadius: '6px', border: '1px solid #34d399' }}>
-                    ⚡ 24 ชม.
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#38bdf8' }}>💳 โอนเงินผ่านบัญชีธนาคาร</h3>
+                  <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold', backgroundColor: 'rgba(52,211,153,0.15)', padding: '3px 10px', borderRadius: '8px', border: '1px solid #34d399' }}>
+                    ⚡ ตรวจสลิปอัตโนมัติ 24 ชม.
                   </span>
                 </div>
 
-                <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', marginBottom: '16px', border: '2px solid #005696' }}>
-                  <div style={{ backgroundColor: '#005696', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {/* การ์ดบัญชีธนาคารกสิกรไทย */}
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.4)', marginBottom: '16px', border: '2px solid #00a950' }}>
+                  <div style={{ backgroundColor: '#00a950', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ backgroundColor: '#ffffff', color: '#005696', fontWeight: '900', fontSize: '12px', padding: '2px 6px', borderRadius: '4px' }}>พร้อมเพย์</span>
-                      <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '13px' }}>PromptPay</span>
+                      <span style={{ backgroundColor: '#ffffff', color: '#00a950', fontWeight: '900', fontSize: '12px', padding: '3px 8px', borderRadius: '6px' }}>KBANK</span>
+                      <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px' }}>ธนาคารกสิกรไทย</span>
                     </div>
-                    <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.85 }}>CYBER TOPUP STORE</span>
+                    <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.9 }}>โอนได้ทุกธนาคาร</span>
                   </div>
 
-                  <div style={{ padding: '16px', textAlign: 'center', color: '#111827' }}>
-                    {/* ข้อมูลบัญชีธนาคารร้านจริง */}
-                    <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '10px 12px', marginBottom: '12px', textAlign: 'left' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                        <span style={{ backgroundColor: '#00a950', color: '#ffffff', fontSize: '10px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px' }}>กสิกรไทย (KBANK)</span>
-                        <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#15803d' }}>นาย ธนภูมิ รักษี</span>
+                  <div style={{ padding: '18px', textAlign: 'center', color: '#111827' }}>
+                    <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '4px' }}>ชื่อบัญชีผู้รับเงิน</div>
+                    <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#15803d', marginBottom: '14px' }}>นาย ธนภูมิ รักษี</div>
+
+                    {/* กล่องเลขบัญชีพร้อมปุ่มคัดลอก */}
+                    <div style={{ backgroundColor: '#f0fdf4', border: '1.5px dashed #00a950', borderRadius: '14px', padding: '12px', marginBottom: '14px' }}>
+                      <div style={{ fontSize: '11px', color: '#166534', marginBottom: '4px', fontWeight: 'bold' }}>เลขที่บัญชี (กสิกรไทย)</div>
+                      <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827', letterSpacing: '2px', fontFamily: 'monospace', marginBottom: '8px' }}>
+                        185-2-97237-4
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '15px', fontWeight: '900', color: '#111827', letterSpacing: '1px' }}>185-2-97237-4</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText('1852972374');
+                          alert('📋 คัดลอกเลขบัญชี 1852972374 เรียบร้อยแล้ว นำไปวางในแอปธนาคารเพื่อโอนเงินได้เลยครับ');
+                        }}
+                        style={{ width: '100%', backgroundColor: '#00a950', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(0,169,80,0.3)' }}
+                      >
+                        <span>📋 กดเพื่อคัดลอกเลขบัญชี</span>
+                      </button>
+                    </div>
+
+                    {/* ยอดเงินสุทธิ */}
+                    <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e5e7eb', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '12px', color: '#4b5563', fontWeight: 'bold' }}>ยอดเงินที่ต้องโอน:</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: '#00a950', fontSize: '22px', fontWeight: '900' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</span>
                         <button
                           type="button"
                           onClick={() => {
-                            navigator.clipboard.writeText('1852972374');
-                            alert('📋 คัดลอกเลขที่บัญชี 1852972374 เรียบร้อยแล้ว');
+                            navigator.clipboard.writeText((selectedPackage.price * packageQuantity).toString());
+                            alert(`📋 คัดลอกยอดเงิน ${selectedPackage.price * packageQuantity} บาท เรียบร้อยแล้ว`);
                           }}
-                          style={{ backgroundColor: '#15803d', color: '#ffffff', border: 'none', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                          style={{ backgroundColor: '#e5e7eb', color: '#374151', border: 'none', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
                         >
-                          คัดลอกเลขบัญชี
+                          คัดลอกยอด
                         </button>
                       </div>
                     </div>
 
-                    <div style={{ fontSize: '12px', color: '#374151', fontWeight: 'bold', marginBottom: '8px' }}>ยอดชำระสุทธิ: <span style={{ color: '#005696', fontSize: '22px', fontWeight: '900' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</span></div>
-
-                    {/* รูปแบบ QR Code สแกนจ่ายเงินจริง รองรับทุกแอปธนาคาร 100% */}
-                    <div style={{ display: 'inline-block', padding: '10px', border: '2px solid #005696', borderRadius: '16px', backgroundColor: '#ffffff', boxShadow: '0 4px 15px rgba(0,86,150,0.15)' }}>
-                      <img
-                        src={OFFICIAL_KPLUS_QR_IMAGE}
-                        alt="Thai QR Payment - นาย ธนภูมิ รักษี"
-                        style={{ width: '190px', height: 'auto', display: 'block', borderRadius: '8px' }}
-                      />
-                      <div style={{ fontSize: '11px', color: '#005696', fontWeight: 'bold', marginTop: '6px' }}>
-                        ✓ Thai QR Payment / PromptPay
+                    {/* ขั้นตอนการโอน */}
+                    <div style={{ textAlign: 'left', backgroundColor: '#eff6ff', borderRadius: '10px', padding: '10px 12px', border: '1px solid #bfdbfe' }}>
+                      <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 'bold', marginBottom: '4px' }}>💡 ขั้นตอนการโอนและรับของ:</div>
+                      <div style={{ fontSize: '11px', color: '#1e3a8a', lineHeight: '1.5' }}>
+                        1. คัดลอกเลขบัญชี <b>185-2-97237-4</b><br/>
+                        2. เปิดแอปธนาคารใดก็ได้ (SCB, K PLUS, Krungthai ฯลฯ) โอนยอด <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b><br/>
+                        3. บันทึกสลิป แล้วนำรูปมาแนบด้านล่าง ระบบจะเติมเข้าเกมทันที
                       </div>
-                    </div>
-
-                    <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 'bold', marginTop: '8px' }}>
-                      ⏱️ สแกนจ่ายภายใน: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')} นาที
                     </div>
                   </div>
                 </div>
