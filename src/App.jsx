@@ -236,114 +236,241 @@ const cyberGlobalStyles = `
       transform: scale(1.3);
     }
   }
+
+  /* Rank Glow & Aura Animations for Decorated Ranks (เอฟเฟกต์แสงเรืองรองทุกระดับแรงค์) */
+  .rank-glow-challenger {
+    animation: glowChallenger 2.4s ease-in-out infinite;
+  }
+  @keyframes glowChallenger {
+    0%, 100% {
+      box-shadow: 0 0 15px rgba(255, 0, 85, 0.75), 0 0 30px rgba(245, 158, 11, 0.45);
+      border-color: #ff0055 !important;
+    }
+    50% {
+      box-shadow: 0 0 25px rgba(255, 0, 85, 1), 0 0 45px rgba(245, 158, 11, 0.8);
+      border-color: #fbbf24 !important;
+    }
+  }
+
+  .rank-glow-master {
+    animation: glowMaster 2.6s ease-in-out infinite;
+  }
+  @keyframes glowMaster {
+    0%, 100% {
+      box-shadow: 0 0 12px rgba(236, 72, 153, 0.65);
+      border-color: #ec4899 !important;
+    }
+    50% {
+      box-shadow: 0 0 22px rgba(236, 72, 153, 0.95), 0 0 35px rgba(168, 85, 247, 0.5);
+      border-color: #f472b6 !important;
+    }
+  }
+
+  .rank-glow-diamond {
+    animation: glowDiamond 2.8s ease-in-out infinite;
+  }
+  @keyframes glowDiamond {
+    0%, 100% {
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
+      border-color: #a855f7 !important;
+    }
+    50% {
+      box-shadow: 0 0 22px rgba(192, 132, 252, 0.9), 0 0 35px rgba(56, 189, 248, 0.5);
+      border-color: #c084fc !important;
+    }
+  }
+
+  .rank-glow-platinum {
+    animation: glowPlatinum 3s ease-in-out infinite;
+  }
+  @keyframes glowPlatinum {
+    0%, 100% {
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.55);
+      border-color: #0284c7 !important;
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.9);
+      border-color: #38bdf8 !important;
+    }
+  }
+
+  .rank-glow-gold {
+    animation: glowGold 3.2s ease-in-out infinite;
+  }
+  @keyframes glowGold {
+    0%, 100% {
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+      border-color: #f59e0b !important;
+    }
+    50% {
+      box-shadow: 0 0 18px rgba(251, 191, 36, 0.85);
+      border-color: #fbbf24 !important;
+    }
+  }
+
+  .rank-tier-card {
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  }
+  .rank-tier-card:hover {
+    transform: translateY(-3px) scale(1.015) !important;
+  }
 `;
 
-// การตั้งค่าระดับแรงค์ลูกค้า (VIP Rank Tiers) ตามยอดเงินเติมแพ็กเกจเกมสะสม
+// การตั้งค่าระดับแรงค์ลูกค้า (VIP Rank Tiers) พร้อมการตกแต่งสวยงามพิเศษทุกแรงค์
 const RANK_TIERS = [
   {
     tier: 'CHALLENGER',
+    level: 7,
+    title: 'Mythic Legend',
     name: 'Challenger VIP 🏆',
     badge: '🏆 CHALLENGER VIP',
     shortName: 'CHALLENGER',
     icon: '🏆',
+    subIcon: '🔥',
     minSpend: 50000,
     maxSpend: Infinity,
     rateText: '฿50,000 ขึ้นไป',
     color: '#ff0055',
+    accentColor: '#fef08a',
     border: '#ff0055',
-    bg: 'linear-gradient(135deg, rgba(255, 0, 85, 0.25) 0%, rgba(245, 158, 11, 0.3) 100%)',
-    glow: '0 0 15px rgba(255, 0, 85, 0.75), 0 0 25px rgba(245, 158, 11, 0.4)',
-    perks: 'สิทธิ์รับโค้ดระดับตำนาน (Legendary Gift Codes) และการดูแลระดับสูงสุด'
+    bg: 'linear-gradient(135deg, rgba(255, 0, 85, 0.35) 0%, rgba(245, 158, 11, 0.4) 100%)',
+    cardBg: 'linear-gradient(135deg, rgba(80, 7, 36, 0.95) 0%, rgba(120, 53, 15, 0.8) 50%, rgba(15, 23, 42, 0.98) 100%)',
+    glow: '0 0 18px rgba(255, 0, 85, 0.85), 0 0 35px rgba(245, 158, 11, 0.5)',
+    animationClass: 'rank-glow-challenger',
+    perks: 'สิทธิ์รับโค้ดระดับตำนาน (Legendary Codes), บริการผู้ดูแลส่วนตัว VIP สูงสุด',
+    rewardSummary: 'โค้ดแพ็กใหญ่สุด + สิทธิ์ร่วมกิจกรรมพิเศษลับ'
   },
   {
     tier: 'MASTER',
+    level: 6,
+    title: 'Grand Master',
     name: 'Master VIP 👑',
     badge: '👑 MASTER VIP',
     shortName: 'MASTER',
     icon: '👑',
+    subIcon: '⚡',
     minSpend: 25000,
     maxSpend: 49999,
     rateText: '฿25,000 - ฿49,999',
-    color: '#ec4899',
+    color: '#f472b6',
+    accentColor: '#fbcfe8',
     border: '#ec4899',
-    bg: 'linear-gradient(135deg, rgba(236, 72, 153, 0.22) 0%, rgba(168, 85, 247, 0.25) 100%)',
-    glow: '0 0 12px rgba(236, 72, 153, 0.65)',
-    perks: 'สิทธิ์รับโค้ดระดับมาสเตอร์ และกิจกรรมลับพิเศษ'
+    bg: 'linear-gradient(135deg, rgba(236, 72, 153, 0.3) 0%, rgba(168, 85, 247, 0.35) 100%)',
+    cardBg: 'linear-gradient(135deg, rgba(80, 7, 36, 0.88) 0%, rgba(59, 7, 100, 0.78) 50%, rgba(15, 23, 42, 0.98) 100%)',
+    glow: '0 0 15px rgba(236, 72, 153, 0.75), 0 0 25px rgba(168, 85, 247, 0.45)',
+    animationClass: 'rank-glow-master',
+    perks: 'สิทธิ์รับโค้ดมาสเตอร์ VIP, สิทธิพิเศษกิจกรรมลับเฉพาะระดับสูง',
+    rewardSummary: 'โค้ดส่วนลด 20% + โค้ดฟรี VIP ประจำเดือน'
   },
   {
     tier: 'DIAMOND',
+    level: 5,
+    title: 'Diamond Champion',
     name: 'Diamond VIP 💠',
     badge: '💠 DIAMOND VIP',
     shortName: 'DIAMOND',
     icon: '💠',
+    subIcon: '🔮',
     minSpend: 10000,
     maxSpend: 24999,
     rateText: '฿10,000 - ฿24,999',
     color: '#c084fc',
+    accentColor: '#f3e8ff',
     border: '#a855f7',
-    bg: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(56, 189, 248, 0.2) 100%)',
-    glow: '0 0 12px rgba(168, 85, 247, 0.55)',
-    perks: 'สิทธิ์รับโค้ดเพชรหายาก (Rare Gift Codes)'
+    bg: 'linear-gradient(135deg, rgba(168, 85, 247, 0.28) 0%, rgba(56, 189, 248, 0.28) 100%)',
+    cardBg: 'linear-gradient(135deg, rgba(46, 16, 101, 0.88) 0%, rgba(12, 74, 110, 0.65) 50%, rgba(15, 23, 42, 0.98) 100%)',
+    glow: '0 0 14px rgba(168, 85, 247, 0.7), 0 0 25px rgba(56, 189, 248, 0.4)',
+    animationClass: 'rank-glow-diamond',
+    perks: 'สิทธิ์รับโค้ดเพชรหายาก (Rare Gift Codes), สิทธิ์ร่วมจับรางวัลใหญ่',
+    rewardSummary: 'โค้ดเพชร/คูปองแรร์ประจำเดือน'
   },
   {
     tier: 'PLATINUM',
+    level: 4,
+    title: 'Platinum Elite',
     name: 'Platinum VIP 💎',
     badge: '💎 PLATINUM VIP',
     shortName: 'PLATINUM',
     icon: '💎',
+    subIcon: '✨',
     minSpend: 5000,
     maxSpend: 9999,
     rateText: '฿5,000 - ฿9,999',
     color: '#38bdf8',
+    accentColor: '#e0f2fe',
     border: '#0284c7',
-    bg: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(45, 212, 191, 0.2) 100%)',
-    glow: '0 0 10px rgba(56, 189, 248, 0.5)',
-    perks: 'สิทธิ์รับโค้ดแพ็กเกจพรีเมียม'
+    bg: 'linear-gradient(135deg, rgba(56, 189, 248, 0.28) 0%, rgba(45, 212, 191, 0.25) 100%)',
+    cardBg: 'linear-gradient(135deg, rgba(12, 74, 110, 0.88) 0%, rgba(19, 78, 74, 0.65) 50%, rgba(15, 23, 42, 0.98) 100%)',
+    glow: '0 0 12px rgba(56, 189, 248, 0.65)',
+    animationClass: 'rank-glow-platinum',
+    perks: 'สิทธิ์รับโค้ดแพ็กเกจพรีเมียม, สิทธิ์รับบริการคิวพิเศษ',
+    rewardSummary: 'โค้ดแพ็กเกจเกมพรีเมียม'
   },
   {
     tier: 'GOLD',
+    level: 3,
+    title: 'Gold Commander',
     name: 'Gold VIP 🥇',
     badge: '🥇 GOLD VIP',
     shortName: 'GOLD',
     icon: '🥇',
+    subIcon: '🌟',
     minSpend: 2000,
     maxSpend: 4999,
     rateText: '฿2,000 - ฿4,999',
     color: '#fbbf24',
+    accentColor: '#fef08a',
     border: '#f59e0b',
-    bg: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.2) 100%)',
-    glow: '0 0 10px rgba(245, 158, 11, 0.45)',
-    perks: 'สิทธิ์รับโค้ดของขวัญระดับโกลด์'
+    bg: 'linear-gradient(135deg, rgba(245, 158, 11, 0.28) 0%, rgba(217, 119, 6, 0.28) 100%)',
+    cardBg: 'linear-gradient(135deg, rgba(120, 53, 15, 0.85) 0%, rgba(69, 26, 3, 0.75) 50%, rgba(15, 23, 42, 0.98) 100%)',
+    glow: '0 0 12px rgba(245, 158, 11, 0.6)',
+    animationClass: 'rank-glow-gold',
+    perks: 'สิทธิ์รับโค้ดของขวัญระดับโกลด์, ส่วนลดพิเศษในเทศกาล',
+    rewardSummary: 'โค้ดส่วนลด 10% ประจำสัปดาห์'
   },
   {
     tier: 'SILVER',
+    level: 2,
+    title: 'Silver Knight',
     name: 'Silver VIP 🥈',
     badge: '🥈 SILVER VIP',
     shortName: 'SILVER',
     icon: '🥈',
+    subIcon: '🛡️',
     minSpend: 500,
     maxSpend: 1999,
     rateText: '฿500 - ฿1,999',
     color: '#cbd5e1',
+    accentColor: '#f8fafc',
     border: '#94a3b8',
-    bg: 'linear-gradient(135deg, rgba(148, 163, 184, 0.2) 0%, rgba(203, 213, 225, 0.15) 100%)',
-    glow: '0 0 8px rgba(148, 163, 184, 0.35)',
-    perks: 'สิทธิ์รับโค้ดของขวัญระดับซิลเวอร์'
+    bg: 'linear-gradient(135deg, rgba(148, 163, 184, 0.25) 0%, rgba(203, 213, 225, 0.22) 100%)',
+    cardBg: 'linear-gradient(135deg, rgba(51, 65, 85, 0.85) 0%, rgba(30, 41, 59, 0.75) 50%, rgba(15, 23, 42, 0.98) 100%)',
+    glow: '0 0 10px rgba(148, 163, 184, 0.5)',
+    animationClass: '',
+    perks: 'สิทธิ์รับโค้ดของขวัญระดับซิลเวอร์, กิจกรรมลูกค้าสมาชิก',
+    rewardSummary: 'โค้ดของขวัญซิลเวอร์'
   },
   {
     tier: 'BRONZE',
+    level: 1,
+    title: 'Bronze Scout',
     name: 'Bronze Member 🥉',
     badge: '🥉 BRONZE',
     shortName: 'BRONZE',
     icon: '🥉',
+    subIcon: '🌱',
     minSpend: 0,
     maxSpend: 499,
     rateText: '฿0 - ฿499',
     color: '#d97706',
+    accentColor: '#fed7aa',
     border: '#b45309',
-    bg: 'linear-gradient(135deg, rgba(217, 119, 6, 0.15) 0%, rgba(180, 83, 9, 0.15) 100%)',
-    glow: '0 0 6px rgba(217, 119, 6, 0.3)',
-    perks: 'ระดับเริ่มต้น สิทธิ์รับโค้ดกิจกรรมทั่วไป'
+    bg: 'linear-gradient(135deg, rgba(217, 119, 6, 0.2) 0%, rgba(180, 83, 9, 0.2) 100%)',
+    cardBg: 'linear-gradient(135deg, rgba(69, 26, 3, 0.85) 0%, rgba(41, 14, 2, 0.75) 50%, rgba(15, 23, 42, 0.98) 100%)',
+    glow: '0 0 8px rgba(217, 119, 6, 0.4)',
+    animationClass: '',
+    perks: 'ระดับเริ่มต้น สิทธิ์รับโค้ดกิจกรรมทั่วไป, แจกของขวัญฟรี',
+    rewardSummary: 'โค้ดกิจกรรมแจกฟรีทั่วไป'
   }
 ];
 
@@ -2597,40 +2724,43 @@ export default function App() {
               >
                 <div
                   onClick={() => setRankTooltipOpen(prev => !prev)}
+                  className={currentUserRank.animationClass || ''}
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '5px',
+                    gap: '6px',
                     background: currentUserRank.bg,
                     border: `1.5px solid ${currentUserRank.border}`,
                     color: currentUserRank.color,
-                    padding: '3px 8px',
-                    borderRadius: '14px',
+                    padding: '3px 10px',
+                    borderRadius: '16px',
                     fontSize: '11px',
                     fontWeight: '900',
                     boxShadow: currentUserRank.glow,
                     cursor: 'pointer',
                     userSelect: 'none',
-                    letterSpacing: '0.5px'
+                    letterSpacing: '0.5px',
+                    transition: 'all 0.25s ease'
                   }}
                   title="คลิกหรือชี้เมาส์เพื่อดูเรทเติมของแต่ละแรงค์"
                 >
-                  <span>{currentUserRank.icon}</span>
-                  <span>{currentUserRank.shortName}</span>
+                  <span style={{ fontSize: '13px' }}>{currentUserRank.icon}</span>
+                  <span style={{ textShadow: `0 0 8px ${currentUserRank.border}` }}>{currentUserRank.shortName}</span>
                   <span
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      width: '14px',
-                      height: '14px',
+                      width: '15px',
+                      height: '15px',
                       borderRadius: '50%',
                       backgroundColor: currentUserRank.border,
                       color: '#030712',
                       fontSize: '10px',
                       fontWeight: '900',
-                      marginLeft: '2px',
-                      boxShadow: '0 0 6px rgba(255,255,255,0.6)'
+                      marginLeft: '3px',
+                      boxShadow: '0 0 8px rgba(255,255,255,0.7)',
+                      animation: 'cyberPulse 2s infinite'
                     }}
                   >
                     !
@@ -2645,7 +2775,7 @@ export default function App() {
                       top: 'calc(100% + 12px)',
                       left: '0',
                       zIndex: 9999,
-                      width: '340px',
+                      width: '380px', maxWidth: '92vw',
                       backgroundColor: 'rgba(11, 15, 25, 0.98)',
                       border: '1.5px solid #a855f7',
                       borderRadius: '16px',
@@ -2705,39 +2835,73 @@ export default function App() {
                       )}
                     </div>
 
-                    {/* ALL TIERS RATE TABLE */}
-                    <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '6px' }}>
-                      📋 เกณฑ์เรทเติมแต่ละระดับแรงค์:
+                    {/* ALL TIERS RATE TABLE (ตกแต่งสวยงามพิเศษทุกระดับแรงค์) */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8' }}>
+                        📋 เกณฑ์เรทเติมและสิทธิ์โค้ดทุกแรงค์:
+                      </span>
+                      <span style={{ fontSize: '10px', color: '#9ca3af' }}>7 ระดับ VIP</span>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', maxHeight: '220px', overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '270px', overflowY: 'auto', paddingRight: '4px' }}>
                       {RANK_TIERS.map(tier => {
                         const isCurrent = currentUserRank.tier === tier.tier;
                         return (
                           <div
                             key={tier.tier}
+                            className={`rank-tier-card ${isCurrent ? (tier.animationClass || '') : ''}`}
                             style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              backgroundColor: isCurrent ? 'rgba(168, 85, 247, 0.2)' : '#030712',
-                              border: isCurrent ? `1.5px solid ${tier.border}` : '1px solid #1f2937',
-                              borderRadius: '8px',
-                              padding: '5px 8px',
-                              fontSize: '11px'
+                              background: tier.cardBg,
+                              border: isCurrent ? `2px solid ${tier.border}` : `1.5px solid ${tier.border}`,
+                              borderRadius: '12px',
+                              padding: '9px 12px',
+                              boxShadow: isCurrent ? tier.glow : '0 4px 15px rgba(0,0,0,0.4)',
+                              position: 'relative',
+                              overflow: 'hidden'
                             }}
                           >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                              <span>{tier.icon}</span>
-                              <span style={{ fontWeight: 'bold', color: tier.color }}>{tier.shortName}</span>
-                              {isCurrent && (
-                                <span style={{ fontSize: '9px', backgroundColor: tier.border, color: '#030712', padding: '1px 5px', borderRadius: '4px', fontWeight: '900' }}>
-                                  คุณอยู่ที่นี่
+                            {/* TOP ROW: Badge, Name, Title, and Rate */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '16px' }}>{tier.icon}</span>
+                                <div>
+                                  <div style={{ fontSize: '12px', fontWeight: '900', color: tier.color, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                    <span>{tier.shortName}</span>
+                                    <span style={{ fontSize: '10px', color: '#d1d5db', fontWeight: 'normal', opacity: 0.85 }}>({tier.title})</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <span style={{
+                                  fontSize: '11px',
+                                  fontWeight: '900',
+                                  color: '#ffffff',
+                                  backgroundColor: 'rgba(0, 0, 0, 0.65)',
+                                  border: `1px solid ${tier.border}`,
+                                  padding: '2px 8px',
+                                  borderRadius: '6px',
+                                  boxShadow: `0 0 8px ${tier.border}40`
+                                }}>
+                                  {tier.rateText}
                                 </span>
-                              )}
+                              </div>
                             </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <span style={{ fontWeight: 'bold', color: '#ffffff', fontSize: '11px' }}>{tier.rateText}</span>
+
+                            {/* PERKS & REWARD ROW */}
+                            <div style={{ fontSize: '10px', color: '#d1d5db', lineHeight: '1.3', marginTop: '2px' }}>
+                              🎁 <span style={{ color: tier.color, fontWeight: 'bold' }}>สิทธิ์โค้ด: </span>{tier.rewardSummary}
                             </div>
+
+                            {/* CURRENT TIER INDICATOR */}
+                            {isCurrent && (
+                              <div style={{ marginTop: '5px', paddingTop: '4px', borderTop: '1px solid rgba(255,255,255,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontSize: '10px', color: '#fbbf24', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span>⭐ แรงค์ปัจจุบันของคุณ</span>
+                                </span>
+                                <span style={{ fontSize: '9px', backgroundColor: tier.border, color: '#030712', padding: '1px 6px', borderRadius: '4px', fontWeight: '900' }}>
+                                  ACTIVE
+                                </span>
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -2800,23 +2964,7 @@ export default function App() {
         </div>
       )}
 
-      <a 
-        href="https://lin.ee/Nn1UeBC" 
-        target="_blank" 
-        rel="noopener noreferrer" 
-        style={{ 
-          position: 'fixed', bottom: '25px', right: '25px', zIndex: 99, 
-          backgroundColor: '#06c755', color: '#ffffff', padding: '12px 20px', 
-          borderRadius: '30px', display: 'flex', alignItems: 'center', gap: '10px', 
-          boxShadow: '0 4px 25px rgba(6, 199, 85, 0.6)', textDecoration: 'none', 
-          fontWeight: 'bold', fontSize: '14px', border: '1.5px solid #ffffff' 
-        }}
-      >
-        <div style={{ width: '22px', height: '22px', backgroundColor: '#ffffff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '13px', color: '#06c755', fontWeight: '900', lineHeight: '1' }}>L</span>
-        </div>
-        ติดต่อแอดมิน (LINE)
-      </a>
+
 
       <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px', position: 'relative', zIndex: 1 }}>
         {activeTab === 'shop' && !selectedGame && (
@@ -3748,23 +3896,33 @@ export default function App() {
                           <span style={{ fontSize: '11px', color: '#9ca3af' }}>{customerRankStats.length} บัญชี</span>
                         </div>
 
-                        {/* RANK DISTRIBUTION CHIPS */}
-                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                        {/* RANK DISTRIBUTION: 7 DECORATED TIER CARDS (ตกแต่งสวยงามพิเศษทุกแรงค์ในหน้าแอดมิน) */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px', marginBottom: '16px' }}>
                           {RANK_TIERS.map(t => (
-                            <span
+                            <div
                               key={t.tier}
+                              className={t.animationClass ? 'rank-tier-card' : 'rank-tier-card'}
                               style={{
-                                fontSize: '10px',
-                                background: t.bg,
-                                border: `1px solid ${t.border}`,
-                                color: t.color,
-                                padding: '2px 6px',
-                                borderRadius: '6px',
-                                fontWeight: 'bold'
+                                background: t.cardBg,
+                                border: `1.5px solid ${t.border}`,
+                                borderRadius: '12px',
+                                padding: '10px 8px',
+                                textAlign: 'center',
+                                boxShadow: t.glow,
+                                position: 'relative'
                               }}
                             >
-                              {t.icon} {t.shortName}: <b>{customerRankCounts[t.tier] || 0}</b> คน
-                            </span>
+                              <div style={{ fontSize: '20px', marginBottom: '2px' }}>{t.icon}</div>
+                              <div style={{ fontSize: '11px', fontWeight: '900', color: t.color, textShadow: `0 0 6px ${t.border}` }}>
+                                {t.shortName}
+                              </div>
+                              <div style={{ fontSize: '14px', fontWeight: '900', color: '#ffffff', margin: '4px 0 2px 0' }}>
+                                {customerRankCounts[t.tier] || 0} <span style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 'normal' }}>คน</span>
+                              </div>
+                              <div style={{ fontSize: '9px', color: '#9ca3af' }}>
+                                {t.rateText}
+                              </div>
+                            </div>
                           ))}
                         </div>
 
@@ -4526,7 +4684,7 @@ export default function App() {
 
             <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '16px', width: '170px', height: '170px', margin: '0 auto 18px auto', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img 
-                src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://line.me/R/ti/p/@cybertopup" 
+                src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://lin.ee/Nn1UeBC" 
                 alt="LINE QR Code" 
                 style={{ width: '150px', height: '150px', display: 'block' }} 
               />
@@ -4570,7 +4728,7 @@ export default function App() {
                 ปิดหน้าต่าง
               </button>
               <a
-                href="https://line.me/R/ti/p/@cybertopup"
+                href="https://lin.ee/Nn1UeBC"
                 target="_blank"
                 rel="noreferrer"
                 style={{ flex: 1.5, backgroundColor: '#06c755', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 15px rgba(6,199,85,0.4)' }}
