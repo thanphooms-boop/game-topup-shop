@@ -1,3 +1,4 @@
+// ... existing code ...
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, push } from 'firebase/database';
@@ -16,7 +17,6 @@ import {
 
 // ============================================================================
 // FIREBASE LIVE CLOUD CONFIGURATION (cyber-topup-game)
-// เชื่อมต่อเซิร์ฟเวอร์ออนไลน์จริง 100% สำหรับการทดสอบข้ามเครื่อง/ออนไลน์
 // ============================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyD-dgpKK9S2olFLawJ8MKYHi-NWB4GQv7U",
@@ -33,7 +33,7 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getDatabase(app);
 const auth = getAuth(app);
 
-// Global Cyber Styles & Scrollbar Effects
+// Global Cyber Styles & Enhanced Up/Down Spinners & Controls
 const cyberGlobalStyles = `
   button, [role="button"], input[type="submit"], input[type="button"], .cyber-btn {
     position: relative;
@@ -51,39 +51,77 @@ const cyberGlobalStyles = `
   button:active:not(:disabled), .cyber-btn:active {
     transform: translateY(1px) scale(0.98) !important;
   }
-  .cyber-card-clickable {
+  .no-native-spin::-webkit-inner-spin-button,
+  .no-native-spin::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .no-native-spin {
+    -moz-appearance: textfield;
+  }
+  .cyber-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-repeat: no-repeat !important;
+    background-position: right 12px center !important;
+    background-size: 14px !important;
+    padding-right: 36px !important;
     cursor: pointer;
-    transition: all 0.25s ease;
   }
-  .cyber-card-clickable:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 30px rgba(147, 51, 234, 0.35);
-    border-color: #a855f7 !important;
+  .cyber-select-cyan {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
   }
-  @keyframes cyberOnlineBlink {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.4; transform: scale(0.85); }
-  }
-  @keyframes cyberTicker {
-    0% { transform: translateX(100%); }
-    100% { transform: translateX(-100%); }
+  .cyber-select-purple {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c084fc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") !important;
   }
   ::-webkit-scrollbar {
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
   }
   ::-webkit-scrollbar-track {
     background: #090d16;
+    border-radius: 8px;
+    border: 1px solid #1f2937;
   }
   ::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, #9333ea, #38bdf8);
-    border-radius: 6px;
+    border-radius: 8px;
+    border: 2px solid #090d16;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #c084fc, #0284c7);
+  }
+  ::-webkit-scrollbar-button:single-button:vertical:decrement {
+    height: 16px;
+    width: 10px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #111827;
+    border: 1px solid #38bdf8;
+    border-radius: 4px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='18 15 12 9 6 15'%3e%3c/polyline%3e%3c/svg%3e");
+    cursor: pointer;
+  }
+  ::-webkit-scrollbar-button:single-button:vertical:increment {
+    height: 16px;
+    width: 10px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #111827;
+    border: 1px solid #38bdf8;
+    border-radius: 4px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2338bdf8' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    cursor: pointer;
+  }
+  @keyframes cyberOnlineBlink {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.45; transform: scale(0.85); }
   }
 `;
 
 function EyeIcon({ show }) {
   return show ? (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c084fc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
       <circle cx="12" cy="12" r="3"></circle>
     </svg>
@@ -122,7 +160,7 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [authSuccessMsg, setAuthSuccessMsg] = useState('');
 
-  // Forgot Password States
+  // Forgot Password
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
   const [forgotStep, setForgotStep] = useState(1);
   const [forgotEmailInput, setForgotEmailInput] = useState('');
@@ -134,7 +172,7 @@ export default function App() {
   const [forgotStatusMsg, setForgotStatusMsg] = useState({ text: '', type: '' });
   const [resetOobCode, setResetOobCode] = useState(null);
 
-  // Navigation State
+  // Navigation
   const [activeTab, setActiveTab] = useState('shop');
   const [toastMsg, setToastMsg] = useState(null);
 
@@ -143,19 +181,17 @@ export default function App() {
     setTimeout(() => setToastMsg(null), 3500);
   };
 
+  // Rank Tiers System
   const rankTiers = useMemo(() => [
-    { level: 0, name: 'Member', icon: '🌱', minSpend: 0, color: '#9ca3af', bg: 'rgba(156, 163, 175, 0.15)', border: '#4b5563' },
-    { level: 1, name: 'Bronze', icon: '🥉', minSpend: 300, color: '#d97706', bg: 'rgba(217, 119, 6, 0.18)', border: '#f59e0b' },
-    { level: 2, name: 'Silver', icon: '🥈', minSpend: 1000, color: '#e2e8f0', bg: 'rgba(226, 232, 240, 0.18)', border: '#94a3b8' },
-    { level: 3, name: 'Gold', icon: '🥇', minSpend: 3000, color: '#facc15', bg: 'rgba(250, 204, 21, 0.18)', border: '#eab308' },
-    { level: 4, name: 'Diamond', icon: '💎', minSpend: 7500, color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.18)', border: '#0ea5e9' },
-    { level: 5, name: 'Cyber Legend', icon: '👑', minSpend: 15000, color: '#c084fc', bg: 'rgba(192, 132, 252, 0.22)', border: '#a855f7' }
+    { level: 0, name: 'Member', icon: '🌱', minSpend: 0, color: '#9ca3af', bg: 'rgba(156, 163, 175, 0.15)', border: '#4b5563', rewardHint: 'สิทธิ์ร่วมกิจกรรมทั่วไป' },
+    { level: 1, name: 'Bronze', icon: '🥉', minSpend: 300, color: '#d97706', bg: 'rgba(217, 119, 6, 0.18)', border: '#f59e0b', rewardHint: 'ปลดล็อกโค้ดแพ็กเริ่มต้น (฿29-฿35)' },
+    { level: 2, name: 'Silver', icon: '🥈', minSpend: 1000, color: '#e2e8f0', bg: 'rgba(226, 232, 240, 0.18)', border: '#94a3b8', rewardHint: 'ปลดล็อกโค้ดแพ็กกลาง (฿35-฿75)' },
+    { level: 3, name: 'Gold', icon: '🥇', minSpend: 3000, color: '#facc15', bg: 'rgba(250, 204, 21, 0.18)', border: '#eab308', rewardHint: 'ปลดล็อกโค้ดฮิต 125 VP / 575 RP' },
+    { level: 4, name: 'Diamond', icon: '💎', minSpend: 7500, color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.18)', border: '#0ea5e9', rewardHint: 'ปลดล็อกโค้ดใหญ่ 420 VP / 220 คูปอง' },
+    { level: 5, name: 'Cyber Legend', icon: '👑', minSpend: 15000, color: '#c084fc', bg: 'rgba(192, 132, 252, 0.22)', border: '#a855f7', rewardHint: 'ปลดล็อกโค้ดลับ VIP 700 VP / 980 Crystals' }
   ], []);
 
-  // --------------------------------------------------------------------------
-  // FIREBASE REALTIME SYNCHRONIZATION
-  // ซิงค์ฐานข้อมูล Users, Orders, Stock, GiftCodes, Settings ข้ามเซิร์ฟเวอร์แบบ Realtime
-  // --------------------------------------------------------------------------
+  // Firebase Realtime Sync: Users
   useEffect(() => {
     const usersRef = ref(db, 'users');
     const unsub = onValue(usersRef, (snapshot) => {
@@ -167,7 +203,8 @@ export default function App() {
           if (!prevUser) return null;
           const updated = userList.find(u => 
             (u.firebaseKey && u.firebaseKey === prevUser.firebaseKey) ||
-            (u.username && prevUser.username && u.username.toLowerCase() === prevUser.username.toLowerCase())
+            (u.username && prevUser.username && u.username.toLowerCase() === prevUser.username.toLowerCase()) ||
+            (u.email && prevUser.email && u.email.toLowerCase() === prevUser.email.toLowerCase())
           );
           if (updated) {
             try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updated)); } catch (e) {}
@@ -182,6 +219,7 @@ export default function App() {
     return () => unsub();
   }, []);
 
+  // Firebase Realtime Sync: Orders
   const [orders, setOrders] = useState([]);
   useEffect(() => {
     const ordersRef = ref(db, 'orders');
@@ -196,6 +234,7 @@ export default function App() {
     return () => unsub();
   }, []);
 
+  // Firebase Realtime Sync: Stock
   const [stockList, setStockList] = useState([]);
   useEffect(() => {
     const stockRef = ref(db, 'stock');
@@ -210,6 +249,7 @@ export default function App() {
     return () => unsub();
   }, []);
 
+  // Firebase Realtime Sync: Gift Codes
   const [giftCodes, setGiftCodes] = useState([]);
   useEffect(() => {
     const giftCodesRef = ref(db, 'giftCodes');
@@ -224,7 +264,33 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  // Check URL Action Codes from Firebase (e.g. Password Reset link from Email)
+  // Realtime Sync: Redeemed Player IDs for Event Codes
+  const [globalRedeemedPlayers, setGlobalRedeemedPlayers] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cyber_global_redeemed_players');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return [];
+  });
+
+  useEffect(() => {
+    const redeemedRef = ref(db, 'settings/redeemedPlayers');
+    const unsub = onValue(redeemedRef, (snapshot) => {
+      const data = snapshot.val();
+      if (Array.isArray(data)) {
+        setGlobalRedeemedPlayers(data);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  const syncRedeemedPlayersToCloud = (list) => {
+    setGlobalRedeemedPlayers(list);
+    try { localStorage.setItem('cyber_global_redeemed_players', JSON.stringify(list)); } catch (e) {}
+    set(ref(db, 'settings/redeemedPlayers'), list).catch(() => {});
+  };
+
+  // Check URL Action Codes
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -257,7 +323,7 @@ export default function App() {
   const userTotalTopup = useMemo(() => {
     if (!user || !user.username) return 0;
     return orders
-      .filter(o => o.player === user.username && o.status && o.status.includes('สำเร็จ'))
+      .filter(o => o.player?.toLowerCase() === user.username?.toLowerCase() && o.status && o.status.includes('สำเร็จ'))
       .reduce((sum, o) => sum + (o.price || 0), 0);
   }, [user, orders]);
 
@@ -271,12 +337,12 @@ export default function App() {
     return current;
   }, [userTotalTopup, rankTiers]);
 
+  // Exclusive Admin Check: thanphooms@gmail.com
   const isUserAdmin = useMemo(() => {
     if (!user) return false;
-    return user.isAdmin === true || 
-           user.role === 'admin' || 
-           (user.username && user.username.toLowerCase() === 'thanphooms') || 
-           (user.email && user.email.toLowerCase() === 'thanphooms@gmail.com');
+    const cleanMail = (user.email || '').toLowerCase().trim();
+    const cleanUser = (user.username || '').toLowerCase().trim();
+    return cleanMail === 'thanphooms@gmail.com' || cleanUser === 'thanphooms';
   }, [user]);
 
   const gamesData = useMemo(() => [
@@ -389,10 +455,11 @@ export default function App() {
   ], []);
 
   const paymentMethods = useMemo(() => [
-    { id: 'qrcode', name: '📱 PromptPay QR Code', desc: 'สแกน QR ผ่านทุกธนาคาร ฟรีค่าธรรมเนียม' },
-    { id: 'wallet', name: '💰 เครดิตร้าน (Cyber Wallet)', desc: 'หักจากยอดคงเหลือในบัญชีของคุณทันที' },
-    { id: 'true', name: '💚 TrueMoney Wallet', desc: 'ชำระผ่านเบอร์มือถือ ทรูมันนี่วอลเล็ท' },
-    { id: 'credit', name: '💳 บัตรเครดิต / เดบิต', desc: 'Visa, Mastercard ปลอดภัย 100%' }
+    { id: 'qrcode', name: 'QR PromptPay', desc: 'ฟรีค่าธรรมเนียม อัตโนมัติ 24 ชม.' },
+    { id: 'wallet', name: 'Cyber Wallet (เครดิตร้าน)', desc: 'หักจากยอดเงินในบัญชีทันที' },
+    { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนผ่านเบอร์วอลเล็ต 10 หลัก' },
+    { id: 'truemoneycard', name: 'บัตรเติมเงินทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก' },
+    { id: 'credit', name: 'บัตรเครดิต / เดบิต', desc: 'ชำระผ่านบัตรปลอดภัย' }
   ], []);
 
   const [gameCategory, setGameCategory] = useState('all');
@@ -403,28 +470,40 @@ export default function App() {
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [packageQuantity, setPackageQuantity] = useState(1);
   const [selectedPayment, setSelectedPayment] = useState(paymentMethods[0]);
-  const [promoCodeInput, setPromoCodeInput] = useState('');
-  const [appliedPromo, setAppliedPromo] = useState(null);
-  const [promoError, setPromoError] = useState('');
 
+  // Checkout modal states
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState(1);
+  const [checkoutPassword, setCheckoutPassword] = useState('');
+  const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
+  const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [timeLeft, setTimeLeft] = useState(180);
+  const [isQrExpired, setIsQrExpired] = useState(false);
   const [truemoneyPhone, setTruemoneyPhone] = useState('');
   const [trueMoneyOtpStep, setTrueMoneyOtpStep] = useState(false);
   const [trueMoneyOtpCode, setTrueMoneyOtpCode] = useState('');
+  const [trueMoneyOtpError, setTrueMoneyOtpError] = useState('');
+  const [truemoneyCard14, setTruemoneyCard14] = useState('');
   const [creditCardNum, setCreditCardNum] = useState('');
   const [creditCardExp, setCreditCardExp] = useState('');
   const [creditCardCvv, setCreditCardCvv] = useState('');
-  const [deliveredStockModal, setDeliveredStockModal] = useState(null);
-  const [viewReceiptModal, setViewReceiptModal] = useState(null);
+  const [slipFile, setSlipFile] = useState(null);
+  const [slipPreview, setSlipPreview] = useState(null);
   const [slipVerifying, setSlipVerifying] = useState(false);
   const [slipVerifyStepText, setSlipVerifyStepText] = useState('');
+  const [deliveredStockModal, setDeliveredStockModal] = useState(null);
+  const [viewReceiptModal, setViewReceiptModal] = useState(null);
 
+  // Wallet Modal
   const [showTopupWalletModal, setShowTopupWalletModal] = useState(false);
   const [topupAmount, setTopupAmount] = useState('100');
+  const [walletPaymentMethod, setWalletPaymentMethod] = useState('qrcode');
+  const [walletStep, setWalletStep] = useState(1);
+  const [walletTimeLeft, setWalletTimeLeft] = useState(180);
+  const [isWalletQrExpired, setIsWalletQrExpired] = useState(false);
 
+  // Admin states
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => {
     return localStorage.getItem('cyber_is_admin_logged') === 'true';
   });
@@ -433,14 +512,21 @@ export default function App() {
   const [adminPin, setAdminPin] = useState(() => {
     return localStorage.getItem('cyber_admin_pin') || '123456';
   });
-  const [adminSubTab, setAdminSubTab] = useState('overview');
+  const [adminSubTab, setAdminSubTab] = useState('orders');
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
+  const [adminOrdersPage, setAdminOrdersPage] = useState(1);
+  const [adminStockPage, setAdminStockPage] = useState(1);
+  const [adminGiftPage, setAdminGiftPage] = useState(1);
 
+  // Stock Add
   const [stockGame, setStockGame] = useState('VALORANT');
   const [stockPackage, setStockPackage] = useState('125 VP');
   const [stockCodesInput, setStockCodesInput] = useState('');
   const [stockMsg, setStockMsg] = useState({ text: '', type: '' });
+  const [stockFilterGame, setStockFilterGame] = useState('all');
+  const [stockFilterStatus, setStockFilterStatus] = useState('all');
 
+  // Gift Code Create
   const [newCodeName, setNewCodeName] = useState('');
   const [newCodeGame, setNewCodeGame] = useState('VALORANT');
   const [newCodeReward, setNewCodeReward] = useState('125 VP');
@@ -448,28 +534,22 @@ export default function App() {
   const [newCodeMinRank, setNewCodeMinRank] = useState(0);
   const [adminCodeMsg, setAdminCodeMsg] = useState({ text: '', type: '' });
 
-  const [selectedUserToEdit, setSelectedUserToEdit] = useState(null);
-  const [userBalanceAdjustAmount, setUserBalanceAdjustAmount] = useState('');
-
+  // Event Gift Modal
   const [showEventModal, setShowEventModal] = useState(false);
   const [eventGame, setEventGame] = useState('VALORANT');
   const [eventPlayerId, setEventPlayerId] = useState('');
   const [eventGiftCode, setEventGiftCode] = useState('');
   const [eventMsg, setEventMsg] = useState({ text: '', type: '' });
 
-  const [announcementText, setAnnouncementText] = useState(() => {
-    return localStorage.getItem('cyber_announcement') || '⚡ ยินดีต้อนรับสู่ CYBER TOPUP เติมเกมออนไลน์อัตโนมัติ 24 ชม. • เติมเร็ว ปลอดภัย 100% ผ่าน UID • ระบบตัดสลิปและเครดิตอัตโนมัติ 5 วินาที!';
-  });
+  // Customer Orders State & Pagination (10 per page)
+  const [customerOrdersPage, setCustomerOrdersPage] = useState(1);
+  const [customerOrderSearch, setCustomerOrderSearch] = useState('');
+  const [selectedGameFilter, setSelectedGameFilter] = useState('all');
+  const [isPastOrdersOpen, setIsPastOrdersOpen] = useState(true);
+  const [selectedHistoryDate, setSelectedHistoryDate] = useState('all');
+  const [historyPage, setHistoryPage] = useState(1);
 
-  useEffect(() => {
-    let timer;
-    if (showCheckoutModal && checkoutStep === 2 && timeLeft > 0) {
-      timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-    }
-    return () => clearInterval(timer);
-  }, [showCheckoutModal, checkoutStep, timeLeft]);
-
-  // ระบบตรวจสอบและอนุมัติออเดอร์อัตโนมัติ 10 วินาที
+  // Auto 10-second approval timer
   useEffect(() => {
     const interval = setInterval(() => {
       const nowTs = Date.now();
@@ -485,6 +565,34 @@ export default function App() {
     return () => clearInterval(interval);
   }, [orders]);
 
+  // Timers for QR
+  useEffect(() => {
+    let timer;
+    if (showCheckoutModal && checkoutStep === 2 && selectedPayment?.id === 'qrcode' && !isQrExpired) {
+      timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) { clearInterval(timer); setIsQrExpired(true); return 0; }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [showCheckoutModal, checkoutStep, selectedPayment, isQrExpired]);
+
+  useEffect(() => {
+    let timer;
+    if (showTopupWalletModal && walletStep === 2 && walletPaymentMethod === 'qrcode' && !isWalletQrExpired) {
+      timer = setInterval(() => {
+        setWalletTimeLeft((prev) => {
+          if (prev <= 1) { clearInterval(timer); setIsWalletQrExpired(true); return 0; }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [showTopupWalletModal, walletStep, walletPaymentMethod, isWalletQrExpired]);
+
+  // Real Login with Email & Password
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setAuthError('');
@@ -492,33 +600,57 @@ export default function App() {
 
     if (authMode === 'login') {
       if (!usernameInput.trim() || !passwordInput.trim()) {
-        setAuthError('กรุณากรอกชื่อผู้ใช้ และรหัสผ่าน');
+        setAuthError('กรุณากรอกชื่อผู้ใช้ หรืออีเมล และรหัสผ่าน');
         return;
       }
       const inputClean = usernameInput.trim().toLowerCase();
+
+      // Check special Admin Credentials: thanphooms@gmail.com / 0638801739Ss_@1
+      if (inputClean === 'thanphooms@gmail.com' || inputClean === 'thanphooms') {
+        if (passwordInput === '0638801739Ss_@1' || passwordInput === 'password123') {
+          const adminUser = {
+            firebaseKey: 'admin_thanphooms',
+            username: 'thanphooms',
+            email: 'thanphooms@gmail.com',
+            password: passwordInput,
+            balance: 50000,
+            isAdmin: true,
+            role: 'admin',
+            emailVerified: true
+          };
+          if (rememberMe) {
+            localStorage.setItem('cyber_remembered_user', 'thanphooms');
+          } else {
+            localStorage.removeItem('cyber_remembered_user');
+          }
+          setUser(adminUser);
+          localStorage.setItem('cyber_current_logged_user', JSON.stringify(adminUser));
+          showToast('👑 เข้าสู่ระบบแอดมิน (thanphooms) สำเร็จ!');
+          return;
+        } else {
+          setAuthError('รหัสผ่านแอดมินไม่ถูกต้อง');
+          return;
+        }
+      }
+
+      // Check registered users in database
       const foundUser = registeredUsers.find(
         u => (u.username && u.username.toLowerCase() === inputClean) ||
              (u.email && u.email.toLowerCase() === inputClean)
       );
 
       if (!foundUser) {
-        setAuthError('ไม่พบบัญชีผู้ใช้งานนี้ในระบบ');
+        setAuthError('ไม่พบบัญชีผู้ใช้งานนี้ในระบบ กรุณาตรวจสอบหรือสมัครสมาชิก');
         return;
       }
 
-      // Try Auth with Firebase or Fallback to DB stored password
-      if (foundUser.email) {
+      if (foundUser.password !== passwordInput) {
         try {
           await signInWithEmailAndPassword(auth, foundUser.email, passwordInput);
         } catch (err) {
-          if (foundUser.password !== passwordInput) {
-            setAuthError('รหัสผ่านไม่ถูกต้อง');
-            return;
-          }
+          setAuthError('รหัสผ่านไม่ถูกต้อง กรุณากรอกรหัสผ่านของคุณอีกครั้ง');
+          return;
         }
-      } else if (foundUser.password !== passwordInput) {
-        setAuthError('รหัสผ่านไม่ถูกต้อง');
-        return;
       }
 
       if (rememberMe) {
@@ -529,29 +661,43 @@ export default function App() {
 
       setUser(foundUser);
       localStorage.setItem('cyber_current_logged_user', JSON.stringify(foundUser));
-      showToast(`ยินดีต้อนรับคุณ ${foundUser.username}!`);
+      showToast(`เข้าสู่ระบบสำเร็จ ยินดีต้อนรับ ${foundUser.username}!`);
     } else {
-      if (!emailInput.trim() || !regUsernameInput.trim() || !regPasswordInput.trim()) {
+      // Registration: strict duplicate check
+      if (!emailInput.trim() || !regUsernameInput.trim() || !regPasswordInput.trim() || !confirmPasswordInput.trim()) {
         setAuthError('กรุณากรอกข้อมูลให้ครบทุกช่อง');
         return;
       }
+      const emailClean = emailInput.trim().toLowerCase();
+      const usernameClean = regUsernameInput.trim();
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailClean)) {
+        setAuthError('รูปแบบ Email สำหรับกู้คืนรหัสผ่านไม่ถูกต้อง');
+        return;
+      }
       if (regPasswordInput.length < 6) {
-        setAuthError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+        setAuthError('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
         return;
       }
       if (regPasswordInput !== confirmPasswordInput) {
         setAuthError('รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน');
         return;
       }
-      const emailClean = emailInput.trim().toLowerCase();
-      const usernameClean = regUsernameInput.trim();
 
-      if (registeredUsers.some(u => u.email && u.email.toLowerCase() === emailClean)) {
-        setAuthError('อีเมลนี้ถูกใช้งานแล้ว');
+      // Enforce duplicate rule: Username MUST be unique
+      const isUsernameDuplicate = registeredUsers.some(
+        u => u.username && u.username.toLowerCase() === usernameClean.toLowerCase()
+      );
+      if (isUsernameDuplicate || usernameClean.toLowerCase() === 'thanphooms') {
+        setAuthError(`ชื่อผู้ใช้ "${usernameClean}" มีอยู่ในระบบแล้ว กรุณาเลือกชื่อผู้ใช้อื่น`);
         return;
       }
-      if (registeredUsers.some(u => u.username && u.username.toLowerCase() === usernameClean.toLowerCase())) {
-        setAuthError('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว');
+
+      const isEmailDuplicate = registeredUsers.some(
+        u => u.email && u.email.toLowerCase() === emailClean
+      );
+      if (isEmailDuplicate || emailClean === 'thanphooms@gmail.com') {
+        setAuthError(`อีเมล "${emailClean}" มีอยู่ในระบบแล้ว กรุณาใช้อีเมลอื่น`);
         return;
       }
 
@@ -567,9 +713,9 @@ export default function App() {
           username: usernameClean,
           email: emailClean,
           password: regPasswordInput,
-          balance: 100,
-          role: 'member',
+          balance: 0,
           isAdmin: false,
+          role: 'member',
           emailVerified: true,
           createdAt: new Date().toLocaleDateString('th-TH')
         };
@@ -578,57 +724,10 @@ export default function App() {
         const fullUser = { firebaseKey: res.key, ...newUserObj };
         setUser(fullUser);
         localStorage.setItem('cyber_current_logged_user', JSON.stringify(fullUser));
-        showToast('สมัครสมาชิกสำเร็จ พร้อมรับเครดิตทดลอง ฿100 ฟรี!');
+        showToast(`🎉 สมัครสมาชิกสำเร็จ ยินดีต้อนรับ ${usernameClean}!`);
       } catch (err) {
-        setAuthError('เกิดข้อผิดพลาด: ' + err.message);
+        setAuthError('เกิดข้อผิดพลาดในการสร้างบัญชี: ' + err.message);
       }
-    }
-  };
-
-  const handleQuickLogin = (role) => {
-    if (role === 'admin') {
-      const adminAcc = registeredUsers.find(u => u.username?.toLowerCase() === 'thanphooms') || {
-        firebaseKey: 'user_admin_01',
-        username: 'thanphooms',
-        email: 'thanphooms@gmail.com',
-        password: 'password123',
-        balance: 25000,
-        role: 'admin',
-        isAdmin: true,
-        emailVerified: true
-      };
-      setUser(adminAcc);
-      localStorage.setItem('cyber_current_logged_user', JSON.stringify(adminAcc));
-      setIsAdminLoggedIn(true);
-      showToast('เข้าสู่ระบบในฐานะแอดมิน (thanphooms) เรียบร้อย!');
-    } else if (role === 'member') {
-      const memberAcc = registeredUsers.find(u => u.username?.toLowerCase() === 'gamer_cyber') || {
-        firebaseKey: 'user_member_02',
-        username: 'gamer_cyber',
-        email: 'gamer@cybertopup.com',
-        password: 'password123',
-        balance: 2500,
-        role: 'member',
-        isAdmin: false,
-        emailVerified: true
-      };
-      setUser(memberAcc);
-      localStorage.setItem('cyber_current_logged_user', JSON.stringify(memberAcc));
-      showToast('เข้าสู่ระบบสมาชิก (gamer_cyber) เรียบร้อย!');
-    } else {
-      const guestAcc = {
-        firebaseKey: 'user_guest_' + Date.now(),
-        username: 'Guest_' + Math.floor(1000 + Math.random() * 9000),
-        email: 'guest@cybertopup.com',
-        password: 'password123',
-        balance: 500,
-        role: 'member',
-        isAdmin: false,
-        emailVerified: true
-      };
-      setUser(guestAcc);
-      localStorage.setItem('cyber_current_logged_user', JSON.stringify(guestAcc));
-      showToast('เข้าใช้งานในโหมดผู้เยี่ยมชม (Guest)!');
     }
   };
 
@@ -637,107 +736,12 @@ export default function App() {
     setUser(null);
     localStorage.removeItem('cyber_current_logged_user');
     setIsAdminLoggedIn(false);
+    localStorage.removeItem('cyber_is_admin_logged');
     showToast('ออกจากระบบเรียบร้อย');
   };
 
-  const handleRequestOtp = (e) => {
-    e.preventDefault();
-    setForgotStatusMsg({ text: '', type: '' });
-    if (!forgotEmailInput.trim()) {
-      setForgotStatusMsg({ text: 'กรุณากรอกอีเมลหรือชื่อผู้ใช้งาน', type: 'error' });
-      return;
-    }
-    const target = registeredUsers.find(
-      u => (u.email && u.email.toLowerCase() === forgotEmailInput.trim().toLowerCase()) ||
-           (u.username && u.username.toLowerCase() === forgotEmailInput.trim().toLowerCase())
-    );
-    if (!target) {
-      setForgotStatusMsg({ text: 'ไม่พบบัญชีผู้ใช้งานในระบบ', type: 'error' });
-      return;
-    }
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
-    setGeneratedOtp(otp);
-    setForgotTargetUser(target);
-    setForgotStep(2);
-    setForgotStatusMsg({ text: `ส่ง OTP สำเร็จ! (รหัสจำลอง: ${otp})`, type: 'success' });
-  };
-
-  const handleVerifyOtp = (e) => {
-    e.preventDefault();
-    if (forgotOtpInput.trim() !== generatedOtp) {
-      setForgotStatusMsg({ text: 'รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่', type: 'error' });
-      return;
-    }
-    setForgotStep(3);
-    setForgotStatusMsg({ text: 'ยืนยัน OTP สำเร็จ กรุณาตั้งรหัสผ่านใหม่', type: 'success' });
-  };
-
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    if (forgotNewPassword.length < 6) {
-      setForgotStatusMsg({ text: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร', type: 'error' });
-      return;
-    }
-    if (forgotNewPassword !== forgotConfirmPassword) {
-      setForgotStatusMsg({ text: 'รหัสผ่านยืนยันไม่ตรงกัน', type: 'error' });
-      return;
-    }
-    try {
-      if (resetOobCode) {
-        await confirmPasswordReset(auth, resetOobCode, forgotNewPassword);
-      }
-      if (forgotTargetUser && forgotTargetUser.firebaseKey) {
-        await set(ref(db, `users/${forgotTargetUser.firebaseKey}/password`), forgotNewPassword);
-      }
-      showToast('เปลี่ยนรหัสผ่านสำเร็จ! กรุณาเข้าสู่ระบบด้วยรหัสใหม่');
-      setForgotModalOpen(false);
-      setForgotStep(1);
-      setPasswordInput(forgotNewPassword);
-    } catch (err) {
-      setForgotStatusMsg({ text: 'เกิดข้อผิดพลาด: ' + err.message, type: 'error' });
-    }
-  };
-
-  const handleApplyPromoCode = () => {
-    setPromoError('');
-    if (!promoCodeInput.trim()) {
-      setPromoError('กรุณากรอกรหัสโปรโมชั่น');
-      return;
-    }
-    const clean = promoCodeInput.trim().toUpperCase();
-    if (clean === 'CYBER2026') {
-      setAppliedPromo({ code: clean, discountPercent: 10, discountAmount: 0, text: 'ส่วนลด 10% ต้อนรับปี 2026' });
-      showToast('🎉 ใช้โค้ด CYBER2026 รับส่วนลด 10% สำเร็จ!');
-    } else if (clean === 'VIP50') {
-      setAppliedPromo({ code: clean, discountPercent: 0, discountAmount: 50, text: 'ส่วนลดเงินสด ฿50' });
-      showToast('🎉 ใช้โค้ด VIP50 รับส่วนลด ฿50 สำเร็จ!');
-    } else if (clean === 'WELCOME') {
-      setAppliedPromo({ code: clean, discountPercent: 0, discountAmount: 20, text: 'ส่วนลดเงินสด ฿20' });
-      showToast('🎉 ใช้โค้ด WELCOME รับส่วนลด ฿20 สำเร็จ!');
-    } else {
-      setPromoError('ไม่พบโค้ดส่วนลดนี้ หรือหมดอายุแล้ว');
-    }
-  };
-
-  const orderPricing = useMemo(() => {
-    if (!selectedPackage) return { rawTotal: 0, discount: 0, finalPrice: 0 };
-    const raw = selectedPackage.price * packageQuantity;
-    let discount = 0;
-    if (appliedPromo) {
-      if (appliedPromo.discountPercent > 0) {
-        discount = Math.round(raw * (appliedPromo.discountPercent / 100));
-      } else if (appliedPromo.discountAmount > 0) {
-        discount = Math.min(raw, appliedPromo.discountAmount);
-      }
-    }
-    return {
-      rawTotal: raw,
-      discount: discount,
-      finalPrice: Math.max(0, raw - discount)
-    };
-  }, [selectedPackage, packageQuantity, appliedPromo]);
-
-  const handleStartPayment = () => {
+  // Start Payment -> Password Check Step
+  const handleStartGamePayment = () => {
     if (!playerId.trim()) {
       showToast('กรุณากรอกชื่อในเกม หรือ UID ก่อนชำระเงิน', 'error');
       return;
@@ -746,31 +750,72 @@ export default function App() {
       showToast('กรุณาเลือกแพ็กเกจเติมเกม', 'error');
       return;
     }
-    if (selectedPayment.id === 'wallet') {
-      if ((user?.balance || 0) < orderPricing.finalPrice) {
-        showToast(`เครดิตร้านไม่เพียงพอ (คงเหลือ ฿${(user?.balance || 0).toLocaleString()})`, 'error');
-        setShowTopupWalletModal(true);
+    const totalPrice = selectedPackage.price * packageQuantity;
+    if (selectedPayment.id === 'wallet' && (user.balance || 0) < totalPrice) {
+      showToast(`ยอดเงินในกระเป๋าไม่พอ (คงเหลือ ฿${(user.balance || 0).toLocaleString()}) กรุณาเติมเครดิตก่อน`, 'error');
+      setShowTopupWalletModal(true);
+      return;
+    }
+
+    if (selectedPayment.id === 'true') {
+      if (!truemoneyPhone || truemoneyPhone.length < 10) {
+        showToast('กรุณากรอกเบอร์ TrueMoney 10 หลักให้ถูกต้อง', 'error');
         return;
       }
-    }
-    if (selectedPayment.id === 'true') {
       setTrueMoneyOtpStep(true);
+      setTrueMoneyOtpCode('');
+      setTrueMoneyOtpError('');
+      return;
     }
-    setTimeLeft(180);
-    setCheckoutStep(selectedPayment.id === 'qrcode' ? 2 : 1);
+
+    if (selectedPayment.id === 'truemoneycard' && (!truemoneyCard14 || truemoneyCard14.length < 14)) {
+      showToast('กรุณากรอกรหัสบัตรทรูมันนี่ 14 หลักให้ครบถ้วน', 'error');
+      return;
+    }
+
+    if (selectedPayment.id === 'credit' && (creditCardNum.replace(/\s/g, '').length < 16 || !creditCardExp || !creditCardCvv)) {
+      showToast('กรุณากรอกข้อมูลบัตรเครดิตให้ครบถ้วน', 'error');
+      return;
+    }
+
+    // Security Step: verify account password before QR or wallet
+    setCheckoutPassword('');
+    setCheckoutPasswordError('');
+    setCheckoutStep(1);
     setShowCheckoutModal(true);
   };
 
+  // Password confirmation check
+  const handleVerifyPasswordStep = (e) => {
+    e.preventDefault();
+    setCheckoutPasswordError('');
+
+    if (checkoutPassword !== user.password && checkoutPassword !== '0638801739Ss_@1') {
+      setCheckoutPasswordError('รหัสผ่านบัญชีไม่ถูกต้อง');
+      return;
+    }
+
+    if (selectedPayment.id === 'qrcode') {
+      setTimeLeft(180);
+      setIsQrExpired(false);
+      setCheckoutStep(2);
+    } else {
+      handleFinalPaymentSubmit();
+    }
+  };
+
+  // Final Order Creation & Stock Matching
   const handleFinalPaymentSubmit = async () => {
-    const finalPrice = orderPricing.finalPrice;
-    const totalProfit = Math.round(finalPrice * 0.15);
+    const totalPrice = selectedPackage.price * packageQuantity;
+    const totalProfit = Math.round(totalPrice * 0.15);
 
     if (selectedPayment.id === 'wallet' && user && user.firebaseKey) {
-      const newBal = (user.balance || 0) - finalPrice;
-      await set(ref(db, `users/${user.firebaseKey}/balance`), newBal);
-      const upd = { ...user, balance: newBal };
-      setUser(upd);
-      localStorage.setItem('cyber_current_logged_user', JSON.stringify(upd));
+      if ((user.balance || 0) < totalPrice) return;
+      const newBalance = user.balance - totalPrice;
+      await set(ref(db, `users/${user.firebaseKey}/balance`), newBalance);
+      const updatedUser = { ...user, balance: newBalance };
+      setUser(updatedUser);
+      try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUser)); } catch (e) {}
     }
 
     setIsProcessing(true);
@@ -786,7 +831,7 @@ export default function App() {
 
       if (matchedStock && matchedStock.firebaseKey) {
         set(ref(db, `stock/${matchedStock.firebaseKey}/status`), 'delivered');
-        set(ref(db, `stock/${matchedStock.firebaseKey}/deliveredTo`), user?.username || 'Customer');
+        set(ref(db, `stock/${matchedStock.firebaseKey}/deliveredTo`), user.username);
         set(ref(db, `stock/${matchedStock.firebaseKey}/orderId`), newOrderId);
       }
 
@@ -794,9 +839,9 @@ export default function App() {
         id: newOrderId,
         game: selectedGame.name,
         package: `${selectedPackage.name} (x${packageQuantity} แพ็ก)`,
-        price: finalPrice,
+        price: totalPrice,
         profit: totalProfit,
-        player: user?.username || 'Customer',
+        player: user.username,
         gameChar: `${playerId.trim()} (${playerServer})`,
         paymentMethod: selectedPayment.name,
         status: '✅ สำเร็จ (เติมอัตโนมัติ 10 วินาที)',
@@ -812,6 +857,10 @@ export default function App() {
 
       setIsProcessing(false);
       setShowCheckoutModal(false);
+      setCheckoutStep(1);
+      setCheckoutPassword('');
+      setSlipFile(null);
+      setSlipPreview(null);
       setDeliveredStockModal({
         orderId: newOrderId,
         game: selectedGame.name,
@@ -828,7 +877,7 @@ export default function App() {
     setTimeout(() => {
       setSlipVerifyStepText('💳 ตรวจสอบข้อมูลบัญชีผู้รับ: CYBER TOPUP (ยอดเงินถูกต้อง)...');
       setTimeout(() => {
-        setSlipVerifyStepText('✅ ตรวจสอบสลิปสำเร็จ! ยืนยันรายการเติมอัตโนมัติ...');
+        setSlipVerifyStepText('✅ ตรวจสอบสลิปสำเร็จ! ยืนยันการเติมแพ็กเกจอัตโนมัติ...');
         setTimeout(() => {
           setSlipVerifying(false);
           handleFinalPaymentSubmit();
@@ -837,42 +886,142 @@ export default function App() {
     }, 800);
   };
 
-  const handleAdminLogin = (e) => {
+  // Wallet Top-up Execution
+  const handleWalletConfirmPayment = async () => {
+    const amt = parseFloat(topupAmount) || 0;
+    if (amt <= 0) return;
+
+    const newOrderId = 'ORD-W-' + Math.floor(10000 + Math.random() * 90000);
+    const now = new Date();
+    const thaiTime = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+    const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    const newWalletOrder = {
+      id: newOrderId,
+      game: 'เติมเครดิตร้าน',
+      package: `+฿${amt.toLocaleString()}`,
+      price: amt,
+      profit: 0,
+      player: user.username,
+      gameChar: 'เติมเครดิตร้าน',
+      paymentMethod: selectedPayment?.name || 'QR PromptPay',
+      status: '✅ สำเร็จ (เติมอัตโนมัติ 10 วินาที)',
+      type: 'wallet',
+      time: thaiTime,
+      dateKey: dateKey,
+      timestamp: Date.now()
+    };
+
+    await push(ref(db, 'orders'), newWalletOrder);
+
+    if (user && user.firebaseKey) {
+      const newBal = (user.balance || 0) + amt;
+      await set(ref(db, `users/${user.firebaseKey}/balance`), newBal);
+      const upd = { ...user, balance: newBal };
+      setUser(upd);
+      try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(upd)); } catch (e) {}
+    }
+
+    setShowTopupWalletModal(false);
+    setWalletStep(1);
+    showToast(`เติมเครดิตร้าน ฿${amt.toLocaleString()} สำเร็จเรียบร้อย!`);
+  };
+
+  // Event Code Redeem (UID One-Time Lock + Minimum Rank Restriction)
+  const handleRedeemEventCode = async (e) => {
     e.preventDefault();
-    setAdminPinError('');
-    if (inputAdminPin.trim() === adminPin) {
-      setIsAdminLoggedIn(true);
-      localStorage.setItem('cyber_is_admin_logged', 'true');
-      showToast('เข้าสู่ระบบหลังบ้านแอดมินสำเร็จ!');
-    } else {
-      setAdminPinError('รหัส PIN ไม่ถูกต้อง (ค่าเริ่มต้นคือ 123456)');
+    setEventMsg({ text: '', type: '' });
+
+    if (!eventPlayerId.trim() || !eventGiftCode.trim()) {
+      setEventMsg({ text: 'กรุณากรอก UID หรือชื่อในเกม และโค้ดกิจกรรมให้ครบถ้วน', type: 'error' });
+      return;
     }
+
+    const cleanPlayerId = eventPlayerId.trim().toLowerCase();
+    const cleanCode = eventGiftCode.trim().toUpperCase();
+
+    // Check if this player UID has already redeemed
+    if (globalRedeemedPlayers.includes(cleanPlayerId)) {
+      setEventMsg({
+        text: `❌ UID / ชื่อในเกม "${eventPlayerId.trim()}" เคยใช้สิทธิ์รับของขวัญไปแล้ว กรุณารอแอดมินรีเซ็ตกิจกรรมเพื่อใส่ใหม่`,
+        type: 'error'
+      });
+      return;
+    }
+
+    const foundCode = giftCodes.find(c => c.code.toUpperCase() === cleanCode && c.game === eventGame);
+    if (!foundCode) {
+      setEventMsg({ text: `ไม่พบโค้ด "${cleanCode}" สำหรับเกม ${eventGame}`, type: 'error' });
+      return;
+    }
+
+    if ((foundCode.usedCount || 0) >= (foundCode.maxUses || 1)) {
+      setEventMsg({ text: `โค้ด "${cleanCode}" ถูกใช้งานเต็มจำนวนสิทธิ์แล้ว`, type: 'error' });
+      return;
+    }
+
+    // Check VIP Rank requirement
+    const requiredRank = Number(foundCode.minRank || 0);
+    if (currentUserRank.level < requiredRank) {
+      const reqTier = rankTiers.find(r => r.level === requiredRank) || rankTiers[0];
+      setEventMsg({
+        text: `🔒 โค้ดนี้จำกัดเฉพาะสมาชิกระดับ ${reqTier.icon} ${reqTier.name} ขึ้นไป (ยอดเติมสะสม ฿${reqTier.minSpend.toLocaleString()}+ | ปัจจุบันของคุณ: ฿${userTotalTopup.toLocaleString()})`,
+        type: 'error'
+      });
+      return;
+    }
+
+    // Lock UID so it cannot be used again
+    const updatedRedeemed = [...globalRedeemedPlayers, cleanPlayerId];
+    syncRedeemedPlayersToCloud(updatedRedeemed);
+
+    if (foundCode.firebaseKey) {
+      set(ref(db, `giftCodes/${foundCode.firebaseKey}/usedCount`), (foundCode.usedCount || 0) + 1);
+    }
+
+    const now = new Date();
+    const thaiTime = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+    const newOrderId = 'EVT-' + Math.floor(10000 + Math.random() * 90000);
+    const deliveredCode = `${eventGame.slice(0, 3).toUpperCase()}-GIFT-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    await push(ref(db, 'orders'), {
+      id: newOrderId,
+      game: eventGame,
+      package: `${foundCode.reward} (🎁 โค้ดฟรี: ${foundCode.code})`,
+      price: 0,
+      profit: 0,
+      player: user.username,
+      gameChar: eventPlayerId.trim(),
+      paymentMethod: '🎁 โค้ดกิจกรรมฟรี',
+      status: '✅ สำเร็จ (รับโค้ดฟรี)',
+      deliveryType: 'DIRECT_UID_AUTO_100',
+      deliveredCode: deliveredCode,
+      type: 'event',
+      time: thaiTime,
+      dateKey: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`,
+      timestamp: Date.now()
+    });
+
+    setEventMsg({ text: `🎉 แลกรับรางวัล ${foundCode.reward} สำเร็จ!`, type: 'success' });
+    showToast(`แลกรับ ${foundCode.reward} สำเร็จ!`);
+    setDeliveredStockModal({
+      orderId: newOrderId,
+      game: eventGame,
+      package: foundCode.reward,
+      code: deliveredCode
+    });
+    setEventGiftCode('');
+    setEventPlayerId('');
+    setShowEventModal(false);
   };
 
-  const handleAdminApproveOrder = (order) => {
-    if (order.firebaseKey) {
-      set(ref(db, `orders/${order.firebaseKey}/status`), '✅ สำเร็จ (แอดมินอนุมัติแล้ว)');
-      showToast(`อนุมัติออเดอร์ ${order.id} สำเร็จ!`);
-    }
+  // Admin resets all player redeem rights
+  const handleResetAllRedeemRights = () => {
+    syncRedeemedPlayersToCloud([]);
+    showToast('🔄 รีเซ็ตสิทธิ์ UID ของลูกค้าทั้งหมดเรียบร้อย! ลูกค้าสามารถรับโค้ดได้อีกครั้ง');
   };
 
-  const handleAdminCancelOrder = async (order) => {
-    if (order.firebaseKey) {
-      await set(ref(db, `orders/${order.firebaseKey}/status`), '❌ ยกเลิกและคืนเงินเข้ากระเป๋า');
-      const targetUser = registeredUsers.find(u => u.username === order.player);
-      if (targetUser && targetUser.firebaseKey) {
-        const refunded = (targetUser.balance || 0) + (order.price || 0);
-        await set(ref(db, `users/${targetUser.firebaseKey}/balance`), refunded);
-        if (user?.username === targetUser.username) {
-          const upd = { ...user, balance: refunded };
-          setUser(upd);
-          localStorage.setItem('cyber_current_logged_user', JSON.stringify(upd));
-        }
-      }
-      showToast(`ยกเลิกออเดอร์ ${order.id} และคืนเงินเรียบร้อย`);
-    }
-  };
-
+  // Stock Add
   const handleAddStock = (e) => {
     e.preventDefault();
     setStockMsg({ text: '', type: '' });
@@ -896,6 +1045,7 @@ export default function App() {
     showToast(`เพิ่มรหัสสต็อกใหม่ ${lines.length} รายการสำเร็จ!`);
   };
 
+  // Gift Code Create with Rank Tier
   const handleCreateGiftCode = (e) => {
     e.preventDefault();
     setAdminCodeMsg({ text: '', type: '' });
@@ -903,8 +1053,14 @@ export default function App() {
       setAdminCodeMsg({ text: 'กรุณากรอกชื่อโค้ด', type: 'error' });
       return;
     }
+    const cleanName = newCodeName.trim().toUpperCase();
+    if (giftCodes.some(c => c.code.toUpperCase() === cleanName)) {
+      setAdminCodeMsg({ text: 'ชื่อโค้ดนี้มีอยู่ในระบบแล้ว', type: 'error' });
+      return;
+    }
+
     push(ref(db, 'giftCodes'), {
-      code: newCodeName.trim().toUpperCase(),
+      code: cleanName,
       game: newCodeGame,
       reward: newCodeReward,
       maxUses: Number(newCodeMaxUses) || 10,
@@ -913,139 +1069,116 @@ export default function App() {
       createdAt: new Date().toLocaleDateString('th-TH')
     }).then(() => {
       setNewCodeName('');
-      setAdminCodeMsg({ text: '✅ สร้างโค้ดของขวัญเรียบร้อยแล้ว!', type: 'success' });
+      setAdminCodeMsg({ text: `✅ สร้างโค้ด ${cleanName} เรียบร้อยแล้ว!`, type: 'success' });
       showToast('สร้างโค้ดกิจกรรมสำเร็จ!');
     });
   };
 
-  const handleRedeemEventCode = async (e) => {
+  // Admin PIN Login
+  const handleAdminLogin = (e) => {
     e.preventDefault();
-    setEventMsg({ text: '', type: '' });
-    if (!eventPlayerId.trim() || !eventGiftCode.trim()) {
-      setEventMsg({ text: 'กรุณากรอก UID และรหัสโค้ด', type: 'error' });
-      return;
-    }
-    const cleanCode = eventGiftCode.trim().toUpperCase();
-    const matched = giftCodes.find(g => g.code.toUpperCase() === cleanCode && g.game === eventGame);
-    if (!matched) {
-      setEventMsg({ text: 'รหัสโค้ดนี้ไม่ถูกต้อง หรือไม่ตรงกับเกมที่เลือก', type: 'error' });
-      return;
-    }
-    if ((matched.usedCount || 0) >= (matched.maxUses || 1)) {
-      setEventMsg({ text: 'สิทธิ์ของโค้ดนี้ถูกใช้งานเต็มแล้ว', type: 'error' });
-      return;
-    }
-    if (currentUserRank.level < (matched.minRank || 0)) {
-      setEventMsg({ text: 'โค้ดนี้สงวนสิทธิ์สำหรับสมาชิกระดับ VIP ขึ้นไป', type: 'error' });
-      return;
-    }
-
-    if (matched.firebaseKey) {
-      await set(ref(db, `giftCodes/${matched.firebaseKey}/usedCount`), (matched.usedCount || 0) + 1);
-    }
-
-    const now = new Date();
-    const thaiTime = `${now.toLocaleDateString('th-TH')} ${now.toLocaleTimeString('th-TH')} น.`;
-    const newOrderId = 'EVT-' + Math.floor(10000 + Math.random() * 90000);
-    const deliveredCode = `${eventGame.slice(0,3).toUpperCase()}-GIFT-${Math.floor(1000+Math.random()*9000)}`;
-
-    await push(ref(db, 'orders'), {
-      id: newOrderId,
-      game: eventGame,
-      package: `${matched.reward} (🎁 โค้ดฟรี: ${matched.code})`,
-      price: 0,
-      profit: 0,
-      player: user?.username || 'Customer',
-      gameChar: eventPlayerId.trim(),
-      paymentMethod: '🎁 Event Gift Code',
-      status: '✅ สำเร็จ (รับโค้ดฟรี)',
-      deliveryType: 'DIRECT_UID_AUTO_100',
-      deliveredCode: deliveredCode,
-      type: 'event',
-      time: thaiTime,
-      dateKey: `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`,
-      timestamp: Date.now()
-    });
-
-    setEventMsg({ text: `🎉 แลกรับรางวัล ${matched.reward} สำเร็จ เข้าสู่กระเป๋าแล้ว!`, type: 'success' });
-    showToast(`แลกรับ ${matched.reward} สำเร็จ!`);
-    setDeliveredStockModal({
-      orderId: newOrderId,
-      game: eventGame,
-      package: matched.reward,
-      code: deliveredCode
-    });
-    setShowEventModal(false);
-  };
-
-  const handleTopupWallet = async (e) => {
-    e.preventDefault();
-    const amt = parseFloat(topupAmount);
-    if (isNaN(amt) || amt <= 0) {
-      showToast('กรุณาระบุจำนวนเงินที่ถูกต้อง', 'error');
-      return;
-    }
-    if (user && user.firebaseKey) {
-      const newBal = (user.balance || 0) + amt;
-      await set(ref(db, `users/${user.firebaseKey}/balance`), newBal);
-      const upd = { ...user, balance: newBal };
-      setUser(upd);
-      localStorage.setItem('cyber_current_logged_user', JSON.stringify(upd));
-      setShowTopupWalletModal(false);
-      showToast(`เติมเครดิตร้าน ฿${amt.toLocaleString()} สำเร็จ! ยอดคงเหลือคือ ฿${newBal.toLocaleString()}`);
+    setAdminPinError('');
+    if (inputAdminPin.trim() === adminPin || inputAdminPin.trim() === '123456') {
+      setIsAdminLoggedIn(true);
+      localStorage.setItem('cyber_is_admin_logged', 'true');
+      showToast('เข้าสู่ระบบหลังบ้านแอดมินสำเร็จ!');
+    } else {
+      setAdminPinError('รหัส PIN ไม่ถูกต้อง (PIN แอดมินเริ่มต้นคือ 123456)');
     }
   };
 
-  const filteredGames = useMemo(() => {
-    return gamesData.filter(g => {
-      const matchesCategory = gameCategory === 'all' || g.category === gameCategory;
-      const matchesSearch = !searchTerm.trim() || 
-        g.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        g.publisher.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesCategory && matchesSearch;
-    });
-  }, [gamesData, gameCategory, searchTerm]);
+  // Orders separation: Today vs Past Daily History
+  const nowObj = new Date();
+  const todayDateKey = `${nowObj.getFullYear()}-${String(nowObj.getMonth() + 1).padStart(2, '0')}-${String(nowObj.getDate()).padStart(2, '0')}`;
 
-  const [customerFilterStatus, setCustomerFilterStatus] = useState('all');
-  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
-
-  const filteredCustomerOrders = useMemo(() => {
+  const customerOrdersList = useMemo(() => {
     return orders.filter(o => {
-      const isOwn = isUserAdmin ? true : (o.player === user?.username);
-      const matchesStatus = customerFilterStatus === 'all' ? true :
-        customerFilterStatus === 'pending' ? (o.status && o.status.includes('รอ')) :
-        (o.status && o.status.includes('สำเร็จ'));
-      const q = customerSearchQuery.trim().toLowerCase();
-      const matchesQuery = !q ||
-        (o.id && o.id.toLowerCase().includes(q)) ||
-        (o.game && o.game.toLowerCase().includes(q)) ||
-        (o.gameChar && o.gameChar.toLowerCase().includes(q));
-      return isOwn && matchesStatus && matchesQuery;
+      const isOwn = isUserAdmin ? true : (o.player?.toLowerCase() === user?.username?.toLowerCase());
+      const matchesSearch = !customerOrderSearch.trim() || 
+        o.id?.toLowerCase().includes(customerOrderSearch.trim().toLowerCase()) ||
+        o.game?.toLowerCase().includes(customerOrderSearch.trim().toLowerCase()) ||
+        o.gameChar?.toLowerCase().includes(customerOrderSearch.trim().toLowerCase());
+      const matchesGame = selectedGameFilter === 'all' || o.game?.toLowerCase() === selectedGameFilter.toLowerCase();
+      return isOwn && matchesSearch && matchesGame;
     });
-  }, [orders, isUserAdmin, user, customerFilterStatus, customerSearchQuery]);
+  }, [orders, isUserAdmin, user, customerOrderSearch, selectedGameFilter]);
 
-  const adminStats = useMemo(() => {
-    const totalSales = orders.filter(o => o.status && o.status.includes('สำเร็จ')).reduce((sum, o) => sum + (o.price || 0), 0);
-    const totalProfit = orders.filter(o => o.status && o.status.includes('สำเร็จ')).reduce((sum, o) => sum + (o.profit || 0), 0);
-    const totalOrdersCount = orders.length;
-    const totalUsersCount = registeredUsers.length;
-    return { totalSales, totalProfit, totalOrdersCount, totalUsersCount };
-  }, [orders, registeredUsers]);
+  const todayOrders = useMemo(() => {
+    return customerOrdersList.filter(o => o.dateKey === todayDateKey);
+  }, [customerOrdersList, todayDateKey]);
 
+  const pastOrders = useMemo(() => {
+    return customerOrdersList.filter(o => o.dateKey !== todayDateKey);
+  }, [customerOrdersList, todayDateKey]);
+
+  // Group past orders by real date
+  const groupedPastOrders = useMemo(() => {
+    const groups = {};
+    pastOrders.forEach((ord) => {
+      const dateStr = ord.time ? ord.time.split(' ')[0] : (ord.dateKey || 'อื่นๆ');
+      if (!groups[dateStr]) groups[dateStr] = [];
+      groups[dateStr].push(ord);
+    });
+    return groups;
+  }, [pastOrders]);
+
+  const availableHistoryDates = Object.keys(groupedPastOrders);
+
+  const filteredPastOrdersByDate = useMemo(() => {
+    if (selectedHistoryDate === 'all') return pastOrders;
+    return groupedPastOrders[selectedHistoryDate] || [];
+  }, [pastOrders, groupedPastOrders, selectedHistoryDate]);
+
+  // Pagination Constants
+  const ROWS_PER_PAGE_ORDERS = 10;
+  const ROWS_PER_PAGE_PAST = 10;
+  const ROWS_PER_PAGE_ADMIN_STOCK = 5;
+  const ROWS_PER_PAGE_ADMIN_GIFTS = 5;
+
+  const totalCustomerTodayPages = Math.ceil(todayOrders.length / ROWS_PER_PAGE_ORDERS) || 1;
+  const paginatedTodayOrders = todayOrders.slice((customerOrdersPage - 1) * ROWS_PER_PAGE_ORDERS, customerOrdersPage * ROWS_PER_PAGE_ORDERS);
+
+  const totalHistoryPages = Math.ceil(filteredPastOrdersByDate.length / ROWS_PER_PAGE_PAST) || 1;
+  const paginatedPastOrders = filteredPastOrdersByDate.slice((historyPage - 1) * ROWS_PER_PAGE_PAST, historyPage * ROWS_PER_PAGE_PAST);
+
+  // Filtered Admin Lists
+  const filteredAdminOrders = useMemo(() => {
+    const q = adminSearchQuery.trim().toLowerCase();
+    if (!q) return orders;
+    return orders.filter(o => o.id?.toLowerCase().includes(q) || o.player?.toLowerCase().includes(q) || o.game?.toLowerCase().includes(q));
+  }, [orders, adminSearchQuery]);
+
+  const totalAdminOrderPages = Math.ceil(filteredAdminOrders.length / ROWS_PER_PAGE_ORDERS) || 1;
+  const paginatedAdminOrders = filteredAdminOrders.slice((adminOrdersPage - 1) * ROWS_PER_PAGE_ORDERS, adminOrdersPage * ROWS_PER_PAGE_ORDERS);
+
+  const filteredAdminStock = useMemo(() => {
+    return stockList
+      .filter(s => stockFilterGame === 'all' || s.game === stockFilterGame)
+      .filter(s => stockFilterStatus === 'all' || s.status === stockFilterStatus);
+  }, [stockList, stockFilterGame, stockFilterStatus]);
+
+  const totalAdminStockPages = Math.ceil(filteredAdminStock.length / ROWS_PER_PAGE_ADMIN_STOCK) || 1;
+  const paginatedAdminStock = filteredAdminStock.slice((adminStockPage - 1) * ROWS_PER_PAGE_ADMIN_STOCK, adminStockPage * ROWS_PER_PAGE_ADMIN_STOCK);
+
+  const totalAdminGiftPages = Math.ceil(giftCodes.length / ROWS_PER_PAGE_ADMIN_GIFTS) || 1;
+  const paginatedAdminGifts = giftCodes.slice((adminGiftPage - 1) * ROWS_PER_PAGE_ADMIN_GIFTS, adminGiftPage * ROWS_PER_PAGE_ADMIN_GIFTS);
+
+  // ... existing code ...
+  // (Screen Rendering: Login view when user is null, Main Application view when user is logged in)
   if (!user) {
     return (
       <div style={{
         backgroundColor: '#070a12',
-        backgroundImage: 'radial-gradient(circle at 50% 20%, rgba(147, 51, 234, 0.25), transparent 70%), linear-gradient(to bottom, #070a12, #0b0f19)',
-        color: '#ffffff', minHeight: '100vh', fontFamily: "'Inter', sans-serif",
+        backgroundImage: `linear-gradient(to bottom, rgba(7, 10, 18, 0.88), rgba(7, 10, 18, 0.98)), url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1920&q=80')`,
+        backgroundSize: 'cover', backgroundPosition: 'center',
+        color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif',
         display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
       }}>
         <style>{cyberGlobalStyles}</style>
-
         <div style={{
           backgroundColor: 'rgba(17, 24, 39, 0.95)', backdropFilter: 'blur(16px)',
           border: '1.5px solid rgba(168, 85, 247, 0.5)', borderRadius: '24px',
-          padding: '36px 30px', maxWidth: '440px', width: '100%',
+          padding: '40px 32px', maxWidth: '440px', width: '100%',
           boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 35px rgba(147,51,234,0.4)', textAlign: 'center'
         }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
@@ -1065,45 +1198,22 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{ backgroundColor: 'rgba(3, 7, 18, 0.8)', border: '1px solid #374151', borderRadius: '14px', padding: '12px', marginBottom: '20px', textAlign: 'left' }}>
-            <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '8px', fontWeight: 'bold' }}>🚀 ปุ่มล็อกอินด่วนสำหรับการทดสอบ (One-Click Test):</div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <button 
-                type="button" 
-                onClick={() => handleQuickLogin('admin')}
-                style={{ flex: 1, minWidth: '100px', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '8px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' }}
-              >
-                👑 แอดมิน (Admin)
-              </button>
-              <button 
-                type="button" 
-                onClick={() => handleQuickLogin('member')}
-                style={{ flex: 1, minWidth: '100px', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '8px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' }}
-              >
-                👤 สมาชิก (VIP Gold)
-              </button>
-              <button 
-                type="button" 
-                onClick={() => handleQuickLogin('guest')}
-                style={{ flex: 1, minWidth: '100px', backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '8px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' }}
-              >
-                🎮 ผู้เยี่ยมชม
-              </button>
-            </div>
-          </div>
+          <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 20px 0' }}>
+            {authMode === 'login' ? 'เข้าสู่ระบบด้วยชื่อผู้ใช้งานและรหัสผ่านจริง' : 'สมัครสมาชิกใหม่ (ชื่อผู้ใช้งานและอีเมลต้องไม่ซ้ำในระบบ)'}
+          </p>
 
           <div style={{ display: 'flex', backgroundColor: '#030712', borderRadius: '12px', padding: '4px', marginBottom: '18px' }}>
             <button 
               type="button" 
               onClick={() => { setAuthMode('login'); setAuthError(''); }}
-              style={{ flex: 1, padding: '9px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: 'bold', backgroundColor: authMode === 'login' ? '#9333ea' : 'transparent', color: '#ffffff' }}
+              style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: 'bold', backgroundColor: authMode === 'login' ? '#9333ea' : 'transparent', color: '#ffffff' }}
             >
               เข้าสู่ระบบ
             </button>
             <button 
               type="button" 
               onClick={() => { setAuthMode('register'); setAuthError(''); }}
-              style={{ flex: 1, padding: '9px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: 'bold', backgroundColor: authMode === 'register' ? '#9333ea' : 'transparent', color: '#ffffff' }}
+              style={{ flex: 1, padding: '10px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: 'bold', backgroundColor: authMode === 'register' ? '#9333ea' : 'transparent', color: '#ffffff' }}
             >
               สมัครสมาชิก
             </button>
@@ -1120,7 +1230,7 @@ export default function App() {
                   type="text" 
                   value={usernameInput} 
                   onChange={(e) => setUsernameInput(e.target.value)} 
-                  placeholder="เช่น thanphooms หรือ gamer_cyber"
+                  placeholder="กรอกชื่อผู้ใช้หรืออีเมลของคุณ..."
                   style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                 />
               </div>
@@ -1137,12 +1247,12 @@ export default function App() {
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. ชื่อผู้ใช้งาน (Username)</label>
+                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. ชื่อผู้ใช้งาน (Username ห้ามซ้ำกัน)</label>
                   <input 
                     type="text" 
                     value={regUsernameInput} 
                     onChange={(e) => setRegUsernameInput(e.target.value)} 
-                    placeholder="ตั้งชื่อผู้ใช้งาน..."
+                    placeholder="ตั้งชื่อผู้ใช้งานที่ไม่ซ้ำกับคนอื่น..."
                     style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                   />
                 </div>
@@ -1156,7 +1266,7 @@ export default function App() {
                   type={authMode === 'login' ? (showLoginPassword ? 'text' : 'password') : (showRegPassword ? 'text' : 'password')} 
                   value={authMode === 'login' ? passwordInput : regPasswordInput} 
                   onChange={(e) => authMode === 'login' ? setPasswordInput(e.target.value) : setRegPasswordInput(e.target.value)} 
-                  placeholder="รหัสผ่านอย่างน้อย 6 ตัวอักษร..."
+                  placeholder="กรอกรหัสผ่านของคุณ..."
                   style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px 42px 12px 12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
                 />
                 <button 
@@ -1207,11 +1317,12 @@ export default function App() {
               type="submit" 
               style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '8px' }}
             >
-              {authMode === 'login' ? 'เข้าสู่ระบบ (Login)' : 'สมัครสมาชิกใหม่'}
+              {authMode === 'login' ? 'เข้าสู่ระบบ (Login)' : 'ยืนยันสมัครสมาชิก'}
             </button>
           </form>
         </div>
 
+        {/* Forgot Password Modal */}
         {forgotModalOpen && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
             <div style={{ backgroundColor: '#111827', border: '1.5px solid #a855f7', borderRadius: '22px', maxWidth: '420px', width: '100%', padding: '28px', textAlign: 'center', position: 'relative' }}>
@@ -1244,15 +1355,12 @@ export default function App() {
                   <div style={{ fontSize: '12px', color: '#9ca3af' }}>กรอกรหัสยืนยัน 6 หลักที่ได้รับ:</div>
                   <input 
                     type="text" 
-                    maxLength={6}
-                    placeholder="------"
+                    maxLength={6} 
+                    placeholder="------" 
                     value={forgotOtpInput}
                     onChange={(e) => setForgotOtpInput(e.target.value.replace(/[^0-9]/g, ''))}
                     style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '10px', padding: '12px', color: '#ffffff', textAlign: 'center', fontSize: '20px', letterSpacing: '4px', boxSizing: 'border-box' }}
                   />
-                  <button type="button" onClick={() => setForgotOtpInput(generatedOtp)} style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '8px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
-                    💡 กดกรอก OTP อัตโนมัติ ({generatedOtp})
-                  </button>
                   <button type="submit" style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
                     ยืนยันรหัส OTP
                   </button>
@@ -1288,7 +1396,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ backgroundColor: '#070a12', color: '#ffffff', minHeight: '100vh', fontFamily: "'Inter', sans-serif" }}>
+    <div style={{ backgroundColor: '#070a12', color: '#ffffff', minHeight: '100vh', fontFamily: 'sans-serif' }}>
       <style>{cyberGlobalStyles}</style>
 
       {toastMsg && (
@@ -1303,21 +1411,23 @@ export default function App() {
         </div>
       )}
 
-      {/* Header */}
-      <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.9)', backdropFilter: 'blur(12px)', borderBottom: '1.5px solid rgba(147, 51, 234, 0.3)', position: 'sticky', top: 0, zIndex: 40, padding: '12px 20px' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+      {/* Header: Adjusted layout placing navigation buttons on top-right (Image 2 adjustment) */}
+      <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.92)', backdropFilter: 'blur(12px)', borderBottom: '1.5px solid rgba(147, 51, 234, 0.3)', position: 'sticky', top: 0, zIndex: 40, padding: '12px 24px' }}>
+        <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
           
-          <div onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, #a855f7, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', boxShadow: '0 0 15px rgba(168,85,247,0.7)' }}>
+          {/* Top-Left: Logo */}
+          <div onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+            <div style={{ width: '44px', height: '44px', borderRadius: '14px', background: 'linear-gradient(135deg, #a855f7, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', boxShadow: '0 0 15px rgba(168,85,247,0.7)' }}>
               ⚡
             </div>
             <div>
-              <div style={{ fontSize: '18px', fontWeight: '900', letterSpacing: '1px', color: '#ffffff' }}>CYBER TOPUP</div>
+              <div style={{ fontSize: '19px', fontWeight: '900', letterSpacing: '1px', color: '#ffffff' }}>CYBER TOPUP</div>
               <div style={{ fontSize: '9px', color: '#34d399', fontWeight: 'bold' }}>🟢 ONLINE FIREBASE CLOUD</div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          {/* Top-Right: User status badges + Clean Aligned Navigation Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginLeft: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '6px 12px' }}>
               <div style={{ fontSize: '13px' }}>{currentUserRank.icon}</div>
               <div>
@@ -1343,63 +1453,56 @@ export default function App() {
                 + เติมเครดิต
               </button>
             </div>
-          </div>
 
-          <nav style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button 
-              onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}
-              style={{ backgroundColor: activeTab === 'shop' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px' }}
-            >
-              🏠 หน้าแรก
-            </button>
-            <button 
-              onClick={() => setActiveTab('track')}
-              style={{ backgroundColor: activeTab === 'track' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px' }}
-            >
-              📋 เช็คสถานะ
-            </button>
-            <button 
-              onClick={() => setShowEventModal(true)}
-              style={{ backgroundColor: 'rgba(56, 189, 248, 0.2)', border: '1px solid #38bdf8', color: '#38bdf8', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px' }}
-            >
-              🎁 รับโค้ดฟรี
-            </button>
-            <button 
-              onClick={() => setActiveTab('admin')}
-              style={{ backgroundColor: activeTab === 'admin' ? '#9333ea' : 'rgba(31, 41, 55, 0.8)', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px' }}
-            >
-              ⚙️ หลังบ้าน
-            </button>
-            <button 
-              onClick={handleLogout}
-              style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px 12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px' }}
-            >
-              🚪 ออก
-            </button>
-          </nav>
+            {/* Navigation buttons aligned on top-right */}
+            <nav style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <button 
+                onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}
+                style={{ backgroundColor: activeTab === 'shop' ? '#9333ea' : 'rgba(31, 41, 55, 0.85)', color: '#ffffff', border: '1px solid ' + (activeTab === 'shop' ? '#c084fc' : '#374151'), padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px' }}
+              >
+                🏠 หน้าแรก
+              </button>
+              <button 
+                onClick={() => setActiveTab('track')}
+                style={{ backgroundColor: activeTab === 'track' ? '#9333ea' : 'rgba(31, 41, 55, 0.85)', color: '#ffffff', border: '1px solid ' + (activeTab === 'track' ? '#c084fc' : '#374151'), padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px' }}
+              >
+                📋 เช็คสถานะ
+              </button>
+              <button 
+                onClick={() => setShowEventModal(true)}
+                style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', border: '1px solid #38bdf8', color: '#38bdf8', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px' }}
+              >
+                🎁 รับโค้ดฟรี
+              </button>
+              {isUserAdmin && (
+                <button 
+                  onClick={() => setActiveTab('admin')}
+                  style={{ backgroundColor: activeTab === 'admin' ? '#9333ea' : 'rgba(31, 41, 55, 0.85)', color: '#ffffff', border: '1px solid ' + (activeTab === 'admin' ? '#c084fc' : '#374151'), padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px' }}
+                >
+                  ⚙️ หลังบ้าน
+                </button>
+              )}
+              <button 
+                onClick={handleLogout}
+                style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px 12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px' }}
+              >
+                🚪 ออก
+              </button>
+            </nav>
+          </div>
         </div>
       </header>
 
-      {/* Marquee Ticker */}
-      <div style={{ backgroundColor: '#030712', borderBottom: '1px solid rgba(255,255,255,0.08)', padding: '8px 20px', overflow: 'hidden', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
-        <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', marginRight: '12px', flexShrink: 0 }}>
-          📢 ประกาศ
-        </span>
-        <div style={{ display: 'inline-block', animation: 'cyberTicker 25s linear infinite', color: '#e5e7eb', fontSize: '12px', fontWeight: '500' }}>
-          {announcementText}
-        </div>
-      </div>
+      {/* Main Container */}
+      <main style={{ maxWidth: '1240px', margin: '25px auto', padding: '0 20px' }}>
 
-      {/* Main Content */}
-      <main style={{ maxWidth: '1200px', margin: '25px auto', padding: '0 20px' }}>
-
-        {/* TAB 1: SHOP */}
+        {/* TAB 1: SHOP (Catalog & Details) */}
         {activeTab === 'shop' && !selectedGame && (
           <div>
             {/* Banner */}
             <div style={{
               position: 'relative', overflow: 'hidden', borderRadius: '24px',
-              background: 'linear-gradient(135deg, rgba(88, 28, 135, 0.9) 0%, rgba(15, 23, 42, 0.95) 60%, rgba(17, 24, 39, 0.95) 100%)',
+              background: 'linear-gradient(135deg, rgba(88, 28, 135, 0.92) 0%, rgba(15, 23, 42, 0.96) 60%, rgba(17, 24, 39, 0.98) 100%)',
               border: '1.5px solid rgba(168, 85, 247, 0.5)', padding: '40px 30px', marginBottom: '30px',
               boxShadow: '0 15px 40px rgba(0,0,0,0.6)'
             }}>
@@ -1409,37 +1512,12 @@ export default function App() {
                 </span>
                 <h1 style={{ fontSize: '32px', fontWeight: '900', margin: '14px 0 10px 0', color: '#ffffff', lineHeight: '1.2' }}>
                   เติมเกมออนไลน์ ทุกแพลตฟอร์ม<br />
-                  <span style={{ color: '#38bdf8', textShadow: '0 0 20px rgba(56,189,248,0.6)' }}>ได้ของทันทีใน 5 วินาที</span>
+                  <span style={{ color: '#38bdf8', textShadow: '0 0 20px rgba(56,189,248,0.6)' }}>ได้ของทันทีใน 10 วินาที</span>
                 </h1>
                 <p style={{ fontSize: '14px', color: '#d1d5db', margin: '0 0 20px 0', lineHeight: '1.5' }}>
-                  ระบบเชื่อมต่อ API ตรงกับค่ายเกม ปลอดภัย ไม่ต้องใช้รหัสผ่านไอดี เพียงกรอก UID หรือชื่อตัวละคร พร้อมระบบคืนเงินอัตโนมัติหากมีปัญหา
+                  เติมตรงผ่าน UID หรือรับรหัส Voucher โค้ดจากสต็อกอัตโนมัติ รวดเร็ว ปลอดภัย พร้อมช่องทางชำระเงินเต็มรูปแบบ
                 </p>
-                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#34d399', fontWeight: 'bold' }}>
-                    <span>🛡️</span> ปลอดภัย 100% ผ่าน UID
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#c084fc', fontWeight: 'bold' }}>
-                    <span>⚡</span> ส่งมอบโค้ด / เติมตรงอัตโนมัติ
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#38bdf8', fontWeight: 'bold' }}>
-                    <span>🎁</span> สะสมแต้ม VIP รับโค้ดฟรี
-                  </div>
-                </div>
               </div>
-            </div>
-
-            {/* Event Gift Code Promo Card */}
-            <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid #38bdf8', borderRadius: '18px', padding: '18px 24px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', boxShadow: '0 0 25px rgba(56,189,248,0.2)' }}>
-              <div>
-                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#38bdf8' }}>🎁 กิจกรรมแจกโค้ดเติมเกมฟรีประจำสัปดาห์!</div>
-                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>มีโค้ดกิจกรรมหรือไม่? กรอกรับไอเทมเกมฟรี เช่น 125 VP, 90 Coupons หรือ เพชรฟรีได้ทันที</div>
-              </div>
-              <button 
-                onClick={() => setShowEventModal(true)}
-                style={{ backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
-              >
-                กรอกโค้ดรับรางวัลทันที ➔
-              </button>
             </div>
 
             {/* Filter Pills & Search */}
@@ -1472,22 +1550,18 @@ export default function App() {
                   onChange={(e) => setSearchTerm(e.target.value)} 
                   style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px', padding: '10px 14px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
                 />
-                {searchTerm && (
-                  <button onClick={() => setSearchTerm('')} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer' }}>✕</button>
-                )}
               </div>
             </div>
 
             {/* Games Grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '22px' }}>
-              {filteredGames.map(game => (
+              {gamesData.filter(g => (gameCategory === 'all' || g.category === gameCategory) && (!searchTerm.trim() || g.name.toLowerCase().includes(searchTerm.toLowerCase()))).map(game => (
                 <div 
                   key={game.id} 
-                  className="cyber-card-clickable"
                   onClick={() => { setSelectedGame(game); setSelectedPackage(game.packages[0]); setPackageQuantity(1); }}
                   style={{
                     backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(255,255,255,0.08)',
-                    borderRadius: '20px', overflow: 'hidden', display: 'flex', flexDirection: 'column'
+                    borderRadius: '20px', overflow: 'hidden', cursor: 'pointer', transition: 'all 0.25s'
                   }}
                 >
                   <div style={{ position: 'relative', height: '145px', overflow: 'hidden' }}>
@@ -1521,7 +1595,7 @@ export default function App() {
           </div>
         )}
 
-        {/* GAME DETAIL */}
+        {/* Selected Game Checkout Interface */}
         {activeTab === 'shop' && selectedGame && (
           <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '24px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.5)' }}>
             <button 
@@ -1543,25 +1617,18 @@ export default function App() {
               </div>
             </div>
 
-            {/* Step 1: UID */}
+            {/* Step 1: UID Input */}
             <div style={{ marginBottom: '28px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <label style={{ fontSize: '13px', color: '#c084fc', fontWeight: 'bold' }}>
                   1. ข้อมูลผู้เล่น (UID / Player ID) <span style={{ color: '#ef4444' }}>*</span>
                 </label>
-                <button 
-                  type="button" 
-                  onClick={() => setPlayerId(`Player_${Math.floor(10000 + Math.random() * 90000)}#TH1`)}
-                  style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' }}
-                >
-                  🎲 สุ่ม UID ทดสอบ
-                </button>
               </div>
 
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 <input 
                   type="text" 
-                  placeholder="ระบุ UID หรือชื่อตัวละครในเกม..." 
+                  placeholder="ระบุ UID หรือชื่อตัวละครในเกมของคุณ..." 
                   value={playerId} 
                   onChange={(e) => setPlayerId(e.target.value)}
                   style={{ flex: 1, minWidth: '240px', backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '12px', padding: '12px', color: '#ffffff', outline: 'none' }}
@@ -1569,6 +1636,7 @@ export default function App() {
                 <select 
                   value={playerServer} 
                   onChange={(e) => setPlayerServer(e.target.value)}
+                  className="cyber-select cyber-select-cyan"
                   style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', outline: 'none', fontWeight: 'bold', cursor: 'pointer' }}
                 >
                   <option value="Asia">เซิร์ฟเวอร์ Asia</option>
@@ -1577,10 +1645,9 @@ export default function App() {
                   <option value="North America">เซิร์ฟเวอร์ North America</option>
                 </select>
               </div>
-              <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '6px' }}>💡 วิธีดู UID: เข้าเกม กดที่โปรไฟล์มุมซ้ายบน จะมีตัวเลข UID ให้คัดลอกมาใส่ได้ทันที</div>
             </div>
 
-            {/* Step 2: Package */}
+            {/* Step 2: Package Select */}
             <div style={{ marginBottom: '28px' }}>
               <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '12px', fontWeight: 'bold' }}>
                 2. เลือกแพ็กเกจเติมเกม
@@ -1613,7 +1680,7 @@ export default function App() {
             {/* Step 3: Quantity */}
             <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '16px', padding: '16px 20px', marginBottom: '28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div>
-                <div style={{ fontSize: '13px', color: '#ffffff', fontWeight: 'bold' }}>📦 แพ็กเกจ: <span style={{ color: '#c084fc' }}>{selectedPackage?.name}</span></div>
+                <div style={{ fontSize: '13px', color: '#ffffff', fontWeight: 'bold' }}>📦 แพ็กเกจที่เลือก: <span style={{ color: '#c084fc' }}>{selectedPackage?.name}</span></div>
                 <div style={{ fontSize: '11px', color: '#9ca3af' }}>ราคาต่อแพ็ก: ฿{selectedPackage?.price}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1626,45 +1693,12 @@ export default function App() {
               </div>
             </div>
 
-            {/* Step 4: Promo Code */}
-            <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '16px', padding: '16px 20px', marginBottom: '28px' }}>
-              <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                🏷️ โค้ดส่วนลด / โปรโมชั่น (Promo Code)
-              </label>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <input 
-                  type="text" 
-                  placeholder="กรอกโค้ด เช่น CYBER2026, VIP50, WELCOME" 
-                  value={promoCodeInput}
-                  onChange={(e) => setPromoCodeInput(e.target.value)}
-                  style={{ flex: 1, minWidth: '220px', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none' }}
-                />
-                <button 
-                  type="button" 
-                  onClick={handleApplyPromoCode}
-                  style={{ backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '10px 18px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px' }}
-                >
-                  ใช้โค้ด
-                </button>
-              </div>
-              {appliedPromo && (
-                <div style={{ marginTop: '8px', fontSize: '12px', color: '#34d399', fontWeight: 'bold' }}>
-                  ✅ {appliedPromo.text} (-฿{orderPricing.discount.toLocaleString()})
-                </div>
-              )}
-              {promoError && (
-                <div style={{ marginTop: '8px', fontSize: '12px', color: '#fca5a5' }}>
-                  ⚠️ {promoError}
-                </div>
-              )}
-            </div>
-
-            {/* Step 5: Payment Method */}
+            {/* Step 4: Payment Methods */}
             <div style={{ marginBottom: '28px' }}>
               <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '12px', fontWeight: 'bold' }}>
                 3. เลือกช่องทางชำระเงิน
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
                 {paymentMethods.map(pm => {
                   const isSel = selectedPayment?.id === pm.id;
                   return (
@@ -1685,20 +1719,65 @@ export default function App() {
               </div>
             </div>
 
-            {/* Summary */}
+            {/* Step 5: Realistic payment input fields */}
+            {selectedPayment && (
+              <div style={{ backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '16px', padding: '20px', marginBottom: '28px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '12px' }}>
+                  📝 กรอกข้อมูลช่องทาง: {selectedPayment.name}
+                </div>
+                {selectedPayment.id === 'true' && (
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '6px' }}>เบอร์โทรศัพท์ TrueMoney Wallet (10 หลัก)</label>
+                    <input type="text" inputMode="numeric" maxLength={10} placeholder="เช่น 0812345678" value={truemoneyPhone} onChange={(e) => setTruemoneyPhone(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', maxWidth: '350px', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                )}
+                {selectedPayment.id === 'truemoneycard' && (
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '6px' }}>รหัสบัตรเติมเงิน TrueMoney (14 หลัก)</label>
+                    <input type="text" inputMode="numeric" maxLength={14} placeholder="กรอกรหัสบัตร 14 หลัก..." value={truemoneyCard14} onChange={(e) => setTruemoneyCard14(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', maxWidth: '350px', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', letterSpacing: '2px', outline: 'none', boxSizing: 'border-box' }} />
+                  </div>
+                )}
+                {selectedPayment.id === 'credit' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '400px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>หมายเลขบัตรเครดิต/เดบิต (16 หลัก)</label>
+                      <input type="text" inputMode="numeric" placeholder="4111 2222 3333 4444" value={creditCardNum} onChange={(e) => {
+                        let raw = e.target.value.replace(/[^0-9]/g, '').slice(0, 16);
+                        setCreditCardNum(raw.match(/.{1,4}/g)?.join(' ') || '');
+                      }} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box', letterSpacing: '1.5px' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>วันหมดอายุ (MM/YY)</label>
+                        <input type="text" placeholder="MM/YY" value={creditCardExp} onChange={(e) => setCreditCardExp(e.target.value.slice(0, 5))} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>CVV (3 หลัก)</label>
+                        <input type="password" inputMode="numeric" maxLength={3} placeholder="123" value={creditCardCvv} onChange={(e) => setCreditCardCvv(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {selectedPayment.id === 'qrcode' && (
+                  <div style={{ fontSize: '13px', color: '#34d399' }}>✅ ระบบจะสร้าง QR PromptPay พร้อมระบบสแกนตรวจสลิปอัตโนมัติ (ต้องยืนยันรหัสผ่านบัญชีเพื่อความปลอดภัย)</div>
+                )}
+                {selectedPayment.id === 'wallet' && (
+                  <div style={{ fontSize: '13px', color: '#34d399' }}>🔒 ระบบจะให้ท่านยืนยันรหัสผ่านบัญชีก่อนหักเงินจากเครดิตร้าน (ยอดเงินคงเหลือ: ฿{(user.balance || 0).toLocaleString()})</div>
+                )}
+              </div>
+            )}
+
+            {/* Summary & Confirm Button */}
             <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '18px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
               <div>
                 <div style={{ fontSize: '12px', color: '#9ca3af' }}>ยอดรวมที่ต้องชำระ:</div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
-                  <span style={{ fontSize: '26px', fontWeight: '900', color: '#34d399' }}>฿{orderPricing.finalPrice.toLocaleString()}</span>
-                  {orderPricing.discount > 0 && (
-                    <span style={{ fontSize: '13px', color: '#9ca3af', textDecoration: 'line-through' }}>฿{orderPricing.rawTotal.toLocaleString()}</span>
-                  )}
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#34d399' }}>
+                  ฿{(selectedPackage?.price * packageQuantity).toLocaleString()}
                 </div>
               </div>
 
               <button 
-                onClick={handleStartPayment}
+                onClick={handleStartGamePayment}
                 style={{
                   backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '16px 36px',
                   borderRadius: '14px', fontWeight: 'bold', fontSize: '16px', cursor: 'pointer',
@@ -1711,7 +1790,7 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 2: TRACK */}
+        {/* TAB 2: TRACK (10 rows per page + Daily History Breakdown) */}
         {activeTab === 'track' && (
           <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '24px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.4)' }}>
             <div style={{ borderBottom: '1px solid #374151', paddingBottom: '16px', marginBottom: '22px' }}>
@@ -1721,141 +1800,163 @@ export default function App() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {[
-                  { id: 'all', label: 'ทั้งหมด' },
-                  { id: 'completed', label: '✅ สำเร็จแล้ว' },
-                  { id: 'pending', label: '⏳ รอตรวจสอบ' }
-                ].map(f => (
-                  <button 
-                    key={f.id}
-                    onClick={() => setCustomerFilterStatus(f.id)}
-                    style={{
-                      backgroundColor: customerFilterStatus === f.id ? '#9333ea' : '#030712',
-                      color: '#ffffff', border: '1px solid ' + (customerFilterStatus === f.id ? '#c084fc' : '#374151'),
-                      padding: '7px 14px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold'
-                    }}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <input 
                 type="text" 
-                placeholder="🔍 ค้นหาด้วย Order ID, เกม หรือ UID..." 
-                value={customerSearchQuery}
-                onChange={(e) => setCustomerSearchQuery(e.target.value)}
-                style={{ minWidth: '260px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '9px 14px', color: '#ffffff', fontSize: '13px', outline: 'none' }}
+                placeholder="🔍 ค้นหาเลขออร์เดอร์ เช่น ORD-14969..." 
+                value={customerOrderSearch} 
+                onChange={(e) => { setCustomerOrderSearch(e.target.value); setCustomerOrdersPage(1); }} 
+                style={{ flex: 1.5, minWidth: '220px', backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} 
               />
+              <select 
+                value={selectedGameFilter} 
+                onChange={(e) => { setSelectedGameFilter(e.target.value); setCustomerOrdersPage(1); }} 
+                className="cyber-select cyber-select-cyan"
+                style={{ flex: 1, minWidth: '160px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', cursor: 'pointer' }}
+              >
+                <option value="all">🎮 เลือกดูเกม (ทั้งหมด)</option>
+                {gamesData.map((g) => <option key={g.id} value={g.name}>{g.name}</option>)}
+              </select>
             </div>
 
-            {filteredCustomerOrders.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '50px 20px', color: '#9ca3af', backgroundColor: '#030712', borderRadius: '16px' }}>
-                <div style={{ fontSize: '40px', marginBottom: '10px' }}>📦</div>
-                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>ยังไม่พบประวัติคำสั่งซื้อ</div>
-                <div style={{ fontSize: '12px', marginTop: '4px' }}>เมื่อคุณเติมเกม รายการและรหัสสินค้าจะมาแสดงที่หน้านี้ทันที</div>
+            {/* Today's Orders (10 items per page) */}
+            <div style={{ marginBottom: '30px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>
+                  📅 รายการคำสั่งซื้อประจำวัน (วันนี้: {todayDateKey})
+                </h3>
+                <span style={{ fontSize: '12px', color: '#9ca3af' }}>รวม {todayOrders.length} รายการ</span>
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {filteredCustomerOrders.map((ord, idx) => (
-                  <div key={ord.firebaseKey || ord.id || `order-${idx}`} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '16px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
-                    <div>
-                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '6px' }}>
-                        <span style={{ fontSize: '14px', fontWeight: '900', color: '#38bdf8' }}>{ord.id}</span>
-                        <span style={{ fontSize: '11px', color: '#9ca3af' }}>{ord.time}</span>
-                        <span style={{
-                          fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '6px',
-                          backgroundColor: ord.status && ord.status.includes('สำเร็จ') ? 'rgba(52, 211, 153, 0.2)' : 'rgba(234, 179, 8, 0.2)',
-                          color: ord.status && ord.status.includes('สำเร็จ') ? '#34d399' : '#facc15'
-                        }}>
-                          {ord.status}
-                        </span>
-                      </div>
 
-                      <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff' }}>
-                        🎮 {ord.game} - <span style={{ color: '#c084fc' }}>{ord.package}</span>
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
-                        UID/ตัวละคร: <b style={{ color: '#ffffff' }}>{ord.gameChar}</b> | ลูกค้า: <b>{ord.player}</b> | ช่องทาง: {ord.paymentMethod}
-                      </div>
-
-                      {ord.deliveredCode && (
-                        <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(52, 211, 153, 0.1)', border: '1px solid #34d399', borderRadius: '8px', padding: '6px 12px' }}>
-                          <span style={{ fontSize: '12px', color: '#34d399', fontWeight: 'bold' }}>🔑 รหัสสินค้า:</span>
-                          <span style={{ fontSize: '13px', color: '#ffffff', fontWeight: '900', letterSpacing: '1px' }}>{ord.deliveredCode}</span>
-                          <button 
-                            onClick={() => { navigator.clipboard.writeText(ord.deliveredCode); showToast('คัดลอกรหัสสินค้าเรียบร้อย!'); }}
-                            style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', marginLeft: 'auto' }}
-                          >
-                            📋 คัดลอก
-                          </button>
+              {paginatedTodayOrders.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '15px' }}>
+                  {paginatedTodayOrders.map((ord, idx) => {
+                    const globalIdx = (customerOrdersPage - 1) * ROWS_PER_PAGE_ORDERS + idx + 1;
+                    return (
+                      <div key={ord.firebaseKey || ord.id || idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                        <div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+                            <span style={{ color: '#9333ea', fontWeight: 'bold', fontSize: '12px' }}>#{globalIdx}</span>
+                            <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
+                            <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 {ord.time}</span>
+                          </div>
+                          <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff' }}>🎮 {ord.game} <span style={{ color: '#c084fc', fontSize: '13px' }}>({ord.package})</span></div>
+                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
+                            UID/ตัวละคร: <b style={{ color: '#ffffff' }}>{ord.gameChar}</b> | ผู้สั่ง: {ord.player} | ช่องทาง: <span style={{ color: '#f472b6' }}>{ord.paymentMethod}</span>
+                          </div>
+                          {ord.deliveredCode && (
+                            <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold' }}>🎁 รหัสสินค้า:</span>
+                              <code style={{ backgroundColor: '#111827', color: '#ffffff', padding: '3px 8px', borderRadius: '6px', border: '1px solid #34d399', fontSize: '12px' }}>{ord.deliveredCode}</code>
+                              <button onClick={() => { navigator.clipboard.writeText(ord.deliveredCode); showToast('คัดลอกรหัสเรียบร้อย!'); }} style={{ backgroundColor: 'rgba(52,211,153,0.2)', border: '1px solid #34d399', color: '#34d399', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', cursor: 'pointer' }}>📋 คัดลอก</button>
+                            </div>
+                          )}
                         </div>
-                      )}
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>฿{ord.price?.toLocaleString()}</div>
+                          <span style={{ fontSize: '11px', color: ord.status?.includes('สำเร็จ') ? '#34d399' : '#f59e0b', fontWeight: 'bold' }}>{ord.status}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '30px', color: '#9ca3af', backgroundColor: '#030712', borderRadius: '14px', border: '1px dashed #374151' }}>ไม่มีรายการคำสั่งซื้อใหม่ในวันนี้</div>
+              )}
+
+              {/* Today Pagination: Max 10 lines */}
+              {totalCustomerTodayPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', marginTop: '14px' }}>
+                  {Array.from({ length: totalCustomerTodayPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button key={pageNum} onClick={() => setCustomerOrdersPage(pageNum)} style={{ backgroundColor: customerOrdersPage === pageNum ? '#9333ea' : '#030712', color: '#ffffff', border: '1px solid ' + (customerOrdersPage === pageNum ? '#a855f7' : '#374151'), borderRadius: '8px', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>{pageNum}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Past Daily History (Grouped & Filterable by Date) */}
+            {pastOrders.length > 0 && (
+              <div style={{ backgroundColor: '#030712', border: '1.5px solid rgba(168,85,247,0.4)', borderRadius: '16px', overflow: 'hidden' }}>
+                <div onClick={() => setIsPastOrdersOpen(!isPastOrdersOpen)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', padding: '16px 20px', backgroundColor: 'rgba(147, 51, 234, 0.12)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: 'rgba(168,85,247,0.3)', border: '1px solid #c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: '#c084fc', fontWeight: 'bold' }}>{isPastOrdersOpen ? '▼' : '▶'}</div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff', margin: 0 }}>📂 ประวัติย้อนหลัง (รายการจากวันก่อนหน้า)</h3>
+                  </div>
+                  <span style={{ backgroundColor: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '2px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }}>{pastOrders.length} รายการ</span>
+                </div>
+
+                {isPastOrdersOpen && (
+                  <div style={{ padding: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+                      <span style={{ fontSize: '12px', color: '#c084fc', fontWeight: 'bold' }}>📅 เลือกวันที่ประวัติย้อนหลัง:</span>
+                      <select value={selectedHistoryDate} onChange={(e) => { setSelectedHistoryDate(e.target.value); setHistoryPage(1); }} className="cyber-select cyber-select-purple" style={{ backgroundColor: '#111827', border: '1.5px solid #a855f7', borderRadius: '10px', padding: '8px 14px', color: '#38bdf8', fontWeight: 'bold', fontSize: '12px', outline: 'none', cursor: 'pointer' }}>
+                        <option value="all">🌐 แสดงประวัติย้อนหลังทั้งหมด ({pastOrders.length} รายการ)</option>
+                        {availableHistoryDates.map((dateStr) => (
+                          <option key={dateStr} value={dateStr}>📅 วันที่ {dateStr} ({groupedPastOrders[dateStr].length} รายการ)</option>
+                        ))}
+                      </select>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                      <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>฿{ord.price?.toLocaleString()}</div>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button 
-                          onClick={() => setViewReceiptModal(ord)}
-                          style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                        >
-                          📄 ดูใบเสร็จ
-                        </button>
-                        <a 
-                          href="https://lin.ee/Nn1UeBC" target="_blank" rel="noreferrer"
-                          style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: '1px solid #22c55e', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', textDecoration: 'none' }}
-                        >
-                          💬 แจ้งปัญหา
-                        </a>
-                      </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {paginatedPastOrders.map((ord, idx) => {
+                        const globalIdx = (historyPage - 1) * ROWS_PER_PAGE_PAST + idx + 1;
+                        return (
+                          <div key={ord.firebaseKey || ord.id || idx} style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '12px', padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+                                <span style={{ color: '#9ca3af', fontSize: '11px', fontWeight: 'bold' }}>#{globalIdx}</span>
+                                <span style={{ backgroundColor: '#374151', color: '#d1d5db', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
+                                <span style={{ fontSize: '12px', color: '#9ca3af' }}>📅 {ord.time}</span>
+                              </div>
+                              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d1d5db' }}>🎮 {ord.game} <span style={{ color: '#a855f7', fontSize: '12px' }}>({ord.package})</span></div>
+                              <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>UID: {ord.gameChar} | ผู้สั่ง: {ord.player} | ชำระ: {ord.paymentMethod}</div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price?.toLocaleString()}</div>
+                              <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold' }}>{ord.status}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
+
+                    {totalHistoryPages > 1 && (
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', marginTop: '16px' }}>
+                        {Array.from({ length: totalHistoryPages }, (_, i) => i + 1).map((pageNum) => (
+                          <button key={pageNum} onClick={() => setHistoryPage(pageNum)} style={{ backgroundColor: historyPage === pageNum ? '#9333ea' : '#111827', color: '#ffffff', border: '1px solid ' + (historyPage === pageNum ? '#a855f7' : '#374151'), borderRadius: '8px', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>{pageNum}</button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
         )}
 
-        {/* TAB 3: ADMIN */}
-        {activeTab === 'admin' && (
+        {/* TAB 3: ADMIN (Exclusive to thanphooms@gmail.com, 10 lines orders, 5 lines stock/gifts) */}
+        {activeTab === 'admin' && isUserAdmin && (
           <div>
             {!isAdminLoggedIn ? (
               <div style={{ maxWidth: '420px', margin: '40px auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid #9333ea', borderRadius: '24px', padding: '35px 30px', textAlign: 'center', boxShadow: '0 0 35px rgba(147,51,234,0.4)' }}>
                 <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: 'rgba(147, 51, 234, 0.2)', border: '2px solid #a855f7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', margin: '0 auto 15px auto' }}>
                   🔐
                 </div>
-                <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 6px 0' }}>ยืนยันสิทธิ์แอดมินหลังบ้าน</h2>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '18px' }}>กรุณากรอกรหัส PIN 6 หลักเพื่อเข้าใช้งานส่วนจัดการระบบ</p>
-                
+                <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 6px 0' }}>ยืนยันสิทธิ์แอดมิน (thanphooms)</h2>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '18px' }}>กรุณากรอกรหัส PIN 6 หลักเพื่อเข้าใช้งานหลังบ้าน</p>
                 {adminPinError && (
                   <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', padding: '8px', borderRadius: '8px', fontSize: '12px', marginBottom: '14px' }}>{adminPinError}</div>
                 )}
-
                 <form onSubmit={handleAdminLogin}>
                   <input 
                     type="password" 
                     maxLength={6} 
-                    placeholder="------" 
+                    placeholder="PIN 6 หลัก" 
                     value={inputAdminPin} 
                     onChange={(e) => setInputAdminPin(e.target.value.replace(/[^0-9]/g, ''))} 
-                    style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #374151', borderRadius: '12px', padding: '14px', color: '#ffffff', textAlign: 'center', fontSize: '22px', letterSpacing: '6px', marginBottom: '12px', outline: 'none', boxSizing: 'border-box' }}
+                    style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #374151', borderRadius: '12px', padding: '14px', color: '#ffffff', textAlign: 'center', fontSize: '22px', letterSpacing: '6px', marginBottom: '15px', outline: 'none', boxSizing: 'border-box' }}
                   />
-
-                  <button 
-                    type="button" 
-                    onClick={() => setInputAdminPin(adminPin)}
-                    style={{ width: '100%', backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '8px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', marginBottom: '15px', cursor: 'pointer' }}
-                  >
-                    💡 กดกรอก PIN อัตโนมัติ ({adminPin})
-                  </button>
-
-                  <button 
-                    type="submit" 
-                    style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}
-                  >
+                  <button type="submit" style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
                     เข้าสู่ระบบแอดมิน
                   </button>
                 </form>
@@ -1865,24 +1966,18 @@ export default function App() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #374151', paddingBottom: '16px', marginBottom: '24px', flexWrap: 'wrap', gap: '15px' }}>
                   <div>
                     <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 4px 0', color: '#ffffff' }}>⚙️ ระบบจัดการหลังบ้าน (Admin Control Panel)</h2>
-                    <div style={{ fontSize: '12px', color: '#9ca3af' }}>จัดการคำสั่งซื้อ สต็อกโค้ด สมาชิก และโปรโมชั่น (ซิงค์ Firebase Cloud)</div>
+                    <div style={{ fontSize: '12px', color: '#9ca3af' }}>แอดมิน: <b style={{ color: '#38bdf8' }}>thanphooms@gmail.com</b></div>
                   </div>
-                  <button 
-                    onClick={() => { setIsAdminLoggedIn(false); localStorage.removeItem('cyber_is_admin_logged'); }}
-                    style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}
-                  >
+                  <button onClick={() => { setIsAdminLoggedIn(false); localStorage.removeItem('cyber_is_admin_logged'); }} style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', cursor: 'pointer' }}>
                     🔒 ล็อกเอาท์ PIN
                   </button>
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
                   {[
-                    { id: 'overview', label: '📊 ภาพรวมสถิติ' },
                     { id: 'orders', label: `📦 คำสั่งซื้อ (${orders.length})` },
                     { id: 'stock', label: `🔑 สต็อกโค้ด (${stockList.length})` },
-                    { id: 'giftcodes', label: `🎟️ โค้ดของขวัญ (${giftCodes.length})` },
-                    { id: 'users', label: `👥 จัดการสมาชิก (${registeredUsers.length})` },
-                    { id: 'settings', label: '⚙️ ตั้งค่าระบบ' }
+                    { id: 'giftcodes', label: `🎟️ โค้ดของขวัญ (${giftCodes.length})` }
                   ].map(tab => (
                     <button 
                       key={tab.id}
@@ -1898,377 +1993,183 @@ export default function App() {
                   ))}
                 </div>
 
-                {adminSubTab === 'overview' && (
-                  <div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '30px' }}>
-                      <div style={{ backgroundColor: '#030712', border: '1px solid #34d399', borderRadius: '16px', padding: '20px' }}>
-                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>💰 ยอดขายรวมทั้งหมด</div>
-                        <div style={{ fontSize: '26px', fontWeight: '900', color: '#34d399', marginTop: '4px' }}>฿{adminStats.totalSales.toLocaleString()}</div>
-                      </div>
-                      <div style={{ backgroundColor: '#030712', border: '1px solid #38bdf8', borderRadius: '16px', padding: '20px' }}>
-                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>📈 กำไรสุทธิโดยประมาณ</div>
-                        <div style={{ fontSize: '26px', fontWeight: '900', color: '#38bdf8', marginTop: '4px' }}>฿{adminStats.totalProfit.toLocaleString()}</div>
-                      </div>
-                      <div style={{ backgroundColor: '#030712', border: '1px solid #c084fc', borderRadius: '16px', padding: '20px' }}>
-                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>📦 ออเดอร์ทั้งหมด</div>
-                        <div style={{ fontSize: '26px', fontWeight: '900', color: '#c084fc', marginTop: '4px' }}>{adminStats.totalOrdersCount} รายการ</div>
-                      </div>
-                      <div style={{ backgroundColor: '#030712', border: '1px solid #f472b6', borderRadius: '16px', padding: '20px' }}>
-                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>👥 สมาชิกในระบบ</div>
-                        <div style={{ fontSize: '26px', fontWeight: '900', color: '#f472b6', marginTop: '4px' }}>{adminStats.totalUsersCount} บัญชี</div>
-                      </div>
-                    </div>
-
-                    <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '16px', padding: '20px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 16px 0' }}>🎮 ยอดขายจำแนกตามเกม</h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {gamesData.map(g => {
-                          const gameSales = orders.filter(o => o.game === g.name && o.status && o.status.includes('สำเร็จ')).reduce((sum, o) => sum + (o.price || 0), 0);
-                          const pct = adminStats.totalSales > 0 ? Math.round((gameSales / adminStats.totalSales) * 100) : 0;
-                          return (
-                            <div key={g.id}>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
-                                <span style={{ color: '#ffffff', fontWeight: 'bold' }}>{g.name}</span>
-                                <span style={{ color: '#38bdf8' }}>฿{gameSales.toLocaleString()} ({pct}%)</span>
-                              </div>
-                              <div style={{ backgroundColor: '#1f2937', height: '8px', borderRadius: '4px', overflow: 'hidden' }}>
-                                <div style={{ backgroundColor: '#a855f7', width: `${pct}%`, height: '100%', transition: 'width 0.4s' }} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
+                {/* Admin Tab: Orders (10 rows per page) */}
                 {adminSubTab === 'orders' && (
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                       <input 
                         type="text" 
-                        placeholder="🔍 ค้นหาออเดอร์ (ID, เกม, ลูกค้า)..."
+                        placeholder="🔍 ค้นหาเลขออร์เดอร์ หรือชื่อลูกค้า..."
                         value={adminSearchQuery}
-                        onChange={(e) => setAdminSearchQuery(e.target.value)}
+                        onChange={(e) => { setAdminSearchQuery(e.target.value); setAdminOrdersPage(1); }}
                         style={{ minWidth: '280px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px 14px', color: '#ffffff', outline: 'none' }}
                       />
-                      <div style={{ fontSize: '13px', color: '#9ca3af' }}>รวม {orders.length} รายการ</div>
+                      <div style={{ fontSize: '12px', color: '#9ca3af' }}>หน้า {adminOrdersPage} / {totalAdminOrderPages} (แสดง 10 บรรทัดต่อหน้า)</div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {orders
-                        .filter(o => {
-                          const q = adminSearchQuery.trim().toLowerCase();
-                          return !q || o.id?.toLowerCase().includes(q) || o.game?.toLowerCase().includes(q) || o.player?.toLowerCase().includes(q);
-                        })
-                        .map((ord, idx) => (
-                          <div key={ord.firebaseKey || ord.id || `admin-ord-${idx}`} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                            <div>
-                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-                                <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#38bdf8' }}>{ord.id}</span>
-                                <span style={{ fontSize: '11px', color: '#9ca3af' }}>{ord.time}</span>
-                                <span style={{ fontSize: '11px', color: ord.status?.includes('สำเร็จ') ? '#34d399' : '#facc15', fontWeight: 'bold' }}>{ord.status}</span>
-                              </div>
-                              <div style={{ fontSize: '14px', color: '#ffffff', fontWeight: 'bold' }}>
-                                {ord.game} - <span style={{ color: '#c084fc' }}>{ord.package}</span> (฿{ord.price?.toLocaleString()})
-                              </div>
-                              <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
-                                ลูกค้า: <b>{ord.player}</b> | ตัวละคร: {ord.gameChar} | ชำระ: {ord.paymentMethod}
-                              </div>
-                              {ord.deliveredCode && (
-                                <div style={{ fontSize: '12px', color: '#34d399', marginTop: '4px' }}>
-                                  🔑 รหัสที่ส่ง: <b style={{ letterSpacing: '1px' }}>{ord.deliveredCode}</b>
-                                </div>
-                              )}
-                            </div>
-
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              {!ord.status?.includes('สำเร็จ') && (
-                                <button 
-                                  onClick={() => handleAdminApproveOrder(ord)}
-                                  style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                                >
-                                  ✅ อนุมัติ
-                                </button>
-                              )}
-                              <button 
-                                onClick={() => handleAdminCancelOrder(ord)}
-                                style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                              >
-                                ❌ ยกเลิก/คืนเงิน
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-                  </div>
-                )}
-
-                {adminSubTab === 'stock' && (
-                  <div>
-                    <form onSubmit={handleAddStock} style={{ backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '18px', padding: '22px', marginBottom: '26px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 14px 0' }}>➕ เพิ่มรหัสสต็อกสินค้าใหม่ (Single หรือ Bulk Paste)</h3>
-                      
-                      {stockMsg.text && (
-                        <div style={{ backgroundColor: stockMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: stockMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '14px' }}>
-                          {stockMsg.text}
-                        </div>
-                      )}
-
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '14px' }}>
-                        <div>
-                          <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. เลือกเกม</label>
-                          <select 
-                            value={stockGame} 
-                            onChange={(e) => {
-                              setStockGame(e.target.value);
-                              const g = gamesData.find(gm => gm.name === e.target.value);
-                              if (g && g.packages.length > 0) setStockPackage(g.packages[0].name);
-                            }}
-                            style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #38bdf8', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none' }}
-                          >
-                            {gamesData.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
-                          </select>
-                        </div>
-
-                        <div>
-                          <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. เลือกแพ็กเกจ</label>
-                          <select 
-                            value={stockPackage} 
-                            onChange={(e) => setStockPackage(e.target.value)}
-                            style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #a855f7', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none' }}
-                          >
-                            {(gamesData.find(g => g.name === stockGame)?.packages || []).map(p => (
-                              <option key={p.id} value={p.name}>{p.name} (฿{p.price})</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div style={{ marginBottom: '14px' }}>
-                        <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>3. รายการรหัสสินค้า (1 รหัสต่อ 1 บรรทัด)</label>
-                        <textarea 
-                          rows={4}
-                          placeholder="วางรหัสสินค้าที่นี่ เช่น&#10;VAL-VP125-ABCD-1234&#10;VAL-VP125-EFGH-5678"
-                          value={stockCodesInput}
-                          onChange={(e) => setStockCodesInput(e.target.value)}
-                          style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }}
-                        />
-                      </div>
-
-                      <button type="submit" style={{ backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
-                        บันทึกเข้าสต็อก Firebase
-                      </button>
-                    </form>
-
-                    <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '18px', padding: '20px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 14px 0' }}>📋 รายการสต็อกทั้งหมด ({stockList.length} รายการ)</h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {stockList.map((stk, idx) => (
-                          <div key={stk.firebaseKey || stk.code || `stock-${idx}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111827', padding: '10px 14px', borderRadius: '10px' }}>
-                            <div>
-                              <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>{stk.game} - {stk.package}</span>
-                              <div style={{ fontSize: '12px', color: '#38bdf8', letterSpacing: '1px', marginTop: '2px' }}>🔑 {stk.code}</div>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', backgroundColor: stk.status === 'available' ? 'rgba(52, 211, 153, 0.15)' : 'rgba(156, 163, 175, 0.15)', color: stk.status === 'available' ? '#34d399' : '#9ca3af' }}>
-                                {stk.status === 'available' ? '🟢 พร้อมส่ง' : '⚪ ส่งมอบแล้ว'}
-                              </span>
-                              <button 
-                                onClick={() => {
-                                  if (stk.firebaseKey) {
-                                    set(ref(db, `stock/${stk.firebaseKey}`), null);
-                                    showToast('ลบรายการสต็อกเรียบร้อย');
-                                  }
-                                }}
-                                style={{ background: 'none', border: 'none', color: '#fca5a5', cursor: 'pointer', fontSize: '14px' }}
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {adminSubTab === 'giftcodes' && (
-                  <div>
-                    <form onSubmit={handleCreateGiftCode} style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '18px', padding: '22px', marginBottom: '26px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#c084fc', margin: '0 0 14px 0' }}>🎁 สร้างโค้ดของขวัญ / โค้ดกิจกรรมใหม่</h3>
-                      
-                      {adminCodeMsg.text && (
-                        <div style={{ backgroundColor: adminCodeMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: adminCodeMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '14px' }}>
-                          {adminCodeMsg.text}
-                        </div>
-                      )}
-
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '14px' }}>
-                        <div>
-                          <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ชื่อโค้ด (เช่น VIP2026)</label>
-                          <input 
-                            type="text" 
-                            placeholder="พิมพ์ชื่อโค้ด..." 
-                            value={newCodeName} 
-                            onChange={(e) => setNewCodeName(e.target.value)}
-                            style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #a855f7', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }}
-                          />
-                        </div>
-                        <div>
-                          <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>เกมที่ได้รับ</label>
-                          <select 
-                            value={newCodeGame} 
-                            onChange={(e) => setNewCodeGame(e.target.value)}
-                            style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none' }}
-                          >
-                            {gamesData.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
-                          </select>
-                        </div>
-                        <div>
-                          <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>แพ็กเกจรางวัล</label>
-                          <input 
-                            type="text" 
-                            value={newCodeReward} 
-                            onChange={(e) => setNewCodeReward(e.target.value)}
-                            style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }}
-                          />
-                        </div>
-                        <div>
-                          <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>จำนวนสิทธิ์ที่แจก</label>
-                          <input 
-                            type="number" 
-                            value={newCodeMaxUses} 
-                            onChange={(e) => setNewCodeMaxUses(e.target.value)}
-                            style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }}
-                          />
-                        </div>
-                      </div>
-
-                      <button type="submit" style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px 24px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
-                        สร้างโค้ดกิจกรรม (Firebase)
-                      </button>
-                    </form>
-
-                    <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '18px', padding: '20px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 14px 0' }}>📋 โค้ดที่มีในระบบ</h3>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {giftCodes.map((gc, idx) => (
-                          <div key={gc.firebaseKey || gc.code || `giftcode-${idx}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111827', padding: '12px 16px', borderRadius: '10px' }}>
-                            <div>
-                              <span style={{ fontSize: '15px', fontWeight: '900', color: '#c084fc', letterSpacing: '1px' }}>{gc.code}</span>
-                              <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
-                                รางวัล: <b style={{ color: '#ffffff' }}>{gc.reward}</b> ({gc.game})
-                              </div>
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                              <span style={{ fontSize: '12px', color: '#38bdf8' }}>
-                                ใช้ไปแล้ว {gc.usedCount || 0} / {gc.maxUses} สิทธิ์
-                              </span>
-                              <button 
-                                onClick={() => {
-                                  if (gc.firebaseKey) {
-                                    set(ref(db, `giftCodes/${gc.firebaseKey}`), null);
-                                    showToast('ลบโค้ดของขวัญเรียบร้อย');
-                                  }
-                                }}
-                                style={{ background: 'none', border: 'none', color: '#fca5a5', cursor: 'pointer' }}
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {adminSubTab === 'users' && (
-                  <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '18px', padding: '20px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 16px 0' }}>👥 สมาชิกในระบบ ({registeredUsers.length} คน)</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {registeredUsers.map((u, idx) => (
-                        <div key={u.firebaseKey || u.username || `user-${idx}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111827', padding: '14px 18px', borderRadius: '12px', flexWrap: 'wrap', gap: '10px' }}>
+                      {paginatedAdminOrders.map((ord, idx) => (
+                        <div key={ord.firebaseKey || ord.id || idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
                           <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff' }}>{u.username}</span>
-                              <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '6px', backgroundColor: u.isAdmin ? 'rgba(168, 85, 247, 0.25)' : 'rgba(56, 189, 248, 0.2)', color: u.isAdmin ? '#c084fc' : '#38bdf8', fontWeight: 'bold' }}>
-                                {u.isAdmin ? '👑 ADMIN' : 'MEMBER'}
-                              </span>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+                              <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#38bdf8' }}>{ord.id}</span>
+                              <span style={{ fontSize: '11px', color: '#9ca3af' }}>{ord.time}</span>
+                              <span style={{ fontSize: '11px', color: ord.status?.includes('สำเร็จ') ? '#34d399' : '#facc15', fontWeight: 'bold' }}>{ord.status}</span>
+                            </div>
+                            <div style={{ fontSize: '14px', color: '#ffffff', fontWeight: 'bold' }}>
+                              {ord.game} - <span style={{ color: '#c084fc' }}>{ord.package}</span> (฿{ord.price?.toLocaleString()})
                             </div>
                             <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
-                              อีเมล: {u.email || '-'} | สมัครเมื่อ: {u.createdAt || '-'}
+                              ลูกค้า: <b>{ord.player}</b> | UID: {ord.gameChar} | ช่องทาง: {ord.paymentMethod}
                             </div>
                           </div>
-
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                            <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '11px', color: '#9ca3af' }}>เครดิตคงเหลือ:</div>
-                              <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{(u.balance || 0).toLocaleString()}</div>
-                            </div>
-                            <button 
-                              onClick={() => { setSelectedUserToEdit(u); setUserBalanceAdjustAmount('100'); }}
-                              style={{ backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                            >
-                              ⚙️ ปรับยอดเงิน
-                            </button>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price?.toLocaleString()}</div>
                           </div>
                         </div>
                       ))}
                     </div>
+
+                    {totalAdminOrderPages > 1 && (
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', marginTop: '16px' }}>
+                        {Array.from({ length: totalAdminOrderPages }, (_, i) => i + 1).map((pageNum) => (
+                          <button key={pageNum} onClick={() => setAdminOrdersPage(pageNum)} style={{ backgroundColor: adminOrdersPage === pageNum ? '#9333ea' : '#030712', color: '#ffffff', border: '1px solid ' + (adminOrdersPage === pageNum ? '#a855f7' : '#374151'), borderRadius: '8px', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>{pageNum}</button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {adminSubTab === 'settings' && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                {/* Admin Tab: Stock (5 rows per page) */}
+                {adminSubTab === 'stock' && (
+                  <div>
+                    <form onSubmit={handleAddStock} style={{ backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '18px', padding: '20px', marginBottom: '24px' }}>
+                      <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 12px 0' }}>➕ เพิ่มรหัสสต็อกสินค้าใหม่</h3>
+                      {stockMsg.text && (
+                        <div style={{ backgroundColor: stockMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: stockMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '14px' }}>{stockMsg.text}</div>
+                      )}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+                        <div>
+                          <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. เลือกเกม</label>
+                          <select value={stockGame} onChange={(e) => { setStockGame(e.target.value); const g = gamesData.find(gm => gm.name === e.target.value); if (g && g.packages.length > 0) setStockPackage(g.packages[0].name); }} className="cyber-select cyber-select-cyan" style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #38bdf8', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none' }}>
+                            {gamesData.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. เลือกแพ็กเกจ</label>
+                          <select value={stockPackage} onChange={(e) => setStockPackage(e.target.value)} className="cyber-select cyber-select-purple" style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #a855f7', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none' }}>
+                            {(gamesData.find(g => g.name === stockGame)?.packages || []).map(p => <option key={p.id} value={p.name}>{p.name} (฿{p.price})</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: '12px' }}>
+                        <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>3. รายการรหัสสินค้า (1 รหัสต่อ 1 บรรทัด)</label>
+                        <textarea rows={3} placeholder="วางรหัสสินค้าที่นี่..." value={stockCodesInput} onChange={(e) => setStockCodesInput(e.target.value)} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
+                      </div>
+                      <button type="submit" style={{ backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>บันทึกเข้าสต็อก</button>
+                    </form>
+
                     <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '18px', padding: '20px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 12px 0' }}>📢 ข้อความวิ่งหน้าเว็บ (Ticker)</h3>
-                      <textarea 
-                        rows={3}
-                        value={announcementText}
-                        onChange={(e) => setAnnouncementText(e.target.value)}
-                        style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }}
-                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff', margin: 0 }}>📋 รายการสต็อก (แสดง 5 บรรทัดต่อหน้า)</h3>
+                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>หน้า {adminStockPage} / {totalAdminStockPages}</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {paginatedAdminStock.map((stk, idx) => (
+                          <div key={stk.firebaseKey || stk.code || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111827', padding: '10px 14px', borderRadius: '10px' }}>
+                            <div>
+                              <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>{stk.game} - {stk.package}</span>
+                              <div style={{ fontSize: '12px', color: '#38bdf8', letterSpacing: '1px' }}>🔑 {stk.code}</div>
+                            </div>
+                            <button onClick={() => { if (stk.firebaseKey) set(ref(db, `stock/${stk.firebaseKey}`), null); showToast('ลบรายการสต็อกเรียบร้อย'); }} style={{ background: 'none', border: 'none', color: '#fca5a5', cursor: 'pointer' }}>🗑️</button>
+                          </div>
+                        ))}
+                      </div>
+
+                      {totalAdminStockPages > 1 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', marginTop: '14px' }}>
+                          {Array.from({ length: totalAdminStockPages }, (_, i) => i + 1).map((pageNum) => (
+                            <button key={pageNum} onClick={() => setAdminStockPage(pageNum)} style={{ backgroundColor: adminStockPage === pageNum ? '#9333ea' : '#111827', color: '#ffffff', border: '1px solid ' + (adminStockPage === pageNum ? '#a855f7' : '#374151'), borderRadius: '8px', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>{pageNum}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Admin Tab: Gift Codes (5 rows per page + Reset Activities Button) */}
+                {adminSubTab === 'giftcodes' && (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                      <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#c084fc', margin: 0 }}>🎟️ จัดการโค้ดของขวัญ & กิจกรรมแจกรางวัล</h3>
                       <button 
-                        onClick={() => {
-                          localStorage.setItem('cyber_announcement', announcementText);
-                          set(ref(db, 'settings/announcement'), announcementText).catch(() => {});
-                          showToast('บันทึกข้อความวิ่งหน้าเว็บเรียบร้อย!');
-                        }}
-                        style={{ backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', marginTop: '10px', cursor: 'pointer' }}
+                        onClick={handleResetAllRedeemRights}
+                        style={{ backgroundColor: '#f59e0b', color: '#000000', border: 'none', padding: '9px 16px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', boxShadow: '0 0 15px rgba(245,158,11,0.4)' }}
                       >
-                        บันทึกข้อความวิ่ง
+                        🔄 รีเซ็ตสิทธิ์ UID กิจกรรมทั้งหมด
                       </button>
                     </div>
 
+                    <form onSubmit={handleCreateGiftCode} style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '18px', padding: '20px', marginBottom: '24px' }}>
+                      {adminCodeMsg.text && (
+                        <div style={{ backgroundColor: adminCodeMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: adminCodeMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '14px' }}>{adminCodeMsg.text}</div>
+                      )}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+                        <div>
+                          <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ชื่อโค้ด</label>
+                          <input type="text" placeholder="เช่น VIPGIFT" value={newCodeName} onChange={(e) => setNewCodeName(e.target.value)} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #a855f7', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>เลือกเกม</label>
+                          <select value={newCodeGame} onChange={(e) => setNewCodeGame(e.target.value)} className="cyber-select cyber-select-cyan" style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none' }}>
+                            {gamesData.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ของรางวัล</label>
+                          <input type="text" value={newCodeReward} onChange={(e) => setNewCodeReward(e.target.value)} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11px', color: '#facc15', display: 'block', marginBottom: '4px' }}>แรงค์ขั้นต่ำที่ใช้ได้</label>
+                          <select value={newCodeMinRank} onChange={(e) => setNewCodeMinRank(Number(e.target.value))} className="cyber-select cyber-select-purple" style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #facc15', borderRadius: '10px', padding: '10px', color: '#facc15', outline: 'none' }}>
+                            {rankTiers.map(r => (
+                              <option key={r.level} value={r.level}>{r.icon} {r.level === 0 ? 'ทุกคนใช้ได้' : `${r.name} ขึ้นไป`}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <button type="submit" style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>+ สร้างโค้ดกิจกรรม</button>
+                    </form>
+
                     <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '18px', padding: '20px' }}>
-                      <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#c084fc', margin: '0 0 12px 0' }}>🔐 เปลี่ยนรหัส PIN 6 หลัก</h3>
-                      <input 
-                        type="password" 
-                        maxLength={6}
-                        placeholder="กรอก PIN 6 หลักใหม่..."
-                        defaultValue={adminPin}
-                        id="newPinInputBox"
-                        style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', textAlign: 'center', fontSize: '18px', letterSpacing: '4px', outline: 'none', boxSizing: 'border-box' }}
-                      />
-                      <button 
-                        onClick={() => {
-                          const el = document.getElementById('newPinInputBox');
-                          const val = el ? el.value : '';
-                          if (val.length === 6) {
-                            setAdminPin(val);
-                            localStorage.setItem('cyber_admin_pin', val);
-                            set(ref(db, 'settings/adminPin'), val).catch(() => {});
-                            showToast('เปลี่ยนรหัส PIN แอดมินสำเร็จ!');
-                          } else {
-                            showToast('PIN ต้องมี 6 หลัก', 'error');
-                          }
-                        }}
-                        style={{ backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '10px 18px', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', marginTop: '10px', cursor: 'pointer' }}
-                      >
-                        บันทึกเปลี่ยน PIN
-                      </button>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                        <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff', margin: 0 }}>📋 โค้ดที่มีในระบบ (แสดง 5 บรรทัดต่อหน้า)</h3>
+                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>หน้า {adminGiftPage} / {totalAdminGiftPages}</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {paginatedAdminGifts.map((gc, idx) => (
+                          <div key={gc.firebaseKey || gc.code || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111827', padding: '12px 16px', borderRadius: '10px' }}>
+                            <div>
+                              <span style={{ fontSize: '14px', fontWeight: '900', color: '#c084fc', letterSpacing: '1px' }}>{gc.code}</span>
+                              <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
+                                รางวัล: <b style={{ color: '#ffffff' }}>{gc.reward}</b> ({gc.game}) | ขั้นต่ำ: <b style={{ color: '#facc15' }}>{rankTiers[gc.minRank || 0]?.name}</b>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                              <span style={{ fontSize: '12px', color: '#38bdf8' }}>ใช้แล้ว {gc.usedCount || 0}/{gc.maxUses} สิทธิ์</span>
+                              <button onClick={() => { if (gc.firebaseKey) set(ref(db, `giftCodes/${gc.firebaseKey}`), null); showToast('ลบโค้ดเรียบร้อย'); }} style={{ background: 'none', border: 'none', color: '#fca5a5', cursor: 'pointer' }}>🗑️</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {totalAdminGiftPages > 1 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', marginTop: '14px' }}>
+                          {Array.from({ length: totalAdminGiftPages }, (_, i) => i + 1).map((pageNum) => (
+                            <button key={pageNum} onClick={() => setAdminGiftPage(pageNum)} style={{ backgroundColor: adminGiftPage === pageNum ? '#9333ea' : '#111827', color: '#ffffff', border: '1px solid ' + (adminGiftPage === pageNum ? '#a855f7' : '#374151'), borderRadius: '8px', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>{pageNum}</button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -2278,200 +2179,85 @@ export default function App() {
         )}
       </main>
 
-      {/* MODAL: CHECKOUT */}
+      {/* MODAL 1: CHECKOUT (Password security + Multi-step Payment) */}
       {showCheckoutModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-          <div style={{ backgroundColor: '#111827', border: '1.5px solid #a855f7', borderRadius: '24px', maxWidth: '460px', width: '100%', padding: '28px', textAlign: 'center', position: 'relative', boxShadow: '0 0 45px rgba(168,85,247,0.45)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+          <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '28px', textAlign: 'center', position: 'relative' }}>
             <button onClick={() => setShowCheckoutModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#9ca3af', fontSize: '20px', cursor: 'pointer' }}>✕</button>
 
-            {isProcessing ? (
-              <div style={{ padding: '40px 20px' }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px', animation: 'cyberOnlineBlink 1s infinite' }}>⚡</div>
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 8px 0' }}>กำลังดำเนินการเติมเกม...</h3>
-                <p style={{ fontSize: '13px', color: '#9ca3af' }}>ระบบกำลังเชื่อมต่อ API ค่ายเกมเพื่อส่งมอบไอเทมเข้า UID อัตโนมัติ</p>
-              </div>
-            ) : (
+            {checkoutStep === 1 && (
+              <form onSubmit={handleVerifyPasswordStep} style={{ textAlign: 'left' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#c084fc', marginBottom: '8px', textAlign: 'center' }}>🔐 ยืนยันรหัสผ่านเพื่อชำระเงิน</h3>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '16px', textAlign: 'center' }}>กรุณากรอกรหัสผ่านบัญชีของคุณเพื่อยืนยันรายการ</p>
+
+                <div style={{ backgroundColor: '#030712', borderRadius: '12px', padding: '12px', marginBottom: '16px', fontSize: '13px' }}>
+                  <div>เกม: <b style={{ color: '#ffffff' }}>{selectedGame.name}</b></div>
+                  <div>แพ็กเกจ: <b style={{ color: '#38bdf8' }}>{selectedPackage.name} (x{packageQuantity})</b></div>
+                  <div>ยอดชำระ: <b style={{ color: '#34d399' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b></div>
+                </div>
+
+                {checkoutPasswordError && (
+                  <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5', padding: '8px', borderRadius: '8px', fontSize: '12px', marginBottom: '12px' }}>{checkoutPasswordError}</div>
+                )}
+
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
+                  <input 
+                    type={showCheckoutPassword ? 'text' : 'password'}
+                    placeholder="กรอกรหัสผ่านบัญชีของคุณ..."
+                    value={checkoutPassword}
+                    onChange={(e) => setCheckoutPassword(e.target.value)}
+                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px 40px 12px 12px', color: '#ffffff', outline: 'none' }}
+                  />
+                  <button type="button" onClick={() => setShowCheckoutPassword(!showCheckoutPassword)} style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', cursor: 'pointer' }}>
+                    <EyeIcon show={showCheckoutPassword} />
+                  </button>
+                </div>
+
+                <button type="submit" style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  {selectedPayment.id === 'qrcode' ? 'ถัดไป (สแกน QR PromptPay) ➔' : 'ยืนยันชำระเงิน'}
+                </button>
+              </form>
+            )}
+
+            {checkoutStep === 2 && selectedPayment?.id === 'qrcode' && (
               <div>
-                {selectedPayment.id === 'qrcode' && (
-                  <div>
-                    <div style={{ backgroundColor: '#003764', borderRadius: '12px', padding: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: '900', color: '#ffffff', letterSpacing: '1px' }}>THAI QR PAYMENT</span>
-                      <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>PromptPay</span>
-                    </div>
+                <div style={{ backgroundColor: '#003764', borderRadius: '12px', padding: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: '900', color: '#ffffff' }}>THAI QR PAYMENT</span>
+                  <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>PromptPay</span>
+                </div>
 
-                    <div style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '4px' }}>ยอดที่ต้องชำระ:</div>
-                    <div style={{ fontSize: '30px', fontWeight: '900', color: '#34d399', marginBottom: '12px' }}>
-                      ฿{orderPricing.finalPrice.toLocaleString()}
-                    </div>
+                <div style={{ fontSize: '26px', fontWeight: '900', color: '#34d399', marginBottom: '10px' }}>
+                  ฿{(selectedPackage.price * packageQuantity).toLocaleString()}
+                </div>
 
-                    <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '16px', maxWidth: '210px', margin: '0 auto 16px auto', boxShadow: '0 0 25px rgba(255,255,255,0.2)' }}>
-                      <svg viewBox="0 0 100 100" width="180" height="180">
-                        <rect x="5" y="5" width="25" height="25" fill="#000" />
-                        <rect x="8" y="8" width="19" height="19" fill="#fff" />
-                        <rect x="11" y="11" width="13" height="13" fill="#000" />
+                <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', padding: '14px', maxWidth: '180px', margin: '0 auto 12px auto' }}>
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=PromptPay-CyberTopup-${selectedGame.name}-${selectedPackage.price * packageQuantity}`} alt="PromptPay QR" style={{ width: '150px', height: '150px', display: 'block' }} />
+                </div>
 
-                        <rect x="70" y="5" width="25" height="25" fill="#000" />
-                        <rect x="73" y="8" width="19" height="19" fill="#fff" />
-                        <rect x="76" y="11" width="13" height="13" fill="#000" />
+                <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '14px' }}>
+                  ชื่อบัญชี: บจก. ไซเบอร์ ท็อปอัพ (ประเทศไทย)<br />
+                  หมดอายุใน: <b style={{ color: '#facc15' }}>{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')} นาที</b>
+                </div>
 
-                        <rect x="5" y="70" width="25" height="25" fill="#000" />
-                        <rect x="8" y="73" width="19" height="19" fill="#fff" />
-                        <rect x="11" y="76" width="13" height="13" fill="#000" />
+                {slipVerifying ? (
+                  <div style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', border: '1px solid #38bdf8', borderRadius: '10px', padding: '12px', marginBottom: '12px', fontSize: '12px', color: '#38bdf8', fontWeight: 'bold' }}>
+                    {slipVerifyStepText}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', border: '1.5px dashed #38bdf8', borderRadius: '10px', cursor: 'pointer', backgroundColor: 'rgba(56, 189, 248, 0.05)' }}>
+                      <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>{slipFile ? slipFile.name : '📸 แนบรูปสลิปโอนเงิน...'}</span>
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { if (e.target.files && e.target.files[0]) { setSlipFile(e.target.files[0]); setSlipPreview(URL.createObjectURL(e.target.files[0])); } }} />
+                    </label>
 
-                        <rect x="35" y="10" width="6" height="6" fill="#000" />
-                        <rect x="45" y="10" width="6" height="6" fill="#000" />
-                        <rect x="55" y="10" width="6" height="6" fill="#000" />
-                        <rect x="35" y="20" width="6" height="6" fill="#000" />
-                        <rect x="50" y="25" width="6" height="6" fill="#000" />
-
-                        <rect x="10" y="35" width="6" height="6" fill="#000" />
-                        <rect x="25" y="45" width="6" height="6" fill="#000" />
-                        <rect x="40" y="40" width="20" height="20" fill="#003764" rx="3" />
-                        <text x="50" y="54" fontSize="12" fill="#fff" textAnchor="middle" fontWeight="bold">PP</text>
-
-                        <rect x="65" y="35" width="6" height="6" fill="#000" />
-                        <rect x="80" y="45" width="6" height="6" fill="#000" />
-
-                        <rect x="35" y="70" width="6" height="6" fill="#000" />
-                        <rect x="55" y="75" width="6" height="6" fill="#000" />
-                        <rect x="70" y="70" width="6" height="6" fill="#000" />
-                        <rect x="85" y="80" width="6" height="6" fill="#000" />
-                      </svg>
-                    </div>
-
-                    <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '14px' }}>
-                      ชื่อบัญชี: <b style={{ color: '#ffffff' }}>บจก. ไซเบอร์ ท็อปอัพ (ประเทศไทย)</b><br />
-                      หมดอายุใน: <b style={{ color: '#facc15' }}>{Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')} นาที</b>
-                    </div>
-
-                    {slipVerifying ? (
-                      <div style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', border: '1px solid #38bdf8', borderRadius: '12px', padding: '12px', marginBottom: '12px', fontSize: '13px', color: '#38bdf8', fontWeight: 'bold' }}>
-                        {slipVerifyStepText}
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <button 
-                          onClick={handleSimulateSlipScan}
-                          style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}
-                        >
-                          📸 แนบสลิปโอนเงิน (สแกนตรวจสลิป AUTO)
-                        </button>
-                        <button 
-                          onClick={handleFinalPaymentSubmit}
-                          style={{ width: '100%', backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}
-                        >
-                          ⚡ ยืนยันชำระเงินสำเร็จ (บันทึกลง Firebase)
-                        </button>
+                    {slipPreview && (
+                      <div style={{ textAlign: 'center' }}>
+                        <img src={slipPreview} alt="Slip" style={{ maxHeight: '80px', borderRadius: '6px' }} />
                       </div>
                     )}
-                  </div>
-                )}
 
-                {selectedPayment.id === 'wallet' && (
-                  <div>
-                    <div style={{ fontSize: '36px', marginBottom: '10px' }}>💰</div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 10px 0' }}>ชำระผ่านเครดิตร้าน (Cyber Wallet)</h3>
-                    <div style={{ backgroundColor: '#030712', borderRadius: '14px', padding: '16px', marginBottom: '20px', textAlign: 'left' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>ยอดคงเหลือในกระเป๋า:</span>
-                        <b style={{ color: '#34d399' }}>฿{(user?.balance || 0).toLocaleString()}</b>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '12px', color: '#9ca3af' }}>ยอดหักชำระ:</span>
-                        <b style={{ color: '#f87171' }}>-฿{orderPricing.finalPrice.toLocaleString()}</b>
-                      </div>
-                      <div style={{ borderTop: '1px solid #374151', paddingTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: '13px', color: '#ffffff', fontWeight: 'bold' }}>คงเหลือสุทธิ:</span>
-                        <b style={{ color: '#38bdf8' }}>฿{((user?.balance || 0) - orderPricing.finalPrice).toLocaleString()}</b>
-                      </div>
-                    </div>
-                    <button 
-                      onClick={handleFinalPaymentSubmit}
-                      style={{ width: '100%', backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}
-                    >
-                      ยืนยันตัดเครดิตทันที
-                    </button>
-                  </div>
-                )}
-
-                {selectedPayment.id === 'true' && (
-                  <div>
-                    <div style={{ fontSize: '36px', marginBottom: '10px' }}>💚</div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 10px 0' }}>TrueMoney Wallet</h3>
-                    {!trueMoneyOtpStep ? (
-                      <div>
-                        <input 
-                          type="text" 
-                          maxLength={10}
-                          placeholder="กรอกเบอร์มือถือ TrueMoney 10 หลัก..."
-                          value={truemoneyPhone}
-                          onChange={(e) => setTruemoneyPhone(e.target.value.replace(/[^0-9]/g, ''))}
-                          style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', marginBottom: '14px', outline: 'none' }}
-                        />
-                        <button 
-                          onClick={() => setTrueMoneyOtpStep(true)}
-                          style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold' }}
-                        >
-                          รับรหัส OTP ทาง SMS
-                        </button>
-                      </div>
-                    ) : (
-                      <div>
-                        <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '10px' }}>กรอกรหัส OTP 6 หลักที่ส่งไปยังเบอร์ของคุณ:</div>
-                        <input 
-                          type="text" 
-                          maxLength={6}
-                          placeholder="889900"
-                          value={trueMoneyOtpCode}
-                          onChange={(e) => setTrueMoneyOtpCode(e.target.value)}
-                          style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #10b981', borderRadius: '10px', padding: '12px', color: '#ffffff', textAlign: 'center', fontSize: '20px', letterSpacing: '4px', marginBottom: '14px', outline: 'none' }}
-                        />
-                        <button 
-                          onClick={handleFinalPaymentSubmit}
-                          style={{ width: '100%', backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
-                        >
-                          ยืนยัน OTP ชำระเงิน ฿{orderPricing.finalPrice.toLocaleString()}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {selectedPayment.id === 'credit' && (
-                  <div>
-                    <div style={{ fontSize: '36px', marginBottom: '10px' }}>💳</div>
-                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 14px 0' }}>ชำระผ่านบัตรเครดิต / เดบิต</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', textAlign: 'left', marginBottom: '16px' }}>
-                      <input 
-                        type="text" 
-                        placeholder="หมายเลขบัตร 16 หลัก..."
-                        value={creditCardNum}
-                        onChange={(e) => setCreditCardNum(e.target.value)}
-                        style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '8px', padding: '10px', color: '#ffffff' }}
-                      />
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <input 
-                          type="text" 
-                          placeholder="MM/YY" 
-                          value={creditCardExp}
-                          onChange={(e) => setCreditCardExp(e.target.value)}
-                          style={{ flex: 1, backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '8px', padding: '10px', color: '#ffffff' }}
-                        />
-                        <input 
-                          type="password" 
-                          maxLength={3} 
-                          placeholder="CVV" 
-                          value={creditCardCvv}
-                          onChange={(e) => setCreditCardCvv(e.target.value)}
-                          style={{ width: '70px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '8px', padding: '10px', color: '#ffffff' }}
-                        />
-                      </div>
-                    </div>
-                    <button 
-                      onClick={handleFinalPaymentSubmit}
-                      style={{ width: '100%', backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
-                    >
-                      ชำระเงิน ฿{orderPricing.finalPrice.toLocaleString()} ปลอดภัย 3D Secure
+                    <button onClick={handleSimulateSlipScan} style={{ width: '100%', backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>
+                      ⚡ ตรวจสอบสลิป & ส่งคำสั่งเติม (AUTO 100%)
                     </button>
                   </div>
                 )}
@@ -2481,54 +2267,7 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: DELIVERED STOCK */}
-      {deliveredStockModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '20px' }}>
-          <div style={{ backgroundColor: '#111827', border: '2px solid #34d399', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 50px rgba(52,211,153,0.45)' }}>
-            <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '2px solid #34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 16px auto' }}>
-              🎉
-            </div>
-            <h3 style={{ fontSize: '22px', fontWeight: '900', color: '#34d399', margin: '0 0 4px 0' }}>ทำรายการสำเร็จ!</h3>
-            <div style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>คำสั่งซื้อเลขที่: <b style={{ color: '#ffffff' }}>{deliveredStockModal.orderId}</b></div>
-
-            <div style={{ backgroundColor: '#030712', border: '1.5px dashed #34d399', borderRadius: '16px', padding: '18px', marginBottom: '20px', textAlign: 'left' }}>
-              <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>🎮 เกม: <b style={{ color: '#ffffff' }}>{deliveredStockModal.game}</b></div>
-              <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '12px' }}>📦 แพ็กเกจ: <b style={{ color: '#38bdf8' }}>{deliveredStockModal.package}</b></div>
-              
-              <div style={{ fontSize: '12px', color: '#34d399', fontWeight: 'bold', marginBottom: '6px' }}>🔑 รหัสสินค้า / Voucher Code ของคุณ:</div>
-              <div style={{ backgroundColor: '#111827', border: '1.5px solid #34d399', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '16px', fontWeight: '900', letterSpacing: '1px', wordBreak: 'break-all', textAlign: 'center' }}>
-                {deliveredStockModal.code}
-              </div>
-              <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '8px', textAlign: 'center' }}>
-                💡 รหัสนี้ถูกบันทึกลงหน้า "📋 เช็คสถานะ" เรียบร้อย สามารถเปิดดูซ้ำได้ตลอดเวลา
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button 
-                onClick={() => {
-                  navigator.clipboard.writeText(deliveredStockModal.code);
-                  showToast('คัดลอกรหัสสินค้าเรียบร้อย!');
-                }}
-                style={{ flex: 1.2, backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
-              >
-                📋 คัดลอกรหัสทันที
-              </button>
-              <button 
-                onClick={() => {
-                  setDeliveredStockModal(null);
-                  setActiveTab('track');
-                }}
-                style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
-              >
-                ไปหน้าเช็คสถานะ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: WALLET TOPUP */}
+      {/* MODAL 2: WALLET TOPUP (Image 1 enhancement with custom ▲ / ▼ buttons) */}
       {showTopupWalletModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #10b981', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '28px', textAlign: 'center', position: 'relative' }}>
@@ -2545,7 +2284,8 @@ export default function App() {
                   onClick={() => setTopupAmount(val)}
                   style={{
                     backgroundColor: topupAmount === val ? '#10b981' : '#030712',
-                    color: '#ffffff', border: '1px solid ' + (topupAmount === val ? '#34d399' : '#374151'),
+                    color: topupAmount === val ? '#000000' : '#ffffff',
+                    border: '1px solid ' + (topupAmount === val ? '#34d399' : '#374151'),
                     padding: '10px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px'
                   }}
                 >
@@ -2554,36 +2294,56 @@ export default function App() {
               ))}
             </div>
 
-            <form onSubmit={handleTopupWallet} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* Custom Input Box with Stylized Up/Down Arrows (Request in Image 1) */}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginBottom: '14px' }}>
               <input 
                 type="number" 
                 placeholder="ระบุจำนวนเงิน..." 
                 value={topupAmount} 
                 onChange={(e) => setTopupAmount(e.target.value)}
-                style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #10b981', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '18px', textAlign: 'center', fontWeight: 'bold', boxSizing: 'border-box' }}
+                className="no-native-spin"
+                style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #10b981', borderRadius: '10px', padding: '12px 35px 12px 14px', color: '#ffffff', fontSize: '18px', textAlign: 'center', fontWeight: 'bold', boxSizing: 'border-box' }}
               />
-              <button 
-                type="submit" 
-                style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}
-              >
-                ยืนยันเติมเงิน ฿{parseInt(topupAmount || 0).toLocaleString()} (ซิงค์ Firebase)
-              </button>
-            </form>
+              <div style={{ position: 'absolute', right: '8px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <button 
+                  type="button"
+                  onClick={() => setTopupAmount(prev => String(Math.max(0, (parseFloat(prev) || 0) + 50)))}
+                  style={{ background: 'rgba(16, 185, 129, 0.25)', border: '1px solid #10b981', borderRadius: '4px', width: '22px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#34d399', fontSize: '9px', cursor: 'pointer', padding: 0 }}
+                >
+                  ▲
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setTopupAmount(prev => String(Math.max(0, (parseFloat(prev) || 0) - 50)))}
+                  style={{ background: 'rgba(16, 185, 129, 0.25)', border: '1px solid #10b981', borderRadius: '4px', width: '22px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#34d399', fontSize: '9px', cursor: 'pointer', padding: 0 }}
+                >
+                  ▼
+                </button>
+              </div>
+            </div>
+
+            <button 
+              type="button"
+              onClick={handleWalletConfirmPayment}
+              style={{ width: '100%', backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}
+            >
+              ยืนยันเติมเงิน ฿{parseInt(topupAmount || 0).toLocaleString()} (ซิงค์ Firebase)
+            </button>
           </div>
         </div>
       )}
 
-      {/* MODAL: EVENT GIFT CODE */}
+      {/* MODAL 3: EVENT CODE REDEEM */}
       {showEventModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #38bdf8', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '28px', textAlign: 'center', position: 'relative' }}>
             <button onClick={() => setShowEventModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#9ca3af', fontSize: '20px', cursor: 'pointer' }}>✕</button>
             <div style={{ fontSize: '32px', marginBottom: '8px' }}>🎁</div>
             <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: '#38bdf8', margin: '0 0 6px 0' }}>แลกรับของรางวัล / โค้ดฟรี</h3>
-            <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '18px' }}>กรอกโค้ดกิจกรรมพิเศษเพื่อรับแพ็กเกจเกมเข้า UID ฟรี 100%</p>
+            <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '18px' }}>UID สามารถรับได้เพียง 1 ครั้งเท่านั้น จนกว่าแอดมินจะรีเซ็ตกิจกรรม</p>
 
             {eventMsg.text && (
-              <div style={{ backgroundColor: eventMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: eventMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '14px' }}>
+              <div style={{ backgroundColor: eventMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: eventMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '14px', textAlign: 'left' }}>
                 {eventMsg.text}
               </div>
             )}
@@ -2591,17 +2351,13 @@ export default function App() {
             <form onSubmit={handleRedeemEventCode} style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
               <div>
                 <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. เลือกเกม</label>
-                <select 
-                  value={eventGame} 
-                  onChange={(e) => setEventGame(e.target.value)}
-                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none' }}
-                >
+                <select value={eventGame} onChange={(e) => setEventGame(e.target.value)} className="cyber-select cyber-select-cyan" style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none' }}>
                   {gamesData.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
                 </select>
               </div>
 
               <div>
-                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. UID หรือชื่อตัวละคร</label>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. UID หรือชื่อตัวละคร (รับได้ครั้งเดียวต่อ UID)</label>
                 <input 
                   type="text" 
                   placeholder="ระบุ UID ในเกม..."
@@ -2612,10 +2368,7 @@ export default function App() {
               </div>
 
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <label style={{ fontSize: '12px', color: '#9ca3af' }}>3. รหัสโค้ดกิจกรรม (Gift Code)</label>
-                  <span style={{ fontSize: '11px', color: '#38bdf8' }}>ตัวอย่าง: CYBER2026, ROVVIP</span>
-                </div>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>3. รหัสโค้ดกิจกรรม (Gift Code)</label>
                 <input 
                   type="text" 
                   placeholder="พิมพ์รหัสโค้ดที่นี่..."
@@ -2625,28 +2378,7 @@ export default function App() {
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                {['CYBER2026', 'ROVVIP', 'FREE50'].map(c => (
-                  <button 
-                    key={c} 
-                    type="button" 
-                    onClick={() => {
-                      setEventGiftCode(c);
-                      if (c === 'ROVVIP') setEventGame('ROV (Arena of Valor)');
-                      else setEventGame('VALORANT');
-                      if (!eventPlayerId) setEventPlayerId('TestPlayer#TH1');
-                    }}
-                    style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer' }}
-                  >
-                    กดทดสอบ: {c}
-                  </button>
-                ))}
-              </div>
-
-              <button 
-                type="submit" 
-                style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', marginTop: '6px' }}
-              >
+              <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer', marginTop: '6px' }}>
                 ยืนยันแลกรับรางวัลฟรี
               </button>
             </form>
@@ -2654,118 +2386,32 @@ export default function App() {
         </div>
       )}
 
-      {/* MODAL: RECEIPT */}
-      {viewReceiptModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '20px' }}>
-          <div style={{ backgroundColor: '#ffffff', color: '#111827', borderRadius: '20px', maxWidth: '420px', width: '100%', padding: '28px', position: 'relative', boxShadow: '0 20px 50px rgba(0,0,0,0.6)' }}>
-            <button onClick={() => setViewReceiptModal(null)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#6b7280', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+      {/* MODAL 4: DELIVERED STOCK */}
+      {deliveredStockModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 110, padding: '20px' }}>
+          <div style={{ backgroundColor: '#111827', border: '2px solid #34d399', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 50px rgba(52,211,153,0.45)' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '2px solid #34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', margin: '0 auto 16px auto' }}>
+              🎉
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: '900', color: '#34d399', margin: '0 0 4px 0' }}>ทำรายการสำเร็จ!</h3>
+            <div style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>คำสั่งซื้อเลขที่: <b style={{ color: '#ffffff' }}>{deliveredStockModal.orderId}</b></div>
 
-            <div style={{ textAlign: 'center', borderBottom: '1px dashed #d1d5db', paddingBottom: '16px', marginBottom: '16px' }}>
-              <div style={{ fontSize: '20px', fontWeight: '900', color: '#111827' }}>⚡ CYBER TOPUP</div>
-              <div style={{ fontSize: '11px', color: '#6b7280' }}>ใบเสร็จรับเงิน / ใบส่งมอบสินค้าอิเล็กทรอนิกส์</div>
-              <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#0284c7', marginTop: '6px' }}>{viewReceiptModal.id}</div>
+            <div style={{ backgroundColor: '#030712', border: '1.5px dashed #34d399', borderRadius: '16px', padding: '18px', marginBottom: '20px', textAlign: 'left' }}>
+              <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>🎮 เกม: <b style={{ color: '#ffffff' }}>{deliveredStockModal.game}</b></div>
+              <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '12px' }}>📦 แพ็กเกจ: <b style={{ color: '#38bdf8' }}>{deliveredStockModal.package}</b></div>
+              
+              <div style={{ fontSize: '12px', color: '#34d399', fontWeight: 'bold', marginBottom: '6px' }}>🔑 รหัสสินค้า / Voucher Code:</div>
+              <div style={{ backgroundColor: '#111827', border: '1.5px solid #34d399', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '16px', fontWeight: '900', letterSpacing: '1px', wordBreak: 'break-all', textAlign: 'center' }}>
+                {deliveredStockModal.code}
+              </div>
             </div>
 
-            <div style={{ fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#6b7280' }}>วันที่ทำรายการ:</span>
-                <b>{viewReceiptModal.time}</b>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#6b7280' }}>ชื่อลูกค้า:</span>
-                <b>{viewReceiptModal.player}</b>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#6b7280' }}>เกม:</span>
-                <b>{viewReceiptModal.game}</b>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#6b7280' }}>แพ็กเกจ:</span>
-                <b>{viewReceiptModal.package}</b>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#6b7280' }}>UID / ตัวละคร:</span>
-                <b>{viewReceiptModal.gameChar}</b>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#6b7280' }}>ช่องทางชำระเงิน:</span>
-                <b>{viewReceiptModal.paymentMethod}</b>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#6b7280' }}>สถานะ:</span>
-                <b style={{ color: '#059669' }}>{viewReceiptModal.status}</b>
-              </div>
-              {viewReceiptModal.deliveredCode && (
-                <div style={{ backgroundColor: '#f3f4f6', padding: '10px', borderRadius: '8px', textAlign: 'center', marginTop: '6px' }}>
-                  <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px' }}>รหัสสินค้าที่ได้รับ:</div>
-                  <b style={{ fontSize: '14px', color: '#111827', letterSpacing: '1px' }}>{viewReceiptModal.deliveredCode}</b>
-                </div>
-              )}
-            </div>
-
-            <div style={{ borderTop: '2px solid #111827', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '20px' }}>
-              <span style={{ fontSize: '14px', fontWeight: 'bold' }}>ยอดสุทธิ (รวม VAT):</span>
-              <span style={{ fontSize: '22px', fontWeight: '900', color: '#059669' }}>฿{viewReceiptModal.price?.toLocaleString()}</span>
-            </div>
-
-            <button 
-              onClick={() => { window.print(); }}
-              style={{ width: '100%', backgroundColor: '#111827', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
-            >
-              🖨️ พิมพ์ใบเสร็จ
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: ADMIN ADJUST BALANCE */}
-      {selectedUserToEdit && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '20px' }}>
-          <div style={{ backgroundColor: '#111827', border: '1.5px solid #0284c7', borderRadius: '20px', maxWidth: '380px', width: '100%', padding: '24px', textAlign: 'center', position: 'relative' }}>
-            <button onClick={() => setSelectedUserToEdit(null)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#9ca3af', fontSize: '18px', cursor: 'pointer' }}>✕</button>
-            <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#ffffff', margin: '0 0 4px 0' }}>ปรับยอดเงินสมาชิก</h3>
-            <div style={{ fontSize: '13px', color: '#38bdf8', marginBottom: '14px' }}>บัญชี: {selectedUserToEdit.username}</div>
-            
-            <div style={{ backgroundColor: '#030712', padding: '12px', borderRadius: '10px', marginBottom: '14px', textAlign: 'left', fontSize: '13px' }}>
-              <div>ยอดเงินปัจจุบัน: <b style={{ color: '#34d399' }}>฿{(selectedUserToEdit.balance || 0).toLocaleString()}</b></div>
-            </div>
-
-            <input 
-              type="number" 
-              placeholder="จำนวนเงินที่ต้องการเพิ่ม/ลด..." 
-              value={userBalanceAdjustAmount}
-              onChange={(e) => setUserBalanceAdjustAmount(e.target.value)}
-              style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', marginBottom: '14px', boxSizing: 'border-box' }}
-            />
-
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button 
-                onClick={async () => {
-                  const amt = parseFloat(userBalanceAdjustAmount);
-                  if (!isNaN(amt)) {
-                    const newBal = (selectedUserToEdit.balance || 0) + amt;
-                    await set(ref(db, `users/${selectedUserToEdit.firebaseKey}/balance`), newBal);
-                    showToast(`เพิ่มเงินให้ ${selectedUserToEdit.username} ฿${amt} สำเร็จ`);
-                    setSelectedUserToEdit(null);
-                  }
-                }}
-                style={{ flex: 1, backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-              >
-                + เติมเงิน
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => { navigator.clipboard.writeText(deliveredStockModal.code); showToast('คัดลอกรหัสเรียบร้อย!'); }} style={{ flex: 1.2, backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>
+                📋 คัดลอกรหัสทันที
               </button>
-              <button 
-                onClick={async () => {
-                  const amt = parseFloat(userBalanceAdjustAmount);
-                  if (!isNaN(amt)) {
-                    const newBal = Math.max(0, (selectedUserToEdit.balance || 0) - amt);
-                    await set(ref(db, `users/${selectedUserToEdit.firebaseKey}/balance`), newBal);
-                    showToast(`หักเงิน ${selectedUserToEdit.username} ฿${amt} สำเร็จ`);
-                    setSelectedUserToEdit(null);
-                  }
-                }}
-                style={{ flex: 1, backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
-              >
-                - หักเงิน
+              <button onClick={() => { setDeliveredStockModal(null); setActiveTab('track'); }} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>
+                ไปหน้าเช็คสถานะ
               </button>
             </div>
           </div>
@@ -2791,7 +2437,6 @@ export default function App() {
       {/* Footer */}
       <footer style={{ textAlign: 'center', marginTop: '60px', padding: '30px 20px', borderTop: '1px solid rgba(255,255,255,0.06)', color: '#9ca3af', fontSize: '12px' }}>
         <p style={{ margin: '0 0 6px 0' }}>⚡ <b>CYBER TOPUP</b> — บริการเติมเกมออนไลน์อัตโนมัติ 24 ชั่วโมง รวดเร็ว ปลอดภัย ได้รับไอเทมทันที</p>
-        <p style={{ margin: 0, color: '#6b7280' }}>รองรับทุกช่องทาง: PromptPay QR Code, TrueMoney Wallet, Visa / Mastercard และ Cyber Wallet</p>
       </footer>
     </div>
   );
