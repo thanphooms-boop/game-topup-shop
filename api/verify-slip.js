@@ -11,8 +11,7 @@ export default async function handler(req, res) {
   );
 
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
@@ -26,7 +25,6 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'กรุณาแนบไฟล์รูปภาพสลิปโอนเงิน' });
     }
 
-    // รหัสสาขา 80221 และ API Key ตัวจริงจาก SlipOK
     const branchId = '80221';
     const apiKey = 'SLIPOKQ4IRV70';
 
@@ -35,16 +33,23 @@ export default async function handler(req, res) {
       cleanBase64 = cleanBase64.split(',')[1];
     }
 
+    // แปลง Base64 เป็นไฟล์รูปภาพส่งผ่าน FormData ให้ SlipOK ตรวจ QR
+    const buffer = Buffer.from(cleanBase64, 'base64');
+    const blob = new Blob([buffer], { type: 'image/jpeg' });
+
+    const formData = new FormData();
+    formData.append('files', blob, 'slip.jpg');
+    if (expectedAmount) {
+      formData.append('amount', parseFloat(expectedAmount).toString());
+    }
+    formData.append('log', 'true');
+
     const slipokResponse = await fetch(`https://api.slipok.com/api/line/apikey/${branchId}`, {
       method: 'POST',
       headers: {
         'x-authorization': apiKey,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        data: cleanBase64,
-        amount: parseFloat(expectedAmount) || undefined,
-      }),
+      body: formData,
     });
 
     const slipData = await slipokResponse.json();
@@ -81,7 +86,7 @@ export default async function handler(req, res) {
     console.error('Verify Slip Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์ SlipOK: ' + error.message,
+      message: 'เกิดข้อผิดพลาดในการตรวจสอบสลิป: ' + error.message,
     });
   }
 }
