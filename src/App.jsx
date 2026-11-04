@@ -758,21 +758,32 @@ const verifySlipWithSlipOK = async (imageBase64Data, expectedAmount, metadata = 
     console.warn('Backend /api/verify-slip unreachable, falling back to direct SlipOK connection:', backendErr);
   }
 
-  // 2. Fallback: ยิงตรงไปที่ SlipOK API (Branch: 80221, Key: SLIPOKQ4IRV70) เพื่อให้ทำงานได้ 100% เสมอ!
+  // 2. Fallback: ยิงตรงไปที่ SlipOK API (Branch: 80221, Key: SLIPOKQ4IRV70) โดยส่งเป็นรูปภาพ (files: File/Blob)
   try {
     const slipokBranch = '80221';
     const slipokKey = 'SLIPOKQ4IRV70';
+
+    const byteCharacters = atob(cleanBase64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'image/jpeg' });
+
+    const directForm = new FormData();
+    directForm.append('files', blob, 'slip.jpg');
+    if (expectedAmount) {
+      directForm.append('amount', parseFloat(expectedAmount).toString());
+    }
+    directForm.append('log', 'true');
 
     const directResponse = await fetch(`https://api.slipok.com/api/line/apikey/${slipokBranch}`, {
       method: 'POST',
       headers: {
         'x-authorization': slipokKey,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        data: cleanBase64,
-        amount: parseFloat(expectedAmount) || undefined,
-      }),
+      body: directForm,
     });
 
     const slipData = await directResponse.json();
