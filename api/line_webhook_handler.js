@@ -1,8 +1,7 @@
 // api/line-webhook.js
-// รองรับ Node.js Serverless Function บน Vercel / Netlify
+// ระบบแจ้งเตือนออเดอร์และยอดเงินเข้า LINE แอดมินอัตโนมัติ (Cyber Topup)
 
 export default async function handler(req, res) {
-  // อนุญาต CORS ให้หน้าเว็บเรียกใช้งานได้
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -15,86 +14,71 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // รองรับกรณีเปิดผ่าน Browser หรือ LINE Health Check
+  // รองรับการกด Verify จาก LINE Developers
   if (req.method === 'GET') {
-    return res.status(200).json({ status: 'active', message: 'CYBER TOPUP LINE Webhook is running.' });
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed. Only POST is accepted.' });
+    return res.status(200).send('LINE Webhook is active and running.');
   }
 
   try {
-    const body = req.body || {};
+    const CHANNEL_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || '9cStmt35M+TLQvjPu4x03AUkf1scR00IuXaEcmtDQFfZAtkKyZTUUFYKhLCgOQL/FDvEVJ1/js9VwITmdEL8KilZN6pJdkq+FyvTuxjs2pii6irmjbJa84+7A/JG5Di+EqeazToW1wZ01oX91ItM9QdB04t89/1O/w1cDnyilFU=';
+    const ADMIN_LINE_USER_ID = process.env.ADMIN_LINE_USER_ID || 'U04dd8c6f41cf65e939e9843bee1f6223';
 
-    // 1. ตรวจจับกรณีเป็นการกดปุ่ม "Verify" จาก LINE Developers Console
-    // LINE Developers จะส่ง { events: [] } หรือ { destination: ... } มาตรวจสอบ
-    if (body.events && Array.isArray(body.events)) {
-      console.log('✅ [LINE Webhook Verify Ping]: Received verify event from LINE.');
-      return res.status(200).json({ success: true, message: 'Webhook verified successfully' });
+    // กรณี LINE Developers ยิงทดสอบระบบ
+    if (req.body && req.body.events !== undefined) {
+      return res.status(200).json({ status: 'ok', message: 'Webhook verified' });
     }
 
-    // 2. ดึงข้อมูลคำสั่งซื้อจากหน้าเว็บ
-    const { orderId, game, packageName, price, player, gameChar, paymentMethod, deliveredCode } = body;
+    // ข้อมูลออเดอร์หรือการเติมเงินที่ส่งมาจากหน้าเว็บ
+    const order = req.body || {};
+    const orderId = order.orderId || order.id || 'ORD-' + Math.floor(10000 + Math.random() * 90000);
+    const game = order.game || order.service || 'เติมเงินร้าน';
+    const pkg = order.packageName || order.package || 'แพ็กเกจ';
+    const price = order.price ? `฿${parseFloat(order.price).toLocaleString()}` : '-';
+    const player = order.player || 'ลูกค้า';
+    const gameChar = order.gameChar || order.playerId || '-';
+    const paymentMethod = order.paymentMethod || 'โอนเงินธนาคาร';
+    const time = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
 
-    // Channel Access Token และ User ID (33 ตัวอักษร)
-    const LINE_ACCESS_TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || "9cStmt35M+TLQvjPu4x03AUkf1scR00IuXaEcmtDQFfZAtkKyZTUUFYKhLCgOQL/FDvEVJ1/js9VwITmdEL8KilZN6pJdkq+FyvTuxjs2pii6irmjbJa84+7A/JG5Di+EqeazToW1wZ01oX91ItM9QdB04t89/1O/w1cDnyilFU=";
-    const TARGET_USER_ID = process.env.LINE_ADMIN_USER_ID || "U04dd8c6f41cf65e939e9843bee1f6223";
+    const notificationMessage = `🔔 มีรายการใหม่ในร้าน Cyber Topup!\n` +
+      `━━━━━━━━━━━━━━━━━━\n` +
+      `🆔 รหัสออเดอร์: ${orderId}\n` +
+      `🎮 รายการ: ${game}\n` +
+      `📦 แพ็กเกจ: ${pkg}\n` +
+      `💰 ยอดเงิน: ${price}\n` +
+      `👤 ลูกค้า: ${player}\n` +
+      `🎯 ไอดีเกม/UID: ${gameChar}\n` +
+      `💳 ช่องทาง: ${paymentMethod}\n` +
+      `⏱️ เวลา: ${time}\n` +
+      `━━━━━━━━━━━━━━━━━━\n` +
+      `⚡ ระบบดำเนินการเรียบร้อยแล้ว`;
 
-    // จัดรูปแบบข้อความแจ้งเตือนเข้าแชท LINE
-    const messageText = 
-`🔔 [แจ้งเตือนออร์เดอร์ใหม่ 24 ชม.]
-━━━━━━━━━━━━━━━━
-📦 เลขที่ออร์เดอร์: ${orderId || 'ORD-' + Math.floor(10000 + Math.random() * 90000)}
-🎮 เกม: ${game || '-'}
-💎 แพ็กเกจ: ${packageName || '-'}
-💰 ยอดเงิน: ฿${price ? Number(price).toLocaleString() : '0'}
-💳 ช่องทางชำระ: ${paymentMethod || 'QR PromptPay (AUTO)'}
-👤 ลูกค้า: ${player || '-'}
-🎯 ตัวละคร / UID: ${gameChar || '-'}
-🔑 โค้ดที่ส่งมอบ: ${deliveredCode ? deliveredCode : '(รอส่งมอบ/ยังไม่มีในสต็อก)'}
-⏰ เวลา: ${new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })}
-━━━━━━━━━━━━━━━━
-✅ ระบบตรวจสอบสลิป & ดำเนินการอัตโนมัติ`;
-
-    // ยิง Push Message ตรงเข้า User ID ของคุณใน LINE
+    // ส่งข้อความตรงเข้า LINE แอดมินทันที
     const lineResponse = await fetch('https://api.line.me/v2/bot/message/push', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${LINE_ACCESS_TOKEN.trim()}`
+        'Authorization': `Bearer ${CHANNEL_ACCESS_TOKEN}`,
       },
       body: JSON.stringify({
-        to: TARGET_USER_ID.trim(),
+        to: ADMIN_LINE_USER_ID,
         messages: [
           {
             type: 'text',
-            text: messageText
-          }
-        ]
-      })
+            text: notificationMessage,
+          },
+        ],
+      }),
     });
 
-    const result = await lineResponse.json().catch(() => ({}));
-
-    if (!lineResponse.ok) {
-      console.error('❌ [LINE API Error Details]:', result);
-      return res.status(lineResponse.status).json({
-        success: false,
-        error: 'LINE API Rejected',
-        details: result
-      });
+    if (lineResponse.ok) {
+      return res.status(200).json({ success: true, message: 'แจ้งเตือนเข้า LINE สำเร็จ' });
+    } else {
+      const errText = await lineResponse.text();
+      console.error('LINE Push Error:', errText);
+      return res.status(500).json({ success: false, error: errText });
     }
-
-    console.log('✅ [LINE Sent Success]:', result);
-    return res.status(200).json({ 
-      success: true, 
-      message: 'LINE notification sent successfully!', 
-      data: result 
-    });
-
   } catch (error) {
-    console.error('❌ [Server Error sending LINE]:', error);
+    console.error('Webhook Error:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 }
