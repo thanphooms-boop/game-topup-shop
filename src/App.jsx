@@ -502,6 +502,156 @@ const getCustomerRank = (spending) => {
   };
 };
 
+// คอมโพเนนต์เหรียญตราสัญลักษณ์ประจำแรงค์ (Rank Emblem Graphic) สไตล์เกมมิ่งพรีเมียม
+function RankEmblem({ tier, size = 26, glow = true, className = '' }) {
+  const t = (tier || '').toUpperCase();
+  const s = size;
+
+  if (t === 'CHALLENGER') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 8px #ff0055) drop-shadow(0 0 14px #f59e0b)' : 'none', flexShrink: 0 }}>
+        <defs>
+          <linearGradient id="chFire" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ff0055" />
+            <stop offset="40%" stopColor="#e11d48" />
+            <stop offset="70%" stopColor="#f59e0b" />
+            <stop offset="100%" stopColor="#fef08a" />
+          </linearGradient>
+          <linearGradient id="chGold" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#fef08a" />
+            <stop offset="100%" stopColor="#f59e0b" />
+          </linearGradient>
+        </defs>
+        <path d="M50 5 L63 28 L92 35 L72 56 L77 86 L50 72 L23 86 L28 56 L8 35 L37 28 Z" fill="url(#chFire)" opacity="0.95" />
+        <path d="M50 15 L60 33 L82 38 L67 54 L71 76 L50 65 L29 76 L33 54 L18 38 L40 33 Z" fill="#111827" stroke="url(#chGold)" strokeWidth="2.5" />
+        <polygon points="50,22 62,42 50,62 38,42" fill="url(#chGold)" />
+        <polygon points="50,30 53,38 61,38 55,43 57,51 50,46 43,51 45,43 39,38 47,38" fill="#ffffff" />
+        <circle cx="50" cy="10" r="3.5" fill="#fef08a" />
+        <circle cx="26" cy="24" r="2.5" fill="#ff0055" />
+        <circle cx="74" cy="24" r="2.5" fill="#ff0055" />
+      </svg>
+    );
+  }
+
+  if (t === 'MASTER') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 7px #ec4899) drop-shadow(0 0 12px #a855f7)' : 'none', flexShrink: 0 }}>
+        <defs>
+          <linearGradient id="msGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#f472b6" />
+            <stop offset="50%" stopColor="#ec4899" />
+            <stop offset="100%" stopColor="#9333ea" />
+          </linearGradient>
+          <linearGradient id="msCrown" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#fbcfe8" />
+            <stop offset="100%" stopColor="#db2777" />
+          </linearGradient>
+        </defs>
+        <path d="M50 10 L78 22 L88 48 L72 82 L50 92 L28 82 L12 48 L22 22 Z" fill="#0f172a" stroke="url(#msGrad)" strokeWidth="3.5" />
+        <path d="M28 65 L28 42 L38 52 L50 35 L62 52 L72 42 L72 65 Z" fill="url(#msCrown)" stroke="#ffffff" strokeWidth="1.5" />
+        <circle cx="50" cy="62" r="8" fill="#ffffff" />
+        <circle cx="50" cy="62" r="5" fill="#ec4899" />
+        <circle cx="50" cy="24" r="3.5" fill="#f472b6" />
+      </svg>
+    );
+  }
+
+  if (t === 'DIAMOND') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 7px #c084fc) drop-shadow(0 0 12px #38bdf8)' : 'none', flexShrink: 0 }}>
+        <defs>
+          <linearGradient id="dmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#f3e8ff" />
+            <stop offset="35%" stopColor="#c084fc" />
+            <stop offset="70%" stopColor="#7c3aed" />
+            <stop offset="100%" stopColor="#38bdf8" />
+          </linearGradient>
+        </defs>
+        <polygon points="50,6 82,24 94,50 82,76 50,94 18,76 6,50 18,24" fill="#0f172a" stroke="url(#dmGrad)" strokeWidth="3" />
+        <polygon points="50,18 76,50 50,82 24,50" fill="url(#dmGrad)" opacity="0.9" />
+        <polygon points="50,28 66,50 50,72 34,50" fill="#ffffff" opacity="0.95" />
+        <line x1="50" y1="6" x2="50" y2="94" stroke="#ffffff" strokeWidth="1.2" opacity="0.6" />
+        <line x1="6" y1="50" x2="94" y2="50" stroke="#ffffff" strokeWidth="1.2" opacity="0.6" />
+      </svg>
+    );
+  }
+
+  if (t === 'PLATINUM') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 7px #38bdf8) drop-shadow(0 0 12px #0284c7)' : 'none', flexShrink: 0 }}>
+        <defs>
+          <linearGradient id="plGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#e0f2fe" />
+            <stop offset="40%" stopColor="#38bdf8" />
+            <stop offset="80%" stopColor="#0284c7" />
+            <stop offset="100%" stopColor="#2dd4bf" />
+          </linearGradient>
+        </defs>
+        <polygon points="50,8 86,28 86,72 50,92 14,72 14,28" fill="#031525" stroke="url(#plGrad)" strokeWidth="3.5" />
+        <polygon points="50,18 76,34 76,66 50,82 24,66 24,34" fill="url(#plGrad)" opacity="0.9" />
+        <polygon points="50,28 66,40 66,60 50,72 34,60 34,40" fill="#ffffff" opacity="0.95" />
+        <polygon points="50,38 53,47 62,50 53,53 50,62 47,53 38,50 47,47" fill="#0284c7" />
+      </svg>
+    );
+  }
+
+  if (t === 'GOLD') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 7px #f59e0b) drop-shadow(0 0 12px #fbbf24)' : 'none', flexShrink: 0 }}>
+        <defs>
+          <linearGradient id="gdGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fef08a" />
+            <stop offset="40%" stopColor="#fbbf24" />
+            <stop offset="80%" stopColor="#d97706" />
+            <stop offset="100%" stopColor="#78350f" />
+          </linearGradient>
+        </defs>
+        <path d="M50 8 C68 8, 86 16, 86 36 C86 64, 50 92, 50 92 C50 92, 14 64, 14 36 C14 16, 32 8, 50 8 Z" fill="#1c1304" stroke="url(#gdGrad)" strokeWidth="3.5" />
+        <path d="M50 18 C62 18, 76 25, 76 40 C76 60, 50 80, 50 80 C50 80, 24 60, 24 40 C24 25, 38 18, 50 18 Z" fill="url(#gdGrad)" opacity="0.9" />
+        <polygon points="50,28 54,40 67,40 56,48 60,60 50,52 40,60 44,48 33,40 46,40" fill="#ffffff" />
+        <circle cx="50" cy="50" r="4" fill="#d97706" />
+      </svg>
+    );
+  }
+
+  if (t === 'SILVER') {
+    return (
+      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 6px #cbd5e1) drop-shadow(0 0 10px #94a3b8)' : 'none', flexShrink: 0 }}>
+        <defs>
+          <linearGradient id="svGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="50%" stopColor="#cbd5e1" />
+            <stop offset="80%" stopColor="#64748b" />
+            <stop offset="100%" stopColor="#334155" />
+          </linearGradient>
+        </defs>
+        <path d="M50 10 L84 26 L84 56 C84 74, 50 90, 50 90 C50 90, 16 74, 16 56 L16 26 Z" fill="#0f172a" stroke="url(#svGrad)" strokeWidth="3" />
+        <path d="M50 20 L74 32 L74 54 C74 68, 50 80, 50 80 C50 80, 26 68, 26 54 L26 32 Z" fill="url(#svGrad)" opacity="0.9" />
+        <polygon points="50,32 53,43 64,45 55,52 58,63 50,56 42,63 45,52 36,45 47,43" fill="#ffffff" />
+        <circle cx="50" cy="48" r="3.5" fill="#475569" />
+      </svg>
+    );
+  }
+
+  // BRONZE
+  return (
+    <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 5px #b45309) drop-shadow(0 0 8px #d97706)' : 'none', flexShrink: 0 }}>
+      <defs>
+        <linearGradient id="bzGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fed7aa" />
+          <stop offset="40%" stopColor="#d97706" />
+          <stop offset="80%" stopColor="#b45309" />
+          <stop offset="100%" stopColor="#78350f" />
+        </linearGradient>
+      </defs>
+      <polygon points="50,10 84,24 74,70 50,90 26,70 16,24" fill="#1f1105" stroke="url(#bzGrad)" strokeWidth="3" />
+      <polygon points="50,22 74,32 66,66 50,80 34,66 26,32" fill="url(#bzGrad)" opacity="0.9" />
+      <polygon points="50,34 53,44 63,46 55,53 58,63 50,57 42,63 45,53 37,46 47,44" fill="#ffffff" />
+      <circle cx="50" cy="50" r="3.5" fill="#78350f" />
+    </svg>
+  );
+}
+
 export default function App() {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('cyber_current_logged_user');
@@ -2744,8 +2894,8 @@ export default function App() {
                   }}
                   title="คลิกหรือชี้เมาส์เพื่อดูเรทเติมของแต่ละแรงค์"
                 >
-                  <span style={{ fontSize: '13px' }}>{currentUserRank.icon}</span>
-                  <span style={{ textShadow: `0 0 8px ${currentUserRank.border}` }}>{currentUserRank.shortName}</span>
+                  <RankEmblem tier={currentUserRank.tier} size={18} />
+                  <span style={{ textShadow: `0 0 8px ${currentUserRank.border}`, letterSpacing: '0.5px' }}>{currentUserRank.shortName}</span>
                   <span
                     style={{
                       display: 'inline-flex',
@@ -2806,10 +2956,18 @@ export default function App() {
 
                     {/* CURRENT USER STATUS BOX */}
                     <div style={{ backgroundColor: '#030712', border: `1px solid ${currentUserRank.border}`, borderRadius: '12px', padding: '10px', marginBottom: '12px', background: currentUserRank.bg }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '11px', color: '#d1d5db' }}>แรงค์ของคุณ:</span>
-                        <span style={{ fontSize: '12px', fontWeight: '900', color: currentUserRank.color }}>
-                          {currentUserRank.name}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <RankEmblem tier={currentUserRank.tier} size={36} />
+                          <div>
+                            <div style={{ fontSize: '13px', fontWeight: '900', color: currentUserRank.color, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span>{currentUserRank.name}</span>
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#d1d5db', opacity: 0.85 }}>ฉายา: {currentUserRank.title}</div>
+                          </div>
+                        </div>
+                        <span style={{ fontSize: '9px', backgroundColor: currentUserRank.border, color: '#030712', padding: '2px 6px', borderRadius: '4px', fontWeight: '900' }}>
+                          TIER {currentUserRank.level}
                         </span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -2861,13 +3019,13 @@ export default function App() {
                           >
                             {/* TOP ROW: Badge, Name, Title, and Rate */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ fontSize: '16px' }}>{tier.icon}</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <RankEmblem tier={tier.tier} size={28} />
                                 <div>
                                   <div style={{ fontSize: '12px', fontWeight: '900', color: tier.color, display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                    <span>{tier.shortName}</span>
-                                    <span style={{ fontSize: '10px', color: '#d1d5db', fontWeight: 'normal', opacity: 0.85 }}>({tier.title})</span>
+                                    <span>{tier.badge}</span>
                                   </div>
+                                  <div style={{ fontSize: '10px', color: '#d1d5db', opacity: 0.85 }}>ฉายา: {tier.title}</div>
                                 </div>
                               </div>
                               <div style={{ textAlign: 'right' }}>
@@ -3300,17 +3458,18 @@ export default function App() {
                 <span style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '4px',
+                  gap: '6px',
                   background: currentUserRank.bg,
                   border: `1.5px solid ${currentUserRank.border}`,
                   color: currentUserRank.color,
-                  padding: '2px 9px',
-                  borderRadius: '14px',
+                  padding: '3px 10px',
+                  borderRadius: '16px',
                   fontSize: '11px',
                   fontWeight: '900',
                   boxShadow: currentUserRank.glow
                 }}>
-                  {currentUserRank.icon} {currentUserRank.name}
+                  <RankEmblem tier={currentUserRank.tier} size={18} />
+                  <span>{currentUserRank.name}</span>
                 </span>
                 <span>👤 บัญชีผู้ใช้งาน:</span>
                 <b style={{ color: '#ffffff', backgroundColor: 'rgba(147,51,234,0.3)', padding: '2px 10px', borderRadius: '6px', border: '1px solid #9333ea' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
@@ -3912,7 +4071,9 @@ export default function App() {
                                 position: 'relative'
                               }}
                             >
-                              <div style={{ fontSize: '20px', marginBottom: '2px' }}>{t.icon}</div>
+                              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
+                                <RankEmblem tier={t.tier} size={36} />
+                              </div>
                               <div style={{ fontSize: '11px', fontWeight: '900', color: t.color, textShadow: `0 0 6px ${t.border}` }}>
                                 {t.shortName}
                               </div>
@@ -3953,9 +4114,13 @@ export default function App() {
                                     padding: '3px 8px',
                                     borderRadius: '10px',
                                     boxShadow: item.rank.glow,
-                                    whiteSpace: 'nowrap'
+                                    whiteSpace: 'nowrap',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px'
                                   }}>
-                                    {item.rank.icon} {item.rank.shortName}
+                                    <RankEmblem tier={item.rank.tier} size={15} />
+                                    <span>{item.rank.shortName}</span>
                                   </span>
                                 </div>
                               </div>
