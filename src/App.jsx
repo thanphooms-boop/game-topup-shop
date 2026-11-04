@@ -1351,6 +1351,67 @@ export default function App() {
 
   const [showLegacyStockAdmin, setShowLegacyStockAdmin] = useState(false);
 
+  // ระบบจัดการสถานะสต็อกเกม (เปิดรับเติม / สต็อกหมด)
+  const [gameStockStatus, setGameStockStatus] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cyber_game_stock_status');
+      return saved ? JSON.parse(saved) : {};
+    } catch (e) {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    const statusRef = ref(db, 'game_stock_status');
+    const unsubscribe = onValue(statusRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setGameStockStatus(data);
+        try { localStorage.setItem('cyber_game_stock_status', JSON.stringify(data)); } catch (e) {}
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleToggleGameStock = (gameId, gameName) => {
+    const isCurrentlyOpen = gameStockStatus[gameId] !== false;
+    const nextStatus = !isCurrentlyOpen;
+    const updated = { ...gameStockStatus, [gameId]: nextStatus };
+    setGameStockStatus(updated);
+    try { localStorage.setItem('cyber_game_stock_status', JSON.stringify(updated)); } catch (e) {}
+
+    const targetRef = ref(db, `game_stock_status/${gameId}`);
+    set(targetRef, nextStatus);
+
+    setAdminCodeMsg({
+      text: nextStatus
+        ? `🟢 เปิดรับเติมเกม "${gameName}" เรียบร้อยแล้ว (มีสต็อกพร้อมให้บริการ)`
+        : `🔴 ตั้งค่าเกม "${gameName}" เป็น "สต็อกหมด" เรียบร้อยแล้ว (ลูกค้าจะไม่สามารถเติมเกมนี้ได้)`,
+      type: 'success'
+    });
+    setTimeout(() => setAdminCodeMsg({ text: '', type: '' }), 5000);
+  };
+
+  const handleSetAllGameStock = (newStatus) => {
+    const updated = {};
+    gamesData.forEach(g => {
+      updated[g.id] = newStatus;
+    });
+    setGameStockStatus(updated);
+    try { localStorage.setItem('cyber_game_stock_status', JSON.stringify(updated)); } catch (e) {}
+
+    const statusRef = ref(db, 'game_stock_status');
+    set(statusRef, updated);
+
+    setAdminCodeMsg({
+      text: newStatus
+        ? '🟢 เปิดรับเติมทุกเกมในระบบเรียบร้อยแล้ว (มีสต็อกพร้อมให้บริการทุกเกม)'
+        : '🔴 ตั้งค่าทุกเกมในระบบเป็น "สต็อกหมด" เรียบร้อยแล้ว (ปิดรับเติมทุกเกมชั่วคราว)',
+      type: 'success'
+    });
+    setTimeout(() => setAdminCodeMsg({ text: '', type: '' }), 5000);
+  };
+
   const [stockList, setStockList] = useState([]);
   const [stockGame, setStockGame] = useState('VALORANT');
   const [stockPackage, setStockPackage] = useState('125 VP');
@@ -3330,17 +3391,52 @@ export default function App() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: '24px', marginBottom: '35px' }}>
               {filteredGames.map((game) => {
                 const minPrice = game.packages && game.packages.length > 0 ? Math.min(...game.packages.map(p => p.price)) : 0;
+                const isOutOfStock = gameStockStatus[game.id] === false;
                 return (
                   <div 
                     key={game.id} 
                     className="cyber-game-card"
-                    onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPackageQuantity(1); setPlayerId(''); }} 
+                    onClick={() => {
+                      if (isOutOfStock) {
+                        alert(`⚠️ ขออภัย ขณะนี้สต็อกของเกม "${game.name}" หมดชั่วคราว ทางร้านกำลังเร่งเติมสต็อก กรุณาเลือกรอหรือเติมเกมอื่นแทนครับ`);
+                        return;
+                      }
+                      setSelectedGame(game); setSelectedPackage(null); setPackageQuantity(1); setPlayerId('');
+                    }} 
+                    style={{
+                      opacity: isOutOfStock ? 0.78 : 1,
+                      filter: isOutOfStock ? 'grayscale(0.25)' : 'none',
+                      cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+                    }}
                   >
                     <div className="cyber-game-cover-wrap">
                       <img src={game.image} alt={game.name} className="cyber-game-cover-img" />
                       {/* Gradient bottom shadow on image */}
                       <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '70px', background: 'linear-gradient(to top, rgba(17, 24, 39, 0.98) 0%, rgba(17, 24, 39, 0.4) 60%, transparent 100%)', pointerEvents: 'none' }} />
                       
+                      {/* Out of stock overlay */}
+                      {isOutOfStock && (
+                        <div style={{
+                          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                          backgroundColor: 'rgba(3, 7, 18, 0.72)', backdropFilter: 'blur(3px)',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                          zIndex: 10, padding: '10px', textAlign: 'center'
+                        }}>
+                          <span style={{ fontSize: '26px', marginBottom: '4px' }}>🔒</span>
+                          <span style={{
+                            backgroundColor: '#dc2626', color: '#ffffff',
+                            border: '1.5px solid #ef4444', padding: '4px 12px',
+                            borderRadius: '8px', fontSize: '11px', fontWeight: '900',
+                            boxShadow: '0 0 15px rgba(239, 68, 68, 0.8)', letterSpacing: '0.5px'
+                          }}>
+                            🔴 สต็อกหมดชั่วคราว
+                          </span>
+                          <span style={{ fontSize: '10px', color: '#fca5a5', marginTop: '6px', fontWeight: 'bold' }}>
+                            ปิดรับเติมชั่วคราว
+                          </span>
+                        </div>
+                      )}
+
                       {/* Floating Badge */}
                       <span className="cyber-badge-pulse" style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(15, 23, 42, 0.9)', color: '#c084fc', border: '1px solid #c084fc', padding: '4px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold', backdropFilter: 'blur(8px)', boxShadow: '0 0 12px rgba(168,85,247,0.5)' }}>
                         {game.badge}
@@ -3355,18 +3451,50 @@ export default function App() {
                     <div style={{ padding: '18px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
                         <h3 style={{ fontSize: '17px', fontWeight: 'bold', margin: 0, color: '#ffffff' }}>{game.name}</h3>
-                        <span style={{ fontSize: '10px', color: '#34d399', backgroundColor: 'rgba(52,211,153,0.15)', border: '1px solid #34d399', padding: '2px 6px', borderRadius: '6px', fontWeight: 'bold' }}>
-                          ⚡ เติมตรง UID
+                        <span style={{ 
+                          fontSize: '10px', 
+                          color: isOutOfStock ? '#ef4444' : '#34d399', 
+                          backgroundColor: isOutOfStock ? 'rgba(239,68,68,0.15)' : 'rgba(52,211,153,0.15)', 
+                          border: `1px solid ${isOutOfStock ? '#ef4444' : '#34d399'}`, 
+                          padding: '2px 6px', 
+                          borderRadius: '6px', 
+                          fontWeight: 'bold' 
+                        }}>
+                          {isOutOfStock ? '🔴 สต็อกหมด' : '⚡ เติมตรง UID'}
                         </span>
                       </div>
                       <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 14px 0', display: 'flex', justifyContent: 'space-between' }}>
                         <span>ค่ายเกม: {game.publisher}</span>
                         <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>เริ่มต้น ฿{minPrice.toLocaleString()}</span>
                       </p>
-                      <button style={{ width: '100%', background: 'linear-gradient(135deg, #9333ea 0%, #3b82f6 100%)', border: '1px solid #c084fc', color: '#ffffff', padding: '11px', borderRadius: '12px', fontWeight: '900', fontSize: '13px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(147,51,234,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                        <span>คลิกเพื่อเติมเงิน</span>
-                        <span style={{ fontSize: '15px' }}>→</span>
-                      </button>
+                      
+                      {isOutOfStock ? (
+                        <button 
+                          type="button"
+                          style={{ 
+                            width: '100%', 
+                            backgroundColor: '#1f2937', 
+                            border: '1px solid #ef4444', 
+                            color: '#f87171', 
+                            padding: '11px', 
+                            borderRadius: '12px', 
+                            fontWeight: '900', 
+                            fontSize: '12px', 
+                            cursor: 'not-allowed', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            gap: '6px' 
+                          }}
+                        >
+                          <span>❌ สต็อกหมด (ปิดรับเติม)</span>
+                        </button>
+                      ) : (
+                        <button style={{ width: '100%', background: 'linear-gradient(135deg, #9333ea 0%, #3b82f6 100%)', border: '1px solid #c084fc', color: '#ffffff', padding: '11px', borderRadius: '12px', fontWeight: '900', fontSize: '13px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(147,51,234,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          <span>คลิกเพื่อเติมเงิน</span>
+                          <span style={{ fontSize: '15px' }}>→</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -3465,10 +3593,32 @@ export default function App() {
               ← กลับไปหน้าเลือกเกม
             </button>
 
+            {/* แบนเนอร์เตือนหากเกมนี้สต็อกหมด */}
+            {gameStockStatus[selectedGame.id] === false && (
+              <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '2px solid #ef4444', borderRadius: '16px', padding: '16px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '14px', boxShadow: '0 0 25px rgba(239,68,68,0.3)' }}>
+                <div style={{ fontSize: '32px' }}>🔒</div>
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: '900', color: '#fca5a5' }}>
+                    ขณะนี้สต็อกของเกม "{selectedGame.name}" หมดชั่วคราว (ปิดรับเติม)
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#cbd5e1', marginTop: '2px' }}>
+                    ทางร้านอยู่ระหว่างการเติมสต็อกสินค้า กรุณาเลือกเกมอื่นหรือติดต่อสอบถามแอดมินทาง LINE Official
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap' }}>
               <img src={selectedGame.image} alt={selectedGame.name} style={{ width: '100px', height: '100px', borderRadius: '16px', objectFit: 'cover', border: '2px solid #a855f7' }} />
               <div>
-                <h2 style={{ fontSize: '26px', fontWeight: '900', margin: '0 0 6px 0' }}>{selectedGame.name}</h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <h2 style={{ fontSize: '26px', fontWeight: '900', margin: '0 0 6px 0' }}>{selectedGame.name}</h2>
+                  {gameStockStatus[selectedGame.id] === false && (
+                    <span style={{ backgroundColor: '#ef4444', color: '#ffffff', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
+                      สต็อกหมดชั่วคราว
+                    </span>
+                  )}
+                </div>
                 <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>ผู้ให้บริการ: {selectedGame.publisher} | เลือกแพ็กเกจด้านล่างเพื่อเติมเงิน</p>
               </div>
             </div>
@@ -3598,17 +3748,24 @@ export default function App() {
             )}
 
             <button 
-              disabled={!playerId.trim() || !selectedPackage || !selectedPayment}
-              onClick={handleStartGamePayment} 
+              disabled={!playerId.trim() || !selectedPackage || !selectedPayment || gameStockStatus[selectedGame?.id] === false}
+              onClick={() => {
+                if (gameStockStatus[selectedGame?.id] === false) {
+                  alert(`⚠️ ขออภัย สต็อกของเกม "${selectedGame.name}" หมดชั่วคราว ไม่สามารถทำรายการสั่งซื้อได้`);
+                  return;
+                }
+                handleStartGamePayment();
+              }} 
               style={{ 
                 width: '100%', 
-                backgroundColor: (!playerId.trim() || !selectedPackage || !selectedPayment) ? '#374151' : '#9333ea', 
+                backgroundColor: (gameStockStatus[selectedGame?.id] === false || !playerId.trim() || !selectedPackage || !selectedPayment) ? '#374151' : '#9333ea', 
                 color: '#ffffff', border: 'none', padding: '16px', borderRadius: '14px', 
-                fontWeight: 'bold', fontSize: '16px', cursor: (!playerId.trim() || !selectedPackage || !selectedPayment) ? 'not-allowed' : 'pointer',
-                boxShadow: (!playerId.trim() || !selectedPackage || !selectedPayment) ? 'none' : '0 0 25px rgba(147,51,234,0.6)'
+                fontWeight: 'bold', fontSize: '16px', 
+                cursor: (gameStockStatus[selectedGame?.id] === false || !playerId.trim() || !selectedPackage || !selectedPayment) ? 'not-allowed' : 'pointer',
+                boxShadow: (gameStockStatus[selectedGame?.id] === false || !playerId.trim() || !selectedPackage || !selectedPayment) ? 'none' : '0 0 25px rgba(147,51,234,0.6)'
               }}
             >
-              {!playerId.trim() ? 'กรุณากรอกชื่อในเกม หรือ UID (ห้ามเว้นว่าง)' : !selectedPackage ? 'กรุณาเลือกแพ็กเกจเติมเกม' : !selectedPayment ? 'กรุณาเลือกช่องทางชำระเงิน' : `ยืนยันชำระเงิน ฿${(selectedPackage.price * packageQuantity).toLocaleString()} (${packageQuantity} แพ็ก)`}
+              {gameStockStatus[selectedGame?.id] === false ? `❌ สต็อกเกม ${selectedGame.name} หมดชั่วคราว (ไม่สามารถเติมได้)` : !playerId.trim() ? 'กรุณากรอกชื่อในเกม หรือ UID (ห้ามเว้นว่าง)' : !selectedPackage ? 'กรุณาเลือกแพ็กเกจเติมเกม' : !selectedPayment ? 'กรุณาเลือกช่องทางชำระเงิน' : `ยืนยันชำระเงิน ฿${(selectedPackage.price * packageQuantity).toLocaleString()} (${packageQuantity} แพ็ก)`}
             </button>
           </div>
         )}
@@ -4367,39 +4524,146 @@ export default function App() {
                 </div>
 
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #10b981', boxShadow: '0 0 30px rgba(16, 185, 129, 0.25)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
                     <div>
-                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#34d399', margin: 0 }}>⚡ ระบบเชื่อมต่อ API เติมแพ็กเกจเข้า UID อัตโนมัติ (Direct Game Server API)</h3>
+                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#34d399', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>⚡ จัดการสถานะสต็อก & เปิด-ปิดรับเติมเกม (ทุกเกมในระบบ)</span>
+                      </h3>
                       <p style={{ fontSize: '12px', color: '#d1d5db', margin: '4px 0 0 0' }}>
-                        แอดมินไม่ต้องมานั่งเติมแพ็กเกจเอง และลูกค้าไม่ต้องก๊อปโค้ดไปกรอกเอง — ระบบยิงพอยต์/เพชรเข้า UID ลูกค้าอัตโนมัติทันที 24 ชม.!
+                        แอดมินสามารถคลิกตั้งค่าเกมเป็น "สต็อกหมด" เพื่อปิดรับเติมชั่วคราวได้ทันที ลูกค้าจะไม่สามารถกดเติมเกมนั้นได้จนกว่าแอดมินจะกดเปิด
                       </p>
                     </div>
+                    
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <span style={{ backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '1px solid #34d399', color: '#34d399', padding: '6px 12px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold' }}>
-                        🟢 API เติมตรง: ออนไลน์ 100%
-                      </span>
+                      {/* ปุ่มคำสั่งเปิด/ปิดทั้งหมด */}
+                      <button
+                        type="button"
+                        onClick={() => handleSetAllGameStock(true)}
+                        style={{ backgroundColor: 'rgba(52, 211, 153, 0.15)', border: '1px solid #34d399', color: '#34d399', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        title="เปิดรับเติมทุกเกมพร้อมกัน"
+                      >
+                        🟢 เปิดรับเติมทุกเกม
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSetAllGameStock(false)}
+                        style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#f87171', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        title="ตั้งสต็อกหมดทุกเกมพร้อมกัน"
+                      >
+                        🔴 ตั้งสต็อกหมดทุกเกม
+                      </button>
                       <button
                         type="button"
                         onClick={() => setShowLegacyStockAdmin(!showLegacyStockAdmin)}
-                        style={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#9ca3af', padding: '6px 12px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        style={{ backgroundColor: '#1f2937', border: '1px solid #374151', color: '#9ca3af', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                       >
                         {showLegacyStockAdmin ? 'ซ่อนโหมดโค้ดสำรอง ▲' : 'ดูโหมดโค้ดสำรอง ▼'}
                       </button>
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px', marginBottom: showLegacyStockAdmin ? '20px' : '0' }}>
-                    {gamesData.map((g) => (
-                      <div key={g.id} style={{ backgroundColor: '#030712', border: '1px solid rgba(52, 211, 153, 0.4)', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#ffffff' }}>{g.name}</div>
-                          <div style={{ fontSize: '10px', color: '#38bdf8' }}>{g.packages.length} แพ็กเกจ (Direct UID)</div>
+                  {/* สรุปจำนวนเกมที่พร้อมรับเติม vs สต็อกหมด */}
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', fontSize: '12px' }}>
+                    <span style={{ backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '1px solid #34d399', color: '#34d399', padding: '4px 10px', borderRadius: '8px', fontWeight: 'bold' }}>
+                      🟢 พร้อมให้บริการ: {gamesData.filter(g => gameStockStatus[g.id] !== false).length} เกม
+                    </span>
+                    <span style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '4px 10px', borderRadius: '8px', fontWeight: 'bold' }}>
+                      🔴 สต็อกหมด (ปิดรับเติม): {gamesData.filter(g => gameStockStatus[g.id] === false).length} เกม
+                    </span>
+                  </div>
+
+                  {/* ตารางแสดงการ์ดเกมทุกเกม พร้อมปุ่มสลับสถานะ สต็อกหมด / เปิดรับเติม */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px', marginBottom: showLegacyStockAdmin ? '20px' : '0' }}>
+                    {gamesData.map((g) => {
+                      const isOutOfStock = gameStockStatus[g.id] === false;
+                      return (
+                        <div 
+                          key={g.id} 
+                          style={{ 
+                            backgroundColor: isOutOfStock ? 'rgba(30, 20, 25, 0.95)' : '#030712', 
+                            border: isOutOfStock ? '1.5px solid #ef4444' : '1px solid rgba(52, 211, 153, 0.4)', 
+                            borderRadius: '12px', 
+                            padding: '12px 14px', 
+                            display: 'flex', 
+                            flexDirection: 'column',
+                            gap: '10px',
+                            boxShadow: isOutOfStock ? '0 0 15px rgba(239, 68, 68, 0.25)' : 'none',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <img src={g.image} alt={g.name} style={{ width: '38px', height: '38px', borderRadius: '8px', objectFit: 'cover', border: `1px solid ${isOutOfStock ? '#ef4444' : '#34d399'}` }} />
+                              <div>
+                                <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>{g.name}</div>
+                                <div style={{ fontSize: '10px', color: '#9ca3af' }}>{g.packages.length} แพ็กเกจ (UID)</div>
+                              </div>
+                            </div>
+                            <span style={{ 
+                              fontSize: '10px', 
+                              fontWeight: 'bold', 
+                              color: isOutOfStock ? '#fca5a5' : '#34d399', 
+                              backgroundColor: isOutOfStock ? 'rgba(239, 68, 68, 0.2)' : 'rgba(52, 211, 153, 0.15)', 
+                              padding: '2px 8px', 
+                              borderRadius: '6px', 
+                              border: `1px solid ${isOutOfStock ? '#ef4444' : '#34d399'}` 
+                            }}>
+                              {isOutOfStock ? '🔴 สต็อกหมด' : '🟢 มีสต็อก'}
+                            </span>
+                          </div>
+
+                          {/* ปุ่มสลับสถานะ สต็อกหมด / เปิดรับเติม */}
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            {isOutOfStock ? (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleGameStock(g.id, g.name)}
+                                style={{
+                                  width: '100%',
+                                  backgroundColor: '#059669',
+                                  border: '1px solid #34d399',
+                                  color: '#ffffff',
+                                  padding: '7px',
+                                  borderRadius: '8px',
+                                  fontSize: '11px',
+                                  fontWeight: '900',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px',
+                                  boxShadow: '0 0 10px rgba(52, 211, 153, 0.4)'
+                                }}
+                              >
+                                <span>🟢 เติมสต็อกแล้ว (คลิกเปิดรับเติม)</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleGameStock(g.id, g.name)}
+                                style={{
+                                  width: '100%',
+                                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                                  border: '1px solid #ef4444',
+                                  color: '#f87171',
+                                  padding: '7px',
+                                  borderRadius: '8px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '6px'
+                                }}
+                              >
+                                <span>🔴 สต็อกหมด (คลิกปิดรับเติม)</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.15)', padding: '3px 8px', borderRadius: '6px', border: '1px solid #34d399' }}>
-                          ⚡ เติมตรง
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
