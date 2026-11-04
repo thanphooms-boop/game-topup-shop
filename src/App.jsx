@@ -5797,11 +5797,31 @@ export default function App() {
                   </div>
 
                   <div style={{ padding: '16px', textAlign: 'center', color: '#111827' }}>
-                    <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px' }}>ชื่อบัญชี: บจก. ไซเบอร์ ท็อปอัพ (ประเทศไทย)</div>
-                    <div style={{ fontSize: '12px', color: '#374151', fontWeight: 'bold', marginBottom: '8px' }}>ยอดชำระสุทธิ: <span style={{ color: '#005696', fontSize: '20px', fontWeight: '900' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</span></div>
+                    {/* ข้อมูลบัญชีธนาคารร้านจริง */}
+                    <div style={{ backgroundColor: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '10px 12px', marginBottom: '12px', textAlign: 'left' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <span style={{ backgroundColor: '#00a950', color: '#ffffff', fontSize: '10px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px' }}>กสิกรไทย (KBANK)</span>
+                        <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#15803d' }}>นาย ธนภูมิ รักดี</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '15px', fontWeight: '900', color: '#111827', letterSpacing: '1px' }}>186-2-97237-4</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText('1862972374');
+                            alert('📋 คัดลอกเลขที่บัญชี 1862972374 เรียบร้อยแล้ว');
+                          }}
+                          style={{ backgroundColor: '#15803d', color: '#ffffff', border: 'none', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          คัดลอกเลขบัญชี
+                        </button>
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: '12px', color: '#374151', fontWeight: 'bold', marginBottom: '8px' }}>ยอดชำระสุทธิ: <span style={{ color: '#005696', fontSize: '22px', fontWeight: '900' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</span></div>
 
                     <div style={{ display: 'inline-block', padding: '8px', border: '1.5px dashed #005696', borderRadius: '12px', backgroundColor: '#f9fafb' }}>
-                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=PromptPay-CyberTopup-${selectedGame.name}-${selectedPackage.price * packageQuantity}`} alt="PromptPay QR" style={{ width: '150px', height: '150px', display: 'block' }} />
+                      <img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=00020101021129370016A000000677010111011300668629723745802TH5303764540${(selectedPackage.price * packageQuantity).toFixed(2).length.toString().padStart(2, '0')}${(selectedPackage.price * packageQuantity).toFixed(2)}6304`} onError={(e) => { e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=PromptPay-1862972374-${selectedPackage.price * packageQuantity}`; }} alt="PromptPay QR" style={{ width: '150px', height: '150px', display: 'block' }} />
                     </div>
 
                     <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 'bold', marginTop: '8px' }}>
