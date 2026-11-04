@@ -758,10 +758,10 @@ const verifySlipWithSlipOK = async (imageBase64Data, expectedAmount, metadata = 
     console.warn('Backend /api/verify-slip unreachable, falling back to direct SlipOK connection:', backendErr);
   }
 
-  // 2. Fallback: ยิงตรงไปที่ SlipOK API (Branch: 80194, Key: SLIPOKWWHSB0O) เพื่อให้ทำงานได้ 100% เสมอ!
+  // 2. Fallback: ยิงตรงไปที่ SlipOK API (Branch: 80221, Key: SLIPOKQ4IRV70) เพื่อให้ทำงานได้ 100% เสมอ!
   try {
-    const slipokBranch = '80194';
-    const slipokKey = 'SLIPOKWWHSB0O';
+    const slipokBranch = '80221';
+    const slipokKey = 'SLIPOKQ4IRV70';
 
     const directResponse = await fetch(`https://api.slipok.com/api/line/apikey/${slipokBranch}`, {
       method: 'POST',
