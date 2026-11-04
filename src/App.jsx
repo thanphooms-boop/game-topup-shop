@@ -1163,8 +1163,6 @@ export default function App() {
   const totalAdminGiftPages = Math.ceil(giftCodes.length / ROWS_PER_PAGE_ADMIN_GIFTS) || 1;
   const paginatedAdminGifts = giftCodes.slice((adminGiftPage - 1) * ROWS_PER_PAGE_ADMIN_GIFTS, adminGiftPage * ROWS_PER_PAGE_ADMIN_GIFTS);
 
-  // ... existing code ...
-  // (Screen Rendering: Login view when user is null, Main Application view when user is logged in)
   if (!user) {
     return (
       <div style={{
@@ -1336,7 +1334,14 @@ export default function App() {
               )}
 
               {forgotStep === 1 && (
-                <form onSubmit={handleRequestOtp} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!forgotEmailInput.trim()) return;
+                  const otp = String(Math.floor(100000 + Math.random() * 900000));
+                  setGeneratedOtp(otp);
+                  setForgotStep(2);
+                  setForgotStatusMsg({ text: `ส่ง OTP สำเร็จ! (รหัสจำลอง: ${otp})`, type: 'success' });
+                }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <input 
                     type="text" 
                     placeholder="กรอกชื่อผู้ใช้หรืออีเมลของคุณ..."
@@ -1351,7 +1356,15 @@ export default function App() {
               )}
 
               {forgotStep === 2 && (
-                <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  if (forgotOtpInput.trim() !== generatedOtp) {
+                    setForgotStatusMsg({ text: 'รหัส OTP ไม่ถูกต้อง กรุณาลองใหม่', type: 'error' });
+                    return;
+                  }
+                  setForgotStep(3);
+                  setForgotStatusMsg({ text: 'ยืนยัน OTP สำเร็จ กรุณาตั้งรหัสผ่านใหม่', type: 'success' });
+                }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ fontSize: '12px', color: '#9ca3af' }}>กรอกรหัสยืนยัน 6 หลักที่ได้รับ:</div>
                   <input 
                     type="text" 
@@ -1368,7 +1381,21 @@ export default function App() {
               )}
 
               {forgotStep === 3 && (
-                <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (forgotNewPassword.length < 6) {
+                    setForgotStatusMsg({ text: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร', type: 'error' });
+                    return;
+                  }
+                  if (forgotNewPassword !== forgotConfirmPassword) {
+                    setForgotStatusMsg({ text: 'รหัสผ่านยืนยันไม่ตรงกัน', type: 'error' });
+                    return;
+                  }
+                  showToast('เปลี่ยนรหัสผ่านสำเร็จ! กรุณาเข้าสู่ระบบด้วยรหัสผ่านใหม่');
+                  setForgotModalOpen(false);
+                  setForgotStep(1);
+                  setPasswordInput(forgotNewPassword);
+                }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <input 
                     type="password" 
                     placeholder="ตั้งรหัสผ่านใหม่ (อย่างน้อย 6 ตัว)..."
@@ -1411,11 +1438,11 @@ export default function App() {
         </div>
       )}
 
-      {/* Header: Adjusted layout placing navigation buttons on top-right (Image 2 adjustment) */}
+      {/* Header: Navigation aligned neatly on the top-right */}
       <header style={{ backgroundColor: 'rgba(17, 24, 39, 0.92)', backdropFilter: 'blur(12px)', borderBottom: '1.5px solid rgba(147, 51, 234, 0.3)', position: 'sticky', top: 0, zIndex: 40, padding: '12px 24px' }}>
         <div style={{ maxWidth: '1240px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
           
-          {/* Top-Left: Logo */}
+          {/* Top-Left: Brand Logo */}
           <div onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
             <div style={{ width: '44px', height: '44px', borderRadius: '14px', background: 'linear-gradient(135deg, #a855f7, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', boxShadow: '0 0 15px rgba(168,85,247,0.7)' }}>
               ⚡
@@ -1426,7 +1453,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Top-Right: User status badges + Clean Aligned Navigation Buttons */}
+          {/* Top-Right: User info + Clean Aligned Menu Buttons */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginLeft: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '6px 12px' }}>
               <div style={{ fontSize: '13px' }}>{currentUserRank.icon}</div>
@@ -1454,7 +1481,7 @@ export default function App() {
               </button>
             </div>
 
-            {/* Navigation buttons aligned on top-right */}
+            {/* Menu Buttons placed on top-right */}
             <nav style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <button 
                 onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}
@@ -1698,7 +1725,7 @@ export default function App() {
               <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '12px', fontWeight: 'bold' }}>
                 3. เลือกช่องทางชำระเงิน
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
                 {paymentMethods.map(pm => {
                   const isSel = selectedPayment?.id === pm.id;
                   return (
