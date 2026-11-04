@@ -26,9 +26,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'กรุณาแนบไฟล์รูปภาพสลิปโอนเงิน' });
     }
 
-    // รหัสสาขา 80221 และ API Key ใหม่ล่าสุดจาก SlipOK
-    const branchId = process.env.SLIPOK_BRANCH_ID || '80221';
-    const apiKey = process.env.SLIPOK_API_KEY || 'SLIPOKQ4IRV70';
+    // รหัสสาขา 80221 และ API Key ตัวจริงจาก SlipOK
+    const branchId = '80221';
+    const apiKey = 'SLIPOKQ4IRV70';
 
     let cleanBase64 = imageBase64;
     if (cleanBase64.includes(',')) {
