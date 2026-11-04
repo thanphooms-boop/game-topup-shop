@@ -26,17 +26,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'กรุณาแนบไฟล์รูปภาพสลิปโอนเงิน' });
     }
 
-    // ดึงค่า Branch ID และ API Key จาก Environment Variables
     const branchId = process.env.SLIPOK_BRANCH_ID || '80194';
     const apiKey = process.env.SLIPOK_API_KEY || 'SLIPOKWWHSB0O';
 
-    // ตัด Prefix data:image/... ออกให้เหลือเฉพาะ Base64
     let cleanBase64 = imageBase64;
     if (cleanBase64.includes(',')) {
       cleanBase64 = cleanBase64.split(',')[1];
     }
 
-    // 1. ส่งข้อมูลรูปภาพไปตรวจสอบกับ SlipOK API
     const slipokResponse = await fetch(`https://api.slipok.com/api/line/apikey/${branchId}`, {
       method: 'POST',
       headers: {
@@ -51,7 +48,6 @@ export default async function handler(req, res) {
 
     const slipData = await slipokResponse.json();
 
-    // 2. กรณีสลิปไม่ถูกต้อง หรือยอดเงินไม่ตรงกับราคาแพ็กเกจ
     if (!slipokResponse.ok || !slipData.success) {
       const errorMessage = slipData.message || 'สลิปไม่ถูกต้อง ยอดเงินไม่ตรง หรือไม่ได้โอนเข้าบัญชีร้าน';
       return res.status(400).json({
@@ -61,7 +57,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // 3. ตรวจสอบผ่านสำเร็จ
     const transaction = slipData.data || {};
     const transRef = transaction.transRef || transaction.transNo || orderId;
 
@@ -72,7 +67,7 @@ export default async function handler(req, res) {
         transRef: transRef,
         amount: transaction.amount,
         sender: transaction.sender?.name || 'ลูกค้า',
-        receiver: transaction.receiver?.name || 'นาย ธนภูมิ รักดี',
+        receiver: transaction.receiver?.name || 'นาย ธนภูมิ รักษี',
         orderId: orderId,
         game: game,
         packageItem: packageItem,
