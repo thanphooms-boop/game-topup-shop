@@ -5851,13 +5851,9 @@ export default function App() {
                     {/* รูปแบบ QR Code สแกนจ่ายเงินจริง รองรับทุกแอปธนาคาร 100% */}
                     <div style={{ display: 'inline-block', padding: '10px', border: '2px solid #005696', borderRadius: '16px', backgroundColor: '#ffffff', boxShadow: '0 4px 15px rgba(0,86,150,0.15)' }}>
                       <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(generatePromptPayQrPayload(selectedPackage.price * packageQuantity))}`}
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = OFFICIAL_KPLUS_QR_IMAGE;
-                        }}
-                        alt="Thai QR Payment"
-                        style={{ width: '180px', height: '180px', display: 'block', borderRadius: '8px' }}
+                        src={OFFICIAL_KPLUS_QR_IMAGE}
+                        alt="Thai QR Payment - นาย ธนภูมิ รักษี"
+                        style={{ width: '190px', height: 'auto', display: 'block', borderRadius: '8px' }}
                       />
                       <div style={{ fontSize: '11px', color: '#005696', fontWeight: 'bold', marginTop: '6px' }}>
                         ✓ Thai QR Payment / PromptPay
