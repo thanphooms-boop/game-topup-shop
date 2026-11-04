@@ -132,6 +132,110 @@ const cyberGlobalStyles = `
     border-color: #38bdf8 !important;
     box-shadow: 0 0 15px rgba(56, 189, 248, 0.35) !important;
   }
+
+  /* Game Card & Cover Image Effects (เอฟเฟกต์ปกเกมสวยงาม ดูเป็นทางการ) */
+  .cyber-game-card {
+    position: relative;
+    background: rgba(17, 24, 39, 0.88);
+    border: 1.5px solid rgba(168, 85, 247, 0.35);
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  }
+
+  .cyber-game-card:hover {
+    transform: translateY(-8px) scale(1.025) !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 18px 45px rgba(168, 85, 247, 0.5), 0 0 30px rgba(56, 189, 248, 0.45) !important;
+  }
+
+  .cyber-game-cover-wrap {
+    height: 165px;
+    overflow: hidden;
+    position: relative;
+    background-color: #030712;
+  }
+
+  .cyber-game-cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), filter 0.4s ease !important;
+    filter: brightness(0.96) contrast(1.03);
+  }
+
+  .cyber-game-card:hover .cyber-game-cover-img {
+    transform: scale(1.09) !important;
+    filter: brightness(1.12) contrast(1.08) !important;
+  }
+
+  /* Cyber Shimmer Light Sweep Effect on Game Covers */
+  .cyber-game-cover-wrap::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 80%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+    transform: skewX(-25deg);
+    transition: left 0.7s ease;
+    pointer-events: none;
+  }
+
+  .cyber-game-card:hover .cyber-game-cover-wrap::after {
+    left: 150%;
+  }
+
+  /* Badge Animation */
+  .cyber-badge-pulse {
+    animation: cyberBadgeFloat 2.8s ease-in-out infinite;
+  }
+
+  @keyframes cyberBadgeFloat {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+
+  /* LINE Floating Button Animations (เอฟเฟกต์ไลน์ลอยขยับได้นิดหน่อย สวยงามเป็นทางการ) */
+  .line-floating-btn {
+    animation: lineFloat 3.2s ease-in-out infinite, lineGlow 3.2s ease-in-out infinite;
+  }
+
+  @keyframes lineFloat {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-7px) rotate(1deg);
+    }
+  }
+
+  @keyframes lineGlow {
+    0%, 100% {
+      box-shadow: 0 8px 25px rgba(6, 199, 85, 0.45), 0 0 15px rgba(6, 199, 85, 0.3);
+    }
+    50% {
+      box-shadow: 0 14px 35px rgba(6, 199, 85, 0.75), 0 0 25px rgba(56, 189, 248, 0.45);
+    }
+  }
+
+  @keyframes cyberPulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.4;
+      transform: scale(1.3);
+    }
+  }
 `;
 
 // การตั้งค่าระดับแรงค์ลูกค้า (VIP Rank Tiers) ตามยอดเงินเติมแพ็กเกจเกมสะสม
@@ -489,13 +593,31 @@ export default function App() {
     const unsubscribe = onValue(usersRef, (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const userList = Object.keys(data).map(key => ({
-          firebaseKey: key,
-          ...data[key]
-        }));
+        // อัตโนมัติ: ลบบัญชี nattapong ออกจากระบบเพื่อให้สามารถสมัครสมาชิกใหม่ได้ตามต้องการ
+        Object.keys(data).forEach(key => {
+          const u = data[key];
+          if (u && (u.username?.toLowerCase() === 'nattapong' || u.email?.toLowerCase().includes('nattapong'))) {
+            remove(ref(db, `users/${key}`));
+          }
+        });
+
+        const userList = Object.keys(data)
+          .filter(key => {
+            const u = data[key];
+            return !(u && (u.username?.toLowerCase() === 'nattapong' || u.email?.toLowerCase().includes('nattapong')));
+          })
+          .map(key => ({
+            ...data[key],
+            firebaseKey: key
+          }));
+
         setRegisteredUsers(userList);
         setUser(prevUser => {
           if (!prevUser) return null;
+          if (prevUser.username?.toLowerCase() === 'nattapong' || prevUser.email?.toLowerCase().includes('nattapong')) {
+            try { localStorage.removeItem('cyber_current_logged_user'); } catch (e) {}
+            return null;
+          }
           const updated = userList.find(u =>
             (u.firebaseKey && u.firebaseKey === prevUser.firebaseKey) ||
             (u.username && prevUser.username && u.username.toLowerCase() === prevUser.username.toLowerCase())
@@ -512,6 +634,35 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  // ระบบรีเซ็ตยอดเครดิตร้านและประวัติคำสั่งซื้อทุกไอดีให้เหลือ 0 อัตโนมัติในครั้งแรก
+  useEffect(() => {
+    const isResetZeroDone = localStorage.getItem('cyber_reset_zero_all_accounts_2026');
+    if (!isResetZeroDone && registeredUsers.length > 0) {
+      registeredUsers.forEach(u => {
+        if (u.firebaseKey) {
+          if (u.username?.toLowerCase() === 'nattapong' || u.email?.toLowerCase().includes('nattapong')) {
+            remove(ref(db, `users/${u.firebaseKey}`));
+          } else if (u.balance !== 0) {
+            set(ref(db, `users/${u.firebaseKey}/balance`), 0);
+          }
+        }
+      });
+      remove(ref(db, 'orders'));
+      setOrders([]);
+      if (user) {
+        if (user.username?.toLowerCase() === 'nattapong') {
+          setUser(null);
+          localStorage.removeItem('cyber_current_logged_user');
+        } else if (user.balance !== 0) {
+          const resetU = { ...user, balance: 0 };
+          setUser(resetU);
+          try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(resetU)); } catch (e) {}
+        }
+      }
+      localStorage.setItem('cyber_reset_zero_all_accounts_2026', 'done');
+    }
+  }, [registeredUsers, user]);
 
   const handleAuthSubmit = (e) => {
     e.preventDefault();
@@ -964,6 +1115,10 @@ export default function App() {
   const [confirmClearAllGiftCodes, setConfirmClearAllGiftCodes] = useState(false);
   const [rankTooltipOpen, setRankTooltipOpen] = useState(false);
   const [adminAnalyticsTab, setAdminAnalyticsTab] = useState('all');
+  const [showLineModal, setShowLineModal] = useState(false);
+  const [copiedLineId, setCopiedLineId] = useState(false);
+  const [confirmResetAllSystem, setConfirmResetAllSystem] = useState(false);
+  const [confirmDeleteUserKey, setConfirmDeleteUserKey] = useState(null);
 
   useEffect(() => {
     const found = gamesData.find(g => g.name === newCodeGame);
@@ -1776,6 +1931,59 @@ export default function App() {
         }, 700);
       }, 800);
     }, 800);
+  };
+
+  // ฟังก์ชันรีเซ็ตเครดิตและประวัติคำสั่งซื้อทุกไอดีให้เหลือ 0 แต่ยังคงบัญชีไว้ และลบ nattapong ให้สมัครใหม่
+  const handleExecuteResetAll = () => {
+    setConfirmResetAllSystem(false);
+    registeredUsers.forEach(u => {
+      if (u.firebaseKey) {
+        if (u.username?.toLowerCase() === 'nattapong' || u.email?.toLowerCase().includes('nattapong')) {
+          remove(ref(db, `users/${u.firebaseKey}`));
+        } else {
+          set(ref(db, `users/${u.firebaseKey}/balance`), 0);
+        }
+      }
+    });
+    remove(ref(db, 'orders'));
+    setOrders([]);
+    if (user) {
+      if (user.username?.toLowerCase() === 'nattapong') {
+        setUser(null);
+        localStorage.removeItem('cyber_current_logged_user');
+      } else {
+        const resetU = { ...user, balance: 0 };
+        setUser(resetU);
+        try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(resetU)); } catch (e) {}
+      }
+    }
+    setAdminCodeMsg({
+      text: '✅ รีเซ็ตยอดเครดิตและประวัติออเดอร์ทุกไอดีให้เหลือ 0 สำเร็จเรียบร้อยแล้ว (บัญชีเดิมยังคงอยู่ครบถ้วน) และลบไอดี nattapong ให้สมัครใหม่ได้แล้ว',
+      type: 'success'
+    });
+    setTimeout(() => setAdminCodeMsg({ text: '', type: '' }), 6000);
+  };
+
+  // ฟังก์ชันลบบัญชีผู้ใช้รายบุคคล (เช่น ลบไอดี nattapong หรือไอดีอื่นๆ เพื่อให้สมัครใหม่)
+  const handleDeleteUserAccount = (targetUser) => {
+    if (targetUser && targetUser.firebaseKey) {
+      remove(ref(db, `users/${targetUser.firebaseKey}`))
+        .then(() => {
+          setRegisteredUsers(prev => prev.filter(u => u.firebaseKey !== targetUser.firebaseKey));
+          if (user && user.firebaseKey === targetUser.firebaseKey) {
+            setUser(null);
+            localStorage.removeItem('cyber_current_logged_user');
+          }
+          setAdminCodeMsg({
+            text: `🗑️ ลบบัญชีผู้ใช้ "${targetUser.username}" สำเร็จเรียบร้อยแล้ว (สามารถสมัครใหม่ด้วยชื่อนี้ได้ทันที)`,
+            type: 'success'
+          });
+          setTimeout(() => setAdminCodeMsg({ text: '', type: '' }), 5000);
+        })
+        .catch(err => {
+          setAdminCodeMsg({ text: `เกิดข้อผิดพลาดในการลบบัญชี: ${err.message}`, type: 'error' });
+        });
+    }
   };
 
   const handleAdminApproveOrder = (order) => {
@@ -2665,32 +2873,50 @@ export default function App() {
               </h2>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '22px', marginBottom: '35px' }}>
-              {filteredGames.map((game) => (
-                <div 
-                  key={game.id} 
-                  onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPackageQuantity(1); setPlayerId(''); }} 
-                  style={{ 
-                    backgroundColor: 'rgba(17, 24, 39, 0.85)', 
-                    border: '1.5px solid rgba(168, 85, 247, 0.35)', 
-                    borderRadius: '20px', 
-                    overflow: 'hidden', 
-                    cursor: 'pointer', 
-                    boxShadow: '0 6px 25px rgba(0,0,0,0.6)',
-                    position: 'relative'
-                  }} 
-                >
-                  <div style={{ height: '160px', overflow: 'hidden', position: 'relative' }}>
-                    <img src={game.image} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <span style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(15, 23, 42, 0.85)', color: '#c084fc', border: '1px solid #c084fc', padding: '3px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold' }}>{game.badge}</span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: '24px', marginBottom: '35px' }}>
+              {filteredGames.map((game) => {
+                const minPrice = game.packages && game.packages.length > 0 ? Math.min(...game.packages.map(p => p.price)) : 0;
+                return (
+                  <div 
+                    key={game.id} 
+                    className="cyber-game-card"
+                    onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPackageQuantity(1); setPlayerId(''); }} 
+                  >
+                    <div className="cyber-game-cover-wrap">
+                      <img src={game.image} alt={game.name} className="cyber-game-cover-img" />
+                      {/* Gradient bottom shadow on image */}
+                      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '70px', background: 'linear-gradient(to top, rgba(17, 24, 39, 0.98) 0%, rgba(17, 24, 39, 0.4) 60%, transparent 100%)', pointerEvents: 'none' }} />
+                      
+                      {/* Floating Badge */}
+                      <span className="cyber-badge-pulse" style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(15, 23, 42, 0.9)', color: '#c084fc', border: '1px solid #c084fc', padding: '4px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold', backdropFilter: 'blur(8px)', boxShadow: '0 0 12px rgba(168,85,247,0.5)' }}>
+                        {game.badge}
+                      </span>
+
+                      {/* Category Chip */}
+                      <span style={{ position: 'absolute', bottom: '10px', left: '12px', backgroundColor: 'rgba(3, 7, 18, 0.85)', color: '#38bdf8', border: '1px solid #0284c7', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        {game.category === 'pc' ? '🖥️ PC GAMING' : '📱 MOBILE GAMING'}
+                      </span>
+                    </div>
+
+                    <div style={{ padding: '18px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                        <h3 style={{ fontSize: '17px', fontWeight: 'bold', margin: 0, color: '#ffffff' }}>{game.name}</h3>
+                        <span style={{ fontSize: '10px', color: '#34d399', backgroundColor: 'rgba(52,211,153,0.15)', border: '1px solid #34d399', padding: '2px 6px', borderRadius: '6px', fontWeight: 'bold' }}>
+                          ⚡ เติมตรง UID
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 14px 0', display: 'flex', justifyContent: 'space-between' }}>
+                        <span>ค่ายเกม: {game.publisher}</span>
+                        <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>เริ่มต้น ฿{minPrice.toLocaleString()}</span>
+                      </p>
+                      <button style={{ width: '100%', background: 'linear-gradient(135deg, #9333ea 0%, #3b82f6 100%)', border: '1px solid #c084fc', color: '#ffffff', padding: '11px', borderRadius: '12px', fontWeight: '900', fontSize: '13px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(147,51,234,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                        <span>คลิกเพื่อเติมเงิน</span>
+                        <span style={{ fontSize: '15px' }}>→</span>
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ padding: '16px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0' }}>{game.name}</h3>
-                    <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 12px 0' }}>{game.publisher}</p>
-                    <button style={{ width: '100%', backgroundColor: '#9333ea', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>คลิกเพื่อเติมเงิน →</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(56, 189, 248, 0.6)', borderRadius: '20px', padding: '25px 30px', marginBottom: '35px' }}>
@@ -3691,6 +3917,179 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* การจัดการสมาชิก & รีเซ็ตข้อมูลระบบ (User Management & Reset System) */}
+                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #ec4899', boxShadow: '0 0 30px rgba(236,72,153,0.25)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                    <div>
+                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#f472b6', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>👥 จัดการบัญชีสมาชิก & รีเซ็ตข้อมูลระบบ</span>
+                      </h3>
+                      <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0 0' }}>
+                        ควบคุมบัญชีผู้ใช้ ลบบัญชีเพื่อให้ลูกค้าสมัครใหม่ และรีเซ็ตยอดเครดิต/ประวัติออเดอร์ให้เหลือ 0 โดยยังคงบัญชีสมาชิกไว้
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                      {confirmResetAllSystem ? (
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={handleExecuteResetAll}
+                            style={{
+                              backgroundColor: '#dc2626',
+                              border: '1px solid #ef4444',
+                              color: '#ffffff',
+                              padding: '8px 16px',
+                              borderRadius: '10px',
+                              fontWeight: 'bold',
+                              fontSize: '12px',
+                              cursor: 'pointer',
+                              boxShadow: '0 0 15px rgba(239, 68, 68, 0.7)'
+                            }}
+                          >
+                            ⚠️ ยืนยันรีเซ็ตทุกไอดีเป็น 0!
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmResetAllSystem(false)}
+                            style={{
+                              backgroundColor: '#374151',
+                              border: '1px solid #4b5563',
+                              color: '#d1d5db',
+                              padding: '8px 12px',
+                              borderRadius: '10px',
+                              fontWeight: 'bold',
+                              fontSize: '12px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ยกเลิก
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmResetAllSystem(true)}
+                          style={{
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            border: '1.5px solid #ef4444',
+                            color: '#f87171',
+                            padding: '8px 16px',
+                            borderRadius: '10px',
+                            fontWeight: 'bold',
+                            fontSize: '12px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          🔄 รีเซ็ตเครดิต & ประวัติทุกไอดีเป็น 0 (คงบัญชีไว้)
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>
+                        📋 รายชื่อบัญชีสมาชิกทั้งหมดในระบบ ({registeredUsers.length} บัญชี)
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#38bdf8' }}>
+                        💡 คลิก "ลบบัญชี" เพื่อให้ลูกค้านำชื่อผู้ใช้/อีเมลเดิมไปสมัครใหม่ได้ทันที
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px', maxHeight: '280px', overflowY: 'auto' }}>
+                      {registeredUsers.map(u => {
+                        const isNattapong = u.username?.toLowerCase() === 'nattapong';
+                        const isDeletingThis = confirmDeleteUserKey === u.firebaseKey;
+                        return (
+                          <div 
+                            key={u.firebaseKey || u.username}
+                            style={{
+                              backgroundColor: isNattapong ? 'rgba(239, 68, 68, 0.15)' : '#111827',
+                              border: `1px solid ${isNattapong ? '#ef4444' : '#1f2937'}`,
+                              borderRadius: '10px',
+                              padding: '10px 14px',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span>👤 {u.username}</span>
+                                {isNattapong && (
+                                  <span style={{ fontSize: '9px', backgroundColor: '#ef4444', color: '#ffffff', padding: '1px 5px', borderRadius: '4px', fontWeight: '900' }}>
+                                    เป้าหมายลบ
+                                  </span>
+                                )}
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+                                📧 {u.email || 'ไม่มีอีเมล'} | เครดิต: <b style={{ color: '#34d399' }}>฿{(u.balance || 0).toLocaleString()}</b>
+                              </div>
+                            </div>
+
+                            <div>
+                              {isDeletingThis ? (
+                                <div style={{ display: 'flex', gap: '4px' }}>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteUserAccount(u)}
+                                    style={{
+                                      backgroundColor: '#dc2626',
+                                      border: 'none',
+                                      color: '#ffffff',
+                                      padding: '4px 8px',
+                                      borderRadius: '6px',
+                                      fontSize: '10px',
+                                      fontWeight: 'bold',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    ยืนยัน
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmDeleteUserKey(null)}
+                                    style={{
+                                      backgroundColor: '#374151',
+                                      border: 'none',
+                                      color: '#ffffff',
+                                      padding: '4px 6px',
+                                      borderRadius: '6px',
+                                      fontSize: '10px',
+                                      cursor: 'pointer'
+                                    }}
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteUserKey(u.firebaseKey)}
+                                  style={{
+                                    backgroundColor: isNattapong ? '#ef4444' : 'rgba(239, 68, 68, 0.15)',
+                                    border: '1px solid #ef4444',
+                                    color: isNattapong ? '#ffffff' : '#f87171',
+                                    padding: '5px 10px',
+                                    borderRadius: '8px',
+                                    fontSize: '11px',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  🗑️ ลบบัญชี
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🎁 สร้างและจัดการโค้ดของขวัญพิเศษ (Realtime Cloud)</h3>
@@ -4061,6 +4460,128 @@ export default function App() {
             )}
           </div>
         )}
+            {/* LINE OFFICIAL FLOATING CONTACT WIDGET (เอฟเฟกต์ลอยขยับได้นิดหน่อย สวยงาม ดูเป็นทางการ) */}
+      <div style={{ position: 'fixed', bottom: '25px', left: '25px', zIndex: 99 }}>
+        <div
+          onClick={() => setShowLineModal(true)}
+          className="line-floating-btn"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            backgroundColor: '#06c755',
+            color: '#ffffff',
+            padding: '10px 18px',
+            borderRadius: '30px',
+            cursor: 'pointer',
+            userSelect: 'none',
+            border: '2px solid rgba(255, 255, 255, 0.45)',
+            boxShadow: '0 8px 25px rgba(6, 199, 85, 0.5), 0 0 15px rgba(6, 199, 85, 0.3)',
+            transition: 'all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }}
+          title="ติดต่อแอดมินผ่าน LINE Official 24 ชม."
+        >
+          {/* Official LINE Speech Bubble SVG */}
+          <div style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="#ffffff">
+              <path d="M19.365 9.863c.349.001.685.034 1.01.096C20.842 5.093 16.31 1.25 10.75 1.25 4.675 1.25 0 5.438 0 10.75c0 4.744 3.733 8.654 8.795 9.388.384.084.908.257 1.04.589.12.302.079.774.039 1.079l-.167 1.006c-.052.31-.247 1.213 1.063.661 1.309-.551 7.054-4.156 9.626-7.114 1.637-1.884 2.535-4.156 2.535-6.495 0-.001 0-.001 0-.001zM7.228 13.064H5.321a.58.58 0 0 1-.58-.58V8.625a.58.58 0 0 1 .58-.58h1.907a.58.58 0 1 1 0 1.16H5.901v1.139h1.327a.58.58 0 1 1 0 1.16H5.901v1.139h1.327a.58.58 0 1 1 0 1.16zm3.329 0a.58.58 0 0 1-.58-.58V8.625a.58.58 0 1 1 1.16 0v3.859a.58.58 0 0 1-.58.58zm4.492 0a.58.58 0 0 1-.464-.233L12.5 9.998v2.486a.58.58 0 1 1-1.16 0V8.625a.58.58 0 0 1 .936-.457l2.193 2.943V8.625a.58.58 0 1 1 1.16 0v3.859a.58.58 0 0 1-.58.58zm3.805 0h-1.907a.58.58 0 0 1-.58-.58V8.625a.58.58 0 0 1 .58-.58h1.907a.58.58 0 1 1 0 1.16h-1.327v1.139h1.327a.58.58 0 1 1 0 1.16h-1.327v1.139h1.327a.58.58 0 1 1 0 1.16z"/>
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', fontWeight: '900', lineHeight: '1.2', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>LINE Official</span>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ffffff', animation: 'cyberPulse 1.6s infinite' }} />
+            </div>
+            <div style={{ fontSize: '10px', opacity: 0.95, letterSpacing: '0.5px' }}>
+              @cybertopup (แอดมิน 24 ชม.)
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* LINE OFFICIAL CONTACT MODAL */}
+      {showLineModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 120, padding: '20px' }}>
+          <div style={{ backgroundColor: '#111827', border: '2px solid #06c755', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 45px rgba(6,199,85,0.4)', position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => setShowLineModal(false)}
+              style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#9ca3af', fontSize: '18px', cursor: 'pointer', padding: '4px 8px' }}
+            >
+              ✕
+            </button>
+
+            <div style={{ width: '60px', height: '60px', borderRadius: '50%', backgroundColor: '#06c755', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px auto', boxShadow: '0 0 20px rgba(6,199,85,0.6)' }}>
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="#ffffff">
+                <path d="M19.365 9.863c.349.001.685.034 1.01.096C20.842 5.093 16.31 1.25 10.75 1.25 4.675 1.25 0 5.438 0 10.75c0 4.744 3.733 8.654 8.795 9.388.384.084.908.257 1.04.589.12.302.079.774.039 1.079l-.167 1.006c-.052.31-.247 1.213 1.063.661 1.309-.551 7.054-4.156 9.626-7.114 1.637-1.884 2.535-4.156 2.535-6.495 0-.001 0-.001 0-.001zM7.228 13.064H5.321a.58.58 0 0 1-.58-.58V8.625a.58.58 0 0 1 .58-.58h1.907a.58.58 0 1 1 0 1.16H5.901v1.139h1.327a.58.58 0 1 1 0 1.16H5.901v1.139h1.327a.58.58 0 1 1 0 1.16zm3.329 0a.58.58 0 0 1-.58-.58V8.625a.58.58 0 1 1 1.16 0v3.859a.58.58 0 0 1-.58.58zm4.492 0a.58.58 0 0 1-.464-.233L12.5 9.998v2.486a.58.58 0 1 1-1.16 0V8.625a.58.58 0 0 1 .936-.457l2.193 2.943V8.625a.58.58 0 1 1 1.16 0v3.859a.58.58 0 0 1-.58.58zm3.805 0h-1.907a.58.58 0 0 1-.58-.58V8.625a.58.58 0 0 1 .58-.58h1.907a.58.58 0 1 1 0 1.16h-1.327v1.139h1.327a.58.58 0 1 1 0 1.16h-1.327v1.139h1.327a.58.58 0 1 1 0 1.16z"/>
+              </svg>
+            </div>
+
+            <h3 style={{ fontSize: '20px', fontWeight: '900', color: '#ffffff', margin: '0 0 4px 0' }}>
+              LINE Official Account
+            </h3>
+            <p style={{ fontSize: '12px', color: '#34d399', margin: '0 0 18px 0', fontWeight: 'bold' }}>
+              🟢 แอดมินและฝ่ายบริการลูกค้า พร้อมดูแลตลอด 24 ชม.
+            </p>
+
+            <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '16px', width: '170px', height: '170px', margin: '0 auto 18px auto', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img 
+                src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://line.me/R/ti/p/@cybertopup" 
+                alt="LINE QR Code" 
+                style={{ width: '150px', height: '150px', display: 'block' }} 
+              />
+            </div>
+
+            <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', marginBottom: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: '10px', color: '#9ca3af' }}>LINE ID ทางการ:</div>
+                <div style={{ fontSize: '15px', fontWeight: '900', color: '#06c755', letterSpacing: '0.5px' }}>@cybertopup</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (navigator && navigator.clipboard) {
+                    navigator.clipboard.writeText('@cybertopup');
+                    setCopiedLineId(true);
+                    setTimeout(() => setCopiedLineId(false), 2000);
+                  }
+                }}
+                style={{
+                  backgroundColor: copiedLineId ? '#10b981' : '#1f2937',
+                  border: '1px solid #374151',
+                  color: '#ffffff',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                {copiedLineId ? '✓ คัดลอกแล้ว' : '📋 คัดลอก ID'}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setShowLineModal(false)}
+                style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
+              >
+                ปิดหน้าต่าง
+              </button>
+              <a
+                href="https://line.me/R/ti/p/@cybertopup"
+                target="_blank"
+                rel="noreferrer"
+                style={{ flex: 1.5, backgroundColor: '#06c755', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 15px rgba(6,199,85,0.4)' }}
+              >
+                <span>📲 แอด LINE ทันที</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       </main>
 
       {showCheckoutModal && selectedGame && selectedPackage && selectedPayment && (
