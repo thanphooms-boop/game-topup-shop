@@ -205,6 +205,76 @@ const cyberGlobalStyles = `
     filter: brightness(1.12) !important;
     box-shadow: 0 0 35px rgba(6, 199, 85, 1), 0 0 60px rgba(56, 189, 248, 0.6) !important;
   }
+
+  /* ============================================================
+     เอฟเฟคหน้าปกเกมทุกหน้า (Game Covers & Cards) สไตล์ Cyber Neon สวยงาม น่าดึงดูด
+     ============================================================ */
+  .game-card-cyber {
+    position: relative;
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.35s ease, border-color 0.35s ease !important;
+    overflow: hidden;
+  }
+  .game-card-cyber::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -150%;
+    width: 75%;
+    height: 100%;
+    background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.22) 50%, rgba(168, 85, 247, 0.35) 65%, transparent 80%);
+    transform: skewX(-25deg);
+    transition: left 0.75s ease;
+    pointer-events: none;
+    z-index: 10;
+  }
+  .game-card-cyber:hover {
+    transform: translateY(-8px) scale(1.025) !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), 0 0 30px rgba(168, 85, 247, 0.6), 0 0 15px rgba(56, 189, 248, 0.4), inset 0 0 15px rgba(168, 85, 247, 0.2) !important;
+  }
+  .game-card-cyber:hover::after {
+    left: 170%;
+  }
+  .game-card-cover-container {
+    overflow: hidden;
+    position: relative;
+    border-radius: 18px 18px 0 0;
+  }
+  .game-card-img {
+    transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), filter 0.5s ease !important;
+    transform: scale(1);
+  }
+  .game-card-cyber:hover .game-card-img {
+    transform: scale(1.1) !important;
+    filter: brightness(1.15) contrast(1.08) !important;
+  }
+  @keyframes cyberBadgeGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(192, 132, 252, 0.6); }
+    50% { box-shadow: 0 0 18px rgba(244, 114, 182, 0.9), 0 0 25px rgba(168, 85, 247, 0.5); }
+  }
+  .cyber-badge-glow {
+    animation: cyberBadgeGlow 2.5s infinite alternate;
+  }
+  @keyframes heroCoverPulse {
+    0% {
+      box-shadow: 0 0 25px rgba(168, 85, 247, 0.6), 0 0 45px rgba(56, 189, 248, 0.3);
+      transform: scale(1);
+    }
+    100% {
+      box-shadow: 0 0 38px rgba(168, 85, 247, 0.85), 0 0 65px rgba(56, 189, 248, 0.55);
+      transform: scale(1.02);
+    }
+  }
+  .game-hero-avatar {
+    animation: heroCoverPulse 3s ease-in-out infinite alternate;
+    transition: all 0.3s ease;
+  }
+  .game-hero-avatar:hover {
+    transform: scale(1.06) rotate(1deg) !important;
+    filter: brightness(1.18) !important;
+    box-shadow: 0 0 45px rgba(168, 85, 247, 1), 0 0 70px rgba(56, 189, 248, 0.7) !important;
+  }
+
 `;
 
 export default function App() {
@@ -446,13 +516,13 @@ export default function App() {
   };
 
   const [emailJsServiceId, setEmailJsServiceId] = useState(() => {
-    try { return localStorage.getItem('cyber_emailjs_service_id') || ''; } catch (e) { return ''; }
+    try { return localStorage.getItem('cyber_emailjs_service_id') || 'service_fn9b0jl'; } catch (e) { return 'service_fn9b0jl'; }
   });
   const [emailJsTemplateId, setEmailJsTemplateId] = useState(() => {
-    try { return localStorage.getItem('cyber_emailjs_template_id') || ''; } catch (e) { return ''; }
+    try { return localStorage.getItem('cyber_emailjs_template_id') || '9kbvihd'; } catch (e) { return '9kbvihd'; }
   });
   const [emailJsPublicKey, setEmailJsPublicKey] = useState(() => {
-    try { return localStorage.getItem('cyber_emailjs_public_key') || ''; } catch (e) { return ''; }
+    try { return localStorage.getItem('cyber_emailjs_public_key') || 'adj2y0lvTVVFiRIKb'; } catch (e) { return 'adj2y0lvTVVFiRIKb'; }
   });
   const [emailConfigMsg, setEmailConfigMsg] = useState({ text: '', type: '' });
 
@@ -495,10 +565,10 @@ export default function App() {
   const dispatchRealOtpEmail = async (targetUser, fallbackEmail, otpCode) => {
     const emailToSend = (targetUser?.email || fallbackEmail || '').trim().toLowerCase();
     if (!emailToSend || !emailToSend.includes('@')) {
-      return { sent: false, reason: 'บัญชีนี้ไม่ได้ระบุอีเมลไว้', email: '' };
+      return { sent: false, reason: 'no_email', errorText: 'บัญชีนี้ไม่ได้ระบุอีเมลไว้', email: '' };
     }
 
-    // บันทึกรหัส OTP ล่าสุดลงฐานข้อมูลผู้ใช้ (ฝั่งระบบ)
+    // บันทึกรหัส OTP ล่าสุดลงฐานข้อมูลผู้ใช้ (ฝั่งระบบ) สำหรับตรวจสอบความถูกต้อง
     if (targetUser?.firebaseKey) {
       set(ref(db, `users/${targetUser.firebaseKey}/lastOtp`), {
         code: otpCode,
@@ -506,16 +576,20 @@ export default function App() {
       }).catch(() => {});
     }
 
-    // 1. ส่งเลข OTP 6 หลักเข้าอีเมลจริงผ่าน EmailJS API (หากตั้งค่าไว้)
-    if (emailJsServiceId.trim() && emailJsTemplateId.trim() && emailJsPublicKey.trim()) {
+    // 1. ส่งเลข OTP 6 หลักเข้าอีเมลจริงผ่าน EmailJS API (หากตั้งค่าไว้ในหน้าหลังบ้าน)
+    const activeServiceId = emailJsServiceId.trim();
+    const activeTemplateId = emailJsTemplateId.trim();
+    const activePublicKey = emailJsPublicKey.trim();
+
+    if (activeServiceId && activeTemplateId && activePublicKey) {
       try {
         const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            service_id: emailJsServiceId.trim(),
-            template_id: emailJsTemplateId.trim(),
-            user_id: emailJsPublicKey.trim(),
+            service_id: activeServiceId,
+            template_id: activeTemplateId,
+            user_id: activePublicKey,
             template_params: {
               to_email: emailToSend,
               email: emailToSend,
@@ -532,44 +606,51 @@ export default function App() {
         });
         if (res.ok) {
           return { sent: true, email: emailToSend, mode: 'emailjs_otp' };
+        } else {
+          const errData = await res.text();
+          return { sent: false, reason: 'emailjs_error', errorText: `EmailJS ส่งไม่สำเร็จ (${res.status}): ${errData}`, email: emailToSend };
         }
-      } catch (e) {}
+      } catch (e) {
+        return { sent: false, reason: 'emailjs_network_error', errorText: e.message, email: emailToSend };
+      }
     }
 
-    // 2. ส่งเลข OTP 6 หลักผ่าน API Endpoint ของเซิร์ฟเวอร์ (/api/send-otp) หากมีการติดตั้งไว้คู่กับ /api/line-webhook
-    try {
-      const otpEndpoint = ['/api', 'send-otp'].join('/');
-      const apiRes = await fetch(otpEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: emailToSend,
-          username: targetUser?.username || emailToSend.split('@')[0],
-          otp: otpCode
-        })
-      });
-      if (apiRes.ok) {
-        return { sent: true, email: emailToSend, mode: 'server_otp' };
-      }
-    } catch (e) {}
+    // 2. หากยังไม่ได้ตั้งค่า EmailJS ในหลังบ้าน
+    return { 
+      sent: false, 
+      reason: 'missing_emailjs_config', 
+      errorText: 'ยังไม่ได้ตั้งค่าระบบส่งอีเมล (EmailJS) ในหน้า "⚙️ หลังบ้าน"', 
+      email: emailToSend 
+    };
+  };
 
-    // 3. ส่งอีเมลกู้คืนรหัสผ่านผ่าน Firebase Auth
+  // ฟังก์ชันส่งอีเมลกู้คืนรหัสผ่านผ่านระบบ Firebase ของ Google ทันที (ไม่ต้องใช้คีย์ภายนอก)
+  const handleSendFirebaseResetDirect = async (targetEmail) => {
+    const cleanMail = (targetEmail || forgotTargetUser?.email || forgotEmailInput || '').trim();
+    if (!cleanMail || !cleanMail.includes('@')) {
+      setForgotStatusMsg({ text: 'กรุณากรอกอีเมลที่ถูกต้องเพื่อรับลิงก์รีเซ็ตรหัสผ่าน', type: 'error' });
+      return;
+    }
+    setForgotStatusMsg({ text: `⏳ กำลังส่งอีเมลกู้คืนรหัสผ่านผ่านเซิร์ฟเวอร์ Google (Firebase) ไปยัง ${cleanMail}...`, type: 'success' });
     try {
-      await sendPasswordResetEmail(auth, emailToSend);
-      return { sent: true, email: emailToSend, mode: 'firebase_email' };
+      await sendPasswordResetEmail(auth, cleanMail);
+      setForgotStatusMsg({ 
+        text: `✅ ส่งอีเมลจาก Google สำเร็จแล้ว! กรุณาเปิดกล่องจดหมาย ${cleanMail} (หรือโฟลเดอร์ Spam) แล้วคลิกลิงก์เพื่อเด้งกลับมาตั้งรหัสผ่านใหม่ได้ทันที`, 
+        type: 'success' 
+      });
     } catch (err) {
-      if ((err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') && targetUser?.password) {
+      if ((err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') && forgotTargetUser?.password) {
         try {
-          await createUserWithEmailAndPassword(auth, emailToSend, targetUser.password);
-          await sendPasswordResetEmail(auth, emailToSend);
-          return { sent: true, email: emailToSend, mode: 'firebase_email' };
-        } catch (innerErr) {
-          return { sent: false, reason: innerErr.message, email: emailToSend };
-        }
-      } else if (err.code === 'auth/too-many-requests') {
-        return { sent: true, email: emailToSend, mode: 'firebase_email' };
+          await createUserWithEmailAndPassword(auth, cleanMail, forgotTargetUser.password);
+          await sendPasswordResetEmail(auth, cleanMail);
+          setForgotStatusMsg({ 
+            text: `✅ ส่งอีเมลจาก Google สำเร็จแล้ว! กรุณาเปิดกล่องจดหมาย ${cleanMail} แล้วคลิกลิงก์เพื่อตั้งรหัสผ่านใหม่ได้ทันที`, 
+            type: 'success' 
+          });
+          return;
+        } catch (inner) {}
       }
-      return { sent: false, reason: err.message, email: emailToSend };
+      setForgotStatusMsg({ text: `เกิดข้อผิดพลาดในการส่งอีเมล: ${err.message}`, type: 'error' });
     }
   };
 
@@ -609,12 +690,26 @@ export default function App() {
     setForgotOtpInput('');
 
     const emailResult = await dispatchRealOtpEmail(matched, targetEmail, otp);
-    setForgotStep(2);
 
-    setForgotStatusMsg({
-      text: `📧 ส่งรหัสยืนยัน OTP 6 หลักไปยังอีเมล ${emailResult.email || targetEmail} เรียบร้อยแล้ว! กรุณาเปิดดูรหัสในกล่องข้อความ (Inbox) หรือจดหมายขยะ (Spam/Junk) แล้วนำมากรอกด้านล่าง`,
-      type: 'success'
-    });
+    if (emailResult.sent) {
+      setForgotStep(2);
+      setForgotStatusMsg({
+        text: `📧 ส่งรหัสยืนยัน OTP 6 หลักไปยังอีเมล ${emailResult.email || targetEmail} เรียบร้อยแล้ว! กรุณาเปิดดูรหัสในกล่องข้อความ (Inbox) หรือจดหมายขยะ (Spam) แล้วนำตัวเลข 6 หลักมากรอกด้านล่าง`,
+        type: 'success'
+      });
+    } else {
+      if (emailResult.reason === 'missing_emailjs_config') {
+        setForgotStatusMsg({
+          text: `⚠️ ยังไม่ได้ตั้งค่าระบบส่งอีเมล (EmailJS) ในหน้า "⚙️ หลังบ้าน": ระบบไม่สามารถยิงเลข OTP 6 หลักออกไปได้ (เนื่องจากยังไม่มีคีย์ Service ID, Template ID, Public Key) \n\n👉 แอดมินสามารถใส่คีย์ได้ที่เมนู "⚙️ หลังบ้าน" หรือกดปุ่มส่งอีเมลรีเซ็ตผ่าน Google (Firebase) ด้านล่างนี้ได้ทันทีครับ`,
+          type: 'error'
+        });
+      } else {
+        setForgotStatusMsg({
+          text: `❌ ส่งอีเมลไม่สำเร็จ: ${emailResult.errorText || 'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ตหรือคีย์ EmailJS'}`,
+          type: 'error'
+        });
+      }
+    }
   };
 
   const handleResendOtp = async () => {
@@ -2330,9 +2425,20 @@ export default function App() {
                     />
                   </div>
 
-                  <div style={{ backgroundColor: 'rgba(55, 65, 81, 0.35)', borderRadius: '10px', padding: '10px 12px', fontSize: '11px', color: '#9ca3af', marginBottom: '18px', textAlign: 'left', border: '1px dashed #4b5563', lineHeight: '1.5' }}>
-                    💡 <b>ปลอดภัย 100% ส่งรหัส OTP เข้าอีเมลโดยตรง:</b><br/>
-                    ระบบจะจัดส่ง<b>รหัสยืนยัน OTP 6 หลัก</b>ไปยังกล่องข้อความอีเมลของคุณเท่านั้น (ไม่แสดงรหัสบนหน้าจอเว็บ) กรุณาเปิดอีเมลเพื่อนำรหัสมากรอกในขั้นตอนถัดไป
+                  <div style={{ backgroundColor: 'rgba(55, 65, 81, 0.35)', borderRadius: '12px', padding: '12px 14px', fontSize: '11px', color: '#9ca3af', marginBottom: '18px', textAlign: 'left', border: '1px dashed #4b5563', lineHeight: '1.5' }}>
+                    <div style={{ color: '#38bdf8', fontWeight: 'bold', marginBottom: '4px' }}>💡 เลือกระบบการส่งอีเมลกู้คืนรหัสผ่าน:</div>
+                    1. <b>ส่งเลข OTP 6 หลัก (ผ่าน EmailJS)</b>: ต้องตั้งค่าคีย์ในหน้า <b>⚙️ หลังบ้าน</b> ก่อน ระบบจึงจะยิงตัวเลข 6 หลักเข้าอีเมลจริงได้<br/>
+                    2. <b>ส่งผ่านระบบ Google (Firebase)</b>: ใช้งานได้ทันที 100% โดยไม่ต้องใช้คีย์ภายนอก (ส่งเป็นลิงก์กดยืนยันแล้วเด้งกลับมาตั้งรหัสผ่านใหม่)
+                    
+                    {(!emailJsServiceId || !emailJsTemplateId || !emailJsPublicKey) && (
+                      <button 
+                        type="button" 
+                        onClick={() => handleSendFirebaseResetDirect(forgotEmailInput)}
+                        style={{ marginTop: '10px', width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '9px 12px', borderRadius: '10px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 0 15px rgba(2,132,199,0.4)' }}
+                      >
+                        ⚡ ส่งอีเมลกู้คืนผ่าน Google (Firebase) ทันที (ไม่ต้องใช้คีย์ EmailJS)
+                      </button>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', gap: '10px' }}>
@@ -2677,25 +2783,44 @@ export default function App() {
               {filteredGames.map((game) => (
                 <div 
                   key={game.id} 
+                  className="game-card-cyber"
                   onClick={() => { setSelectedGame(game); setSelectedPackage(null); setPackageQuantity(1); setPlayerId(''); }} 
                   style={{ 
-                    backgroundColor: 'rgba(17, 24, 39, 0.85)', 
-                    border: '1.5px solid rgba(168, 85, 247, 0.35)', 
+                    backgroundColor: 'rgba(17, 24, 39, 0.9)', 
+                    border: '1.5px solid rgba(168, 85, 247, 0.4)', 
                     borderRadius: '20px', 
                     overflow: 'hidden', 
                     cursor: 'pointer', 
-                    boxShadow: '0 6px 25px rgba(0,0,0,0.6)',
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.7)',
                     position: 'relative'
                   }} 
                 >
-                  <div style={{ height: '160px', overflow: 'hidden', position: 'relative' }}>
-                    <img src={game.image} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <span style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(15, 23, 42, 0.85)', color: '#c084fc', border: '1px solid #c084fc', padding: '3px 8px', borderRadius: '8px', fontSize: '10px', fontWeight: 'bold' }}>{game.badge}</span>
+                  <div className="game-card-cover-container" style={{ height: '175px', overflow: 'hidden', position: 'relative' }}>
+                    <img className="game-card-img" src={game.image} alt={game.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    {/* Dark gradient vignette overlay for depth */}
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(17, 24, 39, 0.95) 0%, rgba(17, 24, 39, 0.25) 45%, transparent 100%)', pointerEvents: 'none' }} />
+                    
+                    {/* Badge top-right with animated glow */}
+                    <span className="cyber-badge-glow" style={{ position: 'absolute', top: '10px', right: '10px', backgroundColor: 'rgba(15, 23, 42, 0.9)', color: '#c084fc', border: '1px solid #c084fc', padding: '4px 10px', borderRadius: '10px', fontSize: '10px', fontWeight: 'bold', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      {game.badge}
+                    </span>
+
+                    {/* Platform Badge bottom-left */}
+                    <span style={{ position: 'absolute', bottom: '10px', left: '10px', backgroundColor: 'rgba(3, 7, 18, 0.8)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.45)', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', backdropFilter: 'blur(4px)' }}>
+                      {game.category === 'pc' ? '💻 PC GAME' : '📱 MOBILE'}
+                    </span>
+
+                    {/* Auto badge bottom-right */}
+                    <span style={{ position: 'absolute', bottom: '10px', right: '10px', backgroundColor: 'rgba(52, 211, 153, 0.18)', color: '#34d399', border: '1px solid rgba(52, 211, 153, 0.55)', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', backdropFilter: 'blur(4px)' }}>
+                      ⚡ AUTO 100%
+                    </span>
                   </div>
-                  <div style={{ padding: '16px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', margin: '0 0 4px 0' }}>{game.name}</h3>
-                    <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 12px 0' }}>{game.publisher}</p>
-                    <button style={{ width: '100%', backgroundColor: '#9333ea', border: 'none', color: '#ffffff', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>คลิกเพื่อเติมเงิน →</button>
+                  <div style={{ padding: '16px', position: 'relative', zIndex: 2 }}>
+                    <h3 style={{ fontSize: '17px', fontWeight: '900', margin: '0 0 4px 0', color: '#ffffff', letterSpacing: '0.3px' }}>{game.name}</h3>
+                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 14px 0' }}>ผู้ให้บริการ: {game.publisher}</p>
+                    <button style={{ width: '100%', background: 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)', border: '1px solid #a855f7', color: '#ffffff', padding: '10px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 15px rgba(147, 51, 234, 0.4)', fontSize: '13px' }}>
+                      ⚡ คลิกเพื่อเติมเงิน →
+                    </button>
                   </div>
                 </div>
               ))}
@@ -2819,11 +2944,37 @@ export default function App() {
               ← กลับไปหน้าเลือกเกม
             </button>
 
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap' }}>
-              <img src={selectedGame.image} alt={selectedGame.name} style={{ width: '100px', height: '100px', borderRadius: '16px', objectFit: 'cover', border: '2px solid #a855f7' }} />
-              <div>
-                <h2 style={{ fontSize: '26px', fontWeight: '900', margin: '0 0 6px 0' }}>{selectedGame.name}</h2>
-                <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>ผู้ให้บริการ: {selectedGame.publisher} | เลือกแพ็กเกจด้านล่างเพื่อเติมเงิน</p>
+            <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '22px', padding: '24px 28px', marginBottom: '30px', border: '1.5px solid rgba(168, 85, 247, 0.6)', background: 'linear-gradient(135deg, rgba(30, 27, 75, 0.85) 0%, rgba(17, 24, 39, 0.95) 100%)', boxShadow: '0 10px 40px rgba(0,0,0,0.7), inset 0 0 25px rgba(168,85,247,0.15)' }}>
+              {/* Ambient Blurred Background from Game Image */}
+              <div style={{ position: 'absolute', top: -50, right: -50, width: '320px', height: '320px', backgroundImage: `url(${selectedGame.image})`, backgroundSize: 'cover', opacity: 0.22, filter: 'blur(45px)', pointerEvents: 'none' }} />
+              
+              <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap', position: 'relative', zIndex: 2 }}>
+                <div style={{ position: 'relative' }}>
+                  <img src={selectedGame.image} alt={selectedGame.name} className="game-hero-avatar" style={{ width: '110px', height: '110px', borderRadius: '20px', objectFit: 'cover', border: '2.5px solid #c084fc', boxShadow: '0 0 25px rgba(168, 85, 247, 0.7), 0 0 50px rgba(56, 189, 248, 0.35)', display: 'block' }} />
+                  <span style={{ position: 'absolute', bottom: '-8px', right: '-8px', backgroundColor: '#030712', border: '1.5px solid #34d399', color: '#34d399', fontSize: '10px', fontWeight: '900', padding: '2px 8px', borderRadius: '12px', boxShadow: '0 0 10px rgba(52,211,153,0.5)' }}>
+                    ⚡ AUTO
+                  </span>
+                </div>
+                <div style={{ flex: 1, minWidth: '240px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ backgroundColor: 'rgba(168, 85, 247, 0.25)', color: '#c084fc', border: '1px solid #c084fc', padding: '3px 10px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>
+                      {selectedGame.badge}
+                    </span>
+                    <span style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', border: '1px solid rgba(56, 189, 248, 0.4)', padding: '3px 10px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold' }}>
+                      {selectedGame.category === 'pc' ? '💻 PC Game' : '📱 Mobile Game'}
+                    </span>
+                    <span style={{ backgroundColor: 'rgba(52, 211, 153, 0.15)', color: '#34d399', border: '1px solid #34d399', padding: '3px 10px', borderRadius: '10px', fontSize: '11px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#34d399', display: 'inline-block', boxShadow: '0 0 8px #34d399', animation: 'cyberOnlineBlink 1.5s infinite' }}></span>
+                      พร้อมส่งอัตโนมัติ 100%
+                    </span>
+                  </div>
+                  <h2 style={{ fontSize: '28px', fontWeight: '900', margin: '0 0 6px 0', color: '#ffffff', letterSpacing: '0.5px', textShadow: '0 0 15px rgba(192,132,252,0.5)' }}>
+                    {selectedGame.name}
+                  </h2>
+                  <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>
+                    ผู้ให้บริการ: <b style={{ color: '#e5e7eb' }}>{selectedGame.publisher}</b> | เลือกแพ็กเกจด้านล่างเพื่อเติมตรงเข้าไอดี
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -3675,12 +3826,14 @@ export default function App() {
                 <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#c084fc' }}>🔐 ยืนยันรหัสผ่านบัญชี</h3>
                 <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรุณากรอกรหัสผ่านบัญชีของคุณเพื่อยืนยันการทำรายการ</p>
 
-                <div style={{ backgroundColor: '#030712', borderRadius: '12px', padding: '14px', marginBottom: '20px', textAlign: 'left', border: '1px solid #374151' }}>
-                  <div style={{ fontSize: '13px', color: '#ffffff', marginBottom: '4px' }}>🎮 เกม: <b>{selectedGame.name}</b></div>
-                  <div style={{ fontSize: '13px', color: '#38bdf8', marginBottom: '4px' }}>📦 แพ็กเกจ: <b>{selectedPackage.name} (x{packageQuantity} แพ็ก)</b></div>
-                  <div style={{ fontSize: '13px', color: '#34d399', marginBottom: '4px' }}>💰 ยอดชำระ: <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b></div>
-                  <div style={{ fontSize: '13px', color: '#c084fc', marginBottom: '4px' }}>💳 ช่องทาง: <b>{selectedPayment.name}</b></div>
-                  <div style={{ fontSize: '13px', color: '#c084fc' }}>👤 ตัวละคร/UID: <b>{playerId}</b></div>
+                <div style={{ backgroundColor: '#030712', borderRadius: '16px', padding: '14px', marginBottom: '20px', textAlign: 'left', border: '1.5px solid rgba(168, 85, 247, 0.45)', display: 'flex', gap: '14px', alignItems: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.6)' }}>
+                  <img src={selectedGame.image} alt={selectedGame.name} style={{ width: '70px', height: '70px', borderRadius: '12px', objectFit: 'cover', border: '1.5px solid #a855f7', boxShadow: '0 0 15px rgba(168,85,247,0.45)', flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '15px', fontWeight: '900', color: '#ffffff', marginBottom: '3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>🎮 {selectedGame.name}</div>
+                    <div style={{ fontSize: '12px', color: '#38bdf8', marginBottom: '2px' }}>📦 แพ็กเกจ: <b>{selectedPackage.name} (x{packageQuantity} แพ็ก)</b></div>
+                    <div style={{ fontSize: '12px', color: '#34d399', marginBottom: '2px' }}>💰 ยอดชำระ: <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b></div>
+                    <div style={{ fontSize: '11px', color: '#c084fc' }}>👤 ตัวละคร/UID: <b style={{ color: '#ffffff' }}>{playerId}</b> | 💳 {selectedPayment.name}</div>
+                  </div>
                 </div>
 
                 {checkoutPasswordError && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px', borderRadius: '8px', fontSize: '12px', marginBottom: '15px' }}>{checkoutPasswordError}</div>}
