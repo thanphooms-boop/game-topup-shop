@@ -502,152 +502,218 @@ const getCustomerRank = (spending) => {
   };
 };
 
-// คอมโพเนนต์เหรียญตราสัญลักษณ์ประจำแรงค์ (Rank Emblem Graphic) สไตล์เกมมิ่งพรีเมียม
-function RankEmblem({ tier, size = 26, glow = true, className = '' }) {
+// คอมโพเนนต์เหรียญตราสัญลักษณ์ประจำแรงค์ (Rank Emblem Graphic) ดีไซน์เกมมิ่งพรีเมียม สวยงาม สว่าง คมชัดทุกแรงค์
+function RankEmblem({ tier, size = 28, glow = true, className = '' }) {
   const t = (tier || '').toUpperCase();
   const s = size;
 
+  // 🏆 1. CHALLENGER VIP: มงกุฎเปลวเพลิงทองคำ-แดงสุริยะประกายดาว
   if (t === 'CHALLENGER') {
     return (
-      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 8px #ff0055) drop-shadow(0 0 14px #f59e0b)' : 'none', flexShrink: 0 }}>
+      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 8px #ff0055) drop-shadow(0 0 16px #f59e0b)' : 'none', flexShrink: 0 }}>
         <defs>
-          <linearGradient id="chFire" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="chFlame" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#ff0055" />
-            <stop offset="40%" stopColor="#e11d48" />
+            <stop offset="35%" stopColor="#e11d48" />
             <stop offset="70%" stopColor="#f59e0b" />
             <stop offset="100%" stopColor="#fef08a" />
           </linearGradient>
-          <linearGradient id="chGold" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#fef08a" />
-            <stop offset="100%" stopColor="#f59e0b" />
+          <linearGradient id="chShield" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#fff176" />
+            <stop offset="50%" stopColor="#f59e0b" />
+            <stop offset="100%" stopColor="#b45309" />
+          </linearGradient>
+          <linearGradient id="chWings" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#ff0055" />
+            <stop offset="50%" stopColor="#f43f5e" />
+            <stop offset="100%" stopColor="#fbbf24" />
           </linearGradient>
         </defs>
-        <path d="M50 5 L63 28 L92 35 L72 56 L77 86 L50 72 L23 86 L28 56 L8 35 L37 28 Z" fill="url(#chFire)" opacity="0.95" />
-        <path d="M50 15 L60 33 L82 38 L67 54 L71 76 L50 65 L29 76 L33 54 L18 38 L40 33 Z" fill="#111827" stroke="url(#chGold)" strokeWidth="2.5" />
-        <polygon points="50,22 62,42 50,62 38,42" fill="url(#chGold)" />
-        <polygon points="50,30 53,38 61,38 55,43 57,51 50,46 43,51 45,43 39,38 47,38" fill="#ffffff" />
-        <circle cx="50" cy="10" r="3.5" fill="#fef08a" />
-        <circle cx="26" cy="24" r="2.5" fill="#ff0055" />
-        <circle cx="74" cy="24" r="2.5" fill="#ff0055" />
+        {/* Dragon / Phoenix Solar Wings */}
+        <path d="M50 4 L64 26 L94 32 L74 54 L80 86 L50 72 L20 86 L26 54 L6 32 L36 26 Z" fill="url(#chWings)" stroke="#ffffff" strokeWidth="1.5" />
+        {/* Inner Shield */}
+        <polygon points="50,14 74,32 64,72 50,82 36,72 26,32" fill="#18050e" stroke="url(#chShield)" strokeWidth="3" />
+        {/* Golden Trophy Crest Core */}
+        <polygon points="50,22 66,38 50,56 34,38" fill="url(#chShield)" />
+        {/* Radiant Central Legend Star */}
+        <polygon points="50,28 53,38 63,38 55,44 58,54 50,48 42,54 45,44 37,38 47,38" fill="#ffffff" filter="drop-shadow(0 0 4px #ffffff)" />
+        {/* Flame Crown Jewels */}
+        <circle cx="50" cy="8" r="4.5" fill="#fef08a" stroke="#b45309" strokeWidth="1" />
+        <circle cx="22" cy="28" r="3" fill="#ff0055" />
+        <circle cx="78" cy="28" r="3" fill="#ff0055" />
       </svg>
     );
   }
 
+  // 👑 2. MASTER VIP: มงกุฎจักรพรรดิมาเจนต้า ประดับปีกคอสมิกและลูกแก้วเรืองแสง
   if (t === 'MASTER') {
     return (
-      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 7px #ec4899) drop-shadow(0 0 12px #a855f7)' : 'none', flexShrink: 0 }}>
+      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 8px #f472b6) drop-shadow(0 0 14px #a855f7)' : 'none', flexShrink: 0 }}>
         <defs>
-          <linearGradient id="msGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="msShield" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#f472b6" />
             <stop offset="50%" stopColor="#ec4899" />
-            <stop offset="100%" stopColor="#9333ea" />
+            <stop offset="100%" stopColor="#7c3aed" />
           </linearGradient>
           <linearGradient id="msCrown" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#fbcfe8" />
-            <stop offset="100%" stopColor="#db2777" />
+            <stop offset="0%" stopColor="#fdf2f8" />
+            <stop offset="40%" stopColor="#f472b6" />
+            <stop offset="100%" stopColor="#be185d" />
           </linearGradient>
         </defs>
-        <path d="M50 10 L78 22 L88 48 L72 82 L50 92 L28 82 L12 48 L22 22 Z" fill="#0f172a" stroke="url(#msGrad)" strokeWidth="3.5" />
-        <path d="M28 65 L28 42 L38 52 L50 35 L62 52 L72 42 L72 65 Z" fill="url(#msCrown)" stroke="#ffffff" strokeWidth="1.5" />
-        <circle cx="50" cy="62" r="8" fill="#ffffff" />
+        {/* Royal Crest Wings */}
+        <path d="M50 8 L80 20 L90 46 L74 82 L50 94 L26 82 L10 46 L20 20 Z" fill="#1e0b24" stroke="url(#msShield)" strokeWidth="3.5" />
+        {/* Crown Motif */}
+        <path d="M26 66 L26 38 L38 50 L50 30 L62 50 L74 38 L74 66 Z" fill="url(#msCrown)" stroke="#ffffff" strokeWidth="1.8" />
+        {/* Center Glowing Gem */}
+        <circle cx="50" cy="62" r="9" fill="#ffffff" filter="drop-shadow(0 0 6px #f472b6)" />
         <circle cx="50" cy="62" r="5" fill="#ec4899" />
-        <circle cx="50" cy="24" r="3.5" fill="#f472b6" />
+        <polygon points="50,18 53,24 60,24 55,28 57,34 50,30 43,34 45,28 40,24 47,24" fill="#ffffff" />
       </svg>
     );
   }
 
+  // 💠 3. DIAMOND VIP: ผลึกอัญมณีม่วงอัลตราไวโอเลต แสงดวงดาวแปดแฉกเรืองรอง
   if (t === 'DIAMOND') {
     return (
-      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 7px #c084fc) drop-shadow(0 0 12px #38bdf8)' : 'none', flexShrink: 0 }}>
+      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 8px #c084fc) drop-shadow(0 0 14px #38bdf8)' : 'none', flexShrink: 0 }}>
         <defs>
-          <linearGradient id="dmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#f3e8ff" />
-            <stop offset="35%" stopColor="#c084fc" />
-            <stop offset="70%" stopColor="#7c3aed" />
-            <stop offset="100%" stopColor="#38bdf8" />
+          <linearGradient id="dmDiamond" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="25%" stopColor="#e9d5ff" />
+            <stop offset="55%" stopColor="#a855f7" />
+            <stop offset="85%" stopColor="#6d28d9" />
+            <stop offset="100%" stopColor="#0284c7" />
+          </linearGradient>
+          <linearGradient id="dmCore" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#7c3aed" />
+            <stop offset="50%" stopColor="#c084fc" />
+            <stop offset="100%" stopColor="#ffffff" />
           </linearGradient>
         </defs>
-        <polygon points="50,6 82,24 94,50 82,76 50,94 18,76 6,50 18,24" fill="#0f172a" stroke="url(#dmGrad)" strokeWidth="3" />
-        <polygon points="50,18 76,50 50,82 24,50" fill="url(#dmGrad)" opacity="0.9" />
-        <polygon points="50,28 66,50 50,72 34,50" fill="#ffffff" opacity="0.95" />
-        <line x1="50" y1="6" x2="50" y2="94" stroke="#ffffff" strokeWidth="1.2" opacity="0.6" />
-        <line x1="6" y1="50" x2="94" y2="50" stroke="#ffffff" strokeWidth="1.2" opacity="0.6" />
+        {/* Outer Radiant Octagon */}
+        <polygon points="50,4 82,22 96,50 82,78 50,96 18,78 4,50 18,22" fill="#150a2a" stroke="url(#dmDiamond)" strokeWidth="3" />
+        {/* Faceted Brilliant Diamond */}
+        <polygon points="50,16 78,50 50,84 22,50" fill="url(#dmCore)" stroke="#ffffff" strokeWidth="1.8" />
+        {/* Inner Star Facet */}
+        <polygon points="50,26 66,50 50,74 34,50" fill="#ffffff" opacity="0.95" />
+        <circle cx="50" cy="50" r="5" fill="#a855f7" />
+        {/* Cosmic Prismatic Beams */}
+        <line x1="50" y1="4" x2="50" y2="96" stroke="#ffffff" strokeWidth="1.8" opacity="0.75" />
+        <line x1="4" y1="50" x2="96" y2="50" stroke="#ffffff" strokeWidth="1.8" opacity="0.75" />
       </svg>
     );
   }
 
+  // 💎 4. PLATINUM VIP: โล่คริสตัลผลึกแก้วหกเหลี่ยมนีออนฟ้า Laser Crystal
   if (t === 'PLATINUM') {
     return (
-      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 7px #38bdf8) drop-shadow(0 0 12px #0284c7)' : 'none', flexShrink: 0 }}>
+      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 8px #38bdf8) drop-shadow(0 0 14px #0ea5e9)' : 'none', flexShrink: 0 }}>
         <defs>
-          <linearGradient id="plGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="plCrystal" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="25%" stopColor="#bae6fd" />
+            <stop offset="60%" stopColor="#0ea5e9" />
+            <stop offset="100%" stopColor="#0369a1" />
+          </linearGradient>
+          <linearGradient id="plCore" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="#e0f2fe" />
-            <stop offset="40%" stopColor="#38bdf8" />
-            <stop offset="80%" stopColor="#0284c7" />
-            <stop offset="100%" stopColor="#2dd4bf" />
+            <stop offset="60%" stopColor="#38bdf8" />
+            <stop offset="100%" stopColor="#0284c7" />
           </linearGradient>
         </defs>
-        <polygon points="50,8 86,28 86,72 50,92 14,72 14,28" fill="#031525" stroke="url(#plGrad)" strokeWidth="3.5" />
-        <polygon points="50,18 76,34 76,66 50,82 24,66 24,34" fill="url(#plGrad)" opacity="0.9" />
-        <polygon points="50,28 66,40 66,60 50,72 34,60 34,40" fill="#ffffff" opacity="0.95" />
-        <polygon points="50,38 53,47 62,50 53,53 50,62 47,53 38,50 47,47" fill="#0284c7" />
+        {/* Hexagonal Shield Plate */}
+        <polygon points="50,6 88,26 88,74 50,94 12,74 12,26" fill="#041628" stroke="url(#plCrystal)" strokeWidth="3.5" />
+        {/* Faceted Crystal Gem */}
+        <polygon points="50,16 78,32 78,68 50,84 22,68 22,32" fill="url(#plCore)" stroke="#ffffff" strokeWidth="1.8" />
+        {/* Inner Brilliant Diamond Core */}
+        <polygon points="50,26 68,40 68,60 50,74 32,60 32,40" fill="#ffffff" opacity="0.95" />
+        {/* Cyan Star Spark */}
+        <polygon points="50,36 53,46 64,50 53,54 50,64 47,54 36,50 47,46" fill="#0284c7" />
       </svg>
     );
   }
 
+  // 🥇 5. GOLD VIP: โล่มงกุฎทองคำแท้ 24K Cyber Gold ปีกทองและดาวประกาย
   if (t === 'GOLD') {
     return (
-      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 7px #f59e0b) drop-shadow(0 0 12px #fbbf24)' : 'none', flexShrink: 0 }}>
+      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 8px #f59e0b) drop-shadow(0 0 14px #fbbf24)' : 'none', flexShrink: 0 }}>
         <defs>
-          <linearGradient id="gdGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#fef08a" />
-            <stop offset="40%" stopColor="#fbbf24" />
-            <stop offset="80%" stopColor="#d97706" />
-            <stop offset="100%" stopColor="#78350f" />
+          <linearGradient id="gdGold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="25%" stopColor="#fef08a" />
+            <stop offset="60%" stopColor="#f59e0b" />
+            <stop offset="100%" stopColor="#b45309" />
+          </linearGradient>
+          <linearGradient id="gdShield" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#fef3c7" />
+            <stop offset="50%" stopColor="#fbbf24" />
+            <stop offset="100%" stopColor="#92400e" />
           </linearGradient>
         </defs>
-        <path d="M50 8 C68 8, 86 16, 86 36 C86 64, 50 92, 50 92 C50 92, 14 64, 14 36 C14 16, 32 8, 50 8 Z" fill="#1c1304" stroke="url(#gdGrad)" strokeWidth="3.5" />
-        <path d="M50 18 C62 18, 76 25, 76 40 C76 60, 50 80, 50 80 C50 80, 24 60, 24 40 C24 25, 38 18, 50 18 Z" fill="url(#gdGrad)" opacity="0.9" />
-        <polygon points="50,28 54,40 67,40 56,48 60,60 50,52 40,60 44,48 33,40 46,40" fill="#ffffff" />
-        <circle cx="50" cy="50" r="4" fill="#d97706" />
+        {/* Royal Gold Shield */}
+        <path d="M50 6 C70 6, 88 15, 88 36 C88 66, 50 94, 50 94 C50 94, 12 66, 12 36 C12 15, 30 6, 50 6 Z" fill="#241604" stroke="url(#gdGold)" strokeWidth="3.5" />
+        {/* Inner Golden Plate */}
+        <path d="M50 16 C64 16, 76 24, 76 40 C76 62, 50 82, 50 82 C50 82, 24 62, 24 40 C24 24, 36 16, 50 16 Z" fill="url(#gdShield)" stroke="#ffffff" strokeWidth="1.8" />
+        {/* 5-Star Radiant Gold Star */}
+        <polygon points="50,26 54,39 68,39 57,48 61,61 50,53 39,61 43,48 32,39 46,39" fill="#ffffff" filter="drop-shadow(0 0 4px #fbbf24)" />
+        <circle cx="50" cy="50" r="5" fill="#f59e0b" />
+        <circle cx="50" cy="11" r="3.5" fill="#fef08a" />
       </svg>
     );
   }
 
+  // 🥈 6. SILVER VIP: โล่อัศวินโครเมียมเงาวับ ดาบคู่และประกายเงินพรีเมียม
   if (t === 'SILVER') {
     return (
-      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 6px #cbd5e1) drop-shadow(0 0 10px #94a3b8)' : 'none', flexShrink: 0 }}>
+      <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 7px #cbd5e1) drop-shadow(0 0 12px #94a3b8)' : 'none', flexShrink: 0 }}>
         <defs>
-          <linearGradient id="svGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="svSilver" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="50%" stopColor="#cbd5e1" />
-            <stop offset="80%" stopColor="#64748b" />
-            <stop offset="100%" stopColor="#334155" />
+            <stop offset="35%" stopColor="#e2e8f0" />
+            <stop offset="75%" stopColor="#94a3b8" />
+            <stop offset="100%" stopColor="#475569" />
+          </linearGradient>
+          <linearGradient id="svPlate" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#f8fafc" />
+            <stop offset="60%" stopColor="#cbd5e1" />
+            <stop offset="100%" stopColor="#64748b" />
           </linearGradient>
         </defs>
-        <path d="M50 10 L84 26 L84 56 C84 74, 50 90, 50 90 C50 90, 16 74, 16 56 L16 26 Z" fill="#0f172a" stroke="url(#svGrad)" strokeWidth="3" />
-        <path d="M50 20 L74 32 L74 54 C74 68, 50 80, 50 80 C50 80, 26 68, 26 54 L26 32 Z" fill="url(#svGrad)" opacity="0.9" />
-        <polygon points="50,32 53,43 64,45 55,52 58,63 50,56 42,63 45,52 36,45 47,43" fill="#ffffff" />
-        <circle cx="50" cy="48" r="3.5" fill="#475569" />
+        {/* Knight Shield Contour */}
+        <path d="M50 8 L86 24 L86 56 C86 76, 50 94, 50 94 C50 94, 14 76, 14 56 L14 24 Z" fill="#0f172a" stroke="url(#svSilver)" strokeWidth="3.5" />
+        {/* Inner Polished Plate */}
+        <path d="M50 18 L76 30 L76 54 C76 70, 50 82, 50 82 C50 82, 24 70, 24 54 L24 30 Z" fill="url(#svPlate)" stroke="#ffffff" strokeWidth="1.8" />
+        {/* Silver Crossed Crest / Star */}
+        <polygon points="50,28 54,40 66,42 57,50 60,62 50,54 40,62 43,50 34,42 46,40" fill="#ffffff" filter="drop-shadow(0 0 4px #e2e8f0)" />
+        <circle cx="50" cy="48" r="4" fill="#64748b" />
       </svg>
     );
   }
 
-  // BRONZE
+  // 🥉 7. BRONZE MEMBER: โล่เกราะทองแดงเมทัลลิกหนักแน่น สไตล์นักรบพร้อมดาวศึก
   return (
-    <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 5px #b45309) drop-shadow(0 0 8px #d97706)' : 'none', flexShrink: 0 }}>
+    <svg width={s} height={s} viewBox="0 0 100 100" fill="none" className={className} style={{ filter: glow ? 'drop-shadow(0 0 6px #d97706) drop-shadow(0 0 10px #b45309)' : 'none', flexShrink: 0 }}>
       <defs>
-        <linearGradient id="bzGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#fed7aa" />
-          <stop offset="40%" stopColor="#d97706" />
-          <stop offset="80%" stopColor="#b45309" />
+        <linearGradient id="bzBronze" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ffedd5" />
+          <stop offset="30%" stopColor="#fbbf24" />
+          <stop offset="65%" stopColor="#d97706" />
           <stop offset="100%" stopColor="#78350f" />
         </linearGradient>
+        <linearGradient id="bzPlate" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#fed7aa" />
+          <stop offset="50%" stopColor="#d97706" />
+          <stop offset="100%" stopColor="#451a03" />
+        </linearGradient>
       </defs>
-      <polygon points="50,10 84,24 74,70 50,90 26,70 16,24" fill="#1f1105" stroke="url(#bzGrad)" strokeWidth="3" />
-      <polygon points="50,22 74,32 66,66 50,80 34,66 26,32" fill="url(#bzGrad)" opacity="0.9" />
-      <polygon points="50,34 53,44 63,46 55,53 58,63 50,57 42,63 45,53 37,46 47,44" fill="#ffffff" />
-      <circle cx="50" cy="50" r="3.5" fill="#78350f" />
+      {/* Heavy Bronze Shield */}
+      <polygon points="50,8 86,22 76,70 50,92 24,70 14,22" fill="#241003" stroke="url(#bzBronze)" strokeWidth="3.5" />
+      {/* Inner Metallic Chevron */}
+      <polygon points="50,18 76,28 68,66 50,82 32,66 24,28" fill="url(#bzPlate)" stroke="#ffffff" strokeWidth="1.5" />
+      {/* Bronze Scout Crest Star */}
+      <polygon points="50,30 53,41 64,43 55,51 58,62 50,55 42,62 45,51 36,43 47,41" fill="#ffffff" filter="drop-shadow(0 0 4px #fed7aa)" />
+      <circle cx="50" cy="50" r="4.5" fill="#78350f" />
     </svg>
   );
 }
@@ -1384,6 +1450,8 @@ export default function App() {
   const [newCodeGame, setNewCodeGame] = useState('VALORANT');
   const [newCodeReward, setNewCodeReward] = useState('125 VP');
   const [newCodeMaxUses, setNewCodeMaxUses] = useState(10);
+  const [newCodeMinRank, setNewCodeMinRank] = useState('BRONZE');
+  const [isRankSelectOpen, setIsRankSelectOpen] = useState(false);
   const [adminCodeMsg, setAdminCodeMsg] = useState({ text: '', type: '' });
   const [adminGiftCodeSearch, setAdminGiftCodeSearch] = useState('');
   const [adminGiftCodeFilterGame, setAdminGiftCodeFilterGame] = useState('all');
@@ -1786,6 +1854,7 @@ export default function App() {
       code: cleanCode,
       game: newCodeGame,
       reward: newCodeReward,
+      minRank: newCodeMinRank || 'BRONZE',
       maxUses: parseInt(newCodeMaxUses),
       usedCount: 0,
       timestamp: Date.now()
@@ -1794,9 +1863,11 @@ export default function App() {
     const giftCodesRef = ref(db, 'giftCodes');
     push(giftCodesRef, newCodeObj)
       .then(() => {
-        setAdminCodeMsg({ text: `สร้างโค้ด ${cleanCode} สำเร็จเรียบร้อย!`, type: 'success' });
+        const rankName = RANK_TIERS.find(t => t.tier === (newCodeMinRank || 'BRONZE'))?.name || 'ทุกระดับแรงค์';
+        setAdminCodeMsg({ text: `สร้างโค้ด ${cleanCode} (สำหรับ ${rankName}) สำเร็จเรียบร้อย!`, type: 'success' });
         setNewCodeName('');
         setNewCodeMaxUses(10);
+        setNewCodeMinRank('BRONZE');
       })
       .catch(() => {
         setAdminCodeMsg({ text: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล', type: 'error' });
@@ -1853,6 +1924,12 @@ export default function App() {
 
   const handleResetAllRedeemRights = () => {
     setGlobalRedeemedPlayers([]);
+    try { localStorage.removeItem('cyber_global_redeemed_players'); } catch (e) {}
+    setAdminCodeMsg({ 
+      text: '✅ รีเซ็ตสิทธิ์การรับของขวัญของทุกบัญชีและทุก ID เกมเรียบร้อยแล้ว (ลูกค้าทุกคนสามารถรับของขวัญรอบใหม่ได้ทันที)', 
+      type: 'success' 
+    });
+    setTimeout(() => setAdminCodeMsg({ text: '', type: '' }), 5000);
   };
 
   const handleRedeemEventCode = (e) => {
@@ -1860,41 +1937,81 @@ export default function App() {
     setEventMsg({ text: '', type: '' });
 
     if (!eventPlayerId.trim()) {
-      setEventMsg({ text: 'กรุณากรอก ชื่อในเกม หรือ UID ของคุณ', type: 'error' });
+      setEventMsg({ text: '⚠️ กรุณากรอก ชื่อในเกม หรือ UID ตัวละครที่ต้องการรับรางวัลให้เรียบร้อย', type: 'error' });
       return;
     }
 
     if (!eventGiftCode.trim()) {
-      setEventMsg({ text: 'กรุณากรอกรหัสโค้ดของขวัญที่ต้องการแลกรับ', type: 'error' });
+      setEventMsg({ text: '⚠️ กรุณากรอกรหัสโค้ดของขวัญที่ได้รับ (พิมพ์ตัวพิมพ์ใหญ่ทั้งหมด เช่น GIFT2026)', type: 'error' });
       return;
     }
 
     const cleanPlayerId = eventPlayerId.trim().toLowerCase();
+    const currentUsername = user && user.username ? user.username.trim().toLowerCase() : '';
     const targetCode = eventGiftCode.trim().toUpperCase();
     const foundCode = giftCodes.find(c => c.code && c.code.trim().toUpperCase() === targetCode);
 
+    // 1. ตรวจสอบว่าพบโค้ดในระบบหรือไม่
     if (!foundCode) {
-      setEventMsg({ text: `❌ ไม่พบรหัสโค้ดของขวัญ "${targetCode}" ในระบบ กรุณาตรวจสอบอีกครั้ง`, type: 'error' });
+      setEventMsg({ 
+        text: `❌ ไม่พบรหัสโค้ด "${targetCode}" ในระบบ: กรุณาตรวจสอบตัวสะกด พิมพ์ตัวพิมพ์ใหญ่ หรือสอบถามโค้ดที่ถูกต้องจากผู้ดูแลระบบ`, 
+        type: 'error' 
+      });
       return;
     }
 
+    // 2. ตรวจสอบว่าเกมตรงกับที่เลือกหรือไม่
     if (foundCode.game !== eventGame) {
-      setEventMsg({ text: `❌ โค้ดของขวัญนี้สำหรับเกม "${foundCode.game}" ไม่สามารถใช้กับเกม "${eventGame}" ได้`, type: 'error' });
+      setEventMsg({ 
+        text: `⚠️ เกมไม่ถูกต้อง: โค้ด "${foundCode.code}" เป็นสิทธิ์สำหรับเกม "${foundCode.game}" เท่านั้น ไม่สามารถใช้กับ "${eventGame}" ได้ กรุณาเปลี่ยนตัวเลือกเกมด้านบนให้ตรงกับโค้ด`, 
+        type: 'error' 
+      });
       return;
     }
 
-    if (foundCode.usedCount >= foundCode.maxUses) {
-      setEventMsg({ text: `❌ โค้ดของขวัญ "${foundCode.code}" ถูกใช้งานครบจำนวนสิทธิ์เต็มแล้ว`, type: 'error' });
+    // 3. ตรวจสอบจำนวนสิทธิ์ของโค้ด
+    if ((foundCode.usedCount || 0) >= (foundCode.maxUses || 0)) {
+      setEventMsg({ 
+        text: `⚠️ สิทธิ์โค้ดเต็มแล้ว: โค้ดของขวัญ "${foundCode.code}" มีผู้ใช้สิทธิ์ครบจำนวนเต็ม (${foundCode.maxUses} สิทธิ์) แล้ว กรุณารอกิจกรรมรอบใหม่ หรือติดตามโค้ดอัปเดตทาง LINE Official`, 
+        type: 'error' 
+      });
       return;
     }
 
-    if (globalRedeemedPlayers.includes(cleanPlayerId)) {
-      setEventMsg({ text: `❌ ID เกม "${eventPlayerId.trim()}" เคยรับสิทธิ์ของขวัญไปแล้ว`, type: 'error' });
+    // 4. ตรวจสอบระดับแรงค์ขั้นต่ำของลูกค้า (Rank Eligibility Check)
+    const minTierKey = foundCode.minRank || 'BRONZE';
+    const requiredTierObj = RANK_TIERS.find(t => t.tier === minTierKey) || RANK_TIERS[RANK_TIERS.length - 1];
+    
+    if (currentUserRank.level < requiredTierObj.level) {
+      const remainingToTier = Math.max(0, requiredTierObj.minSpend - currentUserSpending);
+      setEventMsg({ 
+        text: `🔒 สิทธิ์ไม่เพียงพอ: โค้ด "${foundCode.code}" สงวนสิทธิ์เฉพาะสมาชิกระดับ "${requiredTierObj.name} ขึ้นไป" (ปัจจุบันคุณอยู่ระดับ "${currentUserRank.name}") 💡 คุณสามารถสะสมยอดเติมแพ็กเกจเกมอีกเพียง ฿${remainingToTier.toLocaleString()} เพื่อเลื่อนเป็นระดับ ${requiredTierObj.name} และรับสิทธิ์โค้ดนี้ได้ทันที`, 
+        type: 'error' 
+      });
       return;
     }
 
-    setGlobalRedeemedPlayers([...globalRedeemedPlayers, cleanPlayerId]);
+    // 5. ระบบกันการสุ่มกรอก / กันตัวไก่: 1 บัญชีผู้ใช้ หรือ 1 UID รับได้ครั้งเดียวจนกว่าแอดมินจะรีเซ็ต
+    const isUidUsed = globalRedeemedPlayers.includes(cleanPlayerId);
+    const isAccountUsed = currentUsername && globalRedeemedPlayers.includes(currentUsername);
 
+    if (isUidUsed || isAccountUsed) {
+      const usedTarget = isAccountUsed ? `บัญชีของคุณ (${user.username})` : `ID เกม (${eventPlayerId.trim()})`;
+      setEventMsg({ 
+        text: `⚠️ สิทธิ์ถูกใช้งานแล้ว: ${usedTarget} ได้รับสิทธิ์แพ็กเกจของขวัญกิจกรรมไปแล้ว (จำกัด 1 สิทธิ์ต่อบัญชีและไอดีเกม เพื่อป้องกันการสแปมไอดีไก่) 🔄 กรุณารอแอดมินรีเซ็ตสิทธิ์กิจกรรมรอบถัดไป หรือติดต่อแอดมินทาง LINE Official`, 
+        type: 'error' 
+      });
+      return;
+    }
+
+    // บันทึกสิทธิ์ป้องกันการกรอกซ้ำทั้ง UID และ Username
+    const updatedRedeemed = [...globalRedeemedPlayers, cleanPlayerId];
+    if (currentUsername && !updatedRedeemed.includes(currentUsername)) {
+      updatedRedeemed.push(currentUsername);
+    }
+    setGlobalRedeemedPlayers(updatedRedeemed);
+
+    // ปรับจำนวนครั้งที่ใช้งานใน Firebase
     if (foundCode.firebaseKey) {
       const codeUsedRef = ref(db, `giftCodes/${foundCode.firebaseKey}/usedCount`);
       set(codeUsedRef, (foundCode.usedCount || 0) + 1);
@@ -1912,7 +2029,7 @@ export default function App() {
     const newEventOrder = {
       id: newOrderId,
       game: `${eventGame}`,
-      package: `โค้ดของขวัญ: ${foundCode.reward}`,
+      package: `โค้ดของขวัญ: ${foundCode.reward} [ระดับ ${requiredTierObj.shortName}]`,
       price: 0,
       profit: 0,
       player: user ? user.username : eventPlayerId.trim(),
@@ -1929,7 +2046,10 @@ export default function App() {
 
     createRealtimeOrder(newEventOrder);
 
-    setEventMsg({ text: `🎉 แลกรับโค้ดของขวัญ "${foundCode.code}" (${foundCode.reward}) สำเร็จเรียบร้อยแล้ว!`, type: 'success' });
+    setEventMsg({ 
+      text: `🎉 แลกรับโค้ดของขวัญ "${foundCode.code}" (${foundCode.reward}) สำเร็จเรียบร้อยแล้ว! ข้อมูลได้ถูกบันทึกและส่งมอบให้ ID "${eventPlayerId.trim()}" เรียบร้อยแล้ว`, 
+      type: 'success' 
+    });
     setEventGiftCode('');
     setEventPlayerId('');
   };
@@ -2830,7 +2950,7 @@ export default function App() {
       
       {floatingTimer > 0 && (
         <div style={{
-          position: 'fixed', bottom: '90px', right: '25px', zIndex: 98,
+          position: 'fixed', bottom: '95px', right: '25px', zIndex: 98,
           backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '2px solid #34d399',
           borderRadius: '16px', padding: '12px 18px', boxShadow: '0 0 25px rgba(52, 211, 153, 0.6)',
           display: 'flex', alignItems: 'center', gap: '12px'
@@ -3284,7 +3404,22 @@ export default function App() {
             <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(56, 189, 248, 0.6)', borderRadius: '20px', padding: '25px 30px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
                 <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🎁 กรอกโค้ดของขวัญแลกรับรางวัล (Redeem Gift Code)</h3>
-                <span style={{ fontSize: '11px', color: '#c084fc', fontWeight: 'bold' }}>✨ กรอก UID และรหัสโค้ดเพื่อแลกรับรางวัล</span>
+                <span style={{ fontSize: '11px', color: '#c084fc', fontWeight: 'bold' }}>✨ กรอก UID และรหัสโค้ดเพื่อรับรางวัลเข้าเกม</span>
+              </div>
+
+              {/* ป้ายแสดงระดับแรงค์ของลูกค้าปัจจุบัน พร้อมระบุยอดเติมสะสม */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', backgroundColor: '#090d16', border: '1px solid #1e293b', borderRadius: '12px', padding: '10px 14px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', color: '#9ca3af' }}>ระดับแรงค์ของคุณ:</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: currentUserRank.bg, border: `1.5px solid ${currentUserRank.border}`, color: currentUserRank.color, padding: '2px 8px', borderRadius: '14px', fontSize: '11px', fontWeight: '900', boxShadow: currentUserRank.glow }}>
+                    <RankEmblem tier={currentUserRank.tier} size={16} />
+                    <span>{currentUserRank.name}</span>
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>({currentUserRank.title})</span>
+                </div>
+                <div style={{ fontSize: '11px', color: '#38bdf8' }}>
+                  ยอดเติมแพ็กสะสม: <b style={{ color: '#34d399', fontSize: '13px' }}>฿{currentUserSpending.toLocaleString()}</b>
+                </div>
               </div>
               {eventMsg.text && (
                 <div style={{ backgroundColor: eventMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${eventMsg.type === 'success' ? '#34d399' : '#ef4444'}`, color: eventMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '15px' }}>
@@ -4444,8 +4579,11 @@ export default function App() {
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🎁 สร้างและจัดการโค้ดของขวัญพิเศษ (Realtime Cloud)</h3>
-                    <button onClick={handleResetAllRedeemRights} style={{ backgroundColor: '#f59e0b', color: '#000000', border: 'none', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>
-                      🔄 รีเซ็ตสิทธิ์ ID เกมทั้งหมด
+                    <button onClick={handleResetAllRedeemRights} style={{ backgroundColor: '#f59e0b', color: '#000000', border: 'none', padding: '8px 16px', borderRadius: '10px', fontWeight: '900', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} title="คลิกเพื่อปลดล็อคให้ทุกบัญชีและทุก UID สามารถรับของขวัญรอบใหม่ได้">
+                      <span>🔄 รีเซ็ตสิทธิ์รับของขวัญทั้งหมด</span>
+                      <span style={{ backgroundColor: '#000000', color: '#fbbf24', padding: '1px 7px', borderRadius: '10px', fontSize: '10px' }}>
+                        {globalRedeemedPlayers.length} รายการติดสิทธิ์
+                      </span>
                     </button>
                   </div>
 
@@ -4453,7 +4591,7 @@ export default function App() {
                     <div style={{ backgroundColor: adminCodeMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: adminCodeMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px' }}>{adminCodeMsg.text}</div>
                   )}
 
-                  <form onSubmit={handleCreateGiftCode} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                  <form onSubmit={handleCreateGiftCode} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '20px' }}>
                     <div>
                       <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. ชื่อโค้ด (Code Name)</label>
                       <input type="text" placeholder="ระบุชื่อโค้ด เช่น GIFT2026 (บังคับกรอก)" value={newCodeName} onChange={(e) => setNewCodeName(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
@@ -4474,8 +4612,126 @@ export default function App() {
                         ))}
                       </select>
                     </div>
+                    <div style={{ position: 'relative' }}>
+                      <label style={{ fontSize: '11px', color: '#c084fc', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+                        4. กำหนดแรงค์ขั้นต่ำที่กรอกได้
+                      </label>
+                      {(() => {
+                        const selTier = RANK_TIERS.find(t => t.tier === newCodeMinRank) || RANK_TIERS[RANK_TIERS.length - 1];
+                        return (
+                          <div style={{ position: 'relative' }}>
+                            {/* กล่องเลือกแรงค์ที่ปรับแต่งใหม่ แสดงรูปตราสัญลักษณ์ คมชัด สวยงาม 100% */}
+                            <div
+                              onClick={() => setIsRankSelectOpen(prev => !prev)}
+                              style={{
+                                width: '100%',
+                                backgroundColor: '#030712',
+                                border: `1.5px solid ${isRankSelectOpen ? '#a855f7' : selTier.border}`,
+                                borderRadius: '10px',
+                                padding: '8px 12px',
+                                color: '#ffffff',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                cursor: 'pointer',
+                                boxSizing: 'border-box',
+                                boxShadow: selTier.glow,
+                                transition: 'all 0.2s ease',
+                                userSelect: 'none',
+                                minHeight: '44px'
+                              }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                                <RankEmblem tier={selTier.tier} size={22} />
+                                <div style={{ textAlign: 'left', lineHeight: '1.2' }}>
+                                  <div style={{ fontSize: '12px', fontWeight: '900', color: selTier.color, whiteSpace: 'nowrap' }}>
+                                    {selTier.tier === 'BRONZE' ? 'ทุกระดับแรงค์ (Bronze Member)' : `เฉพาะ ${selTier.badge} ขึ้นไป`}
+                                  </div>
+                                  <div style={{ fontSize: '10px', color: '#94a3b8' }}>
+                                    ยอดเติมสะสม {selTier.rateText}
+                                  </div>
+                                </div>
+                              </div>
+                              <span style={{ fontSize: '11px', color: '#c084fc', fontWeight: 'bold', marginLeft: '6px' }}>
+                                {isRankSelectOpen ? '▲' : '▼'}
+                              </span>
+                            </div>
+
+                            {/* เมนูดรอปดาวน์แสดงตราสัญลักษณ์ประจำแรงค์ทุกระดับ ไม่มีกล่องสี่เหลี่ยมตกหล่น */}
+                            {isRankSelectOpen && (
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  top: 'calc(100% + 6px)',
+                                  left: 0,
+                                  right: 0,
+                                  minWidth: '290px',
+                                  zIndex: 200,
+                                  backgroundColor: '#0b101d',
+                                  border: '1.5px solid #a855f7',
+                                  borderRadius: '14px',
+                                  padding: '6px',
+                                  boxShadow: '0 16px 45px rgba(0,0,0,0.95), 0 0 25px rgba(168,85,247,0.4)',
+                                  backdropFilter: 'blur(16px)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '4px',
+                                  maxHeight: '320px',
+                                  overflowY: 'auto'
+                                }}
+                              >
+                                {RANK_TIERS.map(t => {
+                                  const isSelected = newCodeMinRank === t.tier;
+                                  return (
+                                    <div
+                                      key={t.tier}
+                                      onClick={() => {
+                                        setNewCodeMinRank(t.tier);
+                                        setIsRankSelectOpen(false);
+                                      }}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '8px 10px',
+                                        borderRadius: '8px',
+                                        backgroundColor: isSelected ? 'rgba(168, 85, 247, 0.25)' : 'transparent',
+                                        border: isSelected ? `1px solid ${t.border}` : '1px solid transparent',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s ease'
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        if (!isSelected) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
+                                      }}
+                                    >
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <RankEmblem tier={t.tier} size={22} />
+                                        <div style={{ textAlign: 'left', lineHeight: '1.2' }}>
+                                          <div style={{ fontSize: '12px', fontWeight: '900', color: t.color }}>
+                                            {t.tier === 'BRONZE' ? 'ทุกระดับแรงค์ (Bronze Member)' : `เฉพาะ ${t.badge}`}
+                                          </div>
+                                          <div style={{ fontSize: '10px', color: '#94a3b8' }}>
+                                            ยอดเติมสะสม {t.rateText}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      {isSelected && (
+                                        <span style={{ fontSize: '12px', color: '#34d399', fontWeight: 'bold' }}>✓</span>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
                     <div>
-                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>4. จำนวนสิทธิ์ทั้งหมด</label>
+                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>5. จำนวนสิทธิ์ทั้งหมด</label>
                       <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', overflow: 'hidden' }}>
                         <button type="button" onClick={() => setNewCodeMaxUses(Math.max(1, newCodeMaxUses - 1))} style={{ backgroundColor: 'rgba(147,51,234,0.3)', color: '#a855f7', border: 'none', padding: '8px 14px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>-</button>
                         <input type="text" readOnly value={newCodeMaxUses} style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', outline: 'none' }} />
@@ -4483,8 +4739,8 @@ export default function App() {
                       </div>
                     </div>
                     <div style={{ gridColumn: '1 / -1' }}>
-                      <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
-                        + สร้างโค้ดของขวัญใหม่ (บันทึกลงเรียลไทม์)
+                      <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
+                        + สร้างโค้ดของขวัญใหม่ (กำหนดแรงค์ & บันทึกเรียลไทม์)
                       </button>
                     </div>
                   </form>
@@ -4704,8 +4960,32 @@ export default function App() {
                                 <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', marginBottom: '4px' }}>
                                   🎮 เกม: <span style={{ color: '#ffffff' }}>{codeItem.game}</span>
                                 </div>
-                                <div style={{ fontSize: '12px', color: '#38bdf8', marginBottom: '10px' }}>
+                                <div style={{ fontSize: '12px', color: '#38bdf8', marginBottom: '8px' }}>
                                   🎁 รางวัล: <b>{codeItem.reward}</b>
+                                </div>
+                                {/* ป้ายระดับแรงค์ขั้นต่ำที่กำหนด */}
+                                <div style={{ marginBottom: '10px' }}>
+                                  {(() => {
+                                    const rKey = codeItem.minRank || 'BRONZE';
+                                    const rObj = RANK_TIERS.find(t => t.tier === rKey) || RANK_TIERS[RANK_TIERS.length - 1];
+                                    return (
+                                      <span style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '5px',
+                                        backgroundColor: rObj.bg,
+                                        border: `1px solid ${rObj.border}`,
+                                        color: rObj.color,
+                                        padding: '2px 8px',
+                                        borderRadius: '6px',
+                                        fontSize: '10px',
+                                        fontWeight: '900'
+                                      }}>
+                                        <RankEmblem tier={rObj.tier} size={14} />
+                                        <span>{rKey === 'BRONZE' ? 'สิทธิ์: ทุกระดับแรงค์' : `สิทธิ์: ${rObj.name} ขึ้นไป`}</span>
+                                      </span>
+                                    );
+                                  })()}
                                 </div>
 
                                 {/* หลอดแสดงจำนวนสิทธิ์คงเหลือ */}
@@ -4812,7 +5092,7 @@ export default function App() {
           </div>
         )}
             {/* LINE OFFICIAL FLOATING CONTACT WIDGET (เอฟเฟกต์ลอยขยับได้นิดหน่อย สวยงาม ดูเป็นทางการ) */}
-      <div style={{ position: 'fixed', bottom: '25px', left: '25px', zIndex: 99 }}>
+      <div style={{ position: 'fixed', bottom: '25px', right: '25px', zIndex: 99 }}>
         <div
           onClick={() => setShowLineModal(true)}
           className="line-floating-btn"
