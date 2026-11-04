@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, onValue, set, push } from 'firebase/database';
+import { getDatabase, ref, onValue, set, push, remove } from 'firebase/database';
 import { getAuth, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth';
 
 // ตั้งค่า Firebase Config
@@ -707,31 +707,18 @@ export default function App() {
       const data = snapshot.val();
       if (data) {
         const codeList = Object.keys(data).map(key => ({
-          firebaseKey: key,
-          ...data[key]
+          ...data[key],
+          firebaseKey: key
         }));
         setGiftCodes(codeList.reverse());
       } else {
-        const defaultEvents = [
-          { code: 'GIFT-VAL-125', game: 'VALORANT', reward: '125 VP', maxUses: 100, usedCount: 0, timestamp: Date.now() },
-          { code: 'GIFT-ROV-40', game: 'ROV (Arena of Valor)', reward: '40 Coupons', maxUses: 100, usedCount: 0, timestamp: Date.now() },
-          { code: 'GIFT-GEN-60', game: 'Genshin Impact', reward: '60 Genesis Crystals', maxUses: 100, usedCount: 0, timestamp: Date.now() }
-        ];
-        defaultEvents.forEach(item => push(giftCodesRef, item));
+        setGiftCodes([]);
       }
     });
     return () => unsubscribe();
   }, []);
 
   const [showLegacyStockAdmin, setShowLegacyStockAdmin] = useState(false);
-  useEffect(() => {
-    const availableForGame = giftCodes.filter(c => c.game === eventGame && c.usedCount < c.maxUses);
-    if (availableForGame.length > 0) {
-      setEventGiftCode(availableForGame[0].code);
-    } else {
-      setEventGiftCode('');
-    }
-  }, [eventGame, giftCodes]);
 
   const [stockList, setStockList] = useState([]);
   const [stockGame, setStockGame] = useState('VALORANT');
@@ -833,6 +820,11 @@ export default function App() {
   const [newCodeReward, setNewCodeReward] = useState('125 VP');
   const [newCodeMaxUses, setNewCodeMaxUses] = useState(10);
   const [adminCodeMsg, setAdminCodeMsg] = useState({ text: '', type: '' });
+  const [adminGiftCodeSearch, setAdminGiftCodeSearch] = useState('');
+  const [adminGiftCodeFilterGame, setAdminGiftCodeFilterGame] = useState('all');
+  const [copiedCodeKey, setCopiedCodeKey] = useState(null);
+  const [confirmDeleteCodeKey, setConfirmDeleteCodeKey] = useState(null);
+  const [confirmClearAllGiftCodes, setConfirmClearAllGiftCodes] = useState(false);
 
   useEffect(() => {
     const found = gamesData.find(g => g.name === newCodeGame);
@@ -935,28 +927,47 @@ export default function App() {
 
   useEffect(() => {
     const interval = setInterval(() => {
+      const now = Date.now();
       orders.forEach((ord) => {
         if ((ord.status.includes('รอตรวจสอบ') || ord.status.includes('รอแอดมิน')) && ord.firebaseKey) {
-          if (ord.type === 'wallet') {
-            creditUserWallet(ord.player, ord.price);
-          }
-          updateRealtimeOrderStatus(ord.firebaseKey, '✅ เติมเข้าไอดีเกมสำเร็จทันที (AUTO 100%)');
-          if (ord.firebaseKey === activeOrderFirebaseKey) {
-            setFloatingTimer(0);
-            setActiveOrderFirebaseKey(null);
+          const elapsed = ord.timestamp ? Math.floor((now - ord.timestamp) / 1000) : 10;
+          if (elapsed >= 10) {
+            if (ord.type === 'wallet') {
+              creditUserWallet(ord.player, ord.price);
+              updateRealtimeOrderStatus(ord.firebaseKey, '✅ เติมเครดิตสำเร็จ (ระบบอนุมัติ)');
+            } else if (ord.type === 'game') {
+              updateRealtimeOrderStatus(ord.firebaseKey, '✅ เติมเข้าไอดีเกมสำเร็จทันที (AUTO 100%)');
+            } else {
+              updateRealtimeOrderStatus(ord.firebaseKey, '✅ สำเร็จ (ระบบอนุมัติ)');
+            }
+            if (ord.firebaseKey === activeOrderFirebaseKey) {
+              setFloatingTimer(0);
+              setActiveOrderFirebaseKey(null);
+            }
           }
         }
       });
-    }, 800);
+    }, 1000);
     return () => clearInterval(interval);
   }, [orders, activeOrderFirebaseKey]);
 
   useEffect(() => {
     if (activeOrderFirebaseKey) {
       const currentOrd = orders.find(o => o.firebaseKey === activeOrderFirebaseKey);
-      if (!currentOrd || !currentOrd.status.includes('รอตรวจสอบ')) {
+      if (currentOrd && !currentOrd.status.includes('รอตรวจสอบ') && !currentOrd.status.includes('รอแอดมิน')) {
         setFloatingTimer(0);
         setActiveOrderFirebaseKey(null);
+        if (currentOrd.type === 'game' && currentOrd.status.includes('AUTO 100%')) {
+          setDeliveredStockModal({
+            orderId: currentOrd.id,
+            game: currentOrd.game,
+            package: currentOrd.package,
+            bonus: currentOrd.bonus || '',
+            gameChar: currentOrd.gameChar,
+            apiRef: currentOrd.apiRef,
+            code: null
+          });
+        }
       }
     }
   }, [orders, activeOrderFirebaseKey]);
@@ -1184,12 +1195,17 @@ export default function App() {
     e.preventDefault();
     setAdminCodeMsg({ text: '', type: '' });
 
+    if (!newCodeName.trim()) {
+      setAdminCodeMsg({ text: 'กรุณากรอกชื่อโค้ดของขวัญที่ต้องการสร้าง (ไม่อนุญาตให้ระบบสุ่มสร้างอัตโนมัติ)', type: 'error' });
+      return;
+    }
+
     if (!newCodeReward.trim() || newCodeMaxUses <= 0) {
       setAdminCodeMsg({ text: 'กรุณาเลือกแพ็กเกจและจำนวนสิทธิ์ให้ถูกต้อง', type: 'error' });
       return;
     }
 
-    const cleanCode = newCodeName.trim() ? newCodeName.trim().toUpperCase() : ('AUTO-' + Math.floor(1000 + Math.random() * 9000));
+    const cleanCode = newCodeName.trim().toUpperCase();
     if (giftCodes.some(c => c.code === cleanCode)) {
       setAdminCodeMsg({ text: 'โค้ดนี้มีอยู่ในระบบแล้ว กรุณาใช้ชื่อโค้ดอื่น', type: 'error' });
       return;
@@ -1217,10 +1233,51 @@ export default function App() {
   };
 
   const handleDeleteGiftCode = (codeItem) => {
-    if (codeItem.firebaseKey) {
-      const targetRef = ref(db, `giftCodes/${codeItem.firebaseKey}`);
-      set(targetRef, null);
+    const keyToDelete = codeItem.firebaseKey;
+    const codeToDelete = codeItem.code;
+
+    // 1. ลบออกจาก State ทันทีเพื่อให้การ์ดหายไปแบบเรียลไทม์ทันใจ (Optimistic Update)
+    setGiftCodes((prev) =>
+      prev.filter((c) => (keyToDelete ? c.firebaseKey !== keyToDelete : c.code !== codeToDelete))
+    );
+    setConfirmDeleteCodeKey(null);
+
+    // 2. ส่งคำสั่งลบถาวรไปยัง Firebase Realtime Database
+    if (keyToDelete) {
+      const targetRef = ref(db, `giftCodes/${keyToDelete}`);
+      remove(targetRef)
+        .then(() => {
+          setAdminCodeMsg({ text: `🗑️ ลบโค้ด "${codeToDelete}" ออกจากระบบถาวรเรียบร้อยแล้ว`, type: 'success' });
+          setTimeout(() => setAdminCodeMsg({ text: '', type: '' }), 4000);
+        })
+        .catch((err) => {
+          console.error("Firebase remove error:", err);
+          set(targetRef, null);
+          setAdminCodeMsg({ text: `🗑️ ลบโค้ด "${codeToDelete}" เรียบร้อยแล้ว`, type: 'success' });
+          setTimeout(() => setAdminCodeMsg({ text: '', type: '' }), 4000);
+        });
+    } else {
+      setAdminCodeMsg({ text: `🗑️ ลบโค้ด "${codeToDelete}" เรียบร้อยแล้ว`, type: 'success' });
+      setTimeout(() => setAdminCodeMsg({ text: '', type: '' }), 4000);
     }
+  };
+
+  const handleClearAllGiftCodes = () => {
+    // ล้างข้อมูลทั้งหมดในระบบให้เหลือ 0 ทันที
+    setGiftCodes([]);
+    setConfirmClearAllGiftCodes(false);
+
+    const allGiftCodesRef = ref(db, 'giftCodes');
+    remove(allGiftCodesRef)
+      .then(() => {
+        setAdminCodeMsg({ text: '🗑️ ลบโค้ดของขวัญทั้งหมดในระบบให้เหลือ 0 เรียบร้อยแล้ว! แอดมินสามารถสร้างโค้ดใหม่ได้ตามต้องการ', type: 'success' });
+        setTimeout(() => setAdminCodeMsg({ text: '', type: '' }), 5000);
+      })
+      .catch((err) => {
+        set(allGiftCodesRef, null);
+        setAdminCodeMsg({ text: '🗑️ ลบโค้ดของขวัญทั้งหมดให้เหลือ 0 เรียบร้อยแล้ว', type: 'success' });
+        setTimeout(() => setAdminCodeMsg({ text: '', type: '' }), 5000);
+      });
   };
 
   const handleResetAllRedeemRights = () => {
@@ -1232,27 +1289,36 @@ export default function App() {
     setEventMsg({ text: '', type: '' });
 
     if (!eventPlayerId.trim()) {
-      setEventMsg({ text: 'กรุณากรอก ชื่อในเกม หรือ UID เพื่อรับแพ็กเกจเข้าไอดีโดยตรง', type: 'error' });
+      setEventMsg({ text: 'กรุณากรอก ชื่อในเกม หรือ UID ของคุณ', type: 'error' });
+      return;
+    }
+
+    if (!eventGiftCode.trim()) {
+      setEventMsg({ text: 'กรุณากรอกรหัสโค้ดของขวัญที่ต้องการแลกรับ', type: 'error' });
       return;
     }
 
     const cleanPlayerId = eventPlayerId.trim().toLowerCase();
-    const availableForGame = giftCodes.filter(c => c.game === eventGame && c.usedCount < c.maxUses);
     const targetCode = eventGiftCode.trim().toUpperCase();
-    const foundCode = (targetCode && giftCodes.find(c => c.code === targetCode && c.game === eventGame)) || availableForGame[0];
+    const foundCode = giftCodes.find(c => c.code && c.code.trim().toUpperCase() === targetCode);
 
     if (!foundCode) {
-      setEventMsg({ text: `ขณะนี้แพ็กเกจของขวัญฟรีสำหรับเกม ${eventGame} ถูกกดรับครบสิทธิ์แล้ว`, type: 'error' });
+      setEventMsg({ text: `❌ ไม่พบรหัสโค้ดของขวัญ "${targetCode}" ในระบบ กรุณาตรวจสอบอีกครั้ง`, type: 'error' });
       return;
     }
 
-    if (globalRedeemedPlayers.includes(cleanPlayerId)) {
-      setEventMsg({ text: `❌ ID เกม "${eventPlayerId.trim()}" เคยรับสิทธิ์แพ็กเกจกิจกรรมไปแล้ว`, type: 'error' });
+    if (foundCode.game !== eventGame) {
+      setEventMsg({ text: `❌ โค้ดของขวัญนี้สำหรับเกม "${foundCode.game}" ไม่สามารถใช้กับเกม "${eventGame}" ได้`, type: 'error' });
       return;
     }
 
     if (foundCode.usedCount >= foundCode.maxUses) {
-      setEventMsg({ text: `แพ็กเกจกิจกรรม "${foundCode.reward}" ถูกกดรับครบจำนวนสิทธิ์เต็มแล้ว`, type: 'error' });
+      setEventMsg({ text: `❌ โค้ดของขวัญ "${foundCode.code}" ถูกใช้งานครบจำนวนสิทธิ์เต็มแล้ว`, type: 'error' });
+      return;
+    }
+
+    if (globalRedeemedPlayers.includes(cleanPlayerId)) {
+      setEventMsg({ text: `❌ ID เกม "${eventPlayerId.trim()}" เคยรับสิทธิ์ของขวัญไปแล้ว`, type: 'error' });
       return;
     }
 
@@ -1260,11 +1326,11 @@ export default function App() {
 
     if (foundCode.firebaseKey) {
       const codeUsedRef = ref(db, `giftCodes/${foundCode.firebaseKey}/usedCount`);
-      set(codeUsedRef, foundCode.usedCount + 1);
+      set(codeUsedRef, (foundCode.usedCount || 0) + 1);
     }
 
     const newOrderId = 'ORD-EVT-' + Math.floor(10000 + Math.random() * 90000);
-    const apiRef = 'API-DIRECT-EVT-' + Math.floor(100000 + Math.random() * 900000);
+    const apiRef = 'API-GIFT-' + Math.floor(100000 + Math.random() * 900000);
     const now = new Date();
     const day = String(now.getDate()).padStart(2, '0');
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -1274,16 +1340,16 @@ export default function App() {
 
     const newEventOrder = {
       id: newOrderId,
-      game: `กิจกรรม (${eventGame})`,
-      package: `รับฟรี AUTO: ${foundCode.reward}`,
+      game: `${eventGame}`,
+      package: `โค้ดของขวัญ: ${foundCode.reward}`,
       price: 0,
       profit: 0,
       player: user ? user.username : eventPlayerId.trim(),
       gameChar: eventPlayerId.trim(),
-      paymentMethod: '🎁 ระบบแจกแพ็กเกจฟรี AUTO 100%',
-      status: '✅ เติมเข้าไอดีเกมสำเร็จทันที (AUTO 100%)',
+      paymentMethod: `🎁 โค้ดของขวัญ (${foundCode.code})`,
+      status: '✅ สำเร็จ (แลกรับของขวัญแล้ว)',
       apiRef: apiRef,
-      deliveryType: 'DIRECT_UID_AUTO_100',
+      deliveryType: 'GIFT_CODE',
       type: 'event',
       time: thaiTime,
       dateKey: dateKey,
@@ -1292,17 +1358,8 @@ export default function App() {
 
     createRealtimeOrder(newEventOrder);
 
-    setDeliveredStockModal({
-      orderId: newOrderId,
-      game: eventGame,
-      package: foundCode.reward,
-      bonus: 'ของขวัญกิจกรรมพิเศษ',
-      gameChar: eventPlayerId.trim(),
-      apiRef: apiRef,
-      code: null
-    });
-
-    setEventMsg({ text: `⚡ เติมแพ็กเกจฟรี "${foundCode.reward}" เข้าสู่ไอดี "${eventPlayerId.trim()}" โดยตรงสำเร็จทันที! (AUTO 100% ไม่ต้องกรอกโค้ด)`, type: 'success' });
+    setEventMsg({ text: `🎉 แลกรับโค้ดของขวัญ "${foundCode.code}" (${foundCode.reward}) สำเร็จเรียบร้อยแล้ว!`, type: 'success' });
+    setEventGiftCode('');
     setEventPlayerId('');
   };
 
@@ -1387,7 +1444,6 @@ export default function App() {
     };
 
     const targetUsername = user ? user.username : 'user11';
-    creditUserWallet(targetUsername, amt);
 
     const newWalletOrder = {
       id: newOrderId,
@@ -1396,16 +1452,19 @@ export default function App() {
       price: amt,
       profit: 0,
       player: targetUsername,
-      gameChar: 'เติมเครดิตร้าน (AUTO 100%)',
+      gameChar: 'เติมเครดิตร้าน',
       paymentMethod: paymentLabelMap[walletPaymentMethod] || walletPaymentMethod.toUpperCase(),
-      status: '✅ เติมเครดิตสำเร็จทันที (AUTO 100%)',
+      status: '⏳ รอตรวจสอบยอดเงิน',
       type: 'wallet',
       time: thaiTime,
       dateKey: dateKey,
       timestamp: Date.now()
     };
 
-    createRealtimeOrder(newWalletOrder);
+    const newKey = createRealtimeOrder(newWalletOrder);
+    setFloatingTimer(10);
+    setActiveOrderFirebaseKey(newKey);
+    setActiveTab('track');
 
     setShowTopupWalletModal(false);
     setWalletStep(1);
@@ -1510,7 +1569,7 @@ export default function App() {
 
       const targetGameChar = playerId.trim();
       const pkgSummary = `${selectedPackage.name} (x${packageQuantity} แพ็ก)`;
-      const finalStatus = '✅ เติมเข้าไอดีเกมสำเร็จทันที (AUTO 100%)';
+      const initialStatus = '⏳ รอตรวจสอบยอดเงิน';
 
       const newOrder = {
         id: newOrderId,
@@ -1522,7 +1581,7 @@ export default function App() {
         player: user ? user.username : 'user11',
         gameChar: targetGameChar,
         paymentMethod: selectedPayment.name,
-        status: finalStatus,
+        status: initialStatus,
         apiRef: apiRef,
         deliveryType: 'DIRECT_UID_AUTO_100',
         deliveredCode: null,
@@ -1532,7 +1591,9 @@ export default function App() {
         timestamp: Date.now(),
       };
 
-      createRealtimeOrder(newOrder);
+      const newKey = createRealtimeOrder(newOrder);
+      setFloatingTimer(10);
+      setActiveOrderFirebaseKey(newKey);
 
       sendLineOrderNotification({
         orderId: newOrderId,
@@ -1559,16 +1620,7 @@ export default function App() {
       setSlipFile(null);
       setSlipPreview(null);
       setSlipVerifying(false);
-
-      setDeliveredStockModal({
-        orderId: newOrderId,
-        game: selectedGame.name,
-        package: pkgSummary,
-        bonus: selectedPackage.bonus,
-        gameChar: targetGameChar,
-        apiRef: apiRef,
-        code: null
-      });
+      setActiveTab('track');
     }, 900);
   };
   const handleSimulateSlipScan = () => {
@@ -1579,7 +1631,7 @@ export default function App() {
     setTimeout(() => {
       setSlipVerifyStepText('💳 ยืนยันยอดโอนถูกต้อง! กำลังเชื่อมต่อเซิร์ฟเวอร์เกม ' + (selectedGame?.name || '') + '...');
       setTimeout(() => {
-        setSlipVerifyStepText('⚡ กำลังยิงแพ็กเกจเข้าสู่ไอดี/UID: ' + playerId.trim() + ' โดยตรง (AUTO 100%)...');
+        setSlipVerifyStepText('⚡ แนบสลิปถูกต้องแล้ว! กำลังส่งข้อมูลเข้าสู่ระบบตรวจสอบ...');
         setTimeout(() => {
           handleFinalPaymentSubmit();
         }, 700);
@@ -1589,10 +1641,16 @@ export default function App() {
 
   const handleAdminApproveOrder = (order) => {
     if (order.firebaseKey) {
-      if (order.type === 'wallet' && !order.status.includes('สำเร็จ')) {
-        creditUserWallet(order.player, order.price);
+      if (order.type === 'wallet') {
+        if (!order.status.includes('สำเร็จ')) {
+          creditUserWallet(order.player, order.price);
+        }
+        updateRealtimeOrderStatus(order.firebaseKey, '✅ เติมเครดิตสำเร็จ (แอดมินอนุมัติแล้ว)');
+      } else if (order.type === 'game') {
+        updateRealtimeOrderStatus(order.firebaseKey, '✅ เติมเข้าไอดีเกมสำเร็จทันที (AUTO 100%)');
+      } else {
+        updateRealtimeOrderStatus(order.firebaseKey, '✅ สำเร็จ (แอดมินอนุมัติแล้ว)');
       }
-      updateRealtimeOrderStatus(order.firebaseKey, '✅ สำเร็จ (แอดมินอนุมัติแล้ว)');
       if (order.firebaseKey === activeOrderFirebaseKey) {
         setFloatingTimer(0);
         setActiveOrderFirebaseKey(null);
@@ -1680,6 +1738,16 @@ export default function App() {
 
   const totalSpentInSearch = searchedOrders.reduce((sum, ord) => sum + ord.price, 0);
   const selectedGameForAdminCode = gamesData.find(g => g.name === newCodeGame);
+
+  const filteredGiftCodes = giftCodes.filter(c => {
+    const matchGame = adminGiftCodeFilterGame === 'all' || c.game === adminGiftCodeFilterGame;
+    const q = adminGiftCodeSearch.trim().toLowerCase();
+    const matchSearch = !q ||
+      (c.code && c.code.toLowerCase().includes(q)) ||
+      (c.reward && c.reward.toLowerCase().includes(q)) ||
+      (c.game && c.game.toLowerCase().includes(q));
+    return matchGame && matchSearch;
+  });
 
   const [selectedHistoryDate, setSelectedHistoryDate] = useState('all');
   const [historyPage, setHistoryPage] = useState(1);
@@ -2226,9 +2294,9 @@ export default function App() {
 
             <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(56, 189, 248, 0.6)', borderRadius: '20px', padding: '25px 30px', marginBottom: '35px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>📊 สถานะแพ็กเกจของขวัญฟรี แยกตามเกม (คลิกเลือกเกมเพื่อรับเข้าไอดีทันที)[cite: 1, 2]</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>📊 รายการเกมที่รองรับโค้ดของขวัญ</h3>
                 <span style={{ fontSize: '11px', color: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.15)', border: '1px solid #34d399', padding: '4px 10px', borderRadius: '8px', fontWeight: 'bold' }}>
-                  ⚡ เติมเข้า UID ทันที[cite: 1, 2]
+                  🎁 ระบบกรอกโค้ดรับรางวัล
                 </span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '14px' }}>
@@ -2239,15 +2307,12 @@ export default function App() {
                   return (
                     <div
                       key={g.id}
-                      onClick={() => {
-                        setEventGame(g.name);
-                        if (codesForGame.length > 0) setEventGiftCode(codesForGame[0].code);
-                      }}
+                      onClick={() => setEventGame(g.name)}
                       style={{ backgroundColor: isGameSelected ? 'rgba(56, 189, 248, 0.15)' : '#030712', border: isGameSelected ? '1.5px solid #38bdf8' : '1px solid #374151', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: '52px', boxSizing: 'border-box', cursor: 'pointer' }}
                     >
                       <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', marginRight: '10px', lineHeight: '1.3', flex: 1 }}>{g.name}</span>
                       <span style={{ backgroundColor: totalRemainingForGame > 0 ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)', color: totalRemainingForGame > 0 ? '#34d399' : '#fca5a5', border: `1px solid ${totalRemainingForGame > 0 ? '#34d399' : '#ef4444'}`, padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0, textAlign: 'center' }}>
-                        {totalRemainingForGame > 0 ? `⚡ แจกฟรี (${totalRemainingForGame} สิทธิ์)` : 'หมดแล้ว'}
+                        {totalRemainingForGame > 0 ? `มีโค้ดแจก (${totalRemainingForGame} สิทธิ์)` : 'หมดแล้ว'}
                       </span>
                     </div>
                   );
@@ -2257,8 +2322,8 @@ export default function App() {
 
             <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(56, 189, 248, 0.6)', borderRadius: '20px', padding: '25px 30px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🎁 รับแพ็กเกจของขวัญ / กิจกรรมพิเศษเข้าไอดีโดยตรง[cite: 1, 2]</h3>
-                <span style={{ fontSize: '11px', color: '#c084fc', fontWeight: 'bold' }}>✨ กรอกเฉพาะ UID แล้วกดรับแพ็กเกจเข้าเกมได้ทันที![cite: 1, 2]</span>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🎁 กรอกโค้ดของขวัญแลกรับรางวัล (Redeem Gift Code)</h3>
+                <span style={{ fontSize: '11px', color: '#c084fc', fontWeight: 'bold' }}>✨ กรอก UID และรหัสโค้ดเพื่อแลกรับรางวัล</span>
               </div>
               {eventMsg.text && (
                 <div style={{ backgroundColor: eventMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${eventMsg.type === 'success' ? '#34d399' : '#ef4444'}`, color: eventMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '15px' }}>
@@ -2275,30 +2340,22 @@ export default function App() {
                   </select>
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>2. ชื่อในเกม หรือ UID (รับพอยต์เข้าไอดีตรง)</label>
-                  <input type="text" placeholder="ระบุไอดีหรือชื่อในเกม..." value={eventPlayerId} onChange={(e) => setEventPlayerId(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
+                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>2. ชื่อในเกม หรือ UID</label>
+                  <input type="text" placeholder="ระบุไอดีหรือ UID ตัวละคร..." value={eventPlayerId} onChange={(e) => setEventPlayerId(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#34d399', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>3. แพ็กเกจของขวัญพิเศษ</label>
-                  <select
+                  <label style={{ fontSize: '12px', color: '#34d399', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>3. กรอกรหัสโค้ดของขวัญ</label>
+                  <input
+                    type="text"
+                    placeholder="เช่น GIFT-VAL-125..."
                     value={eventGiftCode}
-                    onChange={(e) => setEventGiftCode(e.target.value)}
-                    style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #34d399', borderRadius: '10px', padding: '12px', color: '#34d399', fontWeight: 'bold', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}
-                  >
-                    {giftCodes.filter(c => c.game === eventGame && c.usedCount < c.maxUses).length > 0 ? (
-                      giftCodes.filter(c => c.game === eventGame && c.usedCount < c.maxUses).map(c => (
-                        <option key={c.firebaseKey || c.code} value={c.code}>
-                          🎁 แจกฟรี: {c.reward} (เหลือ {c.maxUses - c.usedCount} สิทธิ์)
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">❌ สิทธิ์แพ็กเกจฟรีของเกมนี้เต็มแล้ว</option>
-                    )}
-                  </select>
+                    onChange={(e) => setEventGiftCode(e.target.value.toUpperCase())}
+                    style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #34d399', borderRadius: '10px', padding: '12px', color: '#34d399', fontWeight: 'bold', fontSize: '13px', outline: 'none', boxSizing: 'border-box', letterSpacing: '0.5px' }}
+                  />
                 </div>
                 <div>
                   <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
-                    ✨ ยืนยันรับสิทธิ์ของขวัญ
+                    🎁 แลกรับของขวัญ
                   </button>
                 </div>
               </form>
@@ -2898,7 +2955,7 @@ export default function App() {
 
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🎁 สร้างและจัดการแพ็กเกจของขวัญพิเศษ (Realtime Cloud)</h3>
+                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🎁 สร้างและจัดการโค้ดของขวัญพิเศษ (Realtime Cloud)</h3>
                     <button onClick={handleResetAllRedeemRights} style={{ backgroundColor: '#f59e0b', color: '#000000', border: 'none', padding: '8px 14px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}>
                       🔄 รีเซ็ตสิทธิ์ ID เกมทั้งหมด
                     </button>
@@ -2911,7 +2968,7 @@ export default function App() {
                   <form onSubmit={handleCreateGiftCode} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '20px' }}>
                     <div>
                       <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. ชื่อโค้ด (Code Name)</label>
-                      <input type="text" placeholder="เช่น GIFT2026" value={newCodeName} onChange={(e) => setNewCodeName(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
+                      <input type="text" placeholder="ระบุชื่อโค้ด เช่น GIFT2026 (บังคับกรอก)" value={newCodeName} onChange={(e) => setNewCodeName(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
                     </div>
                     <div>
                       <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. เลือกเกม</label>
@@ -2939,10 +2996,328 @@ export default function App() {
                     </div>
                     <div style={{ gridColumn: '1 / -1' }}>
                       <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>
-                        + สร้างแพ็กเกจของขวัญใหม่ (บันทึกลงเรียลไทม์)
+                        + สร้างโค้ดของขวัญใหม่ (บันทึกลงเรียลไทม์)
                       </button>
                     </div>
                   </form>
+
+                  {/* รายการโค้ดของขวัญทั้งหมดที่สร้างไว้ พร้อมปุ่มลบโค้ด */}
+                  <div style={{ marginTop: '28px', borderTop: '1px solid #374151', paddingTop: '22px' }}>
+                    {adminCodeMsg.text && (
+                      <div style={{ backgroundColor: adminCodeMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: adminCodeMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>{adminCodeMsg.text}</span>
+                        <button type="button" onClick={() => setAdminCodeMsg({ text: '', type: '' })} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '14px' }}>✕</button>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        <h4 style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span>📋 โค้ดของขวัญในระบบทั้งหมด</span>
+                          <span style={{ fontSize: '13px', color: '#38bdf8', fontWeight: 'normal' }}>({giftCodes.length} รายการ)</span>
+                        </h4>
+                        <span style={{ fontSize: '11px', backgroundColor: 'rgba(52, 211, 153, 0.15)', color: '#34d399', border: '1px solid #34d399', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
+                          พร้อมใช้งาน: {giftCodes.filter(c => c.usedCount < c.maxUses).length} โค้ด
+                        </span>
+                        {giftCodes.filter(c => c.usedCount >= c.maxUses).length > 0 && (
+                          <span style={{ fontSize: '11px', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid #ef4444', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
+                            สิทธิ์เต็มแล้ว: {giftCodes.filter(c => c.usedCount >= c.maxUses).length} โค้ด
+                          </span>
+                        )}
+
+                        {giftCodes.length > 0 && (
+                          confirmClearAllGiftCodes ? (
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginLeft: '6px' }}>
+                              <button
+                                type="button"
+                                onClick={handleClearAllGiftCodes}
+                                style={{
+                                  backgroundColor: '#dc2626',
+                                  border: '1px solid #ef4444',
+                                  color: '#ffffff',
+                                  padding: '5px 12px',
+                                  borderRadius: '8px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  boxShadow: '0 0 12px rgba(239, 68, 68, 0.6)'
+                                }}
+                              >
+                                ⚠️ ยืนยันล้างทั้งหมด (เหลือ 0)?
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmClearAllGiftCodes(false)}
+                                style={{
+                                  backgroundColor: '#374151',
+                                  border: '1px solid #4b5563',
+                                  color: '#d1d5db',
+                                  padding: '5px 10px',
+                                  borderRadius: '8px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                ยกเลิก
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmClearAllGiftCodes(true)}
+                              style={{
+                                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                                border: '1px solid #ef4444',
+                                color: '#f87171',
+                                padding: '5px 12px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                marginLeft: '6px',
+                                transition: 'all 0.2s'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#ef4444';
+                                e.currentTarget.style.color = '#ffffff';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                                e.currentTarget.style.color = '#f87171';
+                              }}
+                            >
+                              🗑️ ลบโค้ดทั้งหมด (เคลียร์ให้เหลือ 0)
+                            </button>
+                          )
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          placeholder="🔍 ค้นหาโค้ด / รางวัล..."
+                          value={adminGiftCodeSearch}
+                          onChange={(e) => setAdminGiftCodeSearch(e.target.value)}
+                          style={{
+                            backgroundColor: '#030712',
+                            border: '1px solid #374151',
+                            borderRadius: '8px',
+                            padding: '7px 12px',
+                            color: '#ffffff',
+                            fontSize: '12px',
+                            outline: 'none',
+                            minWidth: '170px'
+                          }}
+                        />
+                        <select
+                          value={adminGiftCodeFilterGame}
+                          onChange={(e) => setAdminGiftCodeFilterGame(e.target.value)}
+                          style={{
+                            backgroundColor: '#030712',
+                            border: '1px solid #374151',
+                            borderRadius: '8px',
+                            padding: '7px 12px',
+                            color: '#ffffff',
+                            fontSize: '12px',
+                            outline: 'none',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="all">🎮 ทุกเกม</option>
+                          {gamesData.map(g => (
+                            <option key={g.id} value={g.name}>{g.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {filteredGiftCodes.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '35px 20px', backgroundColor: '#030712', borderRadius: '14px', border: '1px dashed #374151', color: '#9ca3af', fontSize: '13px' }}>
+                        {giftCodes.length === 0 ? 'ยังไม่มีการสร้างโค้ดของขวัญในระบบ สามารถสร้างโค้ดใหม่ได้จากแบบฟอร์มด้านบน' : 'ไม่พบโค้ดของขวัญที่ตรงกับคำค้นหาหรือตัวกรองที่เลือก'}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '14px' }}>
+                        {filteredGiftCodes.map((codeItem) => {
+                          const isExhausted = (codeItem.usedCount || 0) >= (codeItem.maxUses || 1);
+                          const remaining = Math.max(0, (codeItem.maxUses || 0) - (codeItem.usedCount || 0));
+                          const percentUsed = Math.min(100, Math.round(((codeItem.usedCount || 0) / (codeItem.maxUses || 1)) * 100));
+                          const isCopied = copiedCodeKey === (codeItem.firebaseKey || codeItem.code);
+
+                          return (
+                            <div
+                              key={codeItem.firebaseKey || codeItem.code}
+                              style={{
+                                backgroundColor: '#030712',
+                                border: `1.5px solid ${isExhausted ? '#ef4444' : '#374151'}`,
+                                borderRadius: '14px',
+                                padding: '16px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
+                                boxShadow: isExhausted ? '0 0 15px rgba(239, 68, 68, 0.15)' : 'none',
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              <div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', gap: '8px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                    <span style={{
+                                      backgroundColor: 'rgba(147, 51, 234, 0.2)',
+                                      border: '1px solid #9333ea',
+                                      color: '#c084fc',
+                                      padding: '4px 10px',
+                                      borderRadius: '8px',
+                                      fontWeight: 'bold',
+                                      fontSize: '13px',
+                                      fontFamily: 'monospace',
+                                      letterSpacing: '0.5px'
+                                    }}>
+                                      {codeItem.code}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (navigator && navigator.clipboard) {
+                                          navigator.clipboard.writeText(codeItem.code);
+                                          setCopiedCodeKey(codeItem.firebaseKey || codeItem.code);
+                                          setTimeout(() => setCopiedCodeKey(null), 2000);
+                                        }
+                                      }}
+                                      title="คัดลอกโค้ด"
+                                      style={{
+                                        backgroundColor: isCopied ? '#10b981' : '#1f2937',
+                                        color: isCopied ? '#ffffff' : '#9ca3af',
+                                        border: '1px solid #374151',
+                                        borderRadius: '6px',
+                                        padding: '4px 8px',
+                                        fontSize: '11px',
+                                        cursor: 'pointer',
+                                        fontWeight: 'bold',
+                                        transition: 'all 0.2s'
+                                      }}
+                                    >
+                                      {isCopied ? '✓ คัดลอกแล้ว' : '📋 คัดลอก'}
+                                    </button>
+                                  </div>
+
+                                  <span style={{
+                                    fontSize: '10px',
+                                    fontWeight: 'bold',
+                                    padding: '3px 8px',
+                                    borderRadius: '6px',
+                                    backgroundColor: isExhausted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(52, 211, 153, 0.2)',
+                                    color: isExhausted ? '#fca5a5' : '#34d399',
+                                    border: `1px solid ${isExhausted ? '#ef4444' : '#34d399'}`
+                                  }}>
+                                    {isExhausted ? '🔴 สิทธิ์เต็ม' : '🟢 ใช้งานได้'}
+                                  </span>
+                                </div>
+
+                                <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', marginBottom: '4px' }}>
+                                  🎮 เกม: <span style={{ color: '#ffffff' }}>{codeItem.game}</span>
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#38bdf8', marginBottom: '10px' }}>
+                                  🎁 รางวัล: <b>{codeItem.reward}</b>
+                                </div>
+
+                                {/* หลอดแสดงจำนวนสิทธิ์คงเหลือ */}
+                                <div style={{ marginBottom: '12px' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>
+                                    <span>ใช้ไปแล้ว: <b style={{ color: '#ffffff' }}>{codeItem.usedCount || 0}</b> / {codeItem.maxUses} สิทธิ์</span>
+                                    <span style={{ color: isExhausted ? '#ef4444' : '#34d399', fontWeight: 'bold' }}>
+                                      {isExhausted ? 'หมดแล้ว' : `เหลือ ${remaining} สิทธิ์`}
+                                    </span>
+                                  </div>
+                                  <div style={{ width: '100%', height: '6px', backgroundColor: '#1f2937', borderRadius: '3px', overflow: 'hidden' }}>
+                                    <div style={{
+                                      width: `${percentUsed}%`,
+                                      height: '100%',
+                                      backgroundColor: isExhausted ? '#ef4444' : percentUsed > 80 ? '#f59e0b' : '#38bdf8',
+                                      borderRadius: '3px',
+                                      transition: 'width 0.3s ease'
+                                    }} />
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #1f2937', marginTop: '4px' }}>
+                                <span style={{ fontSize: '11px', color: '#6b7280' }}>
+                                  {codeItem.timestamp ? new Date(codeItem.timestamp).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                                </span>
+                                {confirmDeleteCodeKey === (codeItem.firebaseKey || codeItem.code) ? (
+                                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDeleteGiftCode(codeItem)}
+                                      style={{
+                                        backgroundColor: '#dc2626',
+                                        border: '1px solid #ef4444',
+                                        color: '#ffffff',
+                                        padding: '6px 12px',
+                                        borderRadius: '8px',
+                                        fontSize: '11px',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)',
+                                        transition: 'all 0.15s ease'
+                                      }}
+                                    >
+                                      ⚠️ ยืนยันลบ
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => setConfirmDeleteCodeKey(null)}
+                                      style={{
+                                        backgroundColor: '#374151',
+                                        border: '1px solid #4b5563',
+                                        color: '#d1d5db',
+                                        padding: '6px 10px',
+                                        borderRadius: '8px',
+                                        fontSize: '11px',
+                                        fontWeight: 'bold',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      ยกเลิก
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmDeleteCodeKey(codeItem.firebaseKey || codeItem.code)}
+                                    style={{
+                                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                                      border: '1px solid #ef4444',
+                                      color: '#f87171',
+                                      padding: '6px 14px',
+                                      borderRadius: '8px',
+                                      fontSize: '12px',
+                                      fontWeight: 'bold',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      transition: 'all 0.2s ease'
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#ef4444';
+                                      e.currentTarget.style.color = '#ffffff';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+                                      e.currentTarget.style.color = '#f87171';
+                                    }}
+                                  >
+                                    🗑️ ลบโค้ด
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </>
             )}
