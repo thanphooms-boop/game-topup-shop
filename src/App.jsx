@@ -718,7 +718,7 @@ function RankEmblem({ tier, size = 28, glow = true, className = '' }) {
   );
 }
 
-// ฟังก์ชันสร้าง PromptPay EMVCo QR Code สำหรับธนาคารกสิกรไทย (นาย ธนภูมิ รักษี)
+// ฟังก์ชันสร้าง PromptPay EMVCo QR Code สำหรับพร้อมเพย์ 095-626-7172 / SCB 558-265124-6 (นาย ธนภูมิ รักษี)
 const OFFICIAL_KPLUS_QR_IMAGE = "data:image/webp;base64,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";
 
 // ฟังก์ชันตรวจสอบสลิปแบบ Dual-Engine (รองรับทั้งผ่านเซิร์ฟเวอร์ /api/verify-slip และเรียก SlipOK ตรงกรณีรันบนโดเมนพิเศษ/Iframe)
@@ -825,12 +825,18 @@ const generatePromptPayQrPayload = (amount) => {
     return crc.toString(16).toUpperCase().padStart(4, '0');
   };
 
+  // เบอร์พร้อมเพย์ 095-626-7172 -> 0066956267172
+  const ppTarget = '01130066956267172';
+  const merchantInfo = `0016A000000677010111${ppTarget}`;
+  const tag29 = `29${merchantInfo.length.toString().padStart(2, '0')}${merchantInfo}`;
+
   if (!amount || amount <= 0) {
-    return '00020101021129390016A000000677010111031500499918380287453037645802TH63045EC6';
+    const rawStatic = `000201010211${tag29}5802TH53037646304`;
+    return rawStatic + crc16(rawStatic);
   }
   const amtStr = parseFloat(amount).toFixed(2);
   const amtTag = `54${amtStr.length.toString().padStart(2, '0')}${amtStr}`;
-  const raw = `00020101021229390016A00000067701011103150049991838028745303764${amtTag}5802TH6304`;
+  const raw = `000201010212${tag29}5802TH5303764${amtTag}6304`;
   return raw + crc16(raw);
 };
 
@@ -1727,7 +1733,7 @@ export default function App() {
   const [isWalletQrExpired, setIsWalletQrExpired] = useState(false);
 
   const [truemoneyPhone, setTruemoneyPhone] = useState('');
-  const [customerBank, setCustomerBank] = useState('kbank');
+  const [customerBank, setCustomerBank] = useState('scb');
   const [customerAccountNo, setCustomerAccountNo] = useState('');
   const [trueMoneyOtpStep, setTrueMoneyOtpStep] = useState(false);
   const [trueMoneyOtpCode, setTrueMoneyOtpCode] = useState('');
@@ -1946,7 +1952,7 @@ export default function App() {
 
   const paymentMethods = [
     { id: 'wallet', name: 'Cyber Wallet (เครดิตร้าน)', desc: 'หักจากยอดเงินในบัญชีทันที' },
-    { id: 'qrcode', name: 'โอนเงินผ่านธนาคาร (กสิกรไทย)', desc: 'ฟรีค่าธรรมเนียม ตรวจสลิปอัตโนมัติ 24 ชม.' },
+    { id: 'qrcode', name: 'โอนเงินธนาคาร (SCB) / พร้อมเพย์', desc: 'สแกน QR พร้อมเพย์ หรือโอนเลขบัญชี SCB (ตรวจสลิป 24 ชม.)' },
     { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนเข้าวอลเล็ต 063-880-1739 (ฟรี 0%)' },
     { id: 'truemoneycard', name: 'บัตรเติมเงินทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก' }
   ];
@@ -2399,7 +2405,7 @@ export default function App() {
         imageBase64Data = walletSlipPreview;
       }
 
-      setWalletSlipStepText('🏦 กำลังตรวจสอบยอดเงินเข้าบัญชีกสิกรไทยกับธนาคารผ่าน SlipOK...');
+      setWalletSlipStepText('🏦 กำลังตรวจสอบยอดเงินเข้าบัญชี SCB / พร้อมเพย์ กับธนาคารผ่าน SlipOK...');
 
       const result = await verifySlipWithSlipOK(imageBase64Data, amt, {
         orderId: 'W-TOPUP-' + Date.now(),
@@ -2452,7 +2458,7 @@ export default function App() {
         }, 800);
       } else {
         setWalletSlipVerifying(false);
-        setWalletSlipError(`❌ ${result.message || 'สลิปไม่ถูกต้อง ยอดเงินไม่ตรง หรือไม่ได้โอนเข้าบัญชีกสิกรไทยของร้าน'}`);
+        setWalletSlipError(`❌ ${result.message || 'สลิปไม่ถูกต้อง ยอดเงินไม่ตรง หรือไม่ได้โอนเข้าบัญชี SCB / พร้อมเพย์ ของร้าน'}`);
       }
     } catch (err) {
       console.warn('Wallet verify slip error:', err);
@@ -4031,29 +4037,45 @@ export default function App() {
                 )}
                 {selectedPayment.id === 'qrcode' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                    {/* ข้อมูลบัญชีร้านค้าสำหรับรับเงิน */}
-                    <div style={{ backgroundColor: '#111827', border: '1.5px solid #00a950', borderRadius: '14px', padding: '16px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    {/* ข้อมูลบัญชีร้านค้าสำหรับรับเงิน (SCB & PromptPay) */}
+                    <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '14px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ backgroundColor: '#00a950', color: '#ffffff', fontSize: '11px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '6px' }}>KBANK</span>
-                          <span style={{ fontSize: '14px', color: '#ffffff', fontWeight: 'bold' }}>ธนาคารกสิกรไทย</span>
+                          <span style={{ backgroundColor: '#4e2a84', color: '#ffffff', fontSize: '11px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '6px', border: '1px solid #a855f7' }}>SCB</span>
+                          <span style={{ fontSize: '14px', color: '#ffffff', fontWeight: 'bold' }}>ธนาคารไทยพาณิชย์ & พร้อมเพย์</span>
                         </div>
-                        <span style={{ fontSize: '13px', color: '#34d399', fontWeight: 'bold' }}>นาย ธนภูมิ รักษี</span>
+                        <span style={{ fontSize: '13px', color: '#c084fc', fontWeight: 'bold' }}>นาย ธนภูมิ รักษี</span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#030712', padding: '12px 14px', borderRadius: '10px', border: '1px solid #374151' }}>
                         <div>
-                          <div style={{ fontSize: '11px', color: '#9ca3af' }}>เลขที่บัญชีร้านค้า</div>
-                          <div style={{ fontSize: '20px', fontWeight: '900', color: '#ffffff', letterSpacing: '1.5px', fontFamily: 'monospace' }}>185-2-97237-4</div>
+                          <div style={{ fontSize: '11px', color: '#9ca3af' }}>เลขที่บัญชีร้านค้า (ไทยพาณิชย์ SCB)</div>
+                          <div style={{ fontSize: '20px', fontWeight: '900', color: '#ffffff', letterSpacing: '1.5px', fontFamily: 'monospace' }}>558-265124-6</div>
                         </div>
                         <button
                           type="button"
                           onClick={() => {
-                            navigator.clipboard.writeText('1852972374');
-                            alert('📋 คัดลอกเลขบัญชีกสิกรไทย 1852972374 เรียบร้อยแล้ว');
+                            navigator.clipboard.writeText('5582651246');
+                            alert('📋 คัดลอกเลขบัญชีไทยพาณิชย์ (SCB) 5582651246 เรียบร้อยแล้ว');
                           }}
-                          style={{ backgroundColor: '#00a950', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          style={{ backgroundColor: '#7c3aed', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
                         >
                           📋 คัดลอกเลขบัญชี
+                        </button>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#030712', padding: '12px 14px', borderRadius: '10px', border: '1px solid #374151' }}>
+                        <div>
+                          <div style={{ fontSize: '11px', color: '#38bdf8' }}>เบอร์พร้อมเพย์ (PromptPay สแกน/โอนได้ทุกธนาคาร)</div>
+                          <div style={{ fontSize: '20px', fontWeight: '900', color: '#38bdf8', letterSpacing: '1.5px', fontFamily: 'monospace' }}>095-626-7172</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText('0956267172');
+                            alert('📋 คัดลอกเบอร์พร้อมเพย์ 0956267172 เรียบร้อยแล้ว');
+                          }}
+                          style={{ backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        >
+                          📋 คัดลอกพร้อมเพย์
                         </button>
                       </div>
                     </div>
@@ -6060,43 +6082,76 @@ export default function App() {
                     </div>
                   </div>
                 ) : (
-                  /* การ์ดบัญชีธนาคารกสิกรไทย */
-                  <div style={{ backgroundColor: '#ffffff', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.4)', marginBottom: '16px', border: '2px solid #00a950' }}>
-                    <div style={{ backgroundColor: '#00a950', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  /* การ์ดบัญชีธนาคารไทยพาณิชย์ (SCB) & QR พร้อมเพย์ */
+                  <div style={{ backgroundColor: '#ffffff', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.4)', marginBottom: '16px', border: '2px solid #4e2a84' }}>
+                    <div style={{ backgroundColor: '#4e2a84', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ backgroundColor: '#ffffff', color: '#00a950', fontWeight: '900', fontSize: '12px', padding: '3px 8px', borderRadius: '6px' }}>KBANK</span>
-                        <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px' }}>ธนาคารกสิกรไทย</span>
+                        <span style={{ backgroundColor: '#ffffff', color: '#4e2a84', fontWeight: '900', fontSize: '12px', padding: '3px 8px', borderRadius: '6px' }}>SCB</span>
+                        <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px' }}>ไทยพาณิชย์ & พร้อมเพย์</span>
                       </div>
-                      <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.9 }}>โอนได้ทุกธนาคาร</span>
+                      <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.95 }}>สแกน/โอนได้ทุกธนาคาร</span>
                     </div>
 
-                    <div style={{ padding: '18px', textAlign: 'center', color: '#111827' }}>
-                      <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '4px' }}>ชื่อบัญชีผู้รับเงิน</div>
-                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#15803d', marginBottom: '14px' }}>นาย ธนภูมิ รักษี</div>
+                    <div style={{ padding: '16px', textAlign: 'center', color: '#111827' }}>
+                      <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '2px' }}>ชื่อบัญชีผู้รับเงิน</div>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#4e2a84', marginBottom: '12px' }}>นาย ธนภูมิ รักษี</div>
 
-                      {/* กล่องเลขบัญชีพร้อมปุ่มคัดลอก */}
-                      <div style={{ backgroundColor: '#f0fdf4', border: '1.5px dashed #00a950', borderRadius: '14px', padding: '12px', marginBottom: '14px' }}>
-                        <div style={{ fontSize: '11px', color: '#166534', marginBottom: '4px', fontWeight: 'bold' }}>เลขที่บัญชี (กสิกรไทย)</div>
-                        <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827', letterSpacing: '2px', fontFamily: 'monospace', marginBottom: '8px' }}>
-                          185-2-97237-4
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText('1852972374');
-                            alert('📋 คัดลอกเลขบัญชี 1852972374 เรียบร้อยแล้ว นำไปวางในแอปธนาคารเพื่อโอนเงินได้เลยครับ');
+                      {/* QR Code พร้อมเพย์ สแกนได้ทุกธนาคาร */}
+                      <div style={{ backgroundColor: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '14px', padding: '10px', marginBottom: '12px', display: 'inline-block' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#0284c7', marginBottom: '6px' }}>📱 สแกน QR พร้อมเพย์ (ระบุยอดเงินอัตโนมัติ)</div>
+                        <img
+                          src={`https://promptpay.io/0956267172/${selectedPackage.price * packageQuantity}.png`}
+                          alt="PromptPay QR Code"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(generatePromptPayQrPayload(selectedPackage.price * packageQuantity))}`;
                           }}
-                          style={{ width: '100%', backgroundColor: '#00a950', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(0,169,80,0.3)' }}
-                        >
-                          <span>📋 กดเพื่อคัดลอกเลขบัญชี</span>
-                        </button>
+                          style={{ width: '165px', height: '165px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '8px' }}
+                        />
+                        <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px' }}>พร้อมเพย์: <b>095-626-7172</b></div>
+                      </div>
+
+                      {/* กล่องเลขบัญชี SCB และ พร้อมเพย์ พร้อมปุ่มคัดลอก */}
+                      <div style={{ backgroundColor: '#f5f3ff', border: '1.5px dashed #7c3aed', borderRadius: '14px', padding: '10px 12px', marginBottom: '10px', textAlign: 'left' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <div>
+                            <div style={{ fontSize: '11px', color: '#5b21b6', fontWeight: 'bold' }}>เลขบัญชี ธ.ไทยพาณิชย์ (SCB)</div>
+                            <div style={{ fontSize: '18px', fontWeight: '900', color: '#111827', letterSpacing: '1px', fontFamily: 'monospace' }}>558-265124-6</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText('5582651246');
+                              alert('📋 คัดลอกเลขบัญชี SCB 5582651246 เรียบร้อยแล้ว');
+                            }}
+                            style={{ backgroundColor: '#4e2a84', color: '#ffffff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}
+                          >
+                            📋 คัดลอกเลขบัญชี
+                          </button>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #ddd6fe', paddingTop: '8px' }}>
+                          <div>
+                            <div style={{ fontSize: '11px', color: '#0369a1', fontWeight: 'bold' }}>เบอร์พร้อมเพย์ (PromptPay)</div>
+                            <div style={{ fontSize: '18px', fontWeight: '900', color: '#0284c7', letterSpacing: '1px', fontFamily: 'monospace' }}>095-626-7172</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText('0956267172');
+                              alert('📋 คัดลอกเบอร์พร้อมเพย์ 0956267172 เรียบร้อยแล้ว');
+                            }}
+                            style={{ backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '8px 12px', borderRadius: '8px', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}
+                          >
+                            📋 คัดลอกพร้อมเพย์
+                          </button>
+                        </div>
                       </div>
 
                       {/* ยอดเงินสุทธิ */}
-                      <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e5e7eb', marginBottom: '12px' }}>
+                      <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e5e7eb', marginBottom: '10px' }}>
                         <span style={{ fontSize: '12px', color: '#4b5563', fontWeight: 'bold' }}>ยอดเงินที่ต้องโอน:</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ color: '#00a950', fontSize: '22px', fontWeight: '900' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</span>
+                          <span style={{ color: '#4e2a84', fontSize: '22px', fontWeight: '900' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</span>
                           <button
                             type="button"
                             onClick={() => {
@@ -6114,8 +6169,8 @@ export default function App() {
                       <div style={{ textAlign: 'left', backgroundColor: '#eff6ff', borderRadius: '10px', padding: '10px 12px', border: '1px solid #bfdbfe' }}>
                         <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 'bold', marginBottom: '4px' }}>💡 ขั้นตอนการโอนและรับของ:</div>
                         <div style={{ fontSize: '11px', color: '#1e3a8a', lineHeight: '1.5' }}>
-                          1. คัดลอกเลขบัญชี <b>185-2-97237-4</b><br/>
-                          2. เปิดแอปธนาคารใดก็ได้ (SCB, K PLUS, Krungthai ฯลฯ) โอนยอด <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b><br/>
+                          1. สแกน QR พร้อมเพย์ หรือโอนเข้า <b>SCB 558-265124-6</b> (หรือพร้อมเพย์ <b>095-626-7172</b>)<br/>
+                          2. ตรวจสอบชื่อผู้รับ <b>นาย ธนภูมิ รักษี</b> ยอด <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b><br/>
                           3. บันทึกสลิป แล้วนำรูปมาแนบด้านล่าง ระบบจะเติมเข้าเกมทันที
                         </div>
                       </div>
@@ -6214,7 +6269,7 @@ export default function App() {
                 <div style={{ textAlign: 'left', marginBottom: '15px' }}>
                   <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>เลือกช่องทางชำระเงิน</label>
                   <select value={walletPaymentMethod} onChange={(e) => setWalletPaymentMethod(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '13px', outline: 'none' }}>
-                    <option value="qrcode">โอนเงินธนาคาร (กสิกรไทย 185-2-97237-4)</option>
+                    <option value="qrcode">โอนเงินธนาคาร (SCB 558-265124-6 / พร้อมเพย์ 095-626-7172)</option>
                     <option value="true">TrueMoney Wallet (063-880-1739 ฟรี 0%)</option>
                     <option value="truemoneycard">บัตรเติมเงินทรูมันนี่ (14 หลัก)</option>
                   </select>
@@ -6276,29 +6331,60 @@ export default function App() {
                     </div>
                   </div>
                 ) : (
-                  /* การ์ดบัญชีธนาคารกสิกรไทย */
-                  <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', overflow: 'hidden', marginBottom: '14px', border: '2px solid #00a950', textAlign: 'left', color: '#111827' }}>
-                    <div style={{ backgroundColor: '#00a950', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '12px' }}>ธนาคารกสิกรไทย (KBANK)</span>
-                      <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.9 }}>นาย ธนภูมิ รักษี</span>
+                  /* การ์ดบัญชีธนาคารไทยพาณิชย์ (SCB) & พร้อมเพย์ */
+                  <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', overflow: 'hidden', marginBottom: '14px', border: '2px solid #4e2a84', textAlign: 'left', color: '#111827' }}>
+                    <div style={{ backgroundColor: '#4e2a84', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '12px' }}>ไทยพาณิชย์ (SCB) & พร้อมเพย์</span>
+                      <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.95 }}>นาย ธนภูมิ รักษี</span>
                     </div>
                     <div style={{ padding: '12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '16px', fontWeight: '900', color: '#111827', fontFamily: 'monospace' }}>185-2-97237-4</span>
+                      <div style={{ textAlign: 'center', marginBottom: '10px', backgroundColor: '#f8fafc', padding: '8px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#0284c7', marginBottom: '4px' }}>📱 สแกน QR พร้อมเพย์ (095-626-7172)</div>
+                        <img
+                          src={`https://promptpay.io/0956267172/${parseFloat(topupAmount) || 0}.png`}
+                          alt="PromptPay QR"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(generatePromptPayQrPayload(parseFloat(topupAmount) || 0))}`;
+                          }}
+                          style={{ width: '140px', height: '140px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '6px' }}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <div>
+                          <div style={{ fontSize: '10px', color: '#5b21b6', fontWeight: 'bold' }}>เลขบัญชี SCB</div>
+                          <span style={{ fontSize: '15px', fontWeight: '900', color: '#111827', fontFamily: 'monospace' }}>558-265124-6</span>
+                        </div>
                         <button
                           type="button"
                           onClick={() => {
-                            navigator.clipboard.writeText('1852972374');
-                            alert('📋 คัดลอกเลขบัญชี 1852972374 เรียบร้อยแล้ว');
+                            navigator.clipboard.writeText('5582651246');
+                            alert('📋 คัดลอกเลขบัญชี SCB 5582651246 เรียบร้อยแล้ว');
                           }}
-                          style={{ backgroundColor: '#00a950', color: '#ffffff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                          style={{ backgroundColor: '#4e2a84', color: '#ffffff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
                         >
                           📋 คัดลอกเลขบัญชี
                         </button>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f0fdf4', padding: '6px 10px', borderRadius: '8px', border: '1px solid #86efac' }}>
-                        <span style={{ fontSize: '12px', color: '#166534', fontWeight: 'bold' }}>ยอดที่ต้องโอน:</span>
-                        <span style={{ fontSize: '18px', fontWeight: '900', color: '#00a950' }}>฿{parseFloat(topupAmount).toLocaleString()}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', paddingTop: '6px', borderTop: '1px solid #e5e7eb' }}>
+                        <div>
+                          <div style={{ fontSize: '10px', color: '#0369a1', fontWeight: 'bold' }}>เบอร์พร้อมเพย์</div>
+                          <span style={{ fontSize: '15px', fontWeight: '900', color: '#0284c7', fontFamily: 'monospace' }}>095-626-7172</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText('0956267172');
+                            alert('📋 คัดลอกเบอร์พร้อมเพย์ 0956267172 เรียบร้อยแล้ว');
+                          }}
+                          style={{ backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          📋 คัดลอกพร้อมเพย์
+                        </button>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f5f3ff', padding: '6px 10px', borderRadius: '8px', border: '1px solid #c4b5fd' }}>
+                        <span style={{ fontSize: '12px', color: '#4e2a84', fontWeight: 'bold' }}>ยอดที่ต้องโอน:</span>
+                        <span style={{ fontSize: '18px', fontWeight: '900', color: '#4e2a84' }}>฿{parseFloat(topupAmount).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
