@@ -1,7 +1,8 @@
 // api/line-webhook.js
-// ระบบแจ้งเตือนออเดอร์ และแจ้งเตือนเข้า "กลุ่มแอดมิน" เมื่อลูกค้ากด "ติดต่อแอดมิน"
+// ระบบแจ้งเตือนออเดอร์ และแจ้งเตือนเข้า "กลุ่มแอดมิน" เมื่อลูกค้ากด "ติดต่อแอดมิน" สำหรับร้าน Cyber Topup
 
 export default async function handler(req, res) {
+  // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
@@ -17,12 +18,10 @@ export default async function handler(req, res) {
     const CHANNEL_ACCESS_TOKEN =
       process.env.LINE_CHANNEL_ACCESS_TOKEN ||
       '9cStmt35M+TLQvjPu4x03AUkf1scR00IuXaEcmtDQFfZAtkKyZTUUFYKhLCgOQL/FDvEVJ1/js9VwITmdEL8KilZN6pJdkq+FyvTuxjs2pii6irmjbJa84+7A/JG5Di+EqeazToW1wZ01oX91ItM9QdB04t89/1O/w1cDnyilFU=';
-    
-    // ใส่รหัสกลุ่มแอดมิน หรือ User ID
-    const ADMIN_TARGET_ID =
-      process.env.ADMIN_LINE_GROUP_ID ||
-      process.env.ADMIN_LINE_USER_ID ||
-      'U04dd8c6f41cf65e939e9843bee1f6223';
+
+    // รหัสกลุ่มแอดมิน [ALERT] ติดต่อแอดมิน CYBER TOPUP
+    const ADMIN_GROUP_ID =
+      process.env.ADMIN_LINE_GROUP_ID || 'Cdb2e928ae1941ef9f45380b4ef386387';
 
     // 1. ตรวจจับเหตุการณ์จาก LINE (LINE Webhook Events)
     if (req.body && Array.isArray(req.body.events)) {
@@ -31,41 +30,20 @@ export default async function handler(req, res) {
           const userText = (event.message.text || '').trim();
           const sourceType = event.source?.type; // 'user' หรือ 'group'
 
-          // เช็ครหัสกลุ่ม: พิมพ์ #id ในกลุ่มแอดมิน บอทจะตอบรหัสกลุ่มออกมาทันที
-          if (sourceType === 'group' && (userText === '#id' || userText === 'เช็คไอดี')) {
-            const currentGroupId = event.source.groupId;
-            await fetch('https://api.line.me/v2/bot/message/reply', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
-              },
-              body: JSON.stringify({
-                replyToken: event.replyToken,
-                messages: [
-                  {
-                    type: 'text',
-                    text: `✅ รหัสกลุ่มแอดมิน (Group ID) คือ:\n${currentGroupId}`,
-                  },
-                ],
-              }),
-            });
-            continue;
-          }
-
-          // กรณีลูกค้ากด "ติดต่อแอดมิน" ในแชทร้าน
+          // กรณีลูกค้ากด "ติดต่อแอดมิน" ในห้องแชทของร้าน (sourceType === 'user')
           if (sourceType === 'user' && (userText.includes('ติดต่อแอดมิน') || userText === 'แอดมิน')) {
             const time = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
 
-            const alertAdminMsg =
-              `🚨 [แจ้งเตือน: มีลูกค้าติดต่อแอดมิน!]\n` +
+            const alertGroupMsg =
+              `🚨 [มีลูกค้าติดต่อแอดมิน!]\n` +
               `━━━━━━━━━━━━━━━━━━━━\n` +
               `⏰ เวลา: ${time}\n` +
-              `💬 ลูกค้ากด: "${userText}"\n\n` +
+              `💬 ข้อความลูกค้า: "${userText}"\n\n` +
               `👉 คลิกเพื่อเข้าตอบแชทลูกค้าได้ทันที:\n` +
               `https://chat.line.biz/\n` +
               `━━━━━━━━━━━━━━━━━━━━`;
 
+            // ยิงแจ้งเตือนพร้อมเสียงเข้ากลุ่มแอดมินทันที
             await fetch('https://api.line.me/v2/bot/message/push', {
               method: 'POST',
               headers: {
@@ -73,11 +51,11 @@ export default async function handler(req, res) {
                 Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
               },
               body: JSON.stringify({
-                to: ADMIN_TARGET_ID,
+                to: ADMIN_GROUP_ID,
                 messages: [
                   {
                     type: 'text',
-                    text: alertAdminMsg,
+                    text: alertGroupMsg,
                   },
                 ],
               }),
@@ -88,7 +66,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'ok', message: 'Events processed' });
     }
 
-    // 2. แจ้งเตือนออเดอร์ใหม่จากหน้าเว็บ
+    // 2. แจ้งเตือนออเดอร์ใหม่จากหน้าเว็บไซต์
     const order = req.body || {};
     const orderId = order.orderId || order.id || 'ORD-' + Math.floor(10000 + Math.random() * 90000);
     const game = order.game || order.service || 'เติมเงินร้าน';
@@ -113,6 +91,7 @@ export default async function handler(req, res) {
       `━━━━━━━━━━━━━━━━━━\n` +
       `⚡ ระบบกำลังดำเนินการ`;
 
+    // แจ้งเตือนออเดอร์เข้ากลุ่มแอดมินด้วยเช่นกัน
     await fetch('https://api.line.me/v2/bot/message/push', {
       method: 'POST',
       headers: {
@@ -120,7 +99,7 @@ export default async function handler(req, res) {
         Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
       },
       body: JSON.stringify({
-        to: ADMIN_TARGET_ID,
+        to: ADMIN_GROUP_ID,
         messages: [{ type: 'text', text: notificationMessage }],
       }),
     });
