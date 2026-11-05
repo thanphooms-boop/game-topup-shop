@@ -1947,7 +1947,7 @@ export default function App() {
   const paymentMethods = [
     { id: 'wallet', name: 'Cyber Wallet (เครดิตร้าน)', desc: 'หักจากยอดเงินในบัญชีทันที' },
     { id: 'qrcode', name: 'โอนเงินผ่านธนาคาร (กสิกรไทย)', desc: 'ฟรีค่าธรรมเนียม ตรวจสลิปอัตโนมัติ 24 ชม.' },
-    { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนผ่านเบอร์วอลเล็ต 10 หลัก' },
+    { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนเข้าวอลเล็ต 063-880-1739 (ฟรี 0%)' },
     { id: 'truemoneycard', name: 'บัตรเติมเงินทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก' }
   ];
 
@@ -1965,7 +1965,7 @@ export default function App() {
 
   useEffect(() => {
     let timer;
-    if (showCheckoutModal && checkoutStep === 2 && selectedPayment?.id === 'qrcode' && !isQrExpired) {
+    if (showCheckoutModal && checkoutStep === 2 && (selectedPayment?.id === 'qrcode' || selectedPayment?.id === 'true') && !isQrExpired) {
       timer = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) { clearInterval(timer); setIsQrExpired(true); return 0; }
@@ -1978,7 +1978,7 @@ export default function App() {
 
   useEffect(() => {
     let timer;
-    if (showTopupWalletModal && walletStep === 2 && walletPaymentMethod === 'qrcode' && !isWalletQrExpired) {
+    if (showTopupWalletModal && walletStep === 2 && (walletPaymentMethod === 'qrcode' || walletPaymentMethod === 'true') && !isWalletQrExpired) {
       timer = setInterval(() => {
         setWalletTimeLeft((prev) => {
           if (prev <= 1) { clearInterval(timer); setIsWalletQrExpired(true); return 0; }
@@ -2269,23 +2269,14 @@ export default function App() {
       return;
     }
 
-    if (walletPaymentMethod === 'true') {
-      if (!truemoneyPhone || truemoneyPhone.length < 10) {
-        return;
-      }
-      setTrueMoneyOtpStep(true);
-      setTrueMoneyOtpCode('');
-      setTrueMoneyOtpError('');
+    if (walletPaymentMethod === 'truemoneycard' && (!truemoneyCard14 || truemoneyCard14.length < 14)) {
       return;
-    } else if (walletPaymentMethod === 'truemoneycard' && (!truemoneyCard14 || truemoneyCard14.length < 14)) {
-      return;
-
     }
 
     setWalletTimeLeft(180);
     setIsWalletQrExpired(false);
     
-    if (walletPaymentMethod === 'qrcode') {
+    if (walletPaymentMethod === 'qrcode' || walletPaymentMethod === 'true') {
       setWalletStep(2);
     } else {
       handleWalletConfirmPayment();
@@ -2441,7 +2432,7 @@ export default function App() {
           profit: 0,
           player: targetUsername,
           gameChar: 'เติมเครดิตร้าน',
-          paymentMethod: 'โอนเงินธนาคาร (SlipOK ผ่าน)',
+          paymentMethod: walletPaymentMethod === 'true' ? 'TrueMoney Wallet (SlipOK ผ่าน)' : 'โอนเงินธนาคาร (SlipOK ผ่าน)',
           status: '✅ เติมเครดิตสำเร็จ (SlipOK ตรวจสอบแล้ว)',
           type: 'wallet',
           time: thaiTime,
@@ -2494,15 +2485,7 @@ export default function App() {
       return;
     }
 
-    if (selectedPayment.id === 'true') {
-      if (!truemoneyPhone || truemoneyPhone.length < 10) {
-        return;
-      }
-      setTrueMoneyOtpStep(true);
-      setTrueMoneyOtpCode('');
-      setTrueMoneyOtpError('');
-      return;
-    } else if (selectedPayment.id === 'qrcode') {
+    if (selectedPayment.id === 'qrcode' || selectedPayment.id === 'true') {
       setTimeLeft(300);
       setIsQrExpired(false);
       setCheckoutStep(2); // ข้ามไปหน้าแนบสลิปทันที ไม่ต้องถามรหัสผ่านเว็บ
@@ -4005,9 +3988,39 @@ export default function App() {
                   📝 กรอกข้อมูลช่องทาง: {selectedPayment.name}
                 </div>
                 {selectedPayment.id === 'true' && (
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '6px' }}>เบอร์โทรศัพท์ TrueMoney Wallet (10 หลัก)</label>
-                    <input type="text" inputMode="numeric" maxLength={10} placeholder="เช่น 0812345678" value={truemoneyPhone} onChange={(e) => setTruemoneyPhone(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', maxWidth: '350px', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div style={{ backgroundColor: '#111827', border: '1.5px solid #f97316', borderRadius: '14px', padding: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ backgroundColor: '#f97316', color: '#ffffff', fontSize: '11px', fontWeight: 'bold', padding: '3px 8px', borderRadius: '6px' }}>TrueMoney</span>
+                          <span style={{ fontSize: '14px', color: '#ffffff', fontWeight: 'bold' }}>TrueMoney Wallet</span>
+                        </div>
+                        <span style={{ fontSize: '13px', color: '#fb923c', fontWeight: 'bold' }}>นาย ธนภูมิ รักษี</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#030712', padding: '12px 14px', borderRadius: '10px', border: '1px solid #374151' }}>
+                        <div>
+                          <div style={{ fontSize: '11px', color: '#9ca3af' }}>เบอร์ TrueMoney Wallet ร้านค้า (ฟรีค่าธรรมเนียม 0%)</div>
+                          <div style={{ fontSize: '20px', fontWeight: '900', color: '#ffffff', letterSpacing: '1.5px', fontFamily: 'monospace' }}>063-880-1739</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText('0638801739');
+                            alert('📋 คัดลอกเบอร์ TrueMoney 0638801739 (นาย ธนภูมิ รักษี) เรียบร้อยแล้ว');
+                          }}
+                          style={{ backgroundColor: '#f97316', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
+                        >
+                          📋 คัดลอกเบอร์
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '6px' }}>เบอร์ TrueMoney ของคุณที่ใช้โอน (ระบุเพื่ออ้างอิง - ไม่บังคับ)</label>
+                      <input type="text" inputMode="numeric" maxLength={10} placeholder="เช่น 0812345678" value={truemoneyPhone} onChange={(e) => setTruemoneyPhone(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', maxWidth: '350px', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#fb923c', backgroundColor: 'rgba(249,115,22,0.1)', padding: '10px 12px', borderRadius: '8px', border: '1px solid rgba(249,115,22,0.25)' }}>
+                      💡 เมื่อกดปุ่มยืนยันชำระเงิน ระบบจะเปิดหน้าต่างให้แนบสลิป TrueMoney เพื่อตรวจสอบยอดเงินทันที
+                    </div>
                   </div>
                 )}
                 {selectedPayment.id === 'truemoneycard' && (
@@ -5973,76 +5986,142 @@ export default function App() {
               </form>
             )}
 
-            {checkoutStep === 2 && selectedPayment?.id === 'qrcode' && (
+            {checkoutStep === 2 && (selectedPayment?.id === 'qrcode' || selectedPayment?.id === 'true') && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#38bdf8' }}>💳 โอนเงินผ่านบัญชีธนาคาร</h3>
+                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: selectedPayment?.id === 'true' ? '#fb923c' : '#38bdf8' }}>
+                    {selectedPayment?.id === 'true' ? '🧡 โอนเงินผ่าน TrueMoney Wallet' : '💳 โอนเงินผ่านบัญชีธนาคาร'}
+                  </h3>
                   <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold', backgroundColor: 'rgba(52,211,153,0.15)', padding: '3px 10px', borderRadius: '8px', border: '1px solid #34d399' }}>
                     ⚡ ตรวจสลิปอัตโนมัติ 24 ชม.
                   </span>
                 </div>
 
-                {/* การ์ดบัญชีธนาคารกสิกรไทย */}
-                <div style={{ backgroundColor: '#ffffff', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.4)', marginBottom: '16px', border: '2px solid #00a950' }}>
-                  <div style={{ backgroundColor: '#00a950', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ backgroundColor: '#ffffff', color: '#00a950', fontWeight: '900', fontSize: '12px', padding: '3px 8px', borderRadius: '6px' }}>KBANK</span>
-                      <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px' }}>ธนาคารกสิกรไทย</span>
-                    </div>
-                    <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.9 }}>โอนได้ทุกธนาคาร</span>
-                  </div>
-
-                  <div style={{ padding: '18px', textAlign: 'center', color: '#111827' }}>
-                    <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '4px' }}>ชื่อบัญชีผู้รับเงิน</div>
-                    <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#15803d', marginBottom: '14px' }}>นาย ธนภูมิ รักษี</div>
-
-                    {/* กล่องเลขบัญชีพร้อมปุ่มคัดลอก */}
-                    <div style={{ backgroundColor: '#f0fdf4', border: '1.5px dashed #00a950', borderRadius: '14px', padding: '12px', marginBottom: '14px' }}>
-                      <div style={{ fontSize: '11px', color: '#166534', marginBottom: '4px', fontWeight: 'bold' }}>เลขที่บัญชี (กสิกรไทย)</div>
-                      <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827', letterSpacing: '2px', fontFamily: 'monospace', marginBottom: '8px' }}>
-                        185-2-97237-4
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText('1852972374');
-                          alert('📋 คัดลอกเลขบัญชี 1852972374 เรียบร้อยแล้ว นำไปวางในแอปธนาคารเพื่อโอนเงินได้เลยครับ');
-                        }}
-                        style={{ width: '100%', backgroundColor: '#00a950', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(0,169,80,0.3)' }}
-                      >
-                        <span>📋 กดเพื่อคัดลอกเลขบัญชี</span>
-                      </button>
-                    </div>
-
-                    {/* ยอดเงินสุทธิ */}
-                    <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e5e7eb', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '12px', color: '#4b5563', fontWeight: 'bold' }}>ยอดเงินที่ต้องโอน:</span>
+                {selectedPayment?.id === 'true' ? (
+                  /* การ์ดบัญชี TrueMoney Wallet */
+                  <div style={{ backgroundColor: '#ffffff', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.4)', marginBottom: '16px', border: '2px solid #f97316' }}>
+                    <div style={{ backgroundColor: '#f97316', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ color: '#00a950', fontSize: '22px', fontWeight: '900' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</span>
+                        <span style={{ backgroundColor: '#ffffff', color: '#ea580c', fontWeight: '900', fontSize: '12px', padding: '3px 8px', borderRadius: '6px' }}>TrueMoney</span>
+                        <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px' }}>TrueMoney Wallet</span>
+                      </div>
+                      <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.95 }}>ฟรีค่าธรรมเนียม 0%</span>
+                    </div>
+
+                    <div style={{ padding: '18px', textAlign: 'center', color: '#111827' }}>
+                      <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '4px' }}>ชื่อบัญชีผู้รับเงิน</div>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ea580c', marginBottom: '14px' }}>นาย ธนภูมิ รักษี</div>
+
+                      {/* กล่องเบอร์วอลเล็ตพร้อมปุ่มคัดลอก */}
+                      <div style={{ backgroundColor: '#fff7ed', border: '1.5px dashed #f97316', borderRadius: '14px', padding: '12px', marginBottom: '14px' }}>
+                        <div style={{ fontSize: '11px', color: '#9a3412', marginBottom: '4px', fontWeight: 'bold' }}>เบอร์ TrueMoney Wallet ร้านค้า</div>
+                        <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827', letterSpacing: '2px', fontFamily: 'monospace', marginBottom: '8px' }}>
+                          063-880-1739
+                        </div>
                         <button
                           type="button"
                           onClick={() => {
-                            navigator.clipboard.writeText((selectedPackage.price * packageQuantity).toString());
-                            alert(`📋 คัดลอกยอดเงิน ${selectedPackage.price * packageQuantity} บาท เรียบร้อยแล้ว`);
+                            navigator.clipboard.writeText('0638801739');
+                            alert('📋 คัดลอกเบอร์ TrueMoney 0638801739 เรียบร้อยแล้ว นำไปวางโอนในแอป TrueMoney ได้เลยครับ');
                           }}
-                          style={{ backgroundColor: '#e5e7eb', color: '#374151', border: 'none', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                          style={{ width: '100%', backgroundColor: '#f97316', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(249,115,22,0.3)' }}
                         >
-                          คัดลอกยอด
+                          <span>📋 กดเพื่อคัดลอกเบอร์ TrueMoney</span>
                         </button>
                       </div>
-                    </div>
 
-                    {/* ขั้นตอนการโอน */}
-                    <div style={{ textAlign: 'left', backgroundColor: '#eff6ff', borderRadius: '10px', padding: '10px 12px', border: '1px solid #bfdbfe' }}>
-                      <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 'bold', marginBottom: '4px' }}>💡 ขั้นตอนการโอนและรับของ:</div>
-                      <div style={{ fontSize: '11px', color: '#1e3a8a', lineHeight: '1.5' }}>
-                        1. คัดลอกเลขบัญชี <b>185-2-97237-4</b><br/>
-                        2. เปิดแอปธนาคารใดก็ได้ (SCB, K PLUS, Krungthai ฯลฯ) โอนยอด <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b><br/>
-                        3. บันทึกสลิป แล้วนำรูปมาแนบด้านล่าง ระบบจะเติมเข้าเกมทันที
+                      {/* ยอดเงินสุทธิ */}
+                      <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e5e7eb', marginBottom: '12px' }}>
+                        <span style={{ fontSize: '12px', color: '#4b5563', fontWeight: 'bold' }}>ยอดเงินที่ต้องโอน:</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ color: '#ea580c', fontSize: '22px', fontWeight: '900' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText((selectedPackage.price * packageQuantity).toString());
+                              alert(`📋 คัดลอกยอดเงิน ${selectedPackage.price * packageQuantity} บาท เรียบร้อยแล้ว`);
+                            }}
+                            style={{ backgroundColor: '#e5e7eb', color: '#374151', border: 'none', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                          >
+                            คัดลอกยอด
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* ขั้นตอนการโอน */}
+                      <div style={{ textAlign: 'left', backgroundColor: '#fff7ed', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fed7aa' }}>
+                        <div style={{ fontSize: '11px', color: '#9a3412', fontWeight: 'bold', marginBottom: '4px' }}>💡 ขั้นตอนการโอนผ่าน TrueMoney Wallet:</div>
+                        <div style={{ fontSize: '11px', color: '#7c2d12', lineHeight: '1.5' }}>
+                          1. คัดลอกเบอร์ <b>063-880-1739</b> (นาย ธนภูมิ รักษี)<br/>
+                          2. เปิดแอป TrueMoney เลือก <b>โอนเงิน</b> ยอด <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b><br/>
+                          3. บันทึกรูปสลิป แล้วนำมาแนบด้านล่าง ระบบจะเติมเข้าเกมทันที
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  /* การ์ดบัญชีธนาคารกสิกรไทย */
+                  <div style={{ backgroundColor: '#ffffff', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.4)', marginBottom: '16px', border: '2px solid #00a950' }}>
+                    <div style={{ backgroundColor: '#00a950', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ backgroundColor: '#ffffff', color: '#00a950', fontWeight: '900', fontSize: '12px', padding: '3px 8px', borderRadius: '6px' }}>KBANK</span>
+                        <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px' }}>ธนาคารกสิกรไทย</span>
+                      </div>
+                      <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.9 }}>โอนได้ทุกธนาคาร</span>
+                    </div>
+
+                    <div style={{ padding: '18px', textAlign: 'center', color: '#111827' }}>
+                      <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '4px' }}>ชื่อบัญชีผู้รับเงิน</div>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#15803d', marginBottom: '14px' }}>นาย ธนภูมิ รักษี</div>
+
+                      {/* กล่องเลขบัญชีพร้อมปุ่มคัดลอก */}
+                      <div style={{ backgroundColor: '#f0fdf4', border: '1.5px dashed #00a950', borderRadius: '14px', padding: '12px', marginBottom: '14px' }}>
+                        <div style={{ fontSize: '11px', color: '#166534', marginBottom: '4px', fontWeight: 'bold' }}>เลขที่บัญชี (กสิกรไทย)</div>
+                        <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827', letterSpacing: '2px', fontFamily: 'monospace', marginBottom: '8px' }}>
+                          185-2-97237-4
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText('1852972374');
+                            alert('📋 คัดลอกเลขบัญชี 1852972374 เรียบร้อยแล้ว นำไปวางในแอปธนาคารเพื่อโอนเงินได้เลยครับ');
+                          }}
+                          style={{ width: '100%', backgroundColor: '#00a950', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(0,169,80,0.3)' }}
+                        >
+                          <span>📋 กดเพื่อคัดลอกเลขบัญชี</span>
+                        </button>
+                      </div>
+
+                      {/* ยอดเงินสุทธิ */}
+                      <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e5e7eb', marginBottom: '12px' }}>
+                        <span style={{ fontSize: '12px', color: '#4b5563', fontWeight: 'bold' }}>ยอดเงินที่ต้องโอน:</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ color: '#00a950', fontSize: '22px', fontWeight: '900' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText((selectedPackage.price * packageQuantity).toString());
+                              alert(`📋 คัดลอกยอดเงิน ${selectedPackage.price * packageQuantity} บาท เรียบร้อยแล้ว`);
+                            }}
+                            style={{ backgroundColor: '#e5e7eb', color: '#374151', border: 'none', padding: '3px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold', cursor: 'pointer' }}
+                          >
+                            คัดลอกยอด
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* ขั้นตอนการโอน */}
+                      <div style={{ textAlign: 'left', backgroundColor: '#eff6ff', borderRadius: '10px', padding: '10px 12px', border: '1px solid #bfdbfe' }}>
+                        <div style={{ fontSize: '11px', color: '#1e40af', fontWeight: 'bold', marginBottom: '4px' }}>💡 ขั้นตอนการโอนและรับของ:</div>
+                        <div style={{ fontSize: '11px', color: '#1e3a8a', lineHeight: '1.5' }}>
+                          1. คัดลอกเลขบัญชี <b>185-2-97237-4</b><br/>
+                          2. เปิดแอปธนาคารใดก็ได้ (SCB, K PLUS, Krungthai ฯลฯ) โอนยอด <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b><br/>
+                          3. บันทึกสลิป แล้วนำรูปมาแนบด้านล่าง ระบบจะเติมเข้าเกมทันที
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '14px', marginBottom: '16px', textAlign: 'left' }}>
                   <div style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 'bold', marginBottom: '4px' }}>📸 แนบสลิปโอนเงิน (ตรวจสอบสลิปและเติมเข้า UID)</div>
@@ -6135,14 +6214,16 @@ export default function App() {
                 <div style={{ textAlign: 'left', marginBottom: '15px' }}>
                   <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>เลือกช่องทางชำระเงิน</label>
                   <select value={walletPaymentMethod} onChange={(e) => setWalletPaymentMethod(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '13px', outline: 'none' }}>
-                    <option value="qrcode">QR PromptPay</option>
-                    <option value="true">TrueMoney Wallet (เบอร์ 10 หลัก)</option>
+                    <option value="qrcode">โอนเงินธนาคาร (กสิกรไทย 185-2-97237-4)</option>
+                    <option value="true">TrueMoney Wallet (063-880-1739 ฟรี 0%)</option>
                     <option value="truemoneycard">บัตรเติมเงินทรูมันนี่ (14 หลัก)</option>
                   </select>
                 </div>
                 {walletPaymentMethod === 'true' && (
-                  <div style={{ textAlign: 'left', marginBottom: '15px', backgroundColor: '#030712', padding: '10px', borderRadius: '10px', border: '1px solid #374151' }}>
-                    <input type="text" placeholder="เบอร์ TrueMoney Wallet (10 หลัก)" value={truemoneyPhone} onChange={(e) => setTruemoneyPhone(e.target.value.replace(/[^0-9]/g, ''))} maxLength={10} style={{ width: '100%', backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }} />
+                  <div style={{ textAlign: 'left', marginBottom: '15px', backgroundColor: '#030712', padding: '12px', borderRadius: '10px', border: '1px solid #f97316' }}>
+                    <div style={{ fontSize: '12px', color: '#fb923c', fontWeight: 'bold', marginBottom: '4px' }}>🧡 โอนเข้า TrueMoney Wallet ร้านค้า (ฟรี 0%)</div>
+                    <div style={{ fontSize: '13px', color: '#ffffff', fontWeight: 'bold' }}>063-880-1739 (นาย ธนภูมิ รักษี)</div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>กดปุ่มถัดไปเพื่อคัดลอกเบอร์และแนบสลิปโอนเงิน</div>
                   </div>
                 )}
                 {walletPaymentMethod === 'truemoneycard' && (
@@ -6153,51 +6234,75 @@ export default function App() {
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={resetWalletModal} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
                   <button 
-                    disabled={!topupAmount || parseFloat(topupAmount) <= 0 || (walletPaymentMethod === 'true' && (!truemoneyPhone || truemoneyPhone.length < 10))} 
-                    onClick={walletPaymentMethod === 'qrcode' ? () => setWalletStep(2) : walletPaymentMethod === 'true' ? () => {
-                      if (!truemoneyPhone || truemoneyPhone.length < 10) {
-                        return;
-                      }
-                      setTrueMoneyOtpStep(true);
-                      setTrueMoneyOtpCode('');
-                      setTrueMoneyOtpError('');
-                    } : handleWalletConfirmPayment} 
+                    disabled={!topupAmount || parseFloat(topupAmount) <= 0} 
+                    onClick={(walletPaymentMethod === 'qrcode' || walletPaymentMethod === 'true') ? () => setWalletStep(2) : handleWalletConfirmPayment} 
                     style={{ flex: 1, backgroundColor: (!topupAmount || parseFloat(topupAmount) <= 0) ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
                   >
-                    {walletPaymentMethod === 'qrcode' ? 'ถัดไป (สแกน QR) →' : walletPaymentMethod === 'true' ? 'ส่งรหัส OTP →' : 'ยืนยันการเติมเงิน'}
+                    {(walletPaymentMethod === 'qrcode' || walletPaymentMethod === 'true') ? 'ถัดไป (โอน & แนบสลิป) →' : 'ยืนยันการเติมเงิน'}
                   </button>
                 </div>
               </div>
             ) : (
               <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#38bdf8' }}>💳 โอนเงินเติมเครดิตเข้า Cyber Wallet</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: walletPaymentMethod === 'true' ? '#fb923c' : '#38bdf8' }}>
+                  {walletPaymentMethod === 'true' ? '🧡 โอน TrueMoney เติมเครดิต' : '💳 โอนเงินเติมเครดิตเข้า Cyber Wallet'}
+                </h3>
                 
-                {/* การ์ดบัญชีธนาคารกสิกรไทย */}
-                <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', overflow: 'hidden', marginBottom: '14px', border: '2px solid #00a950', textAlign: 'left', color: '#111827' }}>
-                  <div style={{ backgroundColor: '#00a950', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '12px' }}>ธนาคารกสิกรไทย (KBANK)</span>
-                    <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.9 }}>นาย ธนภูมิ รักษี</span>
-                  </div>
-                  <div style={{ padding: '12px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '16px', fontWeight: '900', color: '#111827', fontFamily: 'monospace' }}>185-2-97237-4</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          navigator.clipboard.writeText('1852972374');
-                          alert('📋 คัดลอกเลขบัญชี 1852972374 เรียบร้อยแล้ว');
-                        }}
-                        style={{ backgroundColor: '#00a950', color: '#ffffff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                      >
-                        📋 คัดลอกเลขบัญชี
-                      </button>
+                {walletPaymentMethod === 'true' ? (
+                  /* การ์ดบัญชี TrueMoney Wallet */
+                  <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', overflow: 'hidden', marginBottom: '14px', border: '2px solid #f97316', textAlign: 'left', color: '#111827' }}>
+                    <div style={{ backgroundColor: '#f97316', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '12px' }}>TrueMoney Wallet (ฟรี 0%)</span>
+                      <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.95 }}>นาย ธนภูมิ รักษี</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f0fdf4', padding: '6px 10px', borderRadius: '8px', border: '1px solid #86efac' }}>
-                      <span style={{ fontSize: '12px', color: '#166534', fontWeight: 'bold' }}>ยอดที่ต้องโอน:</span>
-                      <span style={{ fontSize: '18px', fontWeight: '900', color: '#00a950' }}>฿{parseFloat(topupAmount).toLocaleString()}</span>
+                    <div style={{ padding: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '16px', fontWeight: '900', color: '#111827', fontFamily: 'monospace' }}>063-880-1739</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText('0638801739');
+                            alert('📋 คัดลอกเบอร์ TrueMoney 0638801739 เรียบร้อยแล้ว');
+                          }}
+                          style={{ backgroundColor: '#f97316', color: '#ffffff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          📋 คัดลอกเบอร์
+                        </button>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff7ed', padding: '6px 10px', borderRadius: '8px', border: '1px solid #fdba74' }}>
+                        <span style={{ fontSize: '12px', color: '#9a3412', fontWeight: 'bold' }}>ยอดที่ต้องโอน:</span>
+                        <span style={{ fontSize: '18px', fontWeight: '900', color: '#ea580c' }}>฿{parseFloat(topupAmount).toLocaleString()}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  /* การ์ดบัญชีธนาคารกสิกรไทย */
+                  <div style={{ backgroundColor: '#ffffff', borderRadius: '14px', overflow: 'hidden', marginBottom: '14px', border: '2px solid #00a950', textAlign: 'left', color: '#111827' }}>
+                    <div style={{ backgroundColor: '#00a950', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '12px' }}>ธนาคารกสิกรไทย (KBANK)</span>
+                      <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.9 }}>นาย ธนภูมิ รักษี</span>
+                    </div>
+                    <div style={{ padding: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '16px', fontWeight: '900', color: '#111827', fontFamily: 'monospace' }}>185-2-97237-4</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText('1852972374');
+                            alert('📋 คัดลอกเลขบัญชี 1852972374 เรียบร้อยแล้ว');
+                          }}
+                          style={{ backgroundColor: '#00a950', color: '#ffffff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                        >
+                          📋 คัดลอกเลขบัญชี
+                        </button>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f0fdf4', padding: '6px 10px', borderRadius: '8px', border: '1px solid #86efac' }}>
+                        <span style={{ fontSize: '12px', color: '#166534', fontWeight: 'bold' }}>ยอดที่ต้องโอน:</span>
+                        <span style={{ fontSize: '18px', fontWeight: '900', color: '#00a950' }}>฿{parseFloat(topupAmount).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* กล่องแนบสลิป SlipOK สำหรับเติมเครดิต */}
                 <div style={{ backgroundColor: '#030712', border: '1.5px dashed #34d399', borderRadius: '14px', padding: '14px', marginBottom: '16px', textAlign: 'left' }}>
