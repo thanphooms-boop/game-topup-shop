@@ -1098,34 +1098,8 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // ระบบรีเซ็ตยอดเครดิตร้านและประวัติคำสั่งซื้อทุกไอดีให้เหลือ 0 อัตโนมัติในครั้งแรก
-  useEffect(() => {
-    const isResetZeroDone = localStorage.getItem('cyber_reset_zero_all_accounts_2026');
-    if (!isResetZeroDone && registeredUsers.length > 0) {
-      registeredUsers.forEach(u => {
-        if (u.firebaseKey) {
-          if (u.username?.toLowerCase() === 'nattapong' || u.email?.toLowerCase().includes('nattapong')) {
-            remove(ref(db, `users/${u.firebaseKey}`));
-          } else if (u.balance !== 0) {
-            set(ref(db, `users/${u.firebaseKey}/balance`), 0);
-          }
-        }
-      });
-      remove(ref(db, 'orders'));
-      setOrders([]);
-      if (user) {
-        if (user.username?.toLowerCase() === 'nattapong') {
-          setUser(null);
-          localStorage.removeItem('cyber_current_logged_user');
-        } else if (user.balance !== 0) {
-          const resetU = { ...user, balance: 0 };
-          setUser(resetU);
-          try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(resetU)); } catch (e) {}
-        }
-      }
-      localStorage.setItem('cyber_reset_zero_all_accounts_2026', 'done');
-    }
-  }, [registeredUsers, user]);
+  // [SECURITY FIX] ปิดระบบรีเซ็ตยอดเครดิตอัตโนมัติ เพื่อป้องกันยอดเงินลูกค้าหายถาวร 100%
+
 
   const handleAuthSubmit = (e) => {
     e.preventDefault();
