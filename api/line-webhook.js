@@ -41,7 +41,7 @@ export default async function handler(req, res) {
               `💬 ข้อความลูกค้า: "${userText}"\n\n` +
               `👉 ช่องทางเข้าตอบแชทลูกค้า:\n` +
               `📱 บนมือถือ: เปิดแอป LINE Official Account ➜ เมนูแชท\n` +
-              `💻 บนคอม: https://manager.line.biz/account/@462piycg/chat\n` +
+              `💻 บนคอม: https://chat.line.biz/\n` +
               `━━━━━━━━━━━━━━━━━━━━`;
 
             // ยิงแจ้งเตือนพร้อมเสียงเข้ากลุ่มแอดมินทันที
