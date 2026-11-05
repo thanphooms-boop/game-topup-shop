@@ -33,15 +33,34 @@ export default async function handler(req, res) {
           // กรณีลูกค้ากด "ติดต่อแอดมิน" ในห้องแชทของร้าน (sourceType === 'user')
           if (sourceType === 'user' && (userText.includes('ติดต่อแอดมิน') || userText === 'แอดมิน')) {
             const time = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+            const userId = event.source?.userId;
+
+            // ดึงชื่อโปรไฟล์ LINE ของลูกค้าอัตโนมัติ
+            let customerName = 'ลูกค้า';
+            if (userId) {
+              try {
+                const profileRes = await fetch(`https://api.line.me/v2/bot/profile/${userId}`, {
+                  headers: {
+                    Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
+                  },
+                });
+                if (profileRes.ok) {
+                  const profileData = await profileRes.json();
+                  customerName = profileData.displayName || 'ลูกค้า';
+                }
+              } catch (profileErr) {
+                console.error('Fetch profile error:', profileErr);
+              }
+            }
 
             const alertGroupMsg =
               `🚨 [มีลูกค้าติดต่อแอดมิน!]\n` +
               `━━━━━━━━━━━━━━━━━━━━\n` +
+              `👤 ลูกค้า: คุณ ${customerName}\n` +
               `⏰ เวลา: ${time}\n` +
               `💬 ข้อความลูกค้า: "${userText}"\n\n` +
-              `👉 ช่องทางเข้าตอบแชทลูกค้า:\n` +
-              `📱 บนมือถือ: เปิดแอป LINE Official Account ➜ เมนูแชท\n` +
-              `💻 บนคอม: https://chat.line.biz/\n` +
+              `👉 คลิกเพื่อเข้าตอบแชทลูกค้าได้ทันที:\n` +
+              `https://manager.line.biz/account/@462piycg/chat\n` +
               `━━━━━━━━━━━━━━━━━━━━`;
 
             // ยิงแจ้งเตือนพร้อมเสียงเข้ากลุ่มแอดมินทันที
@@ -92,7 +111,6 @@ export default async function handler(req, res) {
       `━━━━━━━━━━━━━━━━━━\n` +
       `⚡ ระบบกำลังดำเนินการ`;
 
-    // แจ้งเตือนออเดอร์เข้ากลุ่มแอดมินด้วยเช่นกัน
     await fetch('https://api.line.me/v2/bot/message/push', {
       method: 'POST',
       headers: {
