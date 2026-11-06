@@ -1289,12 +1289,12 @@ export default function App() {
       image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิตอันดับ 1 🔥',
       packages: [
-        { id: 'v1', name: '475 VP', price: 129, cost: 125, profit: 4, bonus: '+0 VP' },
-        { id: 'v2', name: '1,000 VP', price: 258, cost: 249, profit: 9, bonus: '🔥 ขายดีอันดับ 1' },
-        { id: 'v3', name: '2,050 VP', price: 515, cost: 499, profit: 16, bonus: '+50 VP โบนัส' },
-        { id: 'v4', name: '3,650 VP', price: 909, cost: 882, profit: 27, bonus: '+150 VP โบนัส' },
-        { id: 'v5', name: '5,350 VP', price: 1299, cost: 1263, profit: 36, bonus: '+350 VP โบนัส' },
-        { id: 'v6', name: '11,000 VP (Whale Pack)', price: 2599, cost: 2525, profit: 74, bonus: '+1,000 VP VIP 👑' }
+        { id: 'v1', name: '475 VP', price: 128, originalPrice: 130, cost: 125, profit: 3, bonus: '⚡ ประหยัด ฿2 +แต้ม VIP' },
+        { id: 'v2', name: '1,000 VP', price: 255, originalPrice: 260, cost: 249, profit: 6, bonus: '🔥 ขายดี ประหยัด ฿5 +แรงค์ VIP' },
+        { id: 'v3', name: '2,050 VP', price: 510, originalPrice: 520, cost: 499, profit: 11, bonus: '⚡ ยอดฮิต ประหยัด ฿10 +แรงค์ VIP' },
+        { id: 'v4', name: '3,650 VP', price: 905, originalPrice: 920, cost: 882, profit: 23, bonus: '⭐ พรีเมียม ประหยัด ฿15 +VIP' },
+        { id: 'v5', name: '5,350 VP', price: 1295, originalPrice: 1320, cost: 1263, profit: 32, bonus: '💥 สุดคุ้ม ประหยัด ฿25 +VIP' },
+        { id: 'v6', name: '11,000 VP (Whale Pack)', price: 2580, originalPrice: 2640, cost: 2525, profit: 55, bonus: '👑 Whale คุ้มสุด ประหยัด ฿60 VIP' }
       ]
     },
     {
@@ -1305,12 +1305,12 @@ export default function App() {
       image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิต MOBA ⚔️',
       packages: [
-        { id: 'r1', name: '40 Coupons', price: 42, cost: 35, profit: 7, bonus: '+0' },
-        { id: 'r2', name: '90 Coupons', price: 88, cost: 75, profit: 13, bonus: '🔥 ขายดี' },
-        { id: 'r3', name: '220 Coupons', price: 205, cost: 180, profit: 25, bonus: '+10 โบนัส' },
-        { id: 'r4', name: '470 Coupons', price: 419, cost: 375, profit: 44, bonus: '+25 โบนัส' },
-        { id: 'r5', name: '950 Coupons', price: 829, cost: 750, profit: 79, bonus: '+60 โบนัส' },
-        { id: 'r6', name: '2,700 Coupons (Big Pack)', price: 2290, cost: 2100, profit: 190, bonus: '+200 คูปอง VIP 👑' }
+        { id: 'r1', name: '60 คูปอง', price: 49.5, originalPrice: 50, cost: 49, profit: 0.5, bonus: '⚡ คุ้มค่า ประหยัด ฿0.5' },
+        { id: 'r2', name: '110 คูปอง', price: 89.5, originalPrice: 90, cost: 89, profit: 0.5, bonus: '⚡ เติมไว ประหยัด ฿0.5' },
+        { id: 'r3', name: '185 คูปอง', price: 148, originalPrice: 150, cost: 145, profit: 3, bonus: '🔥 ขายดี ประหยัด ฿2' },
+        { id: 'r4', name: '370 คูปอง', price: 296, originalPrice: 300, cost: 292, profit: 4, bonus: '⭐ ยอดฮิต ประหยัด ฿4' },
+        { id: 'r5', name: '620 คูปอง', price: 493, originalPrice: 500, cost: 487, profit: 6, bonus: '💥 สุดคุ้ม ประหยัด ฿7' },
+        { id: 'r6', name: '1,240 คูปอง (Big Pack)', price: 985, originalPrice: 1000, cost: 972, profit: 13, bonus: '👑 Big Pack ประหยัด ฿15 VIP' }
       ]
     },
     {
@@ -1321,14 +1321,15 @@ export default function App() {
       image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดนิยมอันดับ 1 🎯',
       packages: [
-        { id: 'ff1', name: '100 (+10) Diamonds', price: 42, cost: 35, profit: 7, bonus: '+10 เพชร' },
-        { id: 'ff2', name: '310 (+31) Diamonds', price: 119, cost: 100, profit: 19, bonus: '🔥 ขายดี' },
-        { id: 'ff3', name: '520 (+52) Diamonds', price: 199, cost: 175, profit: 24, bonus: '+52 เพชร' },
-        { id: 'ff4', name: '1,060 (+106) Diamonds', price: 395, cost: 350, profit: 45, bonus: '+106 เพชร' },
-        { id: 'ff5', name: '2,180 (+218) Diamonds', price: 779, cost: 700, profit: 79, bonus: '+218 เพชร' },
-        { id: 'ff6', name: '5,600 (+560) Diamonds (VIP)', price: 1940, cost: 1750, profit: 190, bonus: '+560 เพชร 👑' },
-        { id: 'ff_w', name: 'บัตรสมาชิกรายสัปดาห์ (Weekly)', price: 82, cost: 69, profit: 13, bonus: 'รับเพชร 7 วัน ⭐' },
-        { id: 'ff_m', name: 'บัตรสมาชิกรายเดือน (Monthly)', price: 389, cost: 349, profit: 40, bonus: 'รับเพชร 30 วัน 💎' }
+        { id: 'ff1', name: '172 เพชร', price: 49.5, originalPrice: 50, cost: 49, profit: 0.5, bonus: '⚡ เติมไว ประหยัด ฿0.5' },
+        { id: 'ff2', name: '310 เพชร', price: 89, originalPrice: 90, cost: 88, profit: 1, bonus: '🔥 ขายดี ประหยัด ฿1' },
+        { id: 'ff3', name: '517 เพชร', price: 148.5, originalPrice: 150, cost: 147, profit: 1.5, bonus: '⚡ ยอดฮิต ประหยัด ฿1.5' },
+        { id: 'ff4', name: '690 เพชร', price: 197, originalPrice: 200, cost: 195, profit: 2, bonus: '⭐ ยอดนิยม ประหยัด ฿3' },
+        { id: 'ff5', name: '1,052 เพชร', price: 296, originalPrice: 300, cost: 293, profit: 3, bonus: '💥 สุดคุ้ม ประหยัด ฿4' },
+        { id: 'ff6', name: '1,801 เพชร', price: 493, originalPrice: 500, cost: 487, profit: 6, bonus: '🔥 โบนัสเพียบ ประหยัด ฿7' },
+        { id: 'ff7', name: '3,698 เพชร (VIP Mega)', price: 986, originalPrice: 1000, cost: 975, profit: 11, bonus: '👑 VIP Mega ประหยัด ฿14' },
+        { id: 'ff_w', name: 'สมาชิกเพชรรายสัปดาห์ (Weekly)', price: 64.5, originalPrice: 65, cost: 64, profit: 0.5, bonus: '⭐ รับเพชร 7 วัน ประหยัด ฿0.5' },
+        { id: 'ff_m', name: 'สมาชิกเพชรรายเดือน (Monthly)', price: 310, originalPrice: 329, cost: 295, profit: 15, bonus: '💎 รับเพชร 30 วัน ประหยัด ฿19' }
       ]
     },
     {
@@ -1339,13 +1340,13 @@ export default function App() {
       image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิต Open World ✨',
       packages: [
-        { id: 'g_welkin', name: 'พรแห่งดวงจันทร์ (Blessing 30 วัน)', price: 199, cost: 179, profit: 20, bonus: '🔥 ขายดีที่สุด' },
-        { id: 'g1', name: '60 Genesis Crystals', price: 42, cost: 35, profit: 7, bonus: '+0' },
-        { id: 'g2', name: '300 (+30) Genesis Crystals', price: 199, cost: 179, profit: 20, bonus: '+30 โบนัส' },
-        { id: 'g3', name: '980 (+110) Genesis Crystals', price: 599, cost: 549, profit: 50, bonus: '+110 โบนัส' },
-        { id: 'g4', name: '1,980 (+260) Genesis Crystals', price: 1190, cost: 1100, profit: 90, bonus: '+260 โบนัส' },
-        { id: 'g5', name: '3,280 (+600) Genesis Crystals', price: 1950, cost: 1800, profit: 150, bonus: '+600 โบนัส 🔥' },
-        { id: 'g6', name: '6,480 (+1,600) Crystals (Whale)', price: 3990, cost: 3700, profit: 290, bonus: '+1,600 VIP 👑' }
+        { id: 'g_welkin', name: 'พรแห่งดวงจันทร์ (Blessing 30 วัน)', price: 199, originalPrice: 219, cost: 179, profit: 20, bonus: '🔥 ขายดีสุด ประหยัด ฿20' },
+        { id: 'g1', name: '60 Genesis Crystals', price: 42, originalPrice: 45, cost: 35, profit: 7, bonus: '⚡ เติมตรง ประหยัด ฿3' },
+        { id: 'g2', name: '300 (+30) Genesis Crystals', price: 199, originalPrice: 219, cost: 179, profit: 20, bonus: '⚡ ยอดฮิต ประหยัด ฿20' },
+        { id: 'g3', name: '980 (+110) Genesis Crystals', price: 599, originalPrice: 650, cost: 549, profit: 50, bonus: '⭐ พรีเมียม ประหยัด ฿51' },
+        { id: 'g4', name: '1,980 (+260) Genesis Crystals', price: 1190, originalPrice: 1290, cost: 1100, profit: 90, bonus: '💥 สุดคุ้ม ประหยัด ฿100' },
+        { id: 'g5', name: '3,280 (+600) Genesis Crystals', price: 1950, originalPrice: 2100, cost: 1800, profit: 150, bonus: '🔥 บิ๊กแพ็ก ประหยัด ฿150' },
+        { id: 'g6', name: '6,480 (+1,600) Crystals (Whale)', price: 3990, originalPrice: 4300, cost: 3700, profit: 290, bonus: '👑 Whale Pack ประหยัด ฿310 VIP' }
       ]
     },
     {
@@ -1356,13 +1357,13 @@ export default function App() {
       image: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิต Turn-Based 🚂',
       packages: [
-        { id: 'h_pass', name: 'บัตรผ่านรถไฟ 30 วัน (Express Pass)', price: 199, cost: 179, profit: 20, bonus: '🔥 ขายดีที่สุด' },
-        { id: 'h1', name: '60 Oneiric Shards', price: 42, cost: 35, profit: 7, bonus: '+0' },
-        { id: 'h2', name: '300 (+30) Oneiric Shards', price: 199, cost: 179, profit: 20, bonus: '+30 โบนัส' },
-        { id: 'h3', name: '980 (+110) Oneiric Shards', price: 599, cost: 549, profit: 50, bonus: '+110 โบนัส' },
-        { id: 'h4', name: '1,980 (+260) Oneiric Shards', price: 1190, cost: 1100, profit: 90, bonus: '+260 โบนัส' },
-        { id: 'h5', name: '3,280 (+600) Oneiric Shards', price: 1950, cost: 1800, profit: 150, bonus: '+600 โบนัส 🔥' },
-        { id: 'h6', name: '6,480 (+1,600) Shards (Whale)', price: 3990, cost: 3700, profit: 290, bonus: '+1,600 VIP 👑' }
+        { id: 'h_pass', name: 'บัตรผ่านรถไฟ 30 วัน (Express Pass)', price: 199, originalPrice: 219, cost: 179, profit: 20, bonus: '🔥 ขายดีสุด ประหยัด ฿20' },
+        { id: 'h1', name: '60 Oneiric Shards', price: 42, originalPrice: 45, cost: 35, profit: 7, bonus: '⚡ เติมตรง ประหยัด ฿3' },
+        { id: 'h2', name: '300 (+30) Oneiric Shards', price: 199, originalPrice: 219, cost: 179, profit: 20, bonus: '⚡ ยอดฮิต ประหยัด ฿20' },
+        { id: 'h3', name: '980 (+110) Oneiric Shards', price: 599, originalPrice: 650, cost: 549, profit: 50, bonus: '⭐ พรีเมียม ประหยัด ฿51' },
+        { id: 'h4', name: '1,980 (+260) Oneiric Shards', price: 1190, originalPrice: 1290, cost: 1100, profit: 90, bonus: '💥 สุดคุ้ม ประหยัด ฿100' },
+        { id: 'h5', name: '3,280 (+600) Oneiric Shards', price: 1950, originalPrice: 2100, cost: 1800, profit: 150, bonus: '🔥 บิ๊กแพ็ก ประหยัด ฿150' },
+        { id: 'h6', name: '6,480 (+1,600) Shards (Whale)', price: 3990, originalPrice: 4300, cost: 3700, profit: 290, bonus: '👑 Whale Pack ประหยัด ฿310 VIP' }
       ]
     },
     {
@@ -1373,12 +1374,12 @@ export default function App() {
       image: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=500&q=80',
       badge: 'Battle Royale 🪂',
       packages: [
-        { id: 'p1', name: '60 UC', price: 42, cost: 35, profit: 7, bonus: '+0' },
-        { id: 'p2', name: '325 UC (300+25)', price: 199, cost: 179, profit: 20, bonus: '🔥 ขายดี' },
-        { id: 'p3', name: '660 UC (Royale Pass ทันที)', price: 389, cost: 349, profit: 40, bonus: '⭐ ซื้อพาสได้ทันที' },
-        { id: 'p4', name: '1,800 UC (1,500+300)', price: 980, cost: 899, profit: 81, bonus: '+300 UC โบนัส' },
-        { id: 'p5', name: '3,850 UC (3,000+850)', price: 1960, cost: 1800, profit: 160, bonus: '+850 UC โบนัส 🔥' },
-        { id: 'p6', name: '8,100 UC (Whale Mega Pack)', price: 3890, cost: 3600, profit: 290, bonus: '+2,100 UC VIP 👑' }
+        { id: 'p1', name: '60 UC', price: 32.5, originalPrice: 33, cost: 32, profit: 0.5, bonus: '⚡ เติมไว ประหยัด ฿0.5' },
+        { id: 'p2', name: '325 UC', price: 162, originalPrice: 165, cost: 159, profit: 3, bonus: '🔥 ขายดี ประหยัด ฿3' },
+        { id: 'p3', name: '660 UC (Royale Pass ทันที)', price: 322, originalPrice: 330, cost: 315, profit: 7, bonus: '⭐ ซื้อพาสได้ทันที ประหยัด ฿8' },
+        { id: 'p4', name: '1,800 UC', price: 805, originalPrice: 825, cost: 789, profit: 16, bonus: '⚡ ยอดฮิต ประหยัด ฿20' },
+        { id: 'p5', name: '3,850 UC', price: 1610, originalPrice: 1650, cost: 1573, profit: 37, bonus: '💥 สุดคุ้ม ประหยัด ฿40' },
+        { id: 'p6', name: '8,100 UC (Whale Mega Pack)', price: 3219, originalPrice: 3300, cost: 3139, profit: 80, bonus: '👑 Whale Mega ประหยัด ฿81 VIP' }
       ]
     },
     {
@@ -1389,12 +1390,12 @@ export default function App() {
       image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=500&q=80',
       badge: 'MOBA ยอดฮิต 🏆',
       packages: [
-        { id: 'l1', name: '575 RP', price: 145, cost: 130, profit: 15, bonus: '+0 RP' },
-        { id: 'l2', name: '1,275 RP', price: 285, cost: 260, profit: 25, bonus: '🔥 ขายดี' },
-        { id: 'l3', name: '2,650 RP', price: 565, cost: 520, profit: 45, bonus: '+50 RP โบนัส' },
-        { id: 'l4', name: '4,800 RP', price: 990, cost: 920, profit: 70, bonus: '+150 RP โบนัส' },
-        { id: 'l5', name: '7,200 RP', price: 1420, cost: 1320, profit: 100, bonus: '+350 RP โบนัส' },
-        { id: 'l6', name: '15,000 RP (Ultra Whale)', price: 2820, cost: 2640, profit: 180, bonus: '+1,000 RP VIP 👑' }
+        { id: 'l1', name: '615 RP', price: 136, originalPrice: 139, cost: 133, profit: 3, bonus: '⚡ เติมไว ประหยัด ฿3' },
+        { id: 'l2', name: '1,320 RP', price: 273, originalPrice: 279, cost: 267, profit: 6, bonus: '🔥 ขายดี ประหยัด ฿6' },
+        { id: 'l3', name: '2,795 RP', price: 547, originalPrice: 559, cost: 536, profit: 11, bonus: '⚡ ยอดฮิต ประหยัด ฿12' },
+        { id: 'l4', name: '4,985 RP', price: 959, originalPrice: 979, cost: 939, profit: 20, bonus: '⭐ พรีเมียม ประหยัด ฿20' },
+        { id: 'l5', name: '7,295 RP', price: 1370, originalPrice: 1400, cost: 1344, profit: 26, bonus: '💥 ซูเปอร์คุ้ม ประหยัด ฿30' },
+        { id: 'l6', name: '14,875 RP (Ultra Whale)', price: 2740, originalPrice: 2800, cost: 2688, profit: 52, bonus: '👑 Ultra Whale ประหยัด ฿60 VIP' }
       ]
     },
     {
@@ -1405,11 +1406,12 @@ export default function App() {
       image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=500&q=80',
       badge: 'ฟุตบอลอันดับ 1 ⚽',
       packages: [
-        { id: 'fc1', name: '100 FC Points', price: 42, cost: 35, profit: 7, bonus: '+0' },
-        { id: 'fc2', name: '520 FC Points', price: 199, cost: 179, profit: 20, bonus: '🔥 ขายดี' },
-        { id: 'fc3', name: '1,070 FC Points', price: 389, cost: 349, profit: 40, bonus: '+70 โบนัส' },
-        { id: 'fc4', name: '2,200 FC Points', price: 770, cost: 699, profit: 71, bonus: '+200 โบนัส 🔥' },
-        { id: 'fc5', name: '5,750 FC Points (Pro Pack)', price: 1920, cost: 1750, profit: 170, bonus: '+750 FC VIP 👑' }
+        { id: 'fc1', name: '4,466 FC Points', price: 49, originalPrice: 50, cost: 48, profit: 1, bonus: '⚡ ประหยัด ฿1' },
+        { id: 'fc2', name: '8,181 FC Points', price: 88.5, originalPrice: 90, cost: 87, profit: 1.5, bonus: '🔥 ขายดี ประหยัด ฿1.5' },
+        { id: 'fc3', name: '15,000 FC Points', price: 147.5, originalPrice: 150, cost: 145, profit: 2.5, bonus: '⚡ ยอดนิยม ประหยัด ฿2.5' },
+        { id: 'fc4', name: '30,000 FC Points', price: 295, originalPrice: 300, cost: 290, profit: 5, bonus: '⭐ คุ้มค่า ประหยัด ฿5' },
+        { id: 'fc5', name: '50,000 FC Points', price: 490, originalPrice: 500, cost: 482, profit: 8, bonus: '💥 สุดคุ้ม ประหยัด ฿10' },
+        { id: 'fc6', name: '100,000 FC Points (Pro Pack)', price: 980, originalPrice: 1000, cost: 965, profit: 15, bonus: '👑 Pro Pack ประหยัด ฿20 VIP' }
       ]
     },
     {
@@ -1420,12 +1422,12 @@ export default function App() {
       image: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=500&q=80',
       badge: 'ยิงปืนสุดมันส์ ⚡',
       packages: [
-        { id: 'as1', name: '300 Diamonds', price: 45, cost: 35, profit: 10, bonus: '+0' },
-        { id: 'as2', name: '1,000 Diamonds', price: 120, cost: 100, profit: 20, bonus: '🔥 ขายดี' },
-        { id: 'as3', name: '2,100 Diamonds', price: 235, cost: 200, profit: 35, bonus: '+100 โบนัส' },
-        { id: 'as4', name: '3,600 Diamonds', price: 399, cost: 350, profit: 49, bonus: '+250 โบนัส' },
-        { id: 'as5', name: '7,500 Diamonds', price: 790, cost: 700, profit: 90, bonus: '+500 โบนัส' },
-        { id: 'as6', name: '16,000 Diamonds (Super VIP)', price: 1680, cost: 1500, profit: 180, bonus: '+1,500 VIP 👑' }
+        { id: 'as1', name: '300 Diamonds', price: 45, originalPrice: 50, cost: 35, profit: 10, bonus: '⚡ เติมตรง ประหยัด ฿5' },
+        { id: 'as2', name: '1,000 Diamonds', price: 120, originalPrice: 135, cost: 100, profit: 20, bonus: '🔥 ขายดี ประหยัด ฿15' },
+        { id: 'as3', name: '2,100 Diamonds', price: 235, originalPrice: 260, cost: 200, profit: 35, bonus: '⚡ ยอดฮิต ประหยัด ฿25' },
+        { id: 'as4', name: '3,600 Diamonds', price: 399, originalPrice: 440, cost: 350, profit: 49, bonus: '⭐ สุดคุ้ม ประหยัด ฿41' },
+        { id: 'as5', name: '7,500 Diamonds', price: 790, originalPrice: 870, cost: 700, profit: 90, bonus: '💥 โบนัสจุใจ ประหยัด ฿80' },
+        { id: 'as6', name: '16,000 Diamonds (Super VIP)', price: 1680, originalPrice: 1850, cost: 1500, profit: 180, bonus: '👑 Super VIP ประหยัด ฿170 VIP' }
       ]
     },
     {
@@ -1436,13 +1438,13 @@ export default function App() {
       image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=500&q=80',
       badge: 'ส่งรหัส PIN ทันที ⚡',
       packages: [
-        { id: 'rg50', name: '50 THB (Razer Gold PIN)', price: 49, cost: 47.5, profit: 1.5, bonus: 'บัตรราคา ฿50' },
-        { id: 'rg100', name: '100 THB (Razer Gold PIN)', price: 98, cost: 95, profit: 3, bonus: 'บัตรราคา ฿100' },
-        { id: 'rg300', name: '300 THB (Razer Gold PIN)', price: 294, cost: 285, profit: 9, bonus: '🔥 ขายดียอดนิยม' },
-        { id: 'rg500', name: '500 THB (Razer Gold PIN)', price: 489, cost: 475, profit: 14, bonus: 'บัตรราคา ฿500' },
-        { id: 'rg1000', name: '1,000 THB (Razer Gold PIN)', price: 979, cost: 950, profit: 29, bonus: '🔥 ขายดีอันดับ 1' },
-        { id: 'rg3500', name: '3,500 THB (Razer Gold PIN)', price: 3425, cost: 3325, profit: 100, bonus: 'เซ็ตใหญ่สุดคุ้ม' },
-        { id: 'rg5000', name: '5,000 THB (Razer Gold PIN)', price: 4880, cost: 4750, profit: 130, bonus: '👑 Big Whale VIP' }
+        { id: 'rg50', name: '50 THB (Razer Gold PIN)', price: 49, originalPrice: 50, cost: 47.5, profit: 1.5, bonus: '⚡ ประหยัด ฿1 ส่งรหัสไว' },
+        { id: 'rg100', name: '100 THB (Razer Gold PIN)', price: 98, originalPrice: 100, cost: 95, profit: 3, bonus: '🔥 ขายดี ประหยัด ฿2' },
+        { id: 'rg300', name: '300 THB (Razer Gold PIN)', price: 292, originalPrice: 300, cost: 285, profit: 7, bonus: '⚡ ยอดฮิต ประหยัด ฿8' },
+        { id: 'rg500', name: '500 THB (Razer Gold PIN)', price: 487, originalPrice: 500, cost: 475, profit: 12, bonus: '⭐ พรีเมียม ประหยัด ฿13' },
+        { id: 'rg1000', name: '1,000 THB (Razer Gold PIN)', price: 975, originalPrice: 1000, cost: 950, profit: 25, bonus: '💥 สุดคุ้ม ประหยัด ฿25' },
+        { id: 'rg3500', name: '3,500 THB (Razer Gold PIN)', price: 3410, originalPrice: 3500, cost: 3325, profit: 85, bonus: '👑 บิ๊กเซ็ต ประหยัด ฿90' },
+        { id: 'rg5000', name: '5,000 THB (Razer Gold PIN)', price: 4875, originalPrice: 5000, cost: 4750, profit: 125, bonus: '👑 Big Whale ประหยัด ฿125' }
       ]
     }
   ]);
@@ -1751,61 +1753,61 @@ export default function App() {
   const [orders, setOrders] = useState([]);
 
 
-  // ลิงก์ช่องทางเติมเงินของแอดมินแยกตามเกม (Official Top-up Direct Links)
+  // ลิงก์ช่องทางเติมเงินของแอดมินแยกตามเกม ยึดเว็บ LnwTRUE เป็นหลัก (Official & LnwTRUE Top-up Direct Links)
   const officialGameTopupLinks = {
     valorant: {
       name: 'VALORANT',
-      provider: 'Codashop Thailand / Riot Games',
-      url: 'https://www.codashop.com/th-th/valorant',
-      note: 'ใส่ Riot ID เช่น Name#TAG แล้วเลือกแพ็กเกจ VP'
+      provider: 'LnwTrue (เทพทรู Official)',
+      url: 'https://www.lnwtrue.com/th/valorant',
+      note: 'ใส่ Riot ID เช่น Name#TAG แล้วเลือกแพ็กเกจ VP หรือซื้อ e-Pin'
     },
     rov: {
       name: 'ROV (Arena of Valor)',
-      provider: 'Termgame (Garena Official)',
-      url: 'https://termgame.com/?app=100055',
-      note: 'ใส่ OpenID หรือล็อกอิน Garena เพื่อเติมคูปองเข้าเกม'
+      provider: 'LnwTrue (เทพทรู Official)',
+      url: 'https://www.lnwtrue.com/th/rov',
+      note: 'ใส่ OpenID / UID หรือซื้อ e-Pin เติมคูปองเข้าเกมได้ทันที'
     },
     freefire: {
       name: 'Free Fire',
-      provider: 'Termgame (Garena Official)',
-      url: 'https://termgame.com/?app=100067',
-      note: 'ใส่ UID ผู้เล่น Free Fire แล้วเลือกจำนวนเพชร'
+      provider: 'LnwTrue (เทพทรู Official)',
+      url: 'https://www.lnwtrue.com/th/freefire',
+      note: 'ใส่ UID ผู้เล่น Free Fire แล้วเลือกจำนวนเพชร หรือซื้อ e-Pin'
     },
     genshin: {
       name: 'Genshin Impact',
-      provider: 'Codashop Thailand / HoYoverse',
-      url: 'https://www.codashop.com/th-th/genshin-impact',
-      note: 'ใส่ UID และเลือกเซิร์ฟเวอร์ (เช่น Asia) แล้วเลือกแพ็กเกจ'
+      provider: 'LnwTrue (เทพทรู Official)',
+      url: 'https://www.lnwtrue.com/th/genshin',
+      note: 'ใส่ UID และเลือกเซิร์ฟเวอร์ (เช่น Asia) เติม Genesis Crystals / พรแห่งดวงจันทร์'
     },
     hsr: {
       name: 'Honkai: Star Rail',
-      provider: 'Codashop Thailand / HoYoverse',
-      url: 'https://www.codashop.com/th-th/honkai-star-rail',
-      note: 'ใส่ UID และเลือกเซิร์ฟเวอร์ (เช่น Asia) แล้วเติม Oneiric Shard'
+      provider: 'LnwTrue (เทพทรู Official)',
+      url: 'https://www.lnwtrue.com/th/hsr',
+      note: 'ใส่ UID และเลือกเซิร์ฟเวอร์ (เช่น Asia) เติม Oneiric Shard / บัตรผ่านรถไฟ'
     },
     pubg: {
       name: 'PUBG Mobile',
-      provider: 'Midasbuy / Codashop Thailand',
-      url: 'https://www.midasbuy.com/midasbuy/th/buy/pubgm',
-      note: 'ใส่ Player ID ในเกม แล้วเลือกแพ็กเกจ UC'
+      provider: 'LnwTrue (เทพทรู Official)',
+      url: 'https://www.lnwtrue.com/th/pubg-m',
+      note: 'ใส่ Player ID ในเกม แล้วเลือกแพ็กเกจ UC จัดส่งทันที'
     },
     lol: {
       name: 'League of Legends (PC)',
-      provider: 'Codashop Thailand / Riot Games',
-      url: 'https://www.codashop.com/th-th/league-of-legends',
-      note: 'ใส่ Riot ID เช่น Name#TAG แล้วเลือกเติม RP'
+      provider: 'LnwTrue (เทพทรู Official)',
+      url: 'https://www.lnwtrue.com/th/lol-epin',
+      note: 'ซื้อ e-Pin เติม Riot Points (RP) หรือเติมตรงเข้ารหัส'
     },
     fcmobile: {
-      name: 'EA SPORTS FC Mobile',
-      provider: 'Codashop Thailand / EA',
-      url: 'https://www.codashop.com/th-th/ea-sports-fc-mobile',
-      note: 'ใส่ UID ของผู้เล่นในเกม แล้วเลือก FC Points'
+      name: 'EA SPORTS FC Mobile / FC Online',
+      provider: 'LnwTrue (เทพทรู Official)',
+      url: 'https://www.lnwtrue.com/th/fc-online-m',
+      note: 'ใส่ UID ของผู้เล่นในเกม หรือซื้อ e-Pin เติมแต้ม FC'
     },
     avatarstar: {
       name: 'Avatar Star',
-      provider: 'AS Global Top-up Portal',
+      provider: 'AS Global Top-up Portal (ทางการ)',
       url: 'https://asglobal.com/',
-      note: 'เข้าเว็บทางการ ล็อกอินไอดีหรือใส่ UID เพื่อเติม Diamonds'
+      note: 'เข้าเว็บทางการ ล็อกอินไอดีหรือใส่ UID เพื่อเติม Diamonds (เกมนี้เติมตรงผ่าน AS Global)'
     },
     razergold_card: {
       name: 'Razer Gold PIN',
@@ -4047,11 +4049,35 @@ export default function App() {
                           {isPkgOutOfStock ? '🔴 สต็อกหมด' : '⚡ เติมตรง 100%'}
                         </span>
                       </div>
-                      <div style={{ fontSize: '12px', color: isPkgOutOfStock ? '#9ca3af' : '#34d399', marginBottom: '8px' }}>
-                        {isPkgOutOfStock ? '⚠️ สินค้าหมดสต็อกชั่วคราว' : `โบนัส: ${pkg.bonus}`}
+<div style={{ fontSize: '12px', color: isPkgOutOfStock ? '#9ca3af' : '#34d399', marginBottom: '8px' }}>
+                        {isPkgOutOfStock ? '⚠️ สินค้าหมดสต็อกชั่วคราว' : `สิทธิพิเศษ: ${pkg.bonus}`}
                       </div>
-                      <div style={{ fontSize: '18px', fontWeight: '900', color: isPkgOutOfStock ? '#9ca3af' : '#38bdf8' }}>
-                        ฿{pkg.price.toLocaleString()}
+
+                      {/* แสดงราคาขาย พร้อมราคาเดิมขีดฆ่า และป้ายประหยัดเงิน */}
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '19px', fontWeight: '900', color: isPkgOutOfStock ? '#9ca3af' : '#38bdf8' }}>
+                          ฿{pkg.price.toLocaleString()}
+                        </span>
+
+                        {pkg.originalPrice && pkg.originalPrice > pkg.price && (
+                          <span style={{ fontSize: '12px', color: '#9ca3af', textDecoration: 'line-through' }}>
+                            ฿{pkg.originalPrice.toLocaleString()}
+                          </span>
+                        )}
+
+                        {pkg.originalPrice && pkg.originalPrice > pkg.price && (
+                          <span style={{ 
+                            fontSize: '10px', 
+                            color: '#f472b6', 
+                            fontWeight: 'bold', 
+                            backgroundColor: 'rgba(236, 72, 153, 0.15)', 
+                            border: '1px solid rgba(236, 72, 153, 0.3)',
+                            padding: '1px 6px', 
+                            borderRadius: '4px' 
+                          }}>
+                            ประหยัด ฿{(pkg.originalPrice - pkg.price).toLocaleString()}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
@@ -4963,14 +4989,14 @@ export default function App() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
                     <div>
                       <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#34d399', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>🌐 ลิงก์เว็บเติมเกมทางการสำหรับแอดมิน (กดเปิดไปเติมให้ลูกค้าได้ทันที)</span>
+                        <span>🌐 ลิงก์เว็บเติมเกมหลังบ้านสำหรับแอดมิน (ยึดเว็บ LnwTRUE เป็นหลัก)</span>
                       </h3>
                       <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0 0' }}>
-                        เมื่อลูกค้าสั่งซื้อและโอนเงินแล้ว คุณสามารถกดปุ่มเปิดเว็บของเกมนั้นๆ แล้วก๊อปปี้ UID ลูกค้าไปวางเติมได้ทันที
+                        เมื่อลูกค้าสั่งซื้อและโอนเงินแล้ว แอดมินสามารถกดปุ่มเปิดเว็บ LnwTRUE (หรือเว็บทางการ) ของแต่ละเกม เพื่อก๊อปปี้ UID ลูกค้าไปวางเติมได้ทันที
                       </p>
                     </div>
                     <span style={{ fontSize: '11px', backgroundColor: 'rgba(16,185,129,0.15)', color: '#34d399', padding: '4px 10px', borderRadius: '8px', border: '1px solid #10b981', fontWeight: 'bold' }}>
-                      ⚡ 9 เกมพร้อมใช้งาน
+                      ⚡ 10 หมวดหมู่พร้อมใช้งาน (LnwTRUE เป็นหลัก)
                     </span>
                   </div>
 
