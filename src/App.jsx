@@ -2351,6 +2351,7 @@ export default function App() {
     };
 
     const newKey = createRealtimeOrder(newWalletOrder);
+    sendLineOrderNotification(newWalletOrder);
     setFloatingTimer(10);
     setActiveOrderFirebaseKey(newKey);
     setActiveTab('track');
@@ -2440,6 +2441,7 @@ export default function App() {
           timestamp: Date.now()
         };
         createRealtimeOrder(newWalletOrder);
+        sendLineOrderNotification(newWalletOrder);
 
         setTimeout(() => {
           setWalletSlipVerifying(false);
