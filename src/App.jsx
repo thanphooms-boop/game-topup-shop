@@ -1685,6 +1685,7 @@ export default function App() {
   const [copiedLineId, setCopiedLineId] = useState(false);
   const [confirmResetAllSystem, setConfirmResetAllSystem] = useState(false);
   const [confirmDeleteUserKey, setConfirmDeleteUserKey] = useState(null);
+  const [adminUserSearch, setAdminUserSearch] = useState('');
 
   useEffect(() => {
     const found = gamesData.find(g => g.name === newCodeGame);
@@ -1743,6 +1744,26 @@ export default function App() {
         try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updated)); } catch (e) {}
       }
     }
+  };
+
+  const deductUserWallet = (targetPlayer, amount) => {
+    const targetUser = registeredUsers.find(u => 
+      (u.username && u.username.toLowerCase() === targetPlayer.toLowerCase()) ||
+      (u.email && u.email.toLowerCase() === targetPlayer.toLowerCase())
+    );
+    if (targetUser && targetUser.firebaseKey) {
+      const currentBalance = targetUser.balance || 0;
+      const newBalance = Math.max(0, currentBalance - amount);
+      const userRef = ref(db, `users/${targetUser.firebaseKey}/balance`);
+      set(userRef, newBalance);
+      if (user && user.firebaseKey === targetUser.firebaseKey) {
+        const updated = { ...user, balance: newBalance };
+        setUser(updated);
+        try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updated)); } catch (e) {}
+      }
+      return newBalance;
+    }
+    return null;
   };
 
   useEffect(() => {
@@ -5209,18 +5230,78 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>
-                        📋 รายชื่อบัญชีสมาชิกทั้งหมดในระบบ ({registeredUsers.length} บัญชี)
-                      </span>
-                      <span style={{ fontSize: '11px', color: '#38bdf8' }}>
-                        💡 คลิก "ลบบัญชี" เพื่อให้ลูกค้านำชื่อผู้ใช้/อีเมลเดิมไปสมัครใหม่ได้ทันที
-                      </span>
+                  {(() => {
+                    const filteredRegisteredUsers = registeredUsers.filter(u => {
+                      if (!adminUserSearch.trim()) return true;
+                      const term = adminUserSearch.toLowerCase().trim();
+                      return (u.username && u.username.toLowerCase().includes(term)) ||
+                             (u.email && u.email.toLowerCase().includes(term)) ||
+                             (u.firebaseKey && u.firebaseKey.toLowerCase().includes(term));
+                    });
+
+                    return (
+                  <div style={{ backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '16px', padding: '18px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                      <div>
+                        <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#38bdf8' }}>
+                          👥 จัดการยอดเครดิตสมาชิก ({filteredRegisteredUsers.length}/{registeredUsers.length} บัญชี)
+                        </span>
+                        <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+                          💡 ค้นหาชื่อบัญชีเพื่อกด <b>+ เติมเงิน</b> หรือ <b>➖ ลดเงิน</b> กรณีเติมผิดบัญชีได้ทันที
+                        </div>
+                      </div>
+
+                      {/* ช่องค้นหาชื่อบัญชีเพื่อเติม/ลดเงิน */}
+                      <div style={{ position: 'relative', width: '100%', maxWidth: '340px' }}>
+                        <input
+                          type="text"
+                          placeholder="🔍 ค้นหาชื่อบัญชี หรือ อีเมล..."
+                          value={adminUserSearch}
+                          onChange={(e) => setAdminUserSearch(e.target.value)}
+                          style={{
+                            width: '100%',
+                            backgroundColor: '#111827',
+                            border: '1.5px solid #38bdf8',
+                            borderRadius: '10px',
+                            padding: '8px 32px 8px 12px',
+                            color: '#ffffff',
+                            fontSize: '12px',
+                            outline: 'none',
+                            boxSizing: 'border-box',
+                            boxShadow: '0 0 12px rgba(56,189,248,0.25)'
+                          }}
+                        />
+                        {adminUserSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setAdminUserSearch('')}
+                            style={{
+                              position: 'absolute',
+                              right: '8px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'none',
+                              border: 'none',
+                              color: '#9ca3af',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              padding: 0
+                            }}
+                            title="ล้างคำค้นหา"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px', maxHeight: '280px', overflowY: 'auto' }}>
-                      {registeredUsers.map(u => {
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '10px', maxHeight: '320px', overflowY: 'auto' }}>
+                      {filteredRegisteredUsers.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '30px 10px', color: '#9ca3af', fontSize: '13px', gridColumn: '1 / -1' }}>
+                          🔍 ไม่พบบัญชีผู้ใช้ที่ตรงกับคำค้นหา <b style={{ color: '#38bdf8' }}>"{adminUserSearch}"</b>
+                        </div>
+                      ) : (
+                        filteredRegisteredUsers.map(u => {
                         const isNattapong = u.username?.toLowerCase() === 'nattapong';
                         const isDeletingThis = confirmDeleteUserKey === u.firebaseKey;
                         return (
@@ -5254,25 +5335,57 @@ export default function App() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const val = prompt(`ระบุจำนวนเครดิต (บาท) ที่ต้องการเพิ่มให้ "${u.username}":`, "100");
+                                  const val = prompt(`ระบุจำนวนเครดิต (บาท) ที่ต้องการเพิ่มให้ "${u.username}" (ยอดปัจจุบัน: ฿${(u.balance || 0).toLocaleString()}):`, "100");
                                   if (val && !isNaN(parseFloat(val)) && parseFloat(val) > 0) {
-                                    creditUserWallet(u.username, parseFloat(val));
-                                    alert(`✅ เพิ่มเครดิตให้คุณ ${u.username} จำนวน ฿${parseFloat(val).toLocaleString()} สำเร็จเรียบร้อยแล้ว`);
+                                    const amt = parseFloat(val);
+                                    creditUserWallet(u.username, amt);
+                                    alert(`✅ เพิ่มเครดิตให้คุณ ${u.username} จำนวน ฿${amt.toLocaleString()} สำเร็จแล้ว (ยอดใหม่: ฿${((u.balance || 0) + amt).toLocaleString()})`);
                                   }
                                 }}
                                 style={{
                                   backgroundColor: '#059669',
                                   border: '1px solid #10b981',
                                   color: '#ffffff',
-                                  padding: '5px 10px',
+                                  padding: '5px 8px',
                                   borderRadius: '8px',
                                   fontSize: '11px',
                                   fontWeight: 'bold',
                                   cursor: 'pointer',
                                   boxShadow: '0 0 10px rgba(16,185,129,0.3)'
                                 }}
+                                title="เพิ่มเครดิตเข้ากระเป๋าบัญชีนี้"
                               >
                                 + เติมเงิน
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const cur = u.balance || 0;
+                                  const val = prompt(`ระบุจำนวนเครดิต (บาท) ที่ต้องการหัก/ลดจาก "${u.username}" (ยอดปัจจุบันมี: ฿${cur.toLocaleString()}):`, cur > 0 ? cur.toString() : "50");
+                                  if (val && !isNaN(parseFloat(val)) && parseFloat(val) > 0) {
+                                    const amt = parseFloat(val);
+                                    if (amt > cur) {
+                                      const confirmExceed = confirm(`⚠️ ยอดที่ต้องการหัก (฿${amt.toLocaleString()}) มากกว่ายอดคงเหลือ (฿${cur.toLocaleString()}) ต้องการลดยอดจนเหลือ ฿0 หรือไม่?`);
+                                      if (!confirmExceed) return;
+                                    }
+                                    const newBal = deductUserWallet(u.username, amt);
+                                    alert(`➖ ลดเครดิตคุณ ${u.username} จำนวน ฿${amt.toLocaleString()} สำเร็จแล้ว (ยอดคงเหลือใหม่: ฿${(newBal !== null ? newBal : 0).toLocaleString()})`);
+                                  }
+                                }}
+                                style={{
+                                  backgroundColor: '#d97706',
+                                  border: '1px solid #f59e0b',
+                                  color: '#ffffff',
+                                  padding: '5px 8px',
+                                  borderRadius: '8px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  boxShadow: '0 0 10px rgba(245,158,11,0.3)'
+                                }}
+                                title="ลดเงินหรือหักยอดเครดิตกรณีเติมผิดบัญชี"
+                              >
+                                ➖ ลดเงิน
                               </button>
                               {isDeletingThis ? (
                                 <div style={{ display: 'flex', gap: '4px' }}>
@@ -5329,9 +5442,11 @@ export default function App() {
                             </div>
                           </div>
                         );
-                      })}
+                      }))}
                     </div>
                   </div>
+                    );
+                  })()}
                 </div>
 
 
