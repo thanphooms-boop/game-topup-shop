@@ -1100,34 +1100,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // ระบบรีเซ็ตยอดเครดิตร้านและประวัติคำสั่งซื้อทุกไอดีให้เหลือ 0 อัตโนมัติในครั้งแรก
-  useEffect(() => {
-    const isResetZeroDone = localStorage.getItem('cyber_reset_zero_all_accounts_2026');
-    if (!isResetZeroDone && registeredUsers.length > 0) {
-      registeredUsers.forEach(u => {
-        if (u.firebaseKey) {
-          if (u.username?.toLowerCase() === 'nattapong' || u.email?.toLowerCase().includes('nattapong')) {
-            remove(ref(db, `users/${u.firebaseKey}`));
-          } else if (u.balance !== 0) {
-            set(ref(db, `users/${u.firebaseKey}/balance`), 0);
-          }
-        }
-      });
-      remove(ref(db, 'orders'));
-      setOrders([]);
-      if (user) {
-        if (user.username?.toLowerCase() === 'nattapong') {
-          setUser(null);
-          localStorage.removeItem('cyber_current_logged_user');
-        } else if (user.balance !== 0) {
-          const resetU = { ...user, balance: 0 };
-          setUser(resetU);
-          try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(resetU)); } catch (e) {}
-        }
-      }
-      localStorage.setItem('cyber_reset_zero_all_accounts_2026', 'done');
-    }
-  }, [registeredUsers, user]);
+// ระบบคงยอดเงินเครดิตร้านถาวร ไม่มีการรีเซ็ตอัตโนมัติ
 
   const handleAuthSubmit = (e) => {
     e.preventDefault();
@@ -5277,7 +5250,30 @@ export default function App() {
                               </div>
                             </div>
 
-                            <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const val = prompt(`ระบุจำนวนเครดิต (บาท) ที่ต้องการเพิ่มให้ "${u.username}":`, "100");
+                                  if (val && !isNaN(parseFloat(val)) && parseFloat(val) > 0) {
+                                    creditUserWallet(u.username, parseFloat(val));
+                                    alert(`✅ เพิ่มเครดิตให้คุณ ${u.username} จำนวน ฿${parseFloat(val).toLocaleString()} สำเร็จเรียบร้อยแล้ว`);
+                                  }
+                                }}
+                                style={{
+                                  backgroundColor: '#059669',
+                                  border: '1px solid #10b981',
+                                  color: '#ffffff',
+                                  padding: '5px 10px',
+                                  borderRadius: '8px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  boxShadow: '0 0 10px rgba(16,185,129,0.3)'
+                                }}
+                              >
+                                + เติมเงิน
+                              </button>
                               {isDeletingThis ? (
                                 <div style={{ display: 'flex', gap: '4px' }}>
                                   <button
