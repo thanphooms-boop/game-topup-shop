@@ -1289,13 +1289,46 @@ export default function App() {
       image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิตอันดับ 1 🔥',
       packages: [
-        { id: 'v1', name: '125 VP', price: 99, profit: 15, bonus: '+0 VP' },
-        { id: 'v2', name: '420 VP', price: 319, profit: 48, bonus: '+15 VP' },
-        { id: 'v3', name: '700 VP', price: 529, profit: 80, bonus: '+30 VP' },
-        { id: 'v4', name: '1,375 VP', price: 999, profit: 150, bonus: '+80 VP' },
-        { id: 'v5', name: '2,400 VP', price: 1750, profit: 260, bonus: '+150 VP 🔥' },
-        { id: 'v6', name: '4,000 VP (Big Pack)', price: 2850, profit: 420, bonus: '+300 VP VIP ⭐' },
-        { id: 'v7', name: '8,500 VP (Whale Pack)', price: 5900, profit: 900, bonus: '+700 VP VIP 👑' }
+        { id: 'v1', name: '475 VP', price: 145, cost: 130, profit: 15, bonus: '+0 VP' },
+        { id: 'v2', name: '1,000 VP', price: 285, cost: 260, profit: 25, bonus: '🔥 ขายดี' },
+        { id: 'v3', name: '2,050 VP', price: 565, cost: 520, profit: 45, bonus: '+50 VP โบนัส' },
+        { id: 'v4', name: '3,650 VP', price: 990, cost: 920, profit: 70, bonus: '+150 VP โบนัส' },
+        { id: 'v5', name: '5,350 VP', price: 1420, cost: 1320, profit: 100, bonus: '+350 VP โบนัส' },
+        { id: 'v6', name: '11,000 VP (Whale Pack)', price: 2820, cost: 2640, profit: 180, bonus: '+1,000 VP VIP 👑' }
+      ]
+    },
+    {
+      id: 'rov',
+      name: 'ROV (Arena of Valor)',
+      publisher: 'Garena',
+      category: 'mobile',
+      image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=500&q=80',
+      badge: 'ยอดฮิต MOBA ⚔️',
+      packages: [
+        { id: 'r1', name: '40 Coupons', price: 42, cost: 35, profit: 7, bonus: '+0' },
+        { id: 'r2', name: '90 Coupons', price: 88, cost: 75, profit: 13, bonus: '🔥 ขายดี' },
+        { id: 'r3', name: '220 Coupons', price: 205, cost: 180, profit: 25, bonus: '+10 โบนัส' },
+        { id: 'r4', name: '470 Coupons', price: 419, cost: 375, profit: 44, bonus: '+25 โบนัส' },
+        { id: 'r5', name: '950 Coupons', price: 829, cost: 750, profit: 79, bonus: '+60 โบนัส' },
+        { id: 'r6', name: '2,700 Coupons (Big Pack)', price: 2290, cost: 2100, profit: 190, bonus: '+200 คูปอง VIP 👑' }
+      ]
+    },
+    {
+      id: 'freefire',
+      name: 'Free Fire',
+      publisher: 'Garena',
+      category: 'mobile',
+      image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=500&q=80',
+      badge: 'ยอดนิยมอันดับ 1 🎯',
+      packages: [
+        { id: 'ff1', name: '100 (+10) Diamonds', price: 42, cost: 35, profit: 7, bonus: '+10 เพชร' },
+        { id: 'ff2', name: '310 (+31) Diamonds', price: 119, cost: 100, profit: 19, bonus: '🔥 ขายดี' },
+        { id: 'ff3', name: '520 (+52) Diamonds', price: 199, cost: 175, profit: 24, bonus: '+52 เพชร' },
+        { id: 'ff4', name: '1,060 (+106) Diamonds', price: 395, cost: 350, profit: 45, bonus: '+106 เพชร' },
+        { id: 'ff5', name: '2,180 (+218) Diamonds', price: 779, cost: 700, profit: 79, bonus: '+218 เพชร' },
+        { id: 'ff6', name: '5,600 (+560) Diamonds (VIP)', price: 1940, cost: 1750, profit: 190, bonus: '+560 เพชร 👑' },
+        { id: 'ff_w', name: 'บัตรสมาชิกรายสัปดาห์ (Weekly)', price: 82, cost: 69, profit: 13, bonus: 'รับเพชร 7 วัน ⭐' },
+        { id: 'ff_m', name: 'บัตรสมาชิกรายเดือน (Monthly)', price: 389, cost: 349, profit: 40, bonus: 'รับเพชร 30 วัน 💎' }
       ]
     },
     {
@@ -1304,30 +1337,48 @@ export default function App() {
       publisher: 'HoYoverse',
       category: 'pc',
       image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดฮิต ✨',
+      badge: 'ยอดฮิต Open World ✨',
       packages: [
-        { id: 'g1', name: '60 Genesis Crystals', price: 35, profit: 5, bonus: '+0' },
-        { id: 'g2', name: '300 Genesis Crystals', price: 179, profit: 27, bonus: '+10' },
-        { id: 'g3', name: '980 Genesis Crystals', price: 549, profit: 82, bonus: '+40' },
-        { id: 'g4', name: '1,980 Genesis Crystals', price: 1050, profit: 158, bonus: '+110' },
-        { id: 'g5', name: '3,280 Genesis Crystals', price: 1750, profit: 260, bonus: '+260 🔥' },
-        { id: 'g6', name: '6,480 Genesis Crystals', price: 3390, profit: 500, bonus: '+1,600 VIP 👑' }
+        { id: 'g_welkin', name: 'พรแห่งดวงจันทร์ (Blessing 30 วัน)', price: 199, cost: 179, profit: 20, bonus: '🔥 ขายดีที่สุด' },
+        { id: 'g1', name: '60 Genesis Crystals', price: 42, cost: 35, profit: 7, bonus: '+0' },
+        { id: 'g2', name: '300 (+30) Genesis Crystals', price: 199, cost: 179, profit: 20, bonus: '+30 โบนัส' },
+        { id: 'g3', name: '980 (+110) Genesis Crystals', price: 599, cost: 549, profit: 50, bonus: '+110 โบนัส' },
+        { id: 'g4', name: '1,980 (+260) Genesis Crystals', price: 1190, cost: 1100, profit: 90, bonus: '+260 โบนัส' },
+        { id: 'g5', name: '3,280 (+600) Genesis Crystals', price: 1950, cost: 1800, profit: 150, bonus: '+600 โบนัส 🔥' },
+        { id: 'g6', name: '6,480 (+1,600) Crystals (Whale)', price: 3990, cost: 3700, profit: 290, bonus: '+1,600 VIP 👑' }
       ]
     },
     {
-      id: 'avatarstar',
-      name: 'Avatar Star',
-      publisher: 'Cubinet / AS Global',
+      id: 'hsr',
+      name: 'Honkai: Star Rail',
+      publisher: 'HoYoverse',
       category: 'pc',
-      image: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดนิยม ⚡',
+      image: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=500&q=80',
+      badge: 'ยอดฮิต Turn-Based 🚂',
       packages: [
-        { id: 'as1', name: '300 Diamonds', price: 90, profit: 14, bonus: '+0' },
-        { id: 'as2', name: '1,000 Diamonds', price: 300, profit: 45, bonus: '+50' },
-        { id: 'as3', name: '2,100 Diamonds', price: 600, profit: 90, bonus: '+150' },
-        { id: 'as4', name: '3,600 Diamonds', price: 1000, profit: 150, bonus: '+300' },
-        { id: 'as5', name: '7,500 Diamonds', price: 2000, profit: 300, bonus: '+800 🔥' },
-        { id: 'as6', name: '16,000 Diamonds (Super VIP)', price: 4000, profit: 600, bonus: '+2,000 👑' }
+        { id: 'h_pass', name: 'บัตรผ่านรถไฟ 30 วัน (Express Pass)', price: 199, cost: 179, profit: 20, bonus: '🔥 ขายดีที่สุด' },
+        { id: 'h1', name: '60 Oneiric Shards', price: 42, cost: 35, profit: 7, bonus: '+0' },
+        { id: 'h2', name: '300 (+30) Oneiric Shards', price: 199, cost: 179, profit: 20, bonus: '+30 โบนัส' },
+        { id: 'h3', name: '980 (+110) Oneiric Shards', price: 599, cost: 549, profit: 50, bonus: '+110 โบนัส' },
+        { id: 'h4', name: '1,980 (+260) Oneiric Shards', price: 1190, cost: 1100, profit: 90, bonus: '+260 โบนัส' },
+        { id: 'h5', name: '3,280 (+600) Oneiric Shards', price: 1950, cost: 1800, profit: 150, bonus: '+600 โบนัส 🔥' },
+        { id: 'h6', name: '6,480 (+1,600) Shards (Whale)', price: 3990, cost: 3700, profit: 290, bonus: '+1,600 VIP 👑' }
+      ]
+    },
+    {
+      id: 'pubg',
+      name: 'PUBG Mobile',
+      publisher: 'Krafton / Tencent',
+      category: 'mobile',
+      image: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=500&q=80',
+      badge: 'Battle Royale 🪂',
+      packages: [
+        { id: 'p1', name: '60 UC', price: 42, cost: 35, profit: 7, bonus: '+0' },
+        { id: 'p2', name: '325 UC (300+25)', price: 199, cost: 179, profit: 20, bonus: '🔥 ขายดี' },
+        { id: 'p3', name: '660 UC (Royale Pass ทันที)', price: 389, cost: 349, profit: 40, bonus: '⭐ ซื้อพาสได้ทันที' },
+        { id: 'p4', name: '1,800 UC (1,500+300)', price: 980, cost: 899, profit: 81, bonus: '+300 UC โบนัส' },
+        { id: 'p5', name: '3,850 UC (3,000+850)', price: 1960, cost: 1800, profit: 160, bonus: '+850 UC โบนัส 🔥' },
+        { id: 'p6', name: '8,100 UC (Whale Mega Pack)', price: 3890, cost: 3600, profit: 290, bonus: '+2,100 UC VIP 👑' }
       ]
     },
     {
@@ -1335,93 +1386,46 @@ export default function App() {
       name: 'League of Legends',
       publisher: 'Riot Games',
       category: 'pc',
-      image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=500&q=80',
-      badge: 'แนะนำ 🏆',
+      image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=500&q=80',
+      badge: 'MOBA ยอดฮิต 🏆',
       packages: [
-        { id: 'l1', name: '575 RP', price: 150, profit: 22, bonus: '+0 RP' },
-        { id: 'l2', name: '1,380 RP', price: 350, profit: 52, bonus: '+30 RP' },
-        { id: 'l3', name: '2,800 RP', price: 700, profit: 105, bonus: '+100 RP' },
-        { id: 'l4', name: '5,000 RP', price: 1250, profit: 188, bonus: '+250 RP 🔥' },
-        { id: 'l5', name: '11,000 RP (Ultra Pack)', price: 2600, profit: 390, bonus: '+700 RP 👑' }
-      ]
-    },
-    {
-      id: 'pubg',
-      name: 'PUBG Mobile',
-      publisher: 'Level Infinite',
-      category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดฮิต 🔫',
-      packages: [
-        { id: 'p1', name: '60 UC', price: 29, profit: 4, bonus: '+0 UC' },
-        { id: 'p2', name: '325 UC', price: 149, profit: 22, bonus: '+15 UC' },
-        { id: 'p3', name: '660 UC', price: 299, profit: 45, bonus: '+50 UC' },
-        { id: 'p4', name: '1,800 UC', price: 799, profit: 120, bonus: '+150 UC 🔥' },
-        { id: 'p5', name: '3,850 UC', price: 1600, profit: 240, bonus: '+350 UC ⭐' },
-        { id: 'p6', name: '8,100 UC (Whale Pack)', price: 3200, profit: 480, bonus: '+900 UC 👑' }
-      ]
-    },
-    {
-      id: 'rov',
-      name: 'ROV (Arena of Valor)',
-      publisher: 'Garena',
-      category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดฮิต ⚔️',
-      packages: [
-        { id: 'r1', name: '40 Coupons', price: 35, profit: 5, bonus: '+2 Coupons' },
-        { id: 'r2', name: '90 Coupons', price: 75, profit: 11, bonus: '+5 Coupons' },
-        { id: 'r3', name: '220 Coupons', price: 175, profit: 26, bonus: '+15 Coupons' },
-        { id: 'r4', name: '470 Coupons', price: 350, profit: 52, bonus: '+30 Coupons' },
-        { id: 'r5', name: '950 Coupons', price: 700, profit: 105, bonus: '+80 Coupons 🔥' },
-        { id: 'r6', name: '2,700 Coupons (Big Pack)', price: 1800, profit: 270, bonus: '+250 Coupons 👑' }
-      ]
-    },
-    {
-      id: 'freefire',
-      name: 'Free Fire',
-      publisher: 'Garena',
-      category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1560253023-3ec5d502959f?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดฮิต 💎',
-      packages: [
-        { id: 'ff1', name: '110 Diamonds', price: 35, profit: 5, bonus: '+5' },
-        { id: 'ff2', name: '341 Diamonds', price: 105, profit: 15, bonus: '+20' },
-        { id: 'ff3', name: '572 Diamonds', price: 175, profit: 26, bonus: '+40' },
-        { id: 'ff4', name: '1,160 Diamonds', price: 350, profit: 52, bonus: '+90 🔥' },
-        { id: 'ff5', name: '2,390 Diamonds', price: 700, profit: 105, bonus: '+200 ⭐' },
-        { id: 'ff6', name: '6,000 Diamonds (VIP Mega)', price: 1700, profit: 255, bonus: '+600 👑' }
-      ]
-    },
-    {
-      id: 'hsr',
-      name: 'Honkai: Star Rail',
-      publisher: 'HoYoverse',
-      category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=500&q=80',
-      badge: 'แนะนำ 🚀',
-      packages: [
-        { id: 'h1', name: '60 Oneiric Shard', price: 35, profit: 5, bonus: '+0' },
-        { id: 'h2', name: '300 Oneiric Shard', price: 179, profit: 27, bonus: '+30' },
-        { id: 'h3', name: '980 Oneiric Shard', price: 549, profit: 82, bonus: '+110' },
-        { id: 'h4', name: '1,980 Oneiric Shard', price: 1050, profit: 158, bonus: '+260 🔥' },
-        { id: 'h5', name: '3,280 Oneiric Shard', price: 1750, profit: 260, bonus: '+600 ⭐' },
-        { id: 'h6', name: '6,480 Oneiric Shard', price: 3390, profit: 500, bonus: '+1,600 👑' }
+        { id: 'l1', name: '575 RP', price: 145, cost: 130, profit: 15, bonus: '+0 RP' },
+        { id: 'l2', name: '1,275 RP', price: 285, cost: 260, profit: 25, bonus: '🔥 ขายดี' },
+        { id: 'l3', name: '2,650 RP', price: 565, cost: 520, profit: 45, bonus: '+50 RP โบนัส' },
+        { id: 'l4', name: '4,800 RP', price: 990, cost: 920, profit: 70, bonus: '+150 RP โบนัส' },
+        { id: 'l5', name: '7,200 RP', price: 1420, cost: 1320, profit: 100, bonus: '+350 RP โบนัส' },
+        { id: 'l6', name: '15,000 RP (Ultra Whale)', price: 2820, cost: 2640, profit: 180, bonus: '+1,000 RP VIP 👑' }
       ]
     },
     {
       id: 'fcmobile',
       name: 'EA SPORTS FC Mobile',
-      publisher: 'ELECTRONIC ARTS',
+      publisher: 'Electronic Arts',
       category: 'mobile',
       image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=500&q=80',
-      badge: 'มาใหม่ ⚽',
+      badge: 'ฟุตบอลอันดับ 1 ⚽',
       packages: [
-        { id: 'fc1', name: '100 FC Points', price: 35, profit: 5, bonus: '+0' },
-        { id: 'fc2', name: '520 FC Points', price: 179, profit: 27, bonus: '+20' },
-        { id: 'fc3', name: '1,070 FC Points', price: 350, profit: 52, bonus: '+70' },
-        { id: 'fc4', name: '2,200 FC Points', price: 700, profit: 105, bonus: '+180 🔥' },
-        { id: 'fc5', name: '5,750 FC Points (Pro Pack)', price: 1750, profit: 260, bonus: '+550 👑' }
+        { id: 'fc1', name: '100 FC Points', price: 42, cost: 35, profit: 7, bonus: '+0' },
+        { id: 'fc2', name: '520 FC Points', price: 199, cost: 179, profit: 20, bonus: '🔥 ขายดี' },
+        { id: 'fc3', name: '1,070 FC Points', price: 389, cost: 349, profit: 40, bonus: '+70 โบนัส' },
+        { id: 'fc4', name: '2,200 FC Points', price: 770, cost: 699, profit: 71, bonus: '+200 โบนัส 🔥' },
+        { id: 'fc5', name: '5,750 FC Points (Pro Pack)', price: 1920, cost: 1750, profit: 170, bonus: '+750 FC VIP 👑' }
+      ]
+    },
+    {
+      id: 'avatarstar',
+      name: 'Avatar Star',
+      publisher: 'AS Global',
+      category: 'pc',
+      image: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=500&q=80',
+      badge: 'ยิงปืนสุดมันส์ ⚡',
+      packages: [
+        { id: 'as1', name: '300 Diamonds', price: 45, cost: 35, profit: 10, bonus: '+0' },
+        { id: 'as2', name: '1,000 Diamonds', price: 120, cost: 100, profit: 20, bonus: '🔥 ขายดี' },
+        { id: 'as3', name: '2,100 Diamonds', price: 235, cost: 200, profit: 35, bonus: '+100 โบนัส' },
+        { id: 'as4', name: '3,600 Diamonds', price: 399, cost: 350, profit: 49, bonus: '+250 โบนัส' },
+        { id: 'as5', name: '7,500 Diamonds', price: 790, cost: 700, profit: 90, bonus: '+500 โบนัส' },
+        { id: 'as6', name: '16,000 Diamonds (Super VIP)', price: 1680, cost: 1500, profit: 180, bonus: '+1,500 VIP 👑' }
       ]
     }
   ]);
@@ -1574,7 +1578,7 @@ export default function App() {
 
   const [stockList, setStockList] = useState([]);
   const [stockGame, setStockGame] = useState('VALORANT');
-  const [stockPackage, setStockPackage] = useState('125 VP');
+  const [stockPackage, setStockPackage] = useState('1,000 VP');
   const [stockCodesInput, setStockCodesInput] = useState('');
   const [stockMsg, setStockMsg] = useState({ text: '', type: '' });
   const [stockFilterGame, setStockFilterGame] = useState('all');
@@ -1600,7 +1604,7 @@ export default function App() {
         setStockList(list.reverse());
       } else {
         const defaultSamples = [
-          { game: 'VALORANT', package: '125 VP', code: 'VAL-VP125-FAST-8891-PROD' },
+          { game: 'VALORANT', package: '1,000 VP', code: 'VAL-VP1000-FAST-8891-PROD' },
           { game: 'VALORANT', package: '125 VP', code: 'VAL-VP125-FAST-4420-OK24' },
           { game: 'VALORANT', package: '420 VP', code: 'VAL-VP420-CYBER-9912-FAST' },
           { game: 'ROV (Arena of Valor)', package: '40 Coupons', code: 'ROV-CP40-INSTANT-7712' },
@@ -1669,7 +1673,7 @@ export default function App() {
 
   const [newCodeName, setNewCodeName] = useState('');
   const [newCodeGame, setNewCodeGame] = useState('VALORANT');
-  const [newCodeReward, setNewCodeReward] = useState('125 VP');
+  const [newCodeReward, setNewCodeReward] = useState('1,000 VP');
   const [newCodeMaxUses, setNewCodeMaxUses] = useState(10);
   const [newCodeMinRank, setNewCodeMinRank] = useState('BRONZE');
   const [isRankSelectOpen, setIsRankSelectOpen] = useState(false);
@@ -1728,6 +1732,80 @@ export default function App() {
 
   const [adminOrdersPage, setAdminOrdersPage] = useState(1);
   const [orders, setOrders] = useState([]);
+
+
+  // ลิงก์ช่องทางเติมเงินของแอดมินแยกตามเกม (Official Top-up Direct Links)
+  const officialGameTopupLinks = {
+    valorant: {
+      name: 'VALORANT',
+      provider: 'Codashop Thailand / Riot Games',
+      url: 'https://www.codashop.com/th-th/valorant',
+      note: 'ใส่ Riot ID เช่น Name#TAG แล้วเลือกแพ็กเกจ VP'
+    },
+    rov: {
+      name: 'ROV (Arena of Valor)',
+      provider: 'Termgame (Garena Official)',
+      url: 'https://termgame.com/?app=100055',
+      note: 'ใส่ OpenID หรือล็อกอิน Garena เพื่อเติมคูปองเข้าเกม'
+    },
+    freefire: {
+      name: 'Free Fire',
+      provider: 'Termgame (Garena Official)',
+      url: 'https://termgame.com/?app=100067',
+      note: 'ใส่ UID ผู้เล่น Free Fire แล้วเลือกจำนวนเพชร'
+    },
+    genshin: {
+      name: 'Genshin Impact',
+      provider: 'Codashop Thailand / HoYoverse',
+      url: 'https://www.codashop.com/th-th/genshin-impact',
+      note: 'ใส่ UID และเลือกเซิร์ฟเวอร์ (เช่น Asia) แล้วเลือกแพ็กเกจ'
+    },
+    hsr: {
+      name: 'Honkai: Star Rail',
+      provider: 'Codashop Thailand / HoYoverse',
+      url: 'https://www.codashop.com/th-th/honkai-star-rail',
+      note: 'ใส่ UID และเลือกเซิร์ฟเวอร์ (เช่น Asia) แล้วเติม Oneiric Shard'
+    },
+    pubg: {
+      name: 'PUBG Mobile',
+      provider: 'Midasbuy / Codashop Thailand',
+      url: 'https://www.midasbuy.com/midasbuy/th/buy/pubgm',
+      note: 'ใส่ Player ID ในเกม แล้วเลือกแพ็กเกจ UC'
+    },
+    lol: {
+      name: 'League of Legends (PC)',
+      provider: 'Codashop Thailand / Riot Games',
+      url: 'https://www.codashop.com/th-th/league-of-legends',
+      note: 'ใส่ Riot ID เช่น Name#TAG แล้วเลือกเติม RP'
+    },
+    fcmobile: {
+      name: 'EA SPORTS FC Mobile',
+      provider: 'Codashop Thailand / EA',
+      url: 'https://www.codashop.com/th-th/ea-sports-fc-mobile',
+      note: 'ใส่ UID ของผู้เล่นในเกม แล้วเลือก FC Points'
+    },
+    avatarstar: {
+      name: 'Avatar Star',
+      provider: 'AS Global Top-up Portal',
+      url: 'https://asglobal.com/',
+      note: 'เข้าเว็บทางการ ล็อกอินไอดีหรือใส่ UID เพื่อเติม Diamonds'
+    }
+  };
+
+  const getTopupLinkForGame = (gameName) => {
+    if (!gameName) return null;
+    const gn = gameName.toLowerCase();
+    if (gn.includes('valo')) return officialGameTopupLinks.valorant;
+    if (gn.includes('rov')) return officialGameTopupLinks.rov;
+    if (gn.includes('free fire') || gn.includes('freefire') || gn.includes('ฟีฟาย')) return officialGameTopupLinks.freefire;
+    if (gn.includes('genshin')) return officialGameTopupLinks.genshin;
+    if (gn.includes('star rail') || gn.includes('hsr')) return officialGameTopupLinks.hsr;
+    if (gn.includes('pubg')) return officialGameTopupLinks.pubg;
+    if (gn.includes('league') || gn.includes('lol')) return officialGameTopupLinks.lol;
+    if (gn.includes('fc mobile') || gn.includes('fcmobile')) return officialGameTopupLinks.fcmobile;
+    if (gn.includes('avatar star') || gn.includes('avatarstar')) return officialGameTopupLinks.avatarstar;
+    return null;
+  };
 
   const creditUserWallet = (targetPlayer, amount) => {
     const targetUser = registeredUsers.find(u => 
@@ -4845,6 +4923,56 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* การ์ดศูนย์รวมลิงก์เว็บเติมเกมทางการสำหรับแอดมิน */}
+                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', border: '1.5px solid #10b981', padding: '22px', boxShadow: '0 0 25px rgba(16,185,129,0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#34d399', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>🌐 ลิงก์เว็บเติมเกมทางการสำหรับแอดมิน (กดเปิดไปเติมให้ลูกค้าได้ทันที)</span>
+                      </h3>
+                      <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0 0' }}>
+                        เมื่อลูกค้าสั่งซื้อและโอนเงินแล้ว คุณสามารถกดปุ่มเปิดเว็บของเกมนั้นๆ แล้วก๊อปปี้ UID ลูกค้าไปวางเติมได้ทันที
+                      </p>
+                    </div>
+                    <span style={{ fontSize: '11px', backgroundColor: 'rgba(16,185,129,0.15)', color: '#34d399', padding: '4px 10px', borderRadius: '8px', border: '1px solid #10b981', fontWeight: 'bold' }}>
+                      ⚡ 9 เกมพร้อมใช้งาน
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+                    {Object.entries(officialGameTopupLinks).map(([key, item]) => (
+                      <div key={key} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>🎮 {item.name}</div>
+                          <div style={{ fontSize: '10px', color: '#38bdf8', marginTop: '2px' }}>ผู้ให้บริการ: {item.provider}</div>
+                          <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '1px' }}>{item.note}</div>
+                        </div>
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            backgroundColor: '#10b981',
+                            color: '#ffffff',
+                            padding: '7px 12px',
+                            borderRadius: '8px',
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            textDecoration: 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            boxShadow: '0 0 10px rgba(16,185,129,0.3)',
+                            flexShrink: 0
+                          }}
+                        >
+                          🔗 เปิดเว็บเติม ↗
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', border: '1.5px solid rgba(147,51,234,0.5)', overflow: 'hidden' }}>
                   <div onClick={() => setIsAdminOrdersOpen(!isAdminOrdersOpen)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none', padding: '20px 25px', backgroundColor: 'rgba(147, 51, 234, 0.15)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -4872,8 +5000,40 @@ export default function App() {
                                   <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
                                   <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 {ord.time}</span>
                                 </div>
-                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff' }}>{ord.game} <span style={{ color: '#c084fc', fontSize: '14px' }}>({ord.package})</span></div>
-                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>บัญชีทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> {ord.gameChar && <span style={{ color: '#34d399' }}>| ตัวละคร/UID: {ord.gameChar}</span>} | ยอดขาย: <b style={{ color: '#ffffff' }}>฿{ord.price.toLocaleString()}</b></div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                  <span>{ord.game}</span>
+                                  <span style={{ color: '#c084fc', fontSize: '14px' }}>({ord.package})</span>
+                                  {(() => {
+                                    const linkInfo = getTopupLinkForGame(ord.game);
+                                    if (linkInfo) {
+                                      return (
+                                        <a
+                                          href={linkInfo.url}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          style={{
+                                            backgroundColor: '#0284c7',
+                                            color: '#ffffff',
+                                            padding: '2px 8px',
+                                            borderRadius: '6px',
+                                            fontSize: '11px',
+                                            fontWeight: 'bold',
+                                            textDecoration: 'none',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '3px',
+                                            boxShadow: '0 0 8px rgba(2,132,199,0.3)'
+                                          }}
+                                          title={`คลิกเพื่อเปิดเว็บ ${linkInfo.provider} เพื่อเติมเกม ${linkInfo.name}`}
+                                        >
+                                          🚀 เปิดเว็บเติม {linkInfo.name} ↗
+                                        </a>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>บัญชีทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> {ord.gameChar && <span style={{ color: '#34d399', fontWeight: 'bold' }}>| UID ลูกค้า: {ord.gameChar}</span>} | ยอดขาย: <b style={{ color: '#ffffff' }}>฿{ord.price.toLocaleString()}</b></div>
                                 <div style={{ fontSize: '12px', color: '#f472b6', marginTop: '4px', fontWeight: 'bold' }}>💳 ช่องทางชำระเงิน: {ord.paymentMethod || 'Cyber Wallet (เครดิตร้าน)'}</div>
                               </div>
                               <div style={{ textAlign: 'right' }}>
