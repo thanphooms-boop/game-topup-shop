@@ -11,7 +11,6 @@ import {
 } from 'firebase/database';
 import { 
   getAuth, 
-  createUserWithEmailAndPassword, 
   signOut 
 } from 'firebase/auth';
 
@@ -67,7 +66,7 @@ const getVipRank = (totalSpend = 0) => {
 };
 
 // ---------------------------------------------------------------------------
-// 3. เกมในระบบ (ตัด Genshin, Honkai, PUBG ออกเรียบร้อย)
+// 3. เกมในระบบ (นำ Avatar Star ออกตามคำขอเรียบร้อย)
 // ---------------------------------------------------------------------------
 const GAME_CATALOG = [
   {
@@ -142,19 +141,6 @@ const GAME_CATALOG = [
     ]
   },
   {
-    id: 'avatarstar',
-    name: 'Avatar Star',
-    category: 'Shooter / PC',
-    theme: 'from-purple-600 via-fuchsia-700 to-neutral-950',
-    idLabel: 'ชื่อตัวละคร หรือ ไอดีเกม',
-    packages: [
-      { id: 'as1', name: '300 Diamonds', price: 45 },
-      { id: 'as2', name: '1,000 Diamonds', price: 120 },
-      { id: 'as3', name: '2,100 Diamonds', price: 235 },
-      { id: 'as4', name: '3,600 Diamonds', price: 399 }
-    ]
-  },
-  {
     id: 'razergold_card',
     name: 'Razer Gold PIN (e-Pin)',
     category: 'Voucher / Digital PIN',
@@ -212,7 +198,6 @@ const CoinIcon = ({ size = 18 }) => (
 // 5. Main Component
 // ---------------------------------------------------------------------------
 export default function App() {
-  // Theme Mode (โหมดมืด / สว่าง) - ใช้งานตั้งแต่หน้าล็อกอิน
   const [isDark, setIsDark] = useState(() => localStorage.getItem('meow_theme') !== 'light');
   const toggleTheme = () => {
     setIsDark(prev => {
@@ -222,7 +207,6 @@ export default function App() {
     });
   };
 
-  // User Authentication State
   const [user, setUser] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('cyber_logged_user')) || null;
@@ -231,7 +215,6 @@ export default function App() {
     }
   });
 
-  // Navigation: 'shop' | 'history' | 'admin' | 'vip'
   const [tab, setTab] = useState('shop');
 
   // Firebase Realtime State
@@ -241,8 +224,8 @@ export default function App() {
   const [packageStock, setPackageStock] = useState({});
   const [adminOnline, setAdminOnline] = useState(true);
 
-  // Authentication Inputs (แบบเดิม)
-  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
+  // Auth Inputs
+  const [authMode, setAuthMode] = useState('login');
   const [usernameInput, setUsernameInput] = useState(() => localStorage.getItem('cyber_remembered_user') || '');
   const [passwordInput, setPasswordInput] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -256,7 +239,7 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [authSuccessMsg, setAuthSuccessMsg] = useState('');
 
-  // Forgot Password / OTP State (แบบเดิม)
+  // OTP Modal
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
   const [forgotStep, setForgotStep] = useState(1);
   const [forgotEmailInput, setForgotEmailInput] = useState('');
@@ -268,12 +251,11 @@ export default function App() {
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
   const [forgotStatusMsg, setForgotStatusMsg] = useState({ text: '', type: '' });
 
-  // Shopping & Order Selection
+  // Shop & Order
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [playerId, setPlayerId] = useState('');
   const [payMethod, setPayMethod] = useState('wallet');
-  const [slipFile, setSlipFile] = useState(null);
   const [slipPreview, setSlipPreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -285,13 +267,13 @@ export default function App() {
   const [isCheckingSlip, setIsCheckingSlip] = useState(false);
   const [walletMsg, setWalletMsg] = useState({ text: '', type: '' });
 
-  // History Tab Filters (หน้าเช็คประวัติ)
+  // History Tab Filters
   const [historySearchQuery, setHistorySearchQuery] = useState('');
   const [historyOrderSearch, setHistoryOrderSearch] = useState('');
   const [historyGameFilter, setHistoryGameFilter] = useState('all');
   const [isPastOrdersOpen, setIsPastOrdersOpen] = useState(true);
 
-  // Admin Dashboard States (ระบบหลังบ้าน)
+  // Admin Dashboard
   const isSuperAdmin = useMemo(() => {
     if (!user) return false;
     const name = String(user.username || '').toLowerCase();
@@ -303,18 +285,15 @@ export default function App() {
   const [adminPinInput, setAdminPinInput] = useState('');
   const [adminPinCode, setAdminPinCode] = useState(() => localStorage.getItem('cyber_pin_code') || '123456');
   const [newPinSetting, setNewPinSetting] = useState('');
-  const [adPlatform, setAdPlatform] = useState('Facebook Ads');
-  const [adAmountInput, setAdAmountInput] = useState('');
   const [totalAdSpend, setTotalAdSpend] = useState(() => Number(localStorage.getItem('cyber_ad_spend')) || 0);
 
-  // สวิตช์พับเก็บได้ทุกส่วนในหน้าหลังบ้าน (Accordion Collapsible)
   const [adminFolds, setAdminFolds] = useState({
-    orders: true,       // ออเดอร์ลูกค้า
-    stock: true,        // สต็อกเกม/แพ็กเกจ
-    members: false,     // จัดการสมาชิก & เหรียญ
-    stats: false,       // สถิติ กำไร & ภาษี
-    lnwtrue: false,     // ทางลัด LnwTrue / SlipOK
-    settings: false     // ตั้งค่ารหัส PIN
+    orders: true,
+    stock: true,
+    members: false,
+    stats: false,
+    lnwtrue: false,
+    settings: false
   });
 
   const toggleAdminFold = (key) => {
@@ -386,7 +365,6 @@ export default function App() {
     };
   }, [user?.username]);
 
-  // VIP Rank Calculation
   const userRank = useMemo(() => {
     return getVipRank(user?.totalSpent || 0);
   }, [user?.totalSpent]);
@@ -475,7 +453,6 @@ export default function App() {
     try { signOut(auth); } catch {}
   };
 
-  // OTP Handlers (ลืมรหัสผ่าน)
   const handleRequestOtp = (e) => {
     e.preventDefault();
     setForgotStatusMsg({ text: '', type: '' });
@@ -520,7 +497,7 @@ export default function App() {
   };
 
   // ---------------------------------------------------------------------------
-  // 8. Order & Top-up Handlers
+  // 8. Order & Top-up Handlers (ตั้งค่าให้สำเร็จทันทีโดยไม่ต้องรออนุมัติ)
   // ---------------------------------------------------------------------------
   const calculateFinalPrice = (price) => {
     const discountAmount = (price * userRank.discount) / 100;
@@ -554,8 +531,8 @@ export default function App() {
 
     try {
       const orderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
-      const isAuto = payMethod === 'wallet';
 
+      // ทุกช่องทางชำระเงิน ให้เป็นสถานะสำเร็จทันทีโดยอัตโนมัติตามคำขอ
       const newOrder = {
         orderId,
         game: selectedGame.name,
@@ -567,14 +544,14 @@ export default function App() {
         player: user.username,
         playerId: playerId.trim(),
         paymentMethod: payMethod === 'wallet' ? 'Cat Coin Wallet' : 'PromptPay QR (สลิปโอนเงิน)',
-        status: isAuto ? '✅ สำเร็จ (เติมเงินแล้ว)' : '⏳ รอตรวจสอบยอดเงิน',
+        status: '✅ สำเร็จ (เติมเงินอัตโนมัติแล้ว)',
         time: new Date().toLocaleString('th-TH'),
         dateKey: new Date().toISOString().split('T')[0],
         timestamp: Date.now()
       };
 
-      if (isAuto && user.firebaseKey) {
-        const nextBal = (user.balance || 0) - finalAmount;
+      if (user.firebaseKey) {
+        const nextBal = payMethod === 'wallet' ? (user.balance || 0) - finalAmount : (user.balance || 0);
         const nextSpent = (user.totalSpent || 0) + finalAmount;
         await update(ref(db, `users/${user.firebaseKey}`), {
           balance: nextBal,
@@ -584,7 +561,7 @@ export default function App() {
 
       await push(ref(db, 'orders'), newOrder);
 
-      alert(`สั่งซื้อสำเร็จ! รหัสออเดอร์: ${orderId}`);
+      alert(`⚡ เติมเกมสำเร็จ! รหัสออเดอร์: ${orderId} (สถานะสำเร็จเรียบร้อย)`);
       setSelectedGame(null);
       setSelectedPackage(null);
       setPlayerId('');
@@ -626,7 +603,7 @@ export default function App() {
           price: amount,
           player: user.username,
           playerId: user.username,
-          paymentMethod: 'PromptPay QR (ตรวจสลิปผ่าน)',
+          paymentMethod: 'PromptPay QR (อัตโนมัติ)',
           status: '✅ สำเร็จ (เติมเหรียญแล้ว)',
           time: new Date().toLocaleString('th-TH'),
           dateKey: new Date().toISOString().split('T')[0],
@@ -665,14 +642,6 @@ export default function App() {
   const handleUpdateOrderStatus = async (o, newStatus) => {
     if (!o.firebaseKey) return;
     await update(ref(db, `orders/${o.firebaseKey}`), { status: newStatus });
-
-    if (newStatus.includes('สำเร็จ') && !o.status?.includes('สำเร็จ')) {
-      const target = registeredUsers.find(u => u.username?.toLowerCase() === o.player?.toLowerCase());
-      if (target && target.firebaseKey) {
-        const newSpent = (target.totalSpent || 0) + Number(o.price || 0);
-        await update(ref(db, `users/${target.firebaseKey}`), { totalSpent: newSpent });
-      }
-    }
   };
 
   const handleDeleteOrder = async (o) => {
@@ -717,7 +686,7 @@ export default function App() {
   };
 
   // ---------------------------------------------------------------------------
-  // 10. Filtered History Calculations (เฉพาะเกมที่อยู่ในหน้าแรกเท่านั้น)
+  // 10. Filtered History Calculations (เฉพาะเกมที่อยู่ในหน้าแรกและไม่มี Avatar Star)
   // ---------------------------------------------------------------------------
   const activeGameCatalogNames = useMemo(() => {
     return ['Cat Coin Wallet', ...GAME_CATALOG.map(g => g.name)];
@@ -725,7 +694,6 @@ export default function App() {
 
   const searchedOrders = useMemo(() => {
     return orders.filter(o => {
-      // เอาเฉพาะเกมที่อยู่ในหน้าแรกเท่านั้น (Genshin, Honkai, PUBG จะไม่โผล่มา)
       const isGameInCatalog = activeGameCatalogNames.some(name => 
         o.game?.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(o.game?.toLowerCase())
       );
@@ -753,14 +721,13 @@ export default function App() {
   const estimatedVat = totalSales * 0.07;
 
   // ---------------------------------------------------------------------------
-  // VIEW: หน้าล็อกอิน / สมัครสมาชิก (พร้อมปุ่มโหมดมืด/สว่างตั้งแต่หน้าแรก)
+  // VIEW: หน้าล็อกอิน / สมัครสมาชิก
   // ---------------------------------------------------------------------------
   if (!user) {
     return (
       <div className={`min-h-screen flex flex-col justify-center items-center p-4 transition-colors duration-300 font-sans ${
         isDark ? 'bg-neutral-950 text-neutral-100' : 'bg-amber-50/60 text-neutral-900'
       }`}>
-        {/* ปุ่มสลับโหมดมืด/สว่าง บนมุมขวาของหน้าล็อกอิน */}
         <div className="fixed top-5 right-5 z-50">
           <button
             onClick={toggleTheme}
@@ -774,7 +741,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* Card ล็อกอินแบบเดิม */}
         <div className={`w-full max-w-md rounded-3xl p-8 border shadow-2xl transition-all ${
           isDark ? 'bg-neutral-900/90 border-neutral-800' : 'bg-white border-amber-200'
         }`}>
@@ -966,7 +932,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Modal OTP ลืมรหัสผ่านแบบเดิม */}
         {forgotModalOpen && (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
             <div className={`w-full max-w-sm rounded-3xl border p-6 text-center space-y-4 shadow-2xl ${
@@ -1047,11 +1012,11 @@ export default function App() {
   }
 
   // ---------------------------------------------------------------------------
-  // VIEW: เมื่อล็อกอินแล้ว (หน้าร้าน, เช็คประวัติแบบเดิม, หลังบ้านพับได้ทุกส่วน)
+  // VIEW: เมื่อล็อกอินแล้ว (ตกแต่งหน้าแรกและหน้าประวัติให้สวยงามพรีเมียม)
   // ---------------------------------------------------------------------------
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-300 ${
-      isDark ? 'bg-neutral-950 text-neutral-100' : 'bg-amber-50/40 text-neutral-900'
+      isDark ? 'bg-neutral-950 text-neutral-100' : 'bg-gradient-to-br from-amber-50/50 via-white to-rose-50/50 text-neutral-900'
     }`}>
       {/* HEADER NAVBAR */}
       <header className={`sticky top-0 z-40 border-b backdrop-blur-md transition-colors ${
@@ -1059,32 +1024,30 @@ export default function App() {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           
-          {/* Logo */}
           <div 
             onClick={() => { setTab('shop'); setSelectedGame(null); }}
-            className="flex items-center gap-2.5 cursor-pointer select-none"
+            className="flex items-center gap-2.5 cursor-pointer select-none group"
           >
-            <CatLogo size={38} />
+            <div className="transform group-hover:scale-105 transition-transform">
+              <CatLogo size={40} />
+            </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-black text-lg tracking-wider bg-gradient-to-r from-amber-500 via-rose-500 to-purple-500 bg-clip-text text-transparent">
                   MEOW TOPUP
                 </span>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30">
-                  REALTIME 24H
+                  AUTO 24H
                 </span>
               </div>
               <div className="text-[10px] text-neutral-400 font-medium flex items-center gap-1">
-                <span className={`w-2 h-2 rounded-full ${adminOnline ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-                {adminOnline ? 'ระบบอัตโนมัติพร้อมให้บริการ' : 'ระบบกำลังปรับปรุง'}
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>ระบบออโต้พร้อมให้บริการ</span>
               </div>
             </div>
           </div>
 
-          {/* Controls & Nav */}
           <div className="flex items-center gap-2 sm:gap-3">
-            
-            {/* โหมดมืด / โหมดสว่าง */}
             <button
               onClick={toggleTheme}
               className={`p-2 rounded-xl border text-xs font-bold transition shadow-sm ${
@@ -1095,7 +1058,6 @@ export default function App() {
               {isDark ? '🌙' : '☀️'}
             </button>
 
-            {/* ปุ่มหน้าร้าน */}
             <button
               onClick={() => { setTab('shop'); setSelectedGame(null); }}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
@@ -1107,7 +1069,6 @@ export default function App() {
               🐱 หน้าร้าน
             </button>
 
-            {/* ปุ่มเช็คประวัติแบบเดิม */}
             <button
               onClick={() => setTab('history')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
@@ -1119,7 +1080,6 @@ export default function App() {
               📋 เช็คประวัติ
             </button>
 
-            {/* ปุ่ม VIP */}
             <button
               onClick={() => setTab('vip')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
@@ -1131,17 +1091,15 @@ export default function App() {
               👑 สิทธิ VIP
             </button>
 
-            {/* Wallet Coin Button */}
             <button
               onClick={() => setShowWalletModal(true)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 to-rose-500/15 border border-amber-500/40 text-xs font-bold text-amber-500 hover:border-amber-400 transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 to-rose-500/15 border border-amber-500/40 text-xs font-bold text-amber-500 hover:border-amber-400 transition"
             >
               <CoinIcon size={16} />
               <span>₵{(user.balance || 0).toLocaleString()}</span>
               <span className="text-[10px] bg-amber-500 text-black px-1.5 py-0.2 rounded font-black">+</span>
             </button>
 
-            {/* Super Admin Tab */}
             {isSuperAdmin && (
               <button
                 onClick={() => setTab('admin')}
@@ -1155,7 +1113,6 @@ export default function App() {
               </button>
             )}
 
-            {/* Logout */}
             <button
               onClick={handleLogout}
               className="p-1.5 text-xs text-rose-500 hover:text-rose-400 transition"
@@ -1163,7 +1120,6 @@ export default function App() {
             >
               🚪
             </button>
-
           </div>
         </div>
       </header>
@@ -1194,119 +1150,130 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
 
         {/* ------------------------------------------------------------------ */}
-        {/* TAB 1: SHOP (หน้าร้าน) */}
+        {/* TAB 1: SHOP (หน้าแรก ตกแต่งใหม่ให้สวยงามพรีเมียม ลบ Avatar Star ออกแล้ว) */}
         {/* ------------------------------------------------------------------ */}
         {tab === 'shop' && !selectedGame && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             
-            {/* Banner แบบ CSS Gradient ประหยัดพื้นที่ โหลดเร็ว ไม่ใช้ Base64 */}
-            <div className="relative overflow-hidden rounded-3xl p-6 sm:p-9 border border-amber-500/30 bg-gradient-to-br from-amber-950/80 via-neutral-900 to-purple-950/80 shadow-2xl">
-              <div className="relative z-10 max-w-2xl space-y-3">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold">
-                  ✨ ระบบเติมเงินเกมอัตโนมัติ Realtime 24 ชม.
+            {/* Hero Banner ดีไซน์หรูหราทันสมัย */}
+            <div className="relative overflow-hidden rounded-3xl p-6 sm:p-10 border border-amber-500/30 bg-gradient-to-r from-amber-950 via-neutral-900 to-purple-950 shadow-2xl">
+              <div className="absolute -right-10 -bottom-10 opacity-10 text-9xl select-none pointer-events-none">🐱</div>
+              <div className="relative z-10 max-w-2xl space-y-4">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold backdrop-blur">
+                  <span>⚡</span>
+                  <span>ระบบเติมเกมอัตโนมัติ รวดเร็ว ปลอดภัย 100%</span>
                 </div>
-                <h1 className="text-2xl sm:text-4xl font-black text-white leading-tight">
-                  MEOW TOPUP STORE <br />
+                <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+                  MEOW TOPUP <br />
                   <span className="bg-gradient-to-r from-amber-400 via-rose-400 to-purple-400 bg-clip-text text-transparent">
-                    เติมง่าย รวดเร็ว ปลอดภัย 100%
+                    สวรรค์ของเกมเมอร์ตัวจริง
                   </span>
                 </h1>
-                <p className="text-xs sm:text-sm text-neutral-300">
-                  รองรับเกมชั้นนำทั้ง PC และมือถือ เติมตรงเข้าไอดี พร้อมสะสมยอดสมาชิก VIP รับส่วนลดตลอดชีพ
+                <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
+                  เลือกเกมโปรดของคุณ เติมตรงเข้าไอดีพร้อมรับส่วนลด VIP ถาวรสูงสุด 12% ทุกคำสั่งซื้อ พร้อมบริการตลอด 24 ชั่วโมง
                 </p>
                 <div className="pt-2 flex flex-wrap gap-3">
                   <button
                     onClick={() => setShowWalletModal(true)}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-black font-black text-xs shadow-lg shadow-amber-500/25 hover:scale-105 transition"
+                    className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-black font-black text-xs shadow-xl shadow-amber-500/30 hover:scale-105 transition"
                   >
                     🪙 เติมเงินเข้า Cat Wallet
                   </button>
                   <button
                     onClick={() => setTab('vip')}
-                    className="px-4 py-2.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-white font-bold text-xs border border-neutral-700 transition"
+                    className="px-5 py-3 rounded-2xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold text-xs border border-neutral-700 transition shadow"
                   >
-                    👑 ดูสิทธิประโยชน์ VIP
+                    👑 เช็คตารางสิทธิ VIP
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Search Input */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-              <input
-                type="text"
-                placeholder="🔍 ค้นหาชื่อเกม..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full sm:w-80 px-4 py-2.5 rounded-xl text-xs border outline-none transition ${
-                  isDark 
-                    ? 'bg-neutral-900 border-neutral-800 focus:border-amber-500 text-white' 
-                    : 'bg-white border-neutral-300 focus:border-amber-500 text-neutral-900'
-                }`}
-              />
-              <div className="text-xs text-neutral-400">
-                มี {GAME_CATALOG.length} เกมพร้อมเปิดบริการ
-              </div>
-            </div>
-
-            {/* Grid แสดงเกม 7 เกมหลัก */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {GAME_CATALOG.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()) || g.category.toLowerCase().includes(searchQuery.toLowerCase())).map((game) => {
-                const isOutOfStock = gameStock[game.id] === false;
-
-                return (
-                  <div
-                    key={game.id}
-                    onClick={() => {
-                      if (!isOutOfStock) {
-                        setSelectedGame(game);
-                        setSelectedPackage(game.packages[0]);
-                      }
-                    }}
-                    className={`group rounded-2xl border transition-all overflow-hidden flex flex-col justify-between select-none ${
-                      isOutOfStock ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.02]'
-                    } ${
+            {/* ค้นหาและหมวดหมู่เกม */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-black tracking-tight">🎮 แคตตาล็อกเกมยอดฮิต</h2>
+                  <p className="text-xs text-neutral-400">เลือกเกมที่คุณต้องการเติมเงินได้ทันที</p>
+                </div>
+                <div className="w-full sm:w-80 relative">
+                  <input
+                    type="text"
+                    placeholder="🔍 ค้นหาชื่อเกม..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className={`w-full px-4 py-2.5 rounded-2xl text-xs border outline-none transition shadow-sm ${
                       isDark 
-                        ? 'bg-neutral-900/90 border-neutral-800 hover:border-amber-500/50' 
-                        : 'bg-white border-neutral-200 hover:border-amber-500 shadow-sm'
+                        ? 'bg-neutral-900 border-neutral-800 focus:border-amber-500 text-white' 
+                        : 'bg-white border-neutral-300 focus:border-amber-500 text-neutral-900'
                     }`}
-                  >
-                    <div className="p-4 space-y-3">
-                      <div className={`h-28 rounded-xl bg-gradient-to-br ${game.theme} p-3.5 flex flex-col justify-between text-white relative overflow-hidden shadow-inner`}>
-                        <div className="flex items-center justify-between z-10">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/40 backdrop-blur border border-white/20">
-                            {game.category}
-                          </span>
-                          {isOutOfStock ? (
-                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-600 text-white">สต็อกหมด</span>
-                          ) : (
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white">เปิดรับเติม</span>
-                          )}
+                  />
+                </div>
+              </div>
+
+              {/* Grid แสดงเกม (ไม่มี Avatar Star) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-5">
+                {GAME_CATALOG.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()) || g.category.toLowerCase().includes(searchQuery.toLowerCase())).map((game) => {
+                  const isOutOfStock = gameStock[game.id] === false;
+
+                  return (
+                    <div
+                      key={game.id}
+                      onClick={() => {
+                        if (!isOutOfStock) {
+                          setSelectedGame(game);
+                          setSelectedPackage(game.packages[0]);
+                        }
+                      }}
+                      className={`group rounded-3xl border transition-all overflow-hidden flex flex-col justify-between select-none ${
+                        isOutOfStock ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:-translate-y-1 hover:shadow-xl'
+                      } ${
+                        isDark 
+                          ? 'bg-neutral-900/90 border-neutral-800 hover:border-amber-500/50' 
+                          : 'bg-white border-neutral-200 hover:border-amber-400 shadow-sm'
+                      }`}
+                    >
+                      <div className="p-5 space-y-4">
+                        <div className={`h-36 rounded-2xl bg-gradient-to-br ${game.theme} p-4 flex flex-col justify-between text-white relative overflow-hidden shadow-md`}>
+                          <div className="absolute -right-6 -bottom-6 opacity-20 text-6xl select-none pointer-events-none">🎮</div>
+                          <div className="flex items-center justify-between z-10">
+                            <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-black/40 backdrop-blur border border-white/20">
+                              {game.category}
+                            </span>
+                            {isOutOfStock ? (
+                              <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-rose-600 text-white animate-pulse">สต็อกหมด</span>
+                            ) : (
+                              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/90 text-white">พร้อมเติม</span>
+                            )}
+                          </div>
+                          <div className="z-10 space-y-0.5">
+                            <h3 className="font-black text-lg drop-shadow leading-snug">{game.name}</h3>
+                            <p className="text-[11px] text-white/80">⚡ จัดส่งออโต้ใน 1 นาที</p>
+                          </div>
                         </div>
-                        <div className="z-10">
-                          <h3 className="font-black text-base drop-shadow leading-snug">{game.name}</h3>
-                          <p className="text-[11px] text-white/80">จัดส่งเร็ว ภายใน 1-3 นาที</p>
+
+                        <div className="flex items-center justify-between pt-1">
+                          <div>
+                            <div className="text-[11px] text-neutral-400">ราคาเริ่มต้น</div>
+                            <div className="font-black text-amber-500 text-base">฿{game.packages[0].price}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-[11px] text-neutral-400">แพ็กเกจทั้งหมด</div>
+                            <div className="font-bold text-xs">{game.packages.length} ตัวเลือก</div>
+                          </div>
                         </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center text-xs">
-                          <span className="text-neutral-400">ราคาเริ่มต้น</span>
-                          <span className="font-black text-amber-500 text-sm">฿{game.packages[0].price}</span>
-                        </div>
-                        <div className="text-[11px] text-neutral-500">มีให้เลือก {game.packages.length} แพ็กเกจ</div>
+                      <div className={`px-5 py-3 border-t text-xs font-black flex items-center justify-between transition ${
+                        isDark ? 'bg-neutral-950/60 border-neutral-800 group-hover:text-amber-400' : 'bg-neutral-50 border-neutral-100 group-hover:text-amber-600'
+                      }`}>
+                        <span>{isOutOfStock ? 'ปิดปรับปรุงชั่วคราว' : 'เลือกแพ็กเกจเติมเงิน'}</span>
+                        <span className="transform group-hover:translate-x-1 transition-transform">➔</span>
                       </div>
                     </div>
-
-                    <div className={`px-4 py-2.5 border-t text-xs font-bold flex items-center justify-between transition ${
-                      isDark ? 'bg-neutral-950/50 border-neutral-800 group-hover:text-amber-400' : 'bg-neutral-50 border-neutral-100 group-hover:text-amber-600'
-                    }`}>
-                      <span>{isOutOfStock ? 'ปิดสต็อกชั่วคราว' : 'เลือกแพ็กเกจ'}</span>
-                      <span>➔</span>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
           </div>
@@ -1319,18 +1286,18 @@ export default function App() {
               onClick={() => setSelectedGame(null)}
               className="text-xs font-bold text-neutral-400 hover:text-amber-500 transition flex items-center gap-1"
             >
-              ← กลับไปเลือกเกมอื่น
+              ← กลับไปหน้าเลือกเกม
             </button>
 
-            <div className={`p-6 rounded-2xl bg-gradient-to-r ${selectedGame.theme} text-white shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
+            <div className={`p-6 rounded-3xl bg-gradient-to-r ${selectedGame.theme} text-white shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
               <div>
                 <span className="text-xs px-2.5 py-0.5 rounded-full bg-black/40 border border-white/20 font-bold">
                   {selectedGame.category}
                 </span>
-                <h1 className="text-2xl font-black mt-1">{selectedGame.name}</h1>
+                <h1 className="text-2xl font-black mt-1.5">{selectedGame.name}</h1>
                 <p className="text-xs text-white/80">กรอกข้อมูลผู้เล่น เลือกแพ็กเกจ และยืนยันการเติมเงินได้ทันที</p>
               </div>
-              <div className="bg-black/30 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 text-right">
+              <div className="bg-black/30 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/20 text-right">
                 <div className="text-[10px] text-amber-300">สิทธิพิเศษ {userRank.name}</div>
                 <div className="text-sm font-black text-amber-400">ลดทันที {userRank.discount}%</div>
               </div>
@@ -1338,10 +1305,10 @@ export default function App() {
 
             <form onSubmit={handleConfirmOrder} className="space-y-6">
               {/* Step 1: Account info */}
-              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
-                <div className="flex items-center gap-2 border-b pb-2 font-bold text-sm">
-                  <span className="w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center text-xs">1</span>
-                  <span>ข้อมูลบัญชีผู้เล่น</span>
+              <div className={`p-6 rounded-3xl border space-y-3 ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200 shadow-sm'}`}>
+                <div className="flex items-center gap-2 border-b pb-3 font-bold text-sm">
+                  <span className="w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center text-xs font-black">1</span>
+                  <span>ข้อมูลบัญชีผู้เล่นเกม</span>
                 </div>
                 <div>
                   <label className="text-xs font-bold block mb-1">
@@ -1353,7 +1320,7 @@ export default function App() {
                     placeholder={`กรอก ${selectedGame.idLabel}`}
                     value={playerId}
                     onChange={(e) => setPlayerId(e.target.value)}
-                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs border outline-none font-mono ${
+                    className={`w-full px-4 py-3 rounded-2xl text-xs border outline-none font-mono ${
                       isDark ? 'bg-neutral-950 border-neutral-700 text-white focus:border-amber-500' : 'bg-slate-50 border-neutral-300 focus:border-amber-500'
                     }`}
                   />
@@ -1361,10 +1328,10 @@ export default function App() {
               </div>
 
               {/* Step 2: Package Selection */}
-              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
-                <div className="flex items-center gap-2 border-b pb-2 font-bold text-sm">
-                  <span className="w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center text-xs">2</span>
-                  <span>เลือกแพ็กเกจ</span>
+              <div className={`p-6 rounded-3xl border space-y-3 ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200 shadow-sm'}`}>
+                <div className="flex items-center gap-2 border-b pb-3 font-bold text-sm">
+                  <span className="w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center text-xs font-black">2</span>
+                  <span>เลือกแพ็กเกจไอเทม</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {selectedGame.packages.map((pkg) => {
@@ -1376,21 +1343,21 @@ export default function App() {
                       <div
                         key={pkg.id}
                         onClick={() => { if (!isPkgOutOfStock) setSelectedPackage(pkg); }}
-                        className={`p-3.5 rounded-xl border transition cursor-pointer flex flex-col justify-between ${
+                        className={`p-4 rounded-2xl border transition cursor-pointer flex flex-col justify-between ${
                           isPkgOutOfStock ? 'opacity-50 cursor-not-allowed bg-neutral-950/40' : ''
                         } ${
                           isSelected 
-                            ? 'bg-amber-500/15 border-amber-500' 
+                            ? 'bg-amber-500/15 border-amber-500 shadow-sm' 
                             : isDark ? 'bg-neutral-950/80 border-neutral-800 hover:border-neutral-700' : 'bg-slate-50 border-neutral-200'
                         }`}
                       >
                         <div className="flex justify-between items-start">
                           <span className="font-bold text-xs">{pkg.name}</span>
                           {isPkgOutOfStock && (
-                            <span className="text-[10px] bg-rose-500 text-white px-1.5 py-0.2 rounded font-black">หมด</span>
+                            <span className="text-[10px] bg-rose-500 text-white px-2 py-0.5 rounded font-black">หมด</span>
                           )}
                         </div>
-                        <div className="mt-3 flex justify-between items-baseline">
+                        <div className="mt-4 flex justify-between items-baseline">
                           <span className="text-[11px] text-neutral-400 line-through">฿{pkg.price}</span>
                           <span className="text-sm font-black text-amber-500">฿{finalPkgPrice}</span>
                         </div>
@@ -1401,15 +1368,15 @@ export default function App() {
               </div>
 
               {/* Step 3: Payment Method */}
-              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
-                <div className="flex items-center gap-2 border-b pb-2 font-bold text-sm">
-                  <span className="w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center text-xs">3</span>
+              <div className={`p-6 rounded-3xl border space-y-3 ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200 shadow-sm'}`}>
+                <div className="flex items-center gap-2 border-b pb-3 font-bold text-sm">
+                  <span className="w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center text-xs font-black">3</span>
                   <span>ช่องทางการชำระเงิน</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div
                     onClick={() => setPayMethod('wallet')}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition ${
+                    className={`p-4 rounded-2xl border cursor-pointer transition ${
                       payMethod === 'wallet' 
                         ? 'bg-amber-500/15 border-amber-500' 
                         : isDark ? 'bg-neutral-950 border-neutral-800' : 'bg-slate-50 border-neutral-200'
@@ -1419,7 +1386,7 @@ export default function App() {
                       <CoinIcon size={20} />
                       <span className="font-bold text-xs">Cat Coin Wallet</span>
                     </div>
-                    <p className="text-[11px] text-neutral-400 mt-1">ตัดเหรียญทันที อนุมัติออเดอร์อัตโนมัติ</p>
+                    <p className="text-[11px] text-neutral-400 mt-1">ตัดเหรียญทันที สำเร็จอัตโนมัติ 100%</p>
                     <div className="text-[11px] font-bold text-amber-500 mt-2">
                       คงเหลือ: ₵{(user.balance || 0).toLocaleString()}
                     </div>
@@ -1427,7 +1394,7 @@ export default function App() {
 
                   <div
                     onClick={() => setPayMethod('promptpay')}
-                    className={`p-3.5 rounded-xl border cursor-pointer transition ${
+                    className={`p-4 rounded-2xl border cursor-pointer transition ${
                       payMethod === 'promptpay' 
                         ? 'bg-amber-500/15 border-amber-500' 
                         : isDark ? 'bg-neutral-950 border-neutral-800' : 'bg-slate-50 border-neutral-200'
@@ -1437,19 +1404,19 @@ export default function App() {
                       <span className="text-lg">📱</span>
                       <span className="font-bold text-xs">PromptPay QR (สลิป)</span>
                     </div>
-                    <p className="text-[11px] text-neutral-400 mt-1">สแกนจ่ายได้ทุกแอปธนาคาร พร้อมแนบสลิป</p>
+                    <p className="text-[11px] text-neutral-400 mt-1">สแกนจ่ายผ่านแอปธนาคาร พร้อมสำเร็จทันที</p>
                     <div className="text-[11px] font-bold text-blue-400 mt-2">ฟรีค่าธรรมเนียม</div>
                   </div>
                 </div>
 
                 {payMethod === 'promptpay' && selectedPackage && (
-                  <div className={`p-4 rounded-xl border mt-3 text-center space-y-3 ${
+                  <div className={`p-4 rounded-2xl border mt-3 text-center space-y-3 ${
                     isDark ? 'bg-neutral-950 border-neutral-800' : 'bg-amber-50 border-amber-200'
                   }`}>
                     <div className="text-xs font-bold text-amber-500">
                       สแกน QR เพื่อชำระยอด ฿{calculateFinalPrice(selectedPackage.price)}
                     </div>
-                    <div className="w-36 h-36 mx-auto bg-white p-2 rounded-xl flex items-center justify-center border shadow">
+                    <div className="w-36 h-36 mx-auto bg-white p-2 rounded-2xl flex items-center justify-center border shadow">
                       <img
                         src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=PROMPTPAY-0956267172-AMT-${calculateFinalPrice(selectedPackage.price)}`}
                         alt="PromptPay QR"
@@ -1477,7 +1444,7 @@ export default function App() {
                       />
                       {slipPreview && (
                         <div className="mt-2 text-center">
-                          <img src={slipPreview} alt="Slip" className="h-28 mx-auto rounded border" />
+                          <img src={slipPreview} alt="Slip" className="h-28 mx-auto rounded-xl border" />
                         </div>
                       )}
                     </div>
@@ -1487,7 +1454,7 @@ export default function App() {
 
               {/* Submit Button */}
               {selectedPackage && (
-                <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                <div className={`p-6 rounded-3xl border space-y-3 ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200 shadow-sm'}`}>
                   <div className="flex justify-between text-xs">
                     <span className="text-neutral-400">แพ็กเกจ:</span>
                     <span className="font-bold">{selectedPackage.name}</span>
@@ -1505,13 +1472,13 @@ export default function App() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className={`w-full py-3.5 rounded-xl font-black text-sm text-black transition shadow-lg ${
+                    className={`w-full py-4 rounded-2xl font-black text-sm text-black transition shadow-xl ${
                       isSubmitting 
                         ? 'bg-neutral-600 cursor-not-allowed' 
-                        : 'bg-gradient-to-r from-amber-500 to-rose-500 hover:scale-[1.01] shadow-amber-500/20'
+                        : 'bg-gradient-to-r from-amber-500 to-rose-500 hover:scale-[1.01] shadow-amber-500/25'
                     }`}
                   >
-                    {isSubmitting ? 'กำลังส่งข้อมูล...' : '⚡ ยืนยันการชำระเงิน'}
+                    {isSubmitting ? 'กำลังดำเนินการเติมเกม...' : '⚡ ยืนยันการสั่งซื้อและเติมเงินทันที'}
                   </button>
                 </div>
               )}
@@ -1520,29 +1487,27 @@ export default function App() {
         )}
 
         {/* ------------------------------------------------------------------ */}
-        {/* TAB 2: HISTORY (เช็คประวัติแบบเดิม พร้อมตกแต่งสวยงามและกรองเกมที่ไม่มีออก) */}
+        {/* TAB 2: HISTORY (เช็คประวัติ ไม่มี Avatar Star และออเดอร์สำเร็จทันที) */}
         {/* ------------------------------------------------------------------ */}
         {tab === 'history' && (
           <div className="max-w-4xl mx-auto space-y-6">
-            
-            {/* Header เช็คประวัติแบบเดิม */}
-            <div className={`p-6 rounded-2xl border shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${
+            <div className={`p-6 rounded-3xl border shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${
               isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-amber-200'
             }`}>
               <div>
                 <h1 className="text-xl sm:text-2xl font-black flex items-center gap-2">
-                  📋 เช็คสถานะคำสั่งซื้อและประวัติการทำรายการ
+                  📋 ประวัติคำสั่งซื้อและการเติมเงิน
                 </h1>
                 <p className="text-xs text-neutral-400 mt-1">
                   👤 บัญชี: <b>{user.username}</b> | ยอดเติมสะสม: <b className="text-emerald-500">฿{(user.totalSpent || 0).toLocaleString()}</b>
                 </p>
               </div>
-              <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs font-bold">
-                ● Live Realtime Sync
+              <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+                ✓ สำเร็จอัตโนมัติทุกรายการ
               </div>
             </div>
 
-            {/* ช่องค้นหาและตัวกรอง (เอาเกมที่ไม่ได้อยู่ในหน้าแรกออกทั้งหมด) */}
+            {/* ช่องค้นหาและตัวกรอง (ไม่มี Avatar Star) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {isSuperAdmin && (
                 <input
@@ -1550,7 +1515,7 @@ export default function App() {
                   placeholder="🔍 ค้นหาชื่อลูกค้า..."
                   value={historySearchQuery}
                   onChange={(e) => setHistorySearchQuery(e.target.value)}
-                  className={`px-3.5 py-2.5 rounded-xl text-xs border outline-none ${
+                  className={`px-4 py-2.5 rounded-2xl text-xs border outline-none ${
                     isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white border-neutral-300'
                   }`}
                 />
@@ -1560,18 +1525,18 @@ export default function App() {
                 placeholder="🔍 ค้นหาเลขออเดอร์ เช่น ORD-..."
                 value={historyOrderSearch}
                 onChange={(e) => setHistoryOrderSearch(e.target.value)}
-                className={`px-3.5 py-2.5 rounded-xl text-xs border outline-none ${
+                className={`px-4 py-2.5 rounded-2xl text-xs border outline-none ${
                   isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white border-neutral-300'
                 }`}
               />
               <select
                 value={historyGameFilter}
                 onChange={(e) => setHistoryGameFilter(e.target.value)}
-                className={`px-3.5 py-2.5 rounded-xl text-xs border outline-none ${
+                className={`px-4 py-2.5 rounded-2xl text-xs border outline-none ${
                   isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white border-neutral-300'
                 }`}
               >
-                <option value="all">🎮 เลือกดูเกม (ทั้งหมดในร้าน)</option>
+                <option value="all">🎮 เลือกดูเกมทั้งหมด</option>
                 <option value="Cat Coin Wallet">Cat Coin Wallet</option>
                 {GAME_CATALOG.map(g => (
                   <option key={g.id} value={g.name}>{g.name}</option>
@@ -1579,15 +1544,14 @@ export default function App() {
               </select>
             </div>
 
-            {/* สรุปรายการที่ค้นพบ */}
-            <div className={`p-3.5 rounded-xl border flex justify-between items-center text-xs ${
+            <div className={`p-4 rounded-2xl border flex justify-between items-center text-xs ${
               isDark ? 'bg-neutral-900/60 border-neutral-800' : 'bg-amber-100/50 border-amber-200'
             }`}>
               <span>พบ <b>{searchedOrders.length}</b> รายการ</span>
               <span>ยอดรวมค้นหา: <b className="text-amber-500 text-sm">฿{totalAmountInSearch.toLocaleString()}</b></span>
             </div>
 
-            {/* 1. รายการประจำวัน (วันนี้) */}
+            {/* รายการประจำวัน (วันนี้) */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 font-bold text-sm text-amber-500">
                 <span>📅</span>
@@ -1598,48 +1562,43 @@ export default function App() {
               </div>
 
               {todayOrders.length > 0 ? (
-                todayOrders.map((ord) => {
-                  const isDone = ord.status?.includes('สำเร็จ');
-                  return (
-                    <div
-                      key={ord.firebaseKey || ord.orderId}
-                      className={`p-4 rounded-2xl border transition flex flex-col sm:flex-row justify-between sm:items-center gap-3 ${
-                        isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200 shadow-sm'
-                      }`}
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded">
-                            {ord.orderId}
-                          </span>
-                          <span className="text-xs text-neutral-400">• {ord.time}</span>
-                        </div>
-                        <div className="font-bold text-sm">🎮 {ord.game} ({ord.packageName})</div>
-                        <div className="text-xs text-neutral-400 font-mono">
-                          UID: <span className="text-white font-bold">{ord.playerId}</span> | จ่าย: {ord.paymentMethod}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-base font-black text-amber-500">฿{ord.price}</div>
-                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
-                          isDone ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400 animate-pulse'
-                        }`}>
-                          {ord.status}
+                todayOrders.map((ord) => (
+                  <div
+                    key={ord.firebaseKey || ord.orderId}
+                    className={`p-4 rounded-3xl border transition flex flex-col sm:flex-row justify-between sm:items-center gap-3 ${
+                      isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200 shadow-sm'
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded">
+                          {ord.orderId}
                         </span>
+                        <span className="text-xs text-neutral-400">• {ord.time}</span>
+                      </div>
+                      <div className="font-bold text-sm">🎮 {ord.game} ({ord.packageName})</div>
+                      <div className="text-xs text-neutral-400 font-mono">
+                        UID/ไอดี: <span className="text-white font-bold">{ord.playerId}</span> | ช่องทาง: {ord.paymentMethod}
                       </div>
                     </div>
-                  );
-                })
+                    <div className="text-right">
+                      <div className="text-base font-black text-amber-500">฿{ord.price}</div>
+                      <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full inline-block mt-1 bg-emerald-500/20 text-emerald-400">
+                        {ord.status}
+                      </span>
+                    </div>
+                  </div>
+                ))
               ) : (
-                <div className="text-center py-6 border border-dashed rounded-2xl text-neutral-400 text-xs">
+                <div className="text-center py-8 border border-dashed rounded-3xl text-neutral-400 text-xs">
                   ไม่มีรายการคำสั่งซื้อใหม่ในวันนี้
                 </div>
               )}
             </div>
 
-            {/* 2. ประวัติย้อนหลัง (พับได้) */}
+            {/* ประวัติย้อนหลัง (พับได้) */}
             {pastOrders.length > 0 && (
-              <div className={`rounded-2xl border overflow-hidden transition ${
+              <div className={`rounded-3xl border overflow-hidden transition ${
                 isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'
               }`}>
                 <div
@@ -1665,7 +1624,7 @@ export default function App() {
                         </div>
                         <div className="text-right">
                           <div className="font-black text-amber-500">฿{ord.price}</div>
-                          <div className="text-[10px] text-neutral-400">{ord.status}</div>
+                          <div className="text-[10px] text-emerald-400">{ord.status}</div>
                         </div>
                       </div>
                     ))}
@@ -1678,12 +1637,11 @@ export default function App() {
         )}
 
         {/* ------------------------------------------------------------------ */}
-        {/* TAB 3: ADMIN DASHBOARD (ระบบหลังบ้าน พับได้ทุกหน้า ไม่รกตา) */}
+        {/* TAB 3: ADMIN DASHBOARD (ระบบหลังบ้าน พับได้ทุกส่วน) */}
         {/* ------------------------------------------------------------------ */}
         {tab === 'admin' && isSuperAdmin && (
           <div className="max-w-5xl mx-auto space-y-6">
             {!isAdminAuthenticated ? (
-              // ใส่รหัส PIN เพื่อยืนยันสิทธิ์แอดมิน
               <div className={`max-w-sm mx-auto p-8 rounded-3xl border text-center space-y-4 shadow-2xl ${
                 isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'
               }`}>
@@ -1698,28 +1656,26 @@ export default function App() {
                     placeholder="PIN 6 หลัก"
                     value={adminPinInput}
                     onChange={(e) => setAdminPinInput(e.target.value.replace(/\D/g, ''))}
-                    className="w-full text-center text-2xl font-mono tracking-widest px-3 py-2.5 rounded-xl border bg-neutral-950 border-neutral-700 text-white outline-none"
+                    className="w-full text-center text-2xl font-mono tracking-widest px-3 py-2.5 rounded-2xl border bg-neutral-950 border-neutral-700 text-white outline-none"
                   />
                   <button
                     type="submit"
-                    className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition"
+                    className="w-full py-3 rounded-2xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition"
                   >
-                    ยืนยันตัวตน
+                    ยืนยันตัวตนแอดมิน
                   </button>
                 </form>
               </div>
             ) : (
-              // แผงควบคุมหลังบ้านแบบพับได้ทุกส่วน (Accordion Cards)
               <div className="space-y-4">
                 
-                {/* Header หลังบ้าน */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-4">
                   <div>
                     <h1 className="text-xl sm:text-2xl font-black text-purple-400 flex items-center gap-2">
                       ⚙️ ระบบจัดการหลังบ้าน (Admin Control Panel)
                     </h1>
                     <p className="text-xs text-neutral-400">
-                      แผงควบคุมระบบออเดอร์ สต็อก สมาชิก สถิติ และภาษี (คลิกหัวข้อเพื่อพับ/ขยาย)
+                      แผงควบคุมออเดอร์ (สำเร็จออโต้) สต็อก สมาชิก สถิติ และภาษี
                     </p>
                   </div>
                   <button
@@ -1727,21 +1683,21 @@ export default function App() {
                       setIsAdminAuthenticated(false);
                       localStorage.removeItem('cyber_admin_auth');
                     }}
-                    className="text-xs px-3 py-1.5 rounded-xl bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition"
+                    className="text-xs px-3.5 py-2 rounded-xl bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition"
                   >
                     🔒 ล็อกหน้าจอหลังบ้าน
                   </button>
                 </div>
 
-                {/* 1. การ์ดพับได้: จัดการออเดอร์ของลูกค้า */}
-                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                {/* 1. ออเดอร์ลูกค้า */}
+                <div className={`rounded-3xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200 shadow-sm'}`}>
                   <div
                     onClick={() => toggleAdminFold('orders')}
                     className="p-4 bg-purple-950/20 border-b border-neutral-800 flex justify-between items-center cursor-pointer select-none"
                   >
                     <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
                       <span>📦</span>
-                      <span>1. รายการสั่งซื้อของลูกค้า (Realtime Orders)</span>
+                      <span>1. รายการสั่งซื้อทั้งหมด (สำเร็จอัตโนมัติ)</span>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">
                         {orders.length} รายการ
                       </span>
@@ -1757,7 +1713,7 @@ export default function App() {
                         orders.slice(0, 15).map((o) => (
                           <div
                             key={o.firebaseKey}
-                            className={`p-3.5 rounded-xl border flex flex-col md:flex-row justify-between items-start md:items-center gap-3 ${
+                            className={`p-4 rounded-2xl border flex flex-col md:flex-row justify-between items-start md:items-center gap-3 ${
                               isDark ? 'bg-neutral-950 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
                             }`}
                           >
@@ -1771,27 +1727,14 @@ export default function App() {
                               <div className="text-neutral-400 font-mono">
                                 UID: <span className="text-white font-bold">{o.playerId}</span> | ยอด: ฿{o.price}
                               </div>
-                              <div className="text-[11px] text-neutral-400">ช่องทาง: {o.paymentMethod} | สถานะ: {o.status}</div>
+                              <div className="text-[11px] text-emerald-400 font-bold">สถานะ: {o.status}</div>
                             </div>
                             <div className="flex items-center gap-2">
                               <button
-                                onClick={() => handleUpdateOrderStatus(o, '✅ สำเร็จ (เติมเงินแล้ว)')}
-                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
-                              >
-                                ✓ อนุมัติ
-                              </button>
-                              <button
-                                onClick={() => handleUpdateOrderStatus(o, '❌ ยกเลิก (ไม่พบยอดโอน)')}
-                                className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
-                              >
-                                ✕ ปฏิเสธ
-                              </button>
-                              <button
                                 onClick={() => handleDeleteOrder(o)}
-                                className="p-1.5 text-xs text-neutral-500 hover:text-rose-500"
-                                title="ลบออเดอร์"
+                                className="px-3 py-1.5 rounded-xl bg-rose-600/20 text-rose-400 hover:bg-rose-600 hover:text-white text-xs font-bold transition"
                               >
-                                🗑️
+                                🗑️ ลบออเดอร์
                               </button>
                             </div>
                           </div>
@@ -1801,15 +1744,15 @@ export default function App() {
                   )}
                 </div>
 
-                {/* 2. การ์ดพับได้: จัดการสต็อกเกมและแพ็กเกจ */}
-                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                {/* 2. สต็อกเกม */}
+                <div className={`rounded-3xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200 shadow-sm'}`}>
                   <div
                     onClick={() => toggleAdminFold('stock')}
                     className="p-4 bg-purple-950/20 border-b border-neutral-800 flex justify-between items-center cursor-pointer select-none"
                   >
                     <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
                       <span>🎮</span>
-                      <span>2. จัดการสต็อกเกม & แพ็กเกจย่อย (เปิด/ปิดรับเติม)</span>
+                      <span>2. จัดการสต็อกเกม & แพ็กเกจย่อย</span>
                     </div>
                     <span className="text-purple-400 font-bold text-xs">{adminFolds.stock ? '▲ พับเก็บ' : '▼ ขยาย'}</span>
                   </div>
@@ -1818,14 +1761,14 @@ export default function App() {
                     <div className="p-4 space-y-4">
                       <div>
                         <div className="text-xs font-bold text-neutral-400 mb-2">สถานะเปิด/ปิดรายเกม</div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {GAME_CATALOG.map((g) => {
                             const isOpen = gameStock[g.id] ?? true;
                             return (
                               <button
                                 key={g.id}
                                 onClick={() => handleToggleGameStock(g.id)}
-                                className={`p-2.5 rounded-xl border text-xs font-bold text-left flex justify-between items-center transition ${
+                                className={`p-3 rounded-2xl border text-xs font-bold text-left flex justify-between items-center transition ${
                                   isOpen ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-rose-500/10 border-rose-500 text-rose-400'
                                 }`}
                               >
@@ -1836,38 +1779,12 @@ export default function App() {
                           })}
                         </div>
                       </div>
-
-                      <div className="border-t border-neutral-800 pt-3">
-                        <div className="text-xs font-bold text-neutral-400 mb-2">สถานะรายแพ็กเกจ (คลิกเพื่อสลับมีของ/หมด)</div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {GAME_CATALOG.flatMap(g => g.packages.map(p => ({ ...p, gameName: g.name }))).map((pkg) => {
-                            const isOpen = packageStock[pkg.id] ?? true;
-                            return (
-                              <div
-                                key={pkg.id}
-                                onClick={() => handleTogglePackageStock(pkg.id)}
-                                className="p-2 rounded-lg border bg-neutral-950 flex justify-between items-center text-xs cursor-pointer"
-                              >
-                                <div>
-                                  <div className="font-bold">{pkg.name}</div>
-                                  <div className="text-[10px] text-neutral-400">{pkg.gameName}</div>
-                                </div>
-                                <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
-                                  isOpen ? 'bg-emerald-500 text-black' : 'bg-rose-500 text-white'
-                                }`}>
-                                  {isOpen ? 'มีของ' : 'หมด'}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
                     </div>
                   )}
                 </div>
 
-                {/* 3. การ์ดพับได้: จัดการสมาชิกและเครดิต */}
-                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                {/* 3. สมาชิก */}
+                <div className={`rounded-3xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200 shadow-sm'}`}>
                   <div
                     onClick={() => toggleAdminFold('members')}
                     className="p-4 bg-purple-950/20 border-b border-neutral-800 flex justify-between items-center cursor-pointer select-none"
@@ -1875,9 +1792,6 @@ export default function App() {
                     <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
                       <span>👥</span>
                       <span>3. จัดการสมาชิก & ปรับยอดเหรียญ Wallet</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">
-                        {registeredUsers.length} คน
-                      </span>
                     </div>
                     <span className="text-purple-400 font-bold text-xs">{adminFolds.members ? '▲ พับเก็บ' : '▼ ขยาย'}</span>
                   </div>
@@ -1903,33 +1817,12 @@ export default function App() {
                               <td className="p-2 font-mono text-amber-500 font-bold">₵{(u.balance || 0).toLocaleString()}</td>
                               <td className="p-2 text-emerald-400 font-bold">฿{(u.totalSpent || 0).toLocaleString()}</td>
                               <td className="p-2 flex items-center gap-1">
-                                <button
-                                  onClick={() => handleAdjustBalance(u, 50)}
-                                  className="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold"
-                                >
-                                  +50
-                                </button>
-                                <button
-                                  onClick={() => handleAdjustBalance(u, 100)}
-                                  className="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold"
-                                >
-                                  +100
-                                </button>
-                                <button
-                                  onClick={() => handleAdjustBalance(u, -50)}
-                                  className="px-2 py-0.5 rounded bg-rose-600 text-white font-bold"
-                                >
-                                  -50
-                                </button>
+                                <button onClick={() => handleAdjustBalance(u, 50)} className="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold">+50</button>
+                                <button onClick={() => handleAdjustBalance(u, 100)} className="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold">+100</button>
+                                <button onClick={() => handleAdjustBalance(u, -50)} className="px-2 py-0.5 rounded bg-rose-600 text-white font-bold">-50</button>
                               </td>
                               <td className="p-2 text-center">
-                                <button
-                                  onClick={() => handleDeleteUser(u)}
-                                  className="text-rose-500 hover:text-rose-400"
-                                  title="ลบสมาชิก"
-                                >
-                                  🗑️
-                                </button>
+                                <button onClick={() => handleDeleteUser(u)} className="text-rose-500 hover:text-rose-400">🗑️</button>
                               </td>
                             </tr>
                           ))}
@@ -1939,15 +1832,15 @@ export default function App() {
                   )}
                 </div>
 
-                {/* 4. การ์ดพับได้: สถิติ ยอดขาย กำไร และภาษี */}
-                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                {/* 4. สถิติ */}
+                <div className={`rounded-3xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200 shadow-sm'}`}>
                   <div
                     onClick={() => toggleAdminFold('stats')}
                     className="p-4 bg-purple-950/20 border-b border-neutral-800 flex justify-between items-center cursor-pointer select-none"
                   >
                     <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
                       <span>📊</span>
-                      <span>4. สถิติรายได้ ยอดขาย กำไรสุทธิ และประมาณการภาษี VAT (7%)</span>
+                      <span>4. สถิติรายได้ กำไรสุทธิ และภาษี VAT (7%)</span>
                     </div>
                     <span className="text-purple-400 font-bold text-xs">{adminFolds.stats ? '▲ พับเก็บ' : '▼ ขยาย'}</span>
                   </div>
@@ -1955,95 +1848,36 @@ export default function App() {
                   {adminFolds.stats && (
                     <div className="p-4 space-y-4">
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-                        <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800">
+                        <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
                           <div className="text-[11px] text-neutral-400">ยอดขายรวม</div>
                           <div className="text-lg font-black text-amber-500">฿{totalSales.toLocaleString()}</div>
                         </div>
-                        <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800">
+                        <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
                           <div className="text-[11px] text-neutral-400">กำไรสุทธิ</div>
                           <div className="text-lg font-black text-emerald-400">฿{netProfit.toLocaleString()}</div>
                         </div>
-                        <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800">
-                          <div className="text-[11px] text-neutral-400">ค่าโฆษณา (Ads)</div>
+                        <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
+                          <div className="text-[11px] text-neutral-400">ค่าโฆษณา</div>
                           <div className="text-lg font-black text-rose-400">฿{totalAdSpend.toLocaleString()}</div>
                         </div>
-                        <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800">
+                        <div className="p-3 rounded-2xl bg-neutral-950 border border-neutral-800">
                           <div className="text-[11px] text-neutral-400">ภาษี VAT (7%)</div>
                           <div className="text-lg font-black text-blue-400">฿{estimatedVat.toFixed(2)}</div>
                         </div>
                       </div>
-
-                      <div className="border-t border-neutral-800 pt-3 flex gap-2">
-                        <input
-                          type="number"
-                          placeholder="บันทึกค่าโฆษณาเพิ่ม (บาท)"
-                          value={adAmountInput}
-                          onChange={(e) => setAdAmountInput(e.target.value)}
-                          className="px-3 py-2 rounded-xl text-xs bg-neutral-950 border border-neutral-700 text-white outline-none flex-1"
-                        />
-                        <button
-                          onClick={() => {
-                            const val = Number(adAmountInput);
-                            if (val > 0) {
-                              const next = totalAdSpend + val;
-                              setTotalAdSpend(next);
-                              localStorage.setItem('cyber_ad_spend', next.toString());
-                              setAdAmountInput('');
-                            }
-                          }}
-                          className="px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs"
-                        >
-                          + เพิ่มค่าใช้จ่าย
-                        </button>
-                      </div>
                     </div>
                   )}
                 </div>
 
-                {/* 5. การ์ดพับได้: ทางลัด LnwTrue / SlipOK */}
-                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
-                  <div
-                    onClick={() => toggleAdminFold('lnwtrue')}
-                    className="p-4 bg-purple-950/20 border-b border-neutral-800 flex justify-between items-center cursor-pointer select-none"
-                  >
-                    <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
-                      <span>🚀</span>
-                      <span>5. ทางลัดตัวแทนเติมเงิน (Official LnwTrue & SlipOK Dashboard)</span>
-                    </div>
-                    <span className="text-purple-400 font-bold text-xs">{adminFolds.lnwtrue ? '▲ พับเก็บ' : '▼ ขยาย'}</span>
-                  </div>
-
-                  {adminFolds.lnwtrue && (
-                    <div className="p-4 flex flex-wrap gap-3">
-                      <a
-                        href="https://lnwtrue.com"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-black font-black text-xs"
-                      >
-                        เข้าสู่เว็บ LnwTrue ↗
-                      </a>
-                      <a
-                        href="https://slipok.com"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-4 py-2 rounded-xl bg-blue-600 text-white font-black text-xs"
-                      >
-                        เข้าสู่แดชบอร์ด SlipOK ↗
-                      </a>
-                    </div>
-                  )}
-                </div>
-
-                {/* 6. การ์ดพับได้: ตั้งค่ารหัส PIN แอดมิน */}
-                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                {/* 5. ตั้งค่า PIN */}
+                <div className={`rounded-3xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200 shadow-sm'}`}>
                   <div
                     onClick={() => toggleAdminFold('settings')}
                     className="p-4 bg-purple-950/20 border-b border-neutral-800 flex justify-between items-center cursor-pointer select-none"
                   >
                     <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
                       <span>🔒</span>
-                      <span>6. ตั้งค่ารหัส PIN แอดมินใหม่ (Change Admin PIN)</span>
+                      <span>5. ตั้งค่ารหัส PIN แอดมินใหม่</span>
                     </div>
                     <span className="text-purple-400 font-bold text-xs">{adminFolds.settings ? '▲ พับเก็บ' : '▼ ขยาย'}</span>
                   </div>
@@ -2057,12 +1891,9 @@ export default function App() {
                           placeholder="รหัส PIN ใหม่ 6 หลัก"
                           value={newPinSetting}
                           onChange={(e) => setNewPinSetting(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl text-xs border bg-neutral-950 border-neutral-700 text-white outline-none"
+                          className="w-full px-3 py-2 rounded-2xl text-xs border bg-neutral-950 border-neutral-700 text-white outline-none"
                         />
-                        <button
-                          type="submit"
-                          className="w-full py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
-                        >
+                        <button type="submit" className="w-full py-2.5 rounded-2xl bg-purple-600 text-white font-bold text-xs">
                           บันทึก PIN ใหม่
                         </button>
                       </form>
@@ -2087,8 +1918,7 @@ export default function App() {
               <p className="text-xs text-neutral-400">ยิ่งสะสมยอดเติมเงิน ยิ่งได้รับส่วนลดถาวรสูงขึ้น</p>
             </div>
 
-            {/* Current VIP Card */}
-            <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-950/60 to-purple-950/60 border border-amber-500/40 flex justify-between items-center">
+            <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-950/60 to-purple-950/60 border border-amber-500/40 flex justify-between items-center shadow-md">
               <div className="flex items-center gap-3">
                 <span className="text-4xl">{userRank.badge}</span>
                 <div>
@@ -2102,8 +1932,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* VIP Tiers Table */}
-            <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+            <div className={`rounded-3xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200 shadow-sm'}`}>
               <table className="w-full text-left text-xs">
                 <thead className={`border-b ${isDark ? 'bg-neutral-950 text-neutral-400 border-neutral-800' : 'bg-neutral-100 text-neutral-600'}`}>
                   <tr>
@@ -2130,7 +1959,7 @@ export default function App() {
                         <td className="p-3.5 text-emerald-400 font-black">{tier.discount}%</td>
                         <td className="p-3.5 text-center">
                           {isCurrent ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-500 text-black font-black">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] bg-amber-500 text-black font-black">
                               ปัจจุบัน
                             </span>
                           ) : isUnlocked ? (
@@ -2188,7 +2017,7 @@ export default function App() {
                       key={amt}
                       type="button"
                       onClick={() => setWalletAmount(amt.toString())}
-                      className={`py-2 text-xs font-bold rounded-xl border transition ${
+                      className={`py-2 text-xs font-bold rounded-2xl border transition ${
                         walletAmount === amt.toString()
                           ? 'bg-amber-500 text-black border-amber-500'
                           : isDark ? 'bg-neutral-950 border-neutral-700 text-neutral-300' : 'bg-slate-100 border-neutral-300'
@@ -2205,18 +2034,18 @@ export default function App() {
                   placeholder="หรือระบุจำนวนเงินเอง"
                   value={walletAmount}
                   onChange={(e) => setWalletAmount(e.target.value)}
-                  className={`w-full mt-2 px-3 py-2 rounded-xl text-xs border outline-none ${
+                  className={`w-full mt-2 px-3.5 py-2.5 rounded-2xl text-xs border outline-none ${
                     isDark ? 'bg-neutral-950 border-neutral-700 text-white' : 'bg-slate-50 border-neutral-300'
                   }`}
                 />
               </div>
 
               {walletAmount && Number(walletAmount) >= 10 && (
-                <div className={`p-3 rounded-xl border text-center space-y-2 ${
+                <div className={`p-3 rounded-2xl border text-center space-y-2 ${
                   isDark ? 'bg-neutral-950 border-neutral-800' : 'bg-amber-50 border-amber-200'
                 }`}>
                   <div className="text-xs font-bold text-amber-500">สแกน QR PromptPay เพื่อโอนเงิน ฿{walletAmount}</div>
-                  <div className="w-36 h-36 mx-auto bg-white p-2 rounded-xl border flex items-center justify-center shadow">
+                  <div className="w-36 h-36 mx-auto bg-white p-2 rounded-2xl border flex items-center justify-center shadow">
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=PROMPTPAY-0956267172-AMT-${walletAmount}`}
                       alt="PromptPay"
@@ -2247,7 +2076,7 @@ export default function App() {
                 />
                 {walletSlipPreview && (
                   <div className="mt-2 text-center">
-                    <img src={walletSlipPreview} alt="Slip" className="h-24 mx-auto rounded border" />
+                    <img src={walletSlipPreview} alt="Slip" className="h-24 mx-auto rounded-xl border" />
                   </div>
                 )}
               </div>
@@ -2255,13 +2084,13 @@ export default function App() {
               <button
                 type="submit"
                 disabled={isCheckingSlip || !walletAmount || !walletSlipPreview}
-                className={`w-full py-2.5 rounded-xl font-bold text-xs text-black transition ${
+                className={`w-full py-3 rounded-2xl font-bold text-xs text-black transition ${
                   isCheckingSlip || !walletAmount || !walletSlipPreview
                     ? 'bg-neutral-700 text-neutral-500 cursor-not-allowed'
                     : 'bg-gradient-to-r from-amber-500 to-rose-500'
                 }`}
               >
-                {isCheckingSlip ? 'กำลังตรวจสอบสลิป...' : '✓ ยืนยันการเติมเหรียญ'}
+                {isCheckingSlip ? 'กำลังตรวจสอบสลิป...' : '✓ ยืนยันการเติมเหรียญ (สำเร็จอัตโนมัติ)'}
               </button>
             </form>
           </div>
