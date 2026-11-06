@@ -59,8 +59,8 @@ export default async function handler(req, res) {
               `👤 ลูกค้า: คุณ ${customerName}\n` +
               `⏰ เวลา: ${time}\n` +
               `💬 ข้อความลูกค้า: "${userText}"\n\n` +
-              `👉 คลิกเพื่อเข้าตอบแชทลูกค้าได้ทันที:\n` +
-              `https://manager.line.biz/account/@462piycg/chat\n` +
+              `💻 ตอบแชทบนคอม: https://chat.line.biz/\n` +
+              `📱 ตอบแชทบนมือถือ: เปิดแอป LINE Official Account\n` +
               `━━━━━━━━━━━━━━━━━━━━`;
 
             // ยิงแจ้งเตือนพร้อมเสียงเข้ากลุ่มแอดมินทันที
