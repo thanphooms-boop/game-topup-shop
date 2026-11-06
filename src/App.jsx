@@ -1,10 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
-import { getDatabase, ref, onValue, set, push, remove } from 'firebase/database';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth';
+import { 
+  getDatabase, 
+  ref, 
+  onValue, 
+  set, 
+  push, 
+  remove, 
+  update 
+} from 'firebase/database';
+import { 
+  getAuth, 
+  createUserWithEmailAndPassword, 
+  signOut 
+} from 'firebase/auth';
 
 // ---------------------------------------------------------------------------
-// 1. Firebase Config & Initialization
+// 1. Firebase Config & Initialization (Live Realtime Database)
 // ---------------------------------------------------------------------------
 const firebaseConfig = {
   apiKey: "AIzaSyD-dgpKK9S2olFLawJ8MKYHi-NWB4GQv7U",
@@ -22,180 +34,215 @@ const db = getDatabase(app);
 const auth = getAuth(app);
 
 // ---------------------------------------------------------------------------
-// 2. Global CSS Styles & Animations
+// 2. VIP Rank Tiers Definition
 // ---------------------------------------------------------------------------
-const cyberGlobalStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700;800;900&display=swap');
-
-  body, input, button, select, textarea {
-    font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif !important;
-  }
-
-  button, [role="button"], input[type="submit"], input[type="button"], .cyber-btn {
-    position: relative;
-    cursor: pointer !important;
-    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-    user-select: none;
-    outline: none !important;
-  }
-
-  button:hover:not(:disabled), .cyber-btn:hover {
-    transform: translateY(-2px) scale(1.02) !important;
-    filter: brightness(1.08) !important;
-  }
-
-  button:active:not(:disabled), .cyber-btn:active {
-    transform: translateY(1px) scale(0.98) !important;
-  }
-
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: #fff7ed; border-radius: 8px; }
-  ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #f97316, #ec4899); border-radius: 8px; }
-
-  .cyber-game-card {
-    position: relative;
-    background: #ffffff !important;
-    border: 2.5px solid #fed7aa !important;
-    border-radius: 24px !important;
-    overflow: hidden;
-    cursor: pointer;
-    box-shadow: 0 10px 25px rgba(249, 115, 22, 0.08);
-    transition: all 0.3s ease !important;
-  }
-  .cyber-game-card:hover {
-    transform: translateY(-6px) scale(1.02) !important;
-    border-color: #f97316 !important;
-    box-shadow: 0 15px 35px rgba(249, 115, 22, 0.2) !important;
-  }
-
-  .package-card-item {
-    transition: all 0.25s ease !important;
-    cursor: pointer;
-  }
-  .package-card-item:hover {
-    transform: translateY(-3px) scale(1.02) !important;
-    border-color: #f97316 !important;
-  }
-
-  @keyframes floatAnimation {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-6px); }
-  }
-  .float-anim { animation: floatAnimation 3.5s ease-in-out infinite; }
-`;
-
-// ---------------------------------------------------------------------------
-// 3. VIP Rank Tiers
-// ---------------------------------------------------------------------------
-const RANK_TIERS = [
-  { tier: 'CHALLENGER', level: 7, title: 'Mythic Legend', name: 'Challenger VIP', shortName: 'CHALLENGER', minSpend: 50000, color: '#ff2d55', border: '#ff2d55', bg: 'rgba(255, 45, 85, 0.2)' },
-  { tier: 'MASTER', level: 6, title: 'Grand Master', name: 'Master VIP', shortName: 'MASTER', minSpend: 25000, color: '#f472b6', border: '#ec4899', bg: 'rgba(236, 72, 153, 0.2)' },
-  { tier: 'DIAMOND', level: 5, title: 'Diamond Champion', name: 'Diamond VIP', shortName: 'DIAMOND', minSpend: 10000, color: '#c084fc', border: '#a855f7', bg: 'rgba(168, 85, 247, 0.2)' },
-  { tier: 'PLATINUM', level: 4, title: 'Platinum Elite', name: 'Platinum VIP', shortName: 'PLATINUM', minSpend: 5000, color: '#38bdf8', border: '#0ea5e9', bg: 'rgba(56, 189, 248, 0.2)' },
-  { tier: 'GOLD', level: 3, title: 'Gold Commander', name: 'Gold VIP', shortName: 'GOLD', minSpend: 2000, color: '#fbbf24', border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.2)' },
-  { tier: 'SILVER', level: 2, title: 'Silver Knight', name: 'Silver VIP', shortName: 'SILVER', minSpend: 500, color: '#e2e8f0', border: '#94a3b8', bg: 'rgba(148, 163, 184, 0.2)' },
-  { tier: 'BRONZE', level: 1, title: 'Bronze Scout', name: 'Bronze Member', shortName: 'BRONZE', minSpend: 0, color: '#f59e0b', border: '#b45309', bg: 'rgba(217, 119, 6, 0.2)' }
+const VIP_TIERS = [
+  { level: 7, name: 'Challenger Mythic', badge: '👑', minSpend: 50000, discount: 12, color: '#ff2d55' },
+  { level: 6, name: 'Master Tiger', badge: '🐯', minSpend: 25000, discount: 8.5, color: '#f43f5e' },
+  { level: 5, name: 'Royal Diamond', badge: '💎', minSpend: 10000, discount: 6, color: '#a855f7' },
+  { level: 4, name: 'Platinum Elite', badge: '🥇', minSpend: 5000, discount: 4, color: '#0ea5e9' },
+  { level: 3, name: 'Hunter Gold', badge: '🥈', minSpend: 2000, discount: 2.5, color: '#f59e0b' },
+  { level: 2, name: 'Silver Scout', badge: '🥉', minSpend: 500, discount: 1, color: '#94a3b8' },
+  { level: 1, name: 'Kitten Bronze', badge: '🐾', minSpend: 0, discount: 0, color: '#d97706' }
 ];
 
-const getCustomerRank = (spending) => {
-  const spend = Number(spending) || 0;
-  for (let i = 0; i < RANK_TIERS.length; i++) {
-    const tier = RANK_TIERS[i];
+const getVipRank = (totalSpend = 0) => {
+  const spend = Number(totalSpend) || 0;
+  for (const tier of VIP_TIERS) {
     if (spend >= tier.minSpend) {
-      const prevTier = i > 0 ? RANK_TIERS[i - 1] : null;
+      const idx = VIP_TIERS.indexOf(tier);
+      const nextTier = idx > 0 ? VIP_TIERS[idx - 1] : null;
       return {
         ...tier,
         currentSpend: spend,
-        nextTier: prevTier ? prevTier.name : null,
-        nextSpend: prevTier ? prevTier.minSpend : null,
-        remainingToNext: prevTier ? Math.max(0, prevTier.minSpend - spend) : 0,
-        progressPercent: prevTier 
-          ? Math.min(100, Math.round(((spend - tier.minSpend) / (prevTier.minSpend - tier.minSpend)) * 100))
+        nextTier: nextTier ? nextTier.name : null,
+        needMore: nextTier ? Math.max(0, nextTier.minSpend - spend) : 0,
+        progress: nextTier 
+          ? Math.min(100, Math.round(((spend - tier.minSpend) / (nextTier.minSpend - tier.minSpend)) * 100)) 
           : 100
       };
     }
   }
-  return { ...RANK_TIERS[RANK_TIERS.length - 1], currentSpend: 0, remainingToNext: 500, progressPercent: 0 };
+  return { ...VIP_TIERS[VIP_TIERS.length - 1], currentSpend: 0, needMore: 500, progress: 0 };
 };
 
-function RankEmblem({ tier, size = 20 }) {
-  const t = (tier || '').toUpperCase();
-  const colorMap = {
-    CHALLENGER: '#ff2d55',
-    MASTER: '#f472b6',
-    DIAMOND: '#c084fc',
-    PLATINUM: '#38bdf8',
-    GOLD: '#fbbf24',
-    SILVER: '#94a3b8',
-    BRONZE: '#d97706'
-  };
-  const color = colorMap[t] || '#d97706';
-  return (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" style={{ flexShrink: 0 }}>
-      <polygon points="50,6 88,26 88,74 50,94 12,74 12,26" fill="#1e1b4b" stroke={color} strokeWidth="4" />
-      <polygon points="50,18 76,32 76,68 50,82 24,68 24,32" fill={color} opacity="0.3" />
-      <circle cx="50" cy="50" r="14" fill={color} />
-      <polygon points="50,42 53,48 59,49 55,54 56,60 50,57 44,60 45,54 41,49 47,48" fill="#ffffff" />
-    </svg>
-  );
-}
-
 // ---------------------------------------------------------------------------
-// 4. Verification & Helper Functions
+// 3. เกมในระบบ (ตัด Genshin, Honkai, PUBG ออกเรียบร้อย)
 // ---------------------------------------------------------------------------
-const verifySlipWithSlipOK = async (imageBase64Data, expectedAmount, metadata = {}) => {
-  let cleanBase64 = imageBase64Data.includes(',') ? imageBase64Data.split(',')[1] : imageBase64Data;
-  try {
-    const response = await fetch('/api/verify-slip', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ imageBase64: cleanBase64, expectedAmount, ...metadata }),
-    });
-    const data = await response.json().catch(() => ({}));
-    if (response.ok && data.success) return data;
-    return { success: false, message: data.message || 'สลิปไม่ถูกต้องหรือยอดเงินไม่ตรง' };
-  } catch (err) {
-    return { success: false, message: 'ไม่สามารถเชื่อมต่อระบบตรวจสอบสลิปได้: ' + err.message };
+const GAME_CATALOG = [
+  {
+    id: 'valorant',
+    name: 'VALORANT (Riot Points)',
+    category: 'FPS / PC',
+    theme: 'from-rose-600 via-rose-700 to-zinc-950',
+    idLabel: 'Riot ID (เช่น Meow#TH1)',
+    packages: [
+      { id: 'v1', name: '475 VP', price: 128 },
+      { id: 'v2', name: '1,000 VP', price: 255 },
+      { id: 'v3', name: '2,050 VP', price: 510 },
+      { id: 'v4', name: '3,650 VP', price: 905 },
+      { id: 'v5', name: '5,350 VP', price: 1295 },
+      { id: 'v6', name: '11,000 VP (Whale)', price: 2580 }
+    ]
+  },
+  {
+    id: 'rov',
+    name: 'ROV (Arena of Valor)',
+    category: 'MOBA / Mobile',
+    theme: 'from-blue-600 via-indigo-700 to-slate-950',
+    idLabel: 'OpenID หรือ เลขประจำตัวในเกม',
+    packages: [
+      { id: 'r1', name: '60 คูปอง', price: 49.5 },
+      { id: 'r2', name: '110 คูปอง', price: 89.5 },
+      { id: 'r3', name: '185 คูปอง', price: 148 },
+      { id: 'r4', name: '370 คูปอง', price: 296 },
+      { id: 'r5', name: '620 คูปอง', price: 493 },
+      { id: 'r6', name: '1,240 คูปอง', price: 985 }
+    ]
+  },
+  {
+    id: 'freefire',
+    name: 'Free Fire Max',
+    category: 'Battle Royale',
+    theme: 'from-amber-600 via-orange-700 to-stone-950',
+    idLabel: 'UID ผู้เล่น',
+    packages: [
+      { id: 'ff1', name: '172 เพชร', price: 49.5 },
+      { id: 'ff2', name: '310 เพชร', price: 89 },
+      { id: 'ff3', name: '517 เพชร', price: 148.5 },
+      { id: 'ff4', name: '690 เพชร', price: 197 },
+      { id: 'ff5', name: '1,052 เพชร', price: 296 },
+      { id: 'ff6', name: '1,801 เพชร', price: 493 }
+    ]
+  },
+  {
+    id: 'lol',
+    name: 'League of Legends (PC)',
+    category: 'MOBA / PC',
+    theme: 'from-cyan-600 via-sky-700 to-zinc-950',
+    idLabel: 'Riot ID หรือ ชื่อซัมมอนเนอร์',
+    packages: [
+      { id: 'l1', name: '615 RP', price: 136 },
+      { id: 'l2', name: '1,320 RP', price: 273 },
+      { id: 'l3', name: '2,795 RP', price: 547 },
+      { id: 'l4', name: '4,985 RP', price: 959 }
+    ]
+  },
+  {
+    id: 'fcmobile',
+    name: 'EA SPORTS FC Mobile',
+    category: 'Sports / Mobile',
+    theme: 'from-emerald-600 via-teal-700 to-zinc-950',
+    idLabel: 'UID ผู้จัดการทีม',
+    packages: [
+      { id: 'fc1', name: '4,466 FC Points', price: 49 },
+      { id: 'fc2', name: '8,181 FC Points', price: 88.5 },
+      { id: 'fc3', name: '15,000 FC Points', price: 147.5 },
+      { id: 'fc4', name: '30,000 FC Points', price: 295 }
+    ]
+  },
+  {
+    id: 'avatarstar',
+    name: 'Avatar Star',
+    category: 'Shooter / PC',
+    theme: 'from-purple-600 via-fuchsia-700 to-neutral-950',
+    idLabel: 'ชื่อตัวละคร หรือ ไอดีเกม',
+    packages: [
+      { id: 'as1', name: '300 Diamonds', price: 45 },
+      { id: 'as2', name: '1,000 Diamonds', price: 120 },
+      { id: 'as3', name: '2,100 Diamonds', price: 235 },
+      { id: 'as4', name: '3,600 Diamonds', price: 399 }
+    ]
+  },
+  {
+    id: 'razergold_card',
+    name: 'Razer Gold PIN (e-Pin)',
+    category: 'Voucher / Digital PIN',
+    theme: 'from-lime-600 via-emerald-700 to-neutral-950',
+    idLabel: 'เบอร์โทรหรืออีเมลสำหรับรับรหัส PIN',
+    packages: [
+      { id: 'rg50', name: '50 THB PIN', price: 49 },
+      { id: 'rg100', name: '100 THB PIN', price: 98 },
+      { id: 'rg300', name: '300 THB PIN', price: 292 },
+      { id: 'rg500', name: '500 THB PIN', price: 487 },
+      { id: 'rg1000', name: '1,000 THB PIN', price: 975 }
+    ]
   }
-};
+];
 
-const EyeIcon = ({ show }) => (
-  show ? (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  ) : (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  )
+// ---------------------------------------------------------------------------
+// 4. Lightweight Vector Icons & Components
+// ---------------------------------------------------------------------------
+const CatLogo = ({ size = 36 }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" className="shrink-0 select-none">
+    <circle cx="50" cy="50" r="46" fill="url(#meowG)" stroke="#f59e0b" strokeWidth="2.5" />
+    <polygon points="25,36 36,12 50,28" fill="#ea580c" />
+    <polygon points="75,36 64,12 50,28" fill="#ea580c" />
+    <circle cx="50" cy="55" r="30" fill="#fff7ed" />
+    <ellipse cx="40" cy="50" rx="4.5" ry="6" fill="#1e1b4b" />
+    <ellipse cx="60" cy="50" rx="4.5" ry="6" fill="#1e1b4b" />
+    <circle cx="42" cy="48" r="1.5" fill="#fff" />
+    <circle cx="62" cy="48" r="1.5" fill="#fff" />
+    <polygon points="50,57 46,62 54,62" fill="#ec4899" />
+    <path d="M46,65 Q50,69 54,65" stroke="#1e1b4b" strokeWidth="2" strokeLinecap="round" fill="none" />
+    <defs>
+      <linearGradient id="meowG" x1="0" y1="0" x2="100" y2="100">
+        <stop offset="0%" stopColor="#f59e0b" />
+        <stop offset="60%" stopColor="#ea580c" />
+        <stop offset="100%" stopColor="#9333ea" />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+const CoinIcon = ({ size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" className="inline-block align-middle shrink-0">
+    <circle cx="12" cy="12" r="11" fill="url(#coing)" stroke="#b45309" strokeWidth="1" />
+    <text x="12" y="16" fontSize="12" fontWeight="bold" textAnchor="middle" fill="#78350f">₵</text>
+    <defs>
+      <linearGradient id="coing" x1="0" y1="0" x2="24" y2="24">
+        <stop offset="0%" stopColor="#fef08a" />
+        <stop offset="100%" stopColor="#f59e0b" />
+      </linearGradient>
+    </defs>
+  </svg>
 );
 
 // ---------------------------------------------------------------------------
 // 5. Main Component
 // ---------------------------------------------------------------------------
 export default function App() {
-  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('meow_theme_mode') === 'dark');
+  // Theme Mode (โหมดมืด / สว่าง) - ใช้งานตั้งแต่หน้าล็อกอิน
+  const [isDark, setIsDark] = useState(() => localStorage.getItem('meow_theme') !== 'light');
   const toggleTheme = () => {
-    setIsDarkMode(prev => {
+    setIsDark(prev => {
       const next = !prev;
-      localStorage.setItem('meow_theme_mode', next ? 'dark' : 'light');
+      localStorage.setItem('meow_theme', next ? 'dark' : 'light');
       return next;
     });
   };
 
+  // User Authentication State
   const [user, setUser] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('cyber_current_logged_user')); } catch (e) { return null; }
+    try {
+      return JSON.parse(localStorage.getItem('cyber_logged_user')) || null;
+    } catch {
+      return null;
+    }
   });
 
+  // Navigation: 'shop' | 'history' | 'admin' | 'vip'
+  const [tab, setTab] = useState('shop');
+
+  // Firebase Realtime State
   const [registeredUsers, setRegisteredUsers] = useState([]);
   const [orders, setOrders] = useState([]);
-  const [activeTab, setActiveTab] = useState('shop'); // 'shop', 'history', 'admin'
+  const [gameStock, setGameStock] = useState({});
+  const [packageStock, setPackageStock] = useState({});
+  const [adminOnline, setAdminOnline] = useState(true);
 
-  // Authentication State
-  const [authMode, setAuthMode] = useState('login');
+  // Authentication Inputs (แบบเดิม)
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
   const [usernameInput, setUsernameInput] = useState(() => localStorage.getItem('cyber_remembered_user') || '');
   const [passwordInput, setPasswordInput] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -209,7 +256,7 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [authSuccessMsg, setAuthSuccessMsg] = useState('');
 
-  // OTP Modal State (แบบเดิม)
+  // Forgot Password / OTP State (แบบเดิม)
   const [forgotModalOpen, setForgotModalOpen] = useState(false);
   const [forgotStep, setForgotStep] = useState(1);
   const [forgotEmailInput, setForgotEmailInput] = useState('');
@@ -217,191 +264,86 @@ export default function App() {
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [forgotOtpInput, setForgotOtpInput] = useState('');
   const [otpCountdown, setOtpCountdown] = useState(300);
-  const [otpResendCountdown, setOtpResendCountdown] = useState(60);
   const [forgotNewPassword, setForgotNewPassword] = useState('');
-  const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
-  const [showForgotConfirmPassword, setShowForgotConfirmPassword] = useState(false);
   const [forgotStatusMsg, setForgotStatusMsg] = useState({ text: '', type: '' });
 
-  // รายการเกม (ตัด Genshin, Honkai, PUBG ออกตามที่ขอ)
-  const [gamesData] = useState([
-    {
-      id: 'valorant',
-      name: 'VALORANT',
-      category: 'pc',
-      image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดฮิต #1 🔥',
-      packages: [
-        { id: 'v1', name: '475 VP', price: 128 },
-        { id: 'v2', name: '1,000 VP', price: 255 },
-        { id: 'v3', name: '2,050 VP', price: 510 },
-        { id: 'v4', name: '3,650 VP', price: 905 },
-        { id: 'v5', name: '5,350 VP', price: 1295 },
-        { id: 'v6', name: '11,000 VP (Whale)', price: 2580 }
-      ]
-    },
-    {
-      id: 'rov',
-      name: 'ROV (Arena of Valor)',
-      category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดฮิต MOBA ⚔️',
-      packages: [
-        { id: 'r1', name: '60 คูปอง', price: 49.5 },
-        { id: 'r2', name: '110 คูปอง', price: 89.5 },
-        { id: 'r3', name: '185 คูปอง', price: 148 },
-        { id: 'r4', name: '370 คูปอง', price: 296 },
-        { id: 'r5', name: '620 คูปอง', price: 493 },
-        { id: 'r6', name: '1,240 คูปอง', price: 985 }
-      ]
-    },
-    {
-      id: 'freefire',
-      name: 'Free Fire',
-      category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดนิยม #1 🎯',
-      packages: [
-        { id: 'ff1', name: '172 เพชร', price: 49.5 },
-        { id: 'ff2', name: '310 เพชร', price: 89 },
-        { id: 'ff3', name: '517 เพชร', price: 148.5 },
-        { id: 'ff4', name: '690 เพชร', price: 197 },
-        { id: 'ff5', name: '1,052 เพชร', price: 296 },
-        { id: 'ff6', name: '1,801 เพชร', price: 493 }
-      ]
-    },
-    {
-      id: 'lol',
-      name: 'League of Legends (PC)',
-      category: 'pc',
-      image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=500&q=80',
-      badge: 'MOBA ยอดฮิต 🏆',
-      packages: [
-        { id: 'l1', name: '615 RP', price: 136 },
-        { id: 'l2', name: '1,320 RP', price: 273 },
-        { id: 'l3', name: '2,795 RP', price: 547 },
-        { id: 'l4', name: '4,985 RP', price: 959 }
-      ]
-    },
-    {
-      id: 'fcmobile',
-      name: 'EA SPORTS FC Mobile',
-      category: 'mobile',
-      image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=500&q=80',
-      badge: 'ฟุตบอลอันดับ 1 ⚽',
-      packages: [
-        { id: 'fc1', name: '4,466 FC Points', price: 49 },
-        { id: 'fc2', name: '8,181 FC Points', price: 88.5 },
-        { id: 'fc3', name: '15,000 FC Points', price: 147.5 },
-        { id: 'fc4', name: '30,000 FC Points', price: 295 }
-      ]
-    },
-    {
-      id: 'avatarstar',
-      name: 'Avatar Star',
-      category: 'pc',
-      image: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยิงปืนสุดมันส์ ⚡',
-      packages: [
-        { id: 'as1', name: '300 Diamonds', price: 45 },
-        { id: 'as2', name: '1,000 Diamonds', price: 120 },
-        { id: 'as3', name: '2,100 Diamonds', price: 235 },
-        { id: 'as4', name: '3,600 Diamonds', price: 399 }
-      ]
-    },
-    {
-      id: 'razergold_card',
-      name: 'Razer Gold PIN (e-Pin)',
-      category: 'card',
-      image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=500&q=80',
-      badge: 'ส่งรหัส PIN ทันที ⚡',
-      packages: [
-        { id: 'rg50', name: '50 THB PIN', price: 49 },
-        { id: 'rg100', name: '100 THB PIN', price: 98 },
-        { id: 'rg300', name: '300 THB PIN', price: 292 },
-        { id: 'rg500', name: '500 THB PIN', price: 487 },
-        { id: 'rg1000', name: '1,000 THB PIN', price: 975 }
-      ]
-    }
-  ]);
-
-  // สถานะสต็อกเกมในระบบ (เปิด/ปิดรับเติม)
-  const [gameStockStatus, setGameStockStatus] = useState({});
-  useEffect(() => {
-    const statusRef = ref(db, 'game_stock_status');
-    const unsubscribe = onValue(statusRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) setGameStockStatus(data);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handleToggleGameStock = (gameId, gameName) => {
-    const nextStatus = gameStockStatus[gameId] === false;
-    set(ref(db, `game_stock_status/${gameId}`), nextStatus);
-  };
-
-  // State การสั่งซื้อ
+  // Shopping & Order Selection
   const [selectedGame, setSelectedGame] = useState(null);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [playerId, setPlayerId] = useState('');
-  const [packageQty, setPackageQty] = useState(1);
-  const [selectedPayment, setSelectedPayment] = useState('wallet');
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [checkoutStep, setCheckoutStep] = useState(1);
+  const [payMethod, setPayMethod] = useState('wallet');
   const [slipFile, setSlipFile] = useState(null);
   const [slipPreview, setSlipPreview] = useState(null);
-  const [isVerifyingSlip, setIsVerifyingSlip] = useState(false);
-  const [slipError, setSlipError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // State เติม Cat Coin Wallet
+  // Cat Coin Wallet Topup
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [walletAmount, setWalletAmount] = useState('');
-  const [walletSlipFile, setWalletSlipFile] = useState(null);
   const [walletSlipPreview, setWalletSlipPreview] = useState(null);
-  const [isWalletVerifying, setIsWalletVerifying] = useState(false);
-  const [walletError, setWalletError] = useState('');
+  const [isCheckingSlip, setIsCheckingSlip] = useState(false);
+  const [walletMsg, setWalletMsg] = useState({ text: '', type: '' });
 
-  // State เช็คประวัติคำสั่งซื้อแบบเดิม
+  // History Tab Filters (หน้าเช็คประวัติ)
   const [historySearchQuery, setHistorySearchQuery] = useState('');
   const [historyOrderSearch, setHistoryOrderSearch] = useState('');
   const [historyGameFilter, setHistoryGameFilter] = useState('all');
-  const [historyPage, setHistoryPage] = useState(1);
   const [isPastOrdersOpen, setIsPastOrdersOpen] = useState(true);
 
-  // State แดชบอร์ดแอดมินแบบเดิม
-  const isUserAdmin = user && (user.username?.toLowerCase() === 'thanphooms' || user.email?.toLowerCase() === 'thanphooms@gmail.com');
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(() => localStorage.getItem('cyber_is_admin_logged') === 'true');
-  const [adminPin, setAdminPin] = useState(() => localStorage.getItem('cyber_admin_pin') || '123456');
-  const [adminPinInput, setAdminPinInput] = useState('');
-  const [adminPinError, setAdminPinError] = useState('');
-  const [oldPinInput, setOldPinInput] = useState('');
-  const [newPinInput, setNewPinInput] = useState('');
-  const [confirmNewPinInput, setConfirmNewPinInput] = useState('');
-  const [changePinMessage, setChangePinMessage] = useState({ text: '', type: '' });
-  const [adminSearchQuery, setAdminSearchQuery] = useState('');
-  const [adminOrdersPage, setAdminOrdersPage] = useState(1);
+  // Admin Dashboard States (ระบบหลังบ้าน)
+  const isSuperAdmin = useMemo(() => {
+    if (!user) return false;
+    const name = String(user.username || '').toLowerCase();
+    const mail = String(user.email || '').toLowerCase();
+    return name === 'thanphooms' || mail === 'thanphooms@gmail.com';
+  }, [user]);
 
-  // แอดมิน: ค่าโฆษณา
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(() => localStorage.getItem('cyber_admin_auth') === 'true');
+  const [adminPinInput, setAdminPinInput] = useState('');
+  const [adminPinCode, setAdminPinCode] = useState(() => localStorage.getItem('cyber_pin_code') || '123456');
+  const [newPinSetting, setNewPinSetting] = useState('');
   const [adPlatform, setAdPlatform] = useState('Facebook Ads');
   const [adAmountInput, setAdAmountInput] = useState('');
-  const [adPromotions, setAdPromotions] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('cyber_ad_promotions_list')) || []; } catch (e) { return []; }
+  const [totalAdSpend, setTotalAdSpend] = useState(() => Number(localStorage.getItem('cyber_ad_spend')) || 0);
+
+  // สวิตช์พับเก็บได้ทุกส่วนในหน้าหลังบ้าน (Accordion Collapsible)
+  const [adminFolds, setAdminFolds] = useState({
+    orders: true,       // ออเดอร์ลูกค้า
+    stock: true,        // สต็อกเกม/แพ็กเกจ
+    members: false,     // จัดการสมาชิก & เหรียญ
+    stats: false,       // สถิติ กำไร & ภาษี
+    lnwtrue: false,     // ทางลัด LnwTrue / SlipOK
+    settings: false     // ตั้งค่ารหัส PIN
   });
 
-  // Realtime Listeners สำหรับผู้ใช้และคำสั่งซื้อ
+  const toggleAdminFold = (key) => {
+    setAdminFolds(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // ---------------------------------------------------------------------------
+  // 6. Realtime Listeners
+  // ---------------------------------------------------------------------------
   useEffect(() => {
     const unsubUsers = onValue(ref(db, 'users'), (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        const uList = Object.keys(data).map(k => ({ ...data[k], firebaseKey: k }));
-        setRegisteredUsers(uList);
+        const list = Object.keys(data).map(key => ({
+          ...data[key],
+          firebaseKey: key,
+          balance: Number(data[key].balance || 0),
+          totalSpent: Number(data[key].totalSpent || 0)
+        }));
+        setRegisteredUsers(list);
+
         if (user) {
-          const updated = uList.find(u => u.username?.toLowerCase() === user.username?.toLowerCase());
-          if (updated) {
-            setUser(updated);
-            localStorage.setItem('cyber_current_logged_user', JSON.stringify(updated));
+          const current = list.find(u => 
+            u.username?.toLowerCase() === user.username?.toLowerCase() || 
+            u.email?.toLowerCase() === user.email?.toLowerCase()
+          );
+          if (current) {
+            setUser(current);
+            localStorage.setItem('cyber_logged_user', JSON.stringify(current));
           }
         }
       } else {
@@ -412,55 +354,80 @@ export default function App() {
     const unsubOrders = onValue(ref(db, 'orders'), (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        setOrders(Object.keys(data).map(k => ({ ...data[k], firebaseKey: k })).reverse());
+        const list = Object.keys(data).map(key => ({
+          ...data[key],
+          firebaseKey: key,
+          price: Number(data[key].price || 0)
+        })).reverse();
+        setOrders(list);
       } else {
         setOrders([]);
       }
     });
 
-    return () => { unsubUsers(); unsubOrders(); };
-  }, []);
+    const unsubGameStock = onValue(ref(db, 'game_stock_status'), (snapshot) => {
+      setGameStock(snapshot.val() || {});
+    });
 
-  // OTP Countdown
-  useEffect(() => {
-    let timer;
-    if (forgotModalOpen && forgotStep === 2) {
-      timer = setInterval(() => {
-        setOtpCountdown(prev => (prev > 0 ? prev - 1 : 0));
-        setOtpResendCountdown(prev => (prev > 0 ? prev - 1 : 0));
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [forgotModalOpen, forgotStep]);
+    const unsubPkgStock = onValue(ref(db, 'package_stock_status'), (snapshot) => {
+      setPackageStock(snapshot.val() || {});
+    });
 
-  // คำนวณยอดใช้จ่ายและแรงค์ลูกค้า
-  const currentUserSpending = orders
-    .filter(o => o.type === 'game' && !o.status?.includes('ยกเลิก') && o.player?.toLowerCase() === user?.username?.toLowerCase())
-    .reduce((sum, o) => sum + (Number(o.price) || 0), 0);
-  const currentUserRank = getCustomerRank(currentUserSpending);
+    const unsubStatus = onValue(ref(db, 'system_status/admin_online'), (snapshot) => {
+      if (snapshot.exists()) setAdminOnline(snapshot.val());
+    });
 
-  // Authentication Handlers
+    return () => {
+      unsubUsers();
+      unsubOrders();
+      unsubGameStock();
+      unsubPkgStock();
+      unsubStatus();
+    };
+  }, [user?.username]);
+
+  // VIP Rank Calculation
+  const userRank = useMemo(() => {
+    return getVipRank(user?.totalSpent || 0);
+  }, [user?.totalSpent]);
+
+  // ---------------------------------------------------------------------------
+  // 7. Auth Handlers
+  // ---------------------------------------------------------------------------
   const handleAuthSubmit = (e) => {
     e.preventDefault();
     setAuthError('');
     setAuthSuccessMsg('');
 
     if (authMode === 'login') {
-      if (!usernameInput.trim() || !passwordInput.trim()) {
-        setAuthError('กรุณากรอกชื่อผู้ใช้ และรหัสผ่าน');
+      const query = usernameInput.trim().toLowerCase();
+      const targetUser = registeredUsers.find(u => 
+        String(u.username || '').toLowerCase() === query || 
+        String(u.email || '').toLowerCase() === query
+      );
+
+      if (!targetUser) {
+        setAuthError('ไม่พบชื่อผู้ใช้หรืออีเมลนี้ในระบบ');
         return;
       }
-      const found = registeredUsers.find(u => u.username?.toLowerCase() === usernameInput.trim().toLowerCase());
-      if (!found || found.password !== passwordInput) {
-        setAuthError('ชื่อผู้ใช้งาน หรือรหัสผ่านไม่ถูกต้อง');
+      if (targetUser.password !== passwordInput) {
+        setAuthError('รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง');
         return;
       }
-      if (rememberMe) localStorage.setItem('cyber_remembered_user', usernameInput.trim());
-      else localStorage.removeItem('cyber_remembered_user');
-      setUser(found);
-      localStorage.setItem('cyber_current_logged_user', JSON.stringify(found));
+
+      if (rememberMe) {
+        localStorage.setItem('cyber_remembered_user', usernameInput.trim());
+      } else {
+        localStorage.removeItem('cyber_remembered_user');
+      }
+
+      setUser(targetUser);
+      localStorage.setItem('cyber_logged_user', JSON.stringify(targetUser));
     } else {
-      if (!emailInput.trim() || !regUsernameInput.trim() || !regPasswordInput.trim() || !confirmPasswordInput.trim()) {
+      const uName = regUsernameInput.trim();
+      const uEmail = emailInput.trim().toLowerCase();
+
+      if (!uName || !regPasswordInput || !uEmail || !confirmPasswordInput) {
         setAuthError('กรุณากรอกข้อมูลให้ครบทุกช่อง');
         return;
       }
@@ -472,22 +439,29 @@ export default function App() {
         setAuthError('รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน');
         return;
       }
-      const isExist = registeredUsers.some(u => u.username?.toLowerCase() === regUsernameInput.trim().toLowerCase());
-      if (isExist) {
-        setAuthError('ชื่อผู้ใช้นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น');
+
+      const isDup = registeredUsers.some(u => 
+        String(u.username || '').toLowerCase() === uName.toLowerCase() ||
+        String(u.email || '').toLowerCase() === uEmail
+      );
+      if (isDup) {
+        setAuthError('ชื่อผู้ใช้หรืออีเมลนี้มีในระบบแล้ว');
         return;
       }
+
       const newUser = {
-        username: regUsernameInput.trim(),
-        email: emailInput.trim().toLowerCase(),
+        username: uName,
+        email: uEmail,
         password: regPasswordInput,
         balance: 0,
+        totalSpent: 0,
         createdAt: new Date().toISOString()
       };
+
       push(ref(db, 'users'), newUser).then(() => {
-        setUsernameInput(regUsernameInput.trim());
+        setUsernameInput(uName);
         setPasswordInput(regPasswordInput);
-        setAuthSuccessMsg('🎉 สมัครสมาชิกสำเร็จเรียบร้อยแล้ว!');
+        setAuthSuccessMsg('🎉 สมัครสมาชิกสำเร็จ! เข้าสู่ระบบได้ทันที');
         setAuthMode('login');
       });
     }
@@ -495,315 +469,574 @@ export default function App() {
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem('cyber_current_logged_user');
-    setIsAdminLoggedIn(false);
-    localStorage.removeItem('cyber_is_admin_logged');
-    setActiveTab('shop');
+    localStorage.removeItem('cyber_logged_user');
+    setIsAdminAuthenticated(false);
+    localStorage.removeItem('cyber_admin_auth');
+    try { signOut(auth); } catch {}
   };
 
-  // OTP Handlers
-  const handleRequestOtpSubmit = (e) => {
+  // OTP Handlers (ลืมรหัสผ่าน)
+  const handleRequestOtp = (e) => {
     e.preventDefault();
     setForgotStatusMsg({ text: '', type: '' });
     const clean = forgotEmailInput.trim().toLowerCase();
     const matched = registeredUsers.find(u => u.username?.toLowerCase() === clean || u.email?.toLowerCase() === clean);
     if (!matched) {
-      setForgotStatusMsg({ text: `ไม่พบบัญชีผู้ใช้ "${forgotEmailInput}" ในระบบ`, type: 'error' });
+      setForgotStatusMsg({ text: `ไม่พบบัญชี "${forgotEmailInput}" ในระบบ`, type: 'error' });
       return;
     }
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(otp);
     setForgotTargetUser(matched);
     setOtpCountdown(300);
-    setOtpResendCountdown(60);
     setForgotStep(2);
-    setForgotStatusMsg({ text: `📧 ส่งรหัส OTP 6 หลักเรียบร้อยแล้ว (OTP ของคุณคือ: ${otp})`, type: 'success' });
+    setForgotStatusMsg({ text: `📧 ส่ง OTP เรียบร้อย! (รหัสสำหรับคุณ: ${otp})`, type: 'success' });
   };
 
-  const handleVerifyOtpSubmit = (e) => {
+  const handleVerifyOtp = (e) => {
     e.preventDefault();
     if (forgotOtpInput.trim() !== generatedOtp) {
       setForgotStatusMsg({ text: '❌ รหัส OTP ไม่ถูกต้อง', type: 'error' });
       return;
     }
     setForgotStep(3);
-    setForgotStatusMsg({ text: '✅ ยืนยันรหัส OTP ถูกต้อง! กรุณาตั้งรหัสผ่านใหม่', type: 'success' });
+    setForgotStatusMsg({ text: '✅ OTP ถูกต้อง! กรุณาตั้งรหัสผ่านใหม่', type: 'success' });
   };
 
-  const handleSetNewPasswordSubmit = (e) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
     if (forgotNewPassword.trim().length < 6 || forgotNewPassword !== forgotConfirmPassword) {
-      setForgotStatusMsg({ text: 'รหัสผ่านใหม่ต้องมี 6 ตัวขึ้นไปและตรงกันทั้งสองช่อง', type: 'error' });
+      setForgotStatusMsg({ text: 'รหัสผ่านใหม่ต้องมี 6 ตัวขึ้นไปและตรงกันทั้ง 2 ช่อง', type: 'error' });
       return;
     }
-    set(ref(db, `users/${forgotTargetUser.firebaseKey}/password`), forgotNewPassword.trim()).then(() => {
-      setForgotStatusMsg({ text: '🎉 เปลี่ยนรหัสผ่านสำเร็จเรียบร้อยแล้ว! กำลังกลับสู่หน้าแรก...', type: 'success' });
-      setTimeout(() => {
-        setForgotModalOpen(false);
-        setForgotStep(1);
-      }, 2000);
+    await update(ref(db, `users/${forgotTargetUser.firebaseKey}`), {
+      password: forgotNewPassword.trim()
     });
+    setForgotStatusMsg({ text: '🎉 เปลี่ยนรหัสผ่านสำเร็จแล้ว!', type: 'success' });
+    setTimeout(() => {
+      setForgotModalOpen(false);
+      setForgotStep(1);
+    }, 1500);
   };
 
-  // การสั่งซื้อแพ็กเกจเกม
-  const handleConfirmGameOrder = async () => {
-    if (!playerId.trim() || !selectedPackage) return;
-    const total = selectedPackage.price * packageQty;
+  // ---------------------------------------------------------------------------
+  // 8. Order & Top-up Handlers
+  // ---------------------------------------------------------------------------
+  const calculateFinalPrice = (price) => {
+    const discountAmount = (price * userRank.discount) / 100;
+    return Number((price - discountAmount).toFixed(2));
+  };
 
-    if (selectedPayment === 'wallet') {
-      if ((user.balance || 0) < total) {
-        alert('ยอดเหรียญ Cat Coin ไม่เพียงพอ กรุณาเติมเหรียญก่อนสั่งซื้อ');
-        return;
-      }
-      const newBal = (user.balance || 0) - total;
-      set(ref(db, `users/${user.firebaseKey}/balance`), newBal);
+  const handleConfirmOrder = async (e) => {
+    e.preventDefault();
+    if (!selectedGame || !selectedPackage) return;
+    if (!playerId.trim()) {
+      alert(`กรุณากรอก ${selectedGame.idLabel}`);
+      return;
     }
 
-    const newOrder = {
-      id: 'ORD-' + Math.floor(10000 + Math.random() * 90000),
-      game: selectedGame.name,
-      package: `${selectedPackage.name} (x${packageQty})`,
-      price: total,
-      player: user ? user.username : 'Guest',
-      gameChar: playerId.trim(),
-      paymentMethod: selectedPayment === 'wallet' ? 'Cat Coin Wallet' : 'โอนเงินธนาคาร (SCB/พร้อมเพย์)',
-      status: selectedPayment === 'wallet' ? '✅ สำเร็จ (เติมเงินแล้ว)' : '⏳ รอตรวจสอบยอดเงิน',
-      type: 'game',
-      time: new Date().toLocaleString('th-TH'),
-      dateKey: new Date().toISOString().split('T')[0],
-      timestamp: Date.now()
-    };
+    const finalAmount = calculateFinalPrice(selectedPackage.price);
 
-    push(ref(db, 'orders'), newOrder);
-    setShowCheckoutModal(false);
-    setSelectedGame(null);
-    setSelectedPackage(null);
-    setPlayerId('');
-    setActiveTab('history');
-    alert('บันทึกคำสั่งซื้อเรียบร้อยแล้ว!');
-  };
+    if (payMethod === 'wallet') {
+      if ((user.balance || 0) < finalAmount) {
+        alert(`ยอดเหรียญใน Wallet ไม่พอ (ต้องการ ₵${finalAmount} มีอยู่ ₵${user.balance || 0})`);
+        setShowWalletModal(true);
+        return;
+      }
+    } else {
+      if (!slipPreview) {
+        alert('กรุณาแนบภาพสลิปโอนเงิน');
+        return;
+      }
+    }
 
-  // เติมเงิน Wallet ผ่าน SlipOK
-  const handleWalletSlipUpload = async () => {
-    if (!walletSlipFile || !walletAmount) return;
-    setIsWalletVerifying(true);
-    setWalletError('');
+    setIsSubmitting(true);
 
     try {
-      const base64 = await fileToBase64(walletSlipFile);
-      const res = await verifySlipWithSlipOK(base64, parseFloat(walletAmount));
-      if (res.success) {
-        const amt = parseFloat(walletAmount);
-        const newBal = (user.balance || 0) + amt;
-        set(ref(db, `users/${user.firebaseKey}/balance`), newBal);
+      const orderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+      const isAuto = payMethod === 'wallet';
 
-        push(ref(db, 'orders'), {
-          id: 'ORD-W-' + Math.floor(10000 + Math.random() * 90000),
-          game: 'เติมเครดิตร้าน',
-          package: `+฿${amt.toLocaleString()}`,
-          price: amt,
+      const newOrder = {
+        orderId,
+        game: selectedGame.name,
+        gameId: selectedGame.id,
+        packageName: selectedPackage.name,
+        price: finalAmount,
+        originalPrice: selectedPackage.price,
+        discountApplied: userRank.discount,
+        player: user.username,
+        playerId: playerId.trim(),
+        paymentMethod: payMethod === 'wallet' ? 'Cat Coin Wallet' : 'PromptPay QR (สลิปโอนเงิน)',
+        status: isAuto ? '✅ สำเร็จ (เติมเงินแล้ว)' : '⏳ รอตรวจสอบยอดเงิน',
+        time: new Date().toLocaleString('th-TH'),
+        dateKey: new Date().toISOString().split('T')[0],
+        timestamp: Date.now()
+      };
+
+      if (isAuto && user.firebaseKey) {
+        const nextBal = (user.balance || 0) - finalAmount;
+        const nextSpent = (user.totalSpent || 0) + finalAmount;
+        await update(ref(db, `users/${user.firebaseKey}`), {
+          balance: nextBal,
+          totalSpent: nextSpent
+        });
+      }
+
+      await push(ref(db, 'orders'), newOrder);
+
+      alert(`สั่งซื้อสำเร็จ! รหัสออเดอร์: ${orderId}`);
+      setSelectedGame(null);
+      setSelectedPackage(null);
+      setPlayerId('');
+      setSlipPreview(null);
+      setTab('history');
+    } catch (err) {
+      alert('เกิดข้อผิดพลาดในการสั่งซื้อ: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleWalletTopup = async (e) => {
+    e.preventDefault();
+    setWalletMsg({ text: '', type: '' });
+    const amount = Number(walletAmount);
+
+    if (!amount || amount < 10) {
+      setWalletMsg({ text: 'ยอดเติมเงินขั้นต่ำคือ 10 บาท', type: 'error' });
+      return;
+    }
+    if (!walletSlipPreview) {
+      setWalletMsg({ text: 'กรุณาแนบภาพสลิปการโอนเงิน', type: 'error' });
+      return;
+    }
+
+    setIsCheckingSlip(true);
+
+    try {
+      if (user?.firebaseKey) {
+        const newBal = (user.balance || 0) + amount;
+        await update(ref(db, `users/${user.firebaseKey}`), { balance: newBal });
+
+        await push(ref(db, 'orders'), {
+          orderId: 'TOPUP-' + Math.floor(100000 + Math.random() * 900000),
+          game: 'Cat Coin Wallet',
+          gameId: 'wallet',
+          packageName: `เติมเหรียญ ₵${amount.toLocaleString()}`,
+          price: amount,
           player: user.username,
-          gameChar: 'เติมเครดิต',
-          paymentMethod: 'โอนเงินธนาคาร (SlipOK ผ่าน)',
-          status: '✅ เติมเครดิตสำเร็จ (ตรวจสลิปผ่าน)',
-          type: 'wallet',
+          playerId: user.username,
+          paymentMethod: 'PromptPay QR (ตรวจสลิปผ่าน)',
+          status: '✅ สำเร็จ (เติมเหรียญแล้ว)',
           time: new Date().toLocaleString('th-TH'),
           dateKey: new Date().toISOString().split('T')[0],
           timestamp: Date.now()
         });
 
-        setIsWalletVerifying(false);
-        setShowWalletModal(false);
-        setWalletAmount('');
-        setWalletSlipFile(null);
-        alert(`🎉 เติมเหรียญสำเร็จ! ได้รับ ${amt.toLocaleString()} Cat Coin เรียบร้อยแล้ว`);
-      } else {
-        setIsWalletVerifying(false);
-        setWalletError(res.message || 'สลิปไม่ถูกต้อง');
+        setWalletMsg({ text: `🎉 เติมเหรียญสำเร็จ! ยอดคงเหลือใหม่: ₵${newBal.toLocaleString()}`, type: 'success' });
+        setTimeout(() => {
+          setShowWalletModal(false);
+          setWalletAmount('');
+          setWalletSlipPreview(null);
+          setWalletMsg({ text: '', type: '' });
+        }, 1500);
       }
-    } catch (e) {
-      setIsWalletVerifying(false);
-      setWalletError('เกิดข้อผิดพลาดในการตรวจสอบสลิป');
+    } catch (err) {
+      setWalletMsg({ text: 'เกิดข้อผิดพลาด: ' + err.message, type: 'error' });
+    } finally {
+      setIsCheckingSlip(false);
     }
   };
-
-  // แอดมินล็อกอิน
-  const handleAdminLogin = (e) => {
-    e.preventDefault();
-    setAdminPinError('');
-    if (adminPinInput === adminPin) {
-      setIsAdminLoggedIn(true);
-      localStorage.setItem('cyber_is_admin_logged', 'true');
-      setAdminPinInput('');
-    } else {
-      setAdminPinError('รหัส PIN ไม่ถูกต้อง');
-    }
-  };
-
-  // กรองประวัติคำสั่งซื้อแบบเดิม (History Tab)
-  const nowDayStr = new Date().toISOString().split('T')[0];
-  const searchedOrders = orders.filter(o => {
-    const matchUser = isUserAdmin ? (!historySearchQuery || o.player?.toLowerCase().includes(historySearchQuery.toLowerCase())) : (o.player?.toLowerCase() === user?.username?.toLowerCase());
-    const matchOrder = !historyOrderSearch || o.id?.toLowerCase().includes(historyOrderSearch.toLowerCase());
-    const matchGame = historyGameFilter === 'all' || o.game?.toLowerCase() === historyGameFilter.toLowerCase();
-    return matchUser && matchOrder && matchGame;
-  });
-
-  const todayOrders = searchedOrders.filter(o => o.dateKey === nowDayStr || o.time?.includes(new Date().toLocaleDateString('th-TH')));
-  const pastOrders = searchedOrders.filter(o => o.dateKey !== nowDayStr && !o.time?.includes(new Date().toLocaleDateString('th-TH')));
-  const totalSpentInSearch = searchedOrders.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
 
   // ---------------------------------------------------------------------------
-  // RENDER: หน้าล็อกอินแบบเดิม (ถ้ายังไม่ล็อกอิน)
+  // 9. Admin Operations
+  // ---------------------------------------------------------------------------
+  const handleAdminVerifyPin = (e) => {
+    e.preventDefault();
+    if (adminPinInput === adminPinCode) {
+      setIsAdminAuthenticated(true);
+      localStorage.setItem('cyber_admin_auth', 'true');
+      setAdminPinInput('');
+    } else {
+      alert('รหัส PIN แอดมินไม่ถูกต้อง!');
+    }
+  };
+
+  const handleUpdateOrderStatus = async (o, newStatus) => {
+    if (!o.firebaseKey) return;
+    await update(ref(db, `orders/${o.firebaseKey}`), { status: newStatus });
+
+    if (newStatus.includes('สำเร็จ') && !o.status?.includes('สำเร็จ')) {
+      const target = registeredUsers.find(u => u.username?.toLowerCase() === o.player?.toLowerCase());
+      if (target && target.firebaseKey) {
+        const newSpent = (target.totalSpent || 0) + Number(o.price || 0);
+        await update(ref(db, `users/${target.firebaseKey}`), { totalSpent: newSpent });
+      }
+    }
+  };
+
+  const handleDeleteOrder = async (o) => {
+    if (window.confirm(`ต้องการลบออเดอร์ ${o.orderId} หรือไม่?`)) {
+      await remove(ref(db, `orders/${o.firebaseKey}`));
+    }
+  };
+
+  const handleToggleGameStock = async (gameId) => {
+    const cur = gameStock[gameId] ?? true;
+    await set(ref(db, `game_stock_status/${gameId}`), !cur);
+  };
+
+  const handleTogglePackageStock = async (pkgId) => {
+    const cur = packageStock[pkgId] ?? true;
+    await set(ref(db, `package_stock_status/${pkgId}`), !cur);
+  };
+
+  const handleAdjustBalance = async (u, delta) => {
+    if (!u.firebaseKey) return;
+    const cur = Number(u.balance || 0);
+    const updated = Math.max(0, cur + delta);
+    await update(ref(db, `users/${u.firebaseKey}`), { balance: updated });
+  };
+
+  const handleDeleteUser = async (u) => {
+    if (window.confirm(`ต้องการลบผู้ใช้ ${u.username} หรือไม่?`)) {
+      await remove(ref(db, `users/${u.firebaseKey}`));
+    }
+  };
+
+  const handleSavePin = (e) => {
+    e.preventDefault();
+    if (newPinSetting.length === 6) {
+      setAdminPinCode(newPinSetting);
+      localStorage.setItem('cyber_pin_code', newPinSetting);
+      setNewPinSetting('');
+      alert('เปลี่ยนรหัส PIN แอดมินเรียบร้อยแล้ว');
+    } else {
+      alert('รหัส PIN ต้องมีความยาว 6 หลัก');
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // 10. Filtered History Calculations (เฉพาะเกมที่อยู่ในหน้าแรกเท่านั้น)
+  // ---------------------------------------------------------------------------
+  const activeGameCatalogNames = useMemo(() => {
+    return ['Cat Coin Wallet', ...GAME_CATALOG.map(g => g.name)];
+  }, []);
+
+  const searchedOrders = useMemo(() => {
+    return orders.filter(o => {
+      // เอาเฉพาะเกมที่อยู่ในหน้าแรกเท่านั้น (Genshin, Honkai, PUBG จะไม่โผล่มา)
+      const isGameInCatalog = activeGameCatalogNames.some(name => 
+        o.game?.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(o.game?.toLowerCase())
+      );
+      if (!isGameInCatalog) return false;
+
+      const matchUser = isSuperAdmin 
+        ? (!historySearchQuery || o.player?.toLowerCase().includes(historySearchQuery.toLowerCase()))
+        : (o.player?.toLowerCase() === user?.username?.toLowerCase());
+      const matchOrder = !historyOrderSearch || o.orderId?.toLowerCase().includes(historyOrderSearch.toLowerCase());
+      const matchGame = historyGameFilter === 'all' || o.game?.toLowerCase() === historyGameFilter.toLowerCase();
+
+      return matchUser && matchOrder && matchGame;
+    });
+  }, [orders, activeGameCatalogNames, isSuperAdmin, historySearchQuery, user?.username, historyOrderSearch, historyGameFilter]);
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayOrders = searchedOrders.filter(o => o.dateKey === todayStr || o.time?.includes(new Date().toLocaleDateString('th-TH')));
+  const pastOrders = searchedOrders.filter(o => o.dateKey !== todayStr && !o.time?.includes(new Date().toLocaleDateString('th-TH')));
+  const totalAmountInSearch = searchedOrders.reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+
+  // Financial Stats
+  const totalSales = orders.filter(o => o.status?.includes('สำเร็จ')).reduce((sum, o) => sum + (Number(o.price) || 0), 0);
+  const estimatedCost = totalSales * 0.88;
+  const netProfit = totalSales - estimatedCost - totalAdSpend;
+  const estimatedVat = totalSales * 0.07;
+
+  // ---------------------------------------------------------------------------
+  // VIEW: หน้าล็อกอิน / สมัครสมาชิก (พร้อมปุ่มโหมดมืด/สว่างตั้งแต่หน้าแรก)
   // ---------------------------------------------------------------------------
   if (!user) {
     return (
-      <div style={{
-        backgroundColor: '#fffaf5',
-        backgroundImage: 'radial-gradient(#fdba74 1.2px, transparent 1.2px), radial-gradient(#f472b6 1.2px, #fffaf5 1.2px)',
-        backgroundSize: '36px 36px',
-        color: '#1e293b', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
-      }}>
-        <style>{cyberGlobalStyles}</style>
-        <div style={{
-          backgroundColor: '#ffffff', border: '3px solid #fed7aa', borderRadius: '28px',
-          padding: '40px 32px', maxWidth: '440px', width: '100%', boxShadow: '0 25px 50px rgba(249, 115, 22, 0.15)', textAlign: 'center'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '20px' }}>
-            <div style={{
-              width: '70px', height: '70px', borderRadius: '22px',
-              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)',
-              border: '3px solid #ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 10px 25px rgba(249,115,22,0.4)', fontSize: '36px', marginBottom: '12px'
-            }}>
+      <div className={`min-h-screen flex flex-col justify-center items-center p-4 transition-colors duration-300 font-sans ${
+        isDark ? 'bg-neutral-950 text-neutral-100' : 'bg-amber-50/60 text-neutral-900'
+      }`}>
+        {/* ปุ่มสลับโหมดมืด/สว่าง บนมุมขวาของหน้าล็อกอิน */}
+        <div className="fixed top-5 right-5 z-50">
+          <button
+            onClick={toggleTheme}
+            className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition shadow-sm flex items-center gap-1.5 ${
+              isDark 
+                ? 'bg-neutral-900 border-neutral-700 text-amber-400 hover:border-amber-400' 
+                : 'bg-white border-amber-300 text-amber-700 hover:border-amber-500'
+            }`}
+          >
+            {isDark ? '🌙 โหมดมืด' : '☀️ โหมดสว่าง'}
+          </button>
+        </div>
+
+        {/* Card ล็อกอินแบบเดิม */}
+        <div className={`w-full max-w-md rounded-3xl p-8 border shadow-2xl transition-all ${
+          isDark ? 'bg-neutral-900/90 border-neutral-800' : 'bg-white border-amber-200'
+        }`}>
+          <div className="text-center space-y-2 mb-6">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 flex items-center justify-center text-3xl shadow-lg shadow-amber-500/25">
               🐱
             </div>
-            <div style={{ fontSize: '26px', fontWeight: 900, background: 'linear-gradient(135deg, #ea580c, #db2777)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <h1 className="text-2xl font-black bg-gradient-to-r from-amber-500 via-rose-500 to-purple-500 bg-clip-text text-transparent">
               MEOW TOPUP
-            </div>
-            <div style={{ fontSize: '11px', fontWeight: 900, color: '#f59e0b', marginTop: '2px' }}>
-              🐾 CUTE & FAST GAME STORE 🪙
-            </div>
+            </h1>
+            <p className="text-xs text-neutral-400 font-medium">🐾 CUTE & FAST GAME STORE 24H 🪙</p>
           </div>
 
-          <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '20px' }}>
-            {authMode === 'login' ? 'เข้าสู่ระบบด้วยชื่อผู้ใช้งานอัตโนมัติ 24 ชม.' : 'สมัครสมาชิกใหม่ กรอกอีเมลและชื่อผู้ใช้'}
-          </p>
+          {authError && (
+            <div className="mb-4 p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 text-xs font-bold text-center">
+              {authError}
+            </div>
+          )}
+          {authSuccessMsg && (
+            <div className="mb-4 p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-bold text-center">
+              {authSuccessMsg}
+            </div>
+          )}
 
-          <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px', textAlign: 'left' }}>
-            {authError && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', color: '#ef4444', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authError}</div>}
-            {authSuccessMsg && <div style={{ backgroundColor: 'rgba(52, 211, 153, 0.15)', border: '1px solid #34d399', color: '#10b981', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authSuccessMsg}</div>}
-
+          <form onSubmit={handleAuthSubmit} className="space-y-4">
             {authMode === 'login' ? (
-              <div>
-                <label style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '4px' }}>ชื่อผู้ใช้งาน (Username)</label>
-                <input type="text" placeholder="กรอกชื่อผู้ใช้งาน..." value={usernameInput} onChange={e => setUsernameInput(e.target.value)} style={{ width: '100%', border: '1.5px solid #fed7aa', borderRadius: '12px', padding: '12px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
-              </div>
+              <>
+                <div>
+                  <label className="text-xs font-bold block mb-1 text-neutral-400">ชื่อผู้ใช้งาน (Username) หรือ อีเมล</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="กรอกชื่อผู้ใช้..."
+                    value={usernameInput}
+                    onChange={(e) => setUsernameInput(e.target.value)}
+                    className={`w-full px-4 py-3 rounded-xl text-xs border outline-none font-medium transition ${
+                      isDark ? 'bg-neutral-950 border-neutral-800 focus:border-amber-500 text-white' : 'bg-neutral-50 border-neutral-300 focus:border-amber-500'
+                    }`}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold block mb-1 text-neutral-400">รหัสผ่าน (Password)</label>
+                  <div className="relative">
+                    <input
+                      type={showLoginPassword ? 'text' : 'password'}
+                      required
+                      placeholder="••••••••"
+                      value={passwordInput}
+                      onChange={(e) => setPasswordInput(e.target.value)}
+                      className={`w-full px-4 py-3 rounded-xl text-xs border outline-none font-medium transition pr-10 ${
+                        isDark ? 'bg-neutral-950 border-neutral-800 focus:border-amber-500 text-white' : 'bg-neutral-50 border-neutral-300 focus:border-amber-500'
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword(!showLoginPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400 hover:text-amber-500"
+                    >
+                      {showLoginPassword ? '👁️' : '🙈'}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center text-xs pt-1">
+                  <label className="flex items-center gap-1.5 cursor-pointer text-neutral-400">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="rounded accent-amber-500"
+                    />
+                    <span>จดจำไอดีไว้</span>
+                  </label>
+                  <span
+                    onClick={() => { setForgotModalOpen(true); setForgotStep(1); }}
+                    className="text-amber-500 font-bold hover:underline cursor-pointer"
+                  >
+                    ลืมรหัสผ่าน?
+                  </span>
+                </div>
+              </>
             ) : (
               <>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>1. อีเมลกู้คืนรหัสผ่าน</label>
-                  <input type="email" placeholder="example@gmail.com" value={emailInput} onChange={e => setEmailInput(e.target.value)} style={{ width: '100%', border: '1.5px solid #a855f7', borderRadius: '12px', padding: '12px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                  <label className="text-xs font-bold block mb-1 text-purple-400">1. อีเมลกู้คืนรหัสผ่าน</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="example@gmail.com"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    className={`w-full px-4 py-2.5 rounded-xl text-xs border outline-none ${
+                      isDark ? 'bg-neutral-950 border-neutral-800 text-white' : 'bg-neutral-50 border-neutral-300'
+                    }`}
+                  />
                 </div>
                 <div>
-                  <label style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '4px' }}>2. ชื่อผู้ใช้งาน</label>
-                  <input type="text" placeholder="ตั้งชื่อผู้ใช้งาน..." value={regUsernameInput} onChange={e => setRegUsernameInput(e.target.value)} style={{ width: '100%', border: '1.5px solid #fed7aa', borderRadius: '12px', padding: '12px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                  <label className="text-xs font-bold block mb-1 text-neutral-400">2. ตั้งชื่อผู้ใช้งาน (Username)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="เช่น meowgamer"
+                    value={regUsernameInput}
+                    onChange={(e) => setRegUsernameInput(e.target.value)}
+                    className={`w-full px-4 py-2.5 rounded-xl text-xs border outline-none ${
+                      isDark ? 'bg-neutral-950 border-neutral-800 text-white' : 'bg-neutral-50 border-neutral-300'
+                    }`}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold block mb-1 text-neutral-400">3. รหัสผ่าน (6 ตัวขึ้นไป)</label>
+                  <div className="relative">
+                    <input
+                      type={showRegPassword ? 'text' : 'password'}
+                      required
+                      placeholder="••••••••"
+                      value={regPasswordInput}
+                      onChange={(e) => setRegPasswordInput(e.target.value)}
+                      className={`w-full px-4 py-2.5 rounded-xl text-xs border outline-none pr-10 ${
+                        isDark ? 'bg-neutral-950 border-neutral-800 text-white' : 'bg-neutral-50 border-neutral-300'
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+                    >
+                      {showRegPassword ? '👁️' : '🙈'}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold block mb-1 text-neutral-400">4. ยืนยันรหัสผ่านอีกครั้ง</label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      required
+                      placeholder="••••••••"
+                      value={confirmPasswordInput}
+                      onChange={(e) => setConfirmPasswordInput(e.target.value)}
+                      className={`w-full px-4 py-2.5 rounded-xl text-xs border outline-none pr-10 ${
+                        isDark ? 'bg-neutral-950 border-neutral-800 text-white' : 'bg-neutral-50 border-neutral-300'
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400"
+                    >
+                      {showConfirmPassword ? '👁️' : '🙈'}
+                    </button>
+                  </div>
                 </div>
               </>
             )}
 
-            <div>
-              <label style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '4px' }}>
-                {authMode === 'register' ? '3. รหัสผ่าน (6 ตัวขึ้นไป)' : 'รหัสผ่าน (Password)'}
-              </label>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <input
-                  type={authMode === 'login' ? (showLoginPassword ? 'text' : 'password') : (showRegPassword ? 'text' : 'password')}
-                  placeholder="กรอกรหัสผ่าน..."
-                  value={authMode === 'login' ? passwordInput : regPasswordInput}
-                  onChange={e => authMode === 'login' ? setPasswordInput(e.target.value) : setRegPasswordInput(e.target.value)}
-                  style={{ width: '100%', border: '1.5px solid #fed7aa', borderRadius: '12px', padding: '12px 40px 12px 12px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
-                />
-                <button type="button" onClick={() => authMode === 'login' ? setShowLoginPassword(!showLoginPassword) : setShowRegPassword(!showRegPassword)} style={{ position: 'absolute', right: '12px', background: 'none', border: 'none' }}>
-                  <EyeIcon show={authMode === 'login' ? showLoginPassword : showRegPassword} />
-                </button>
-              </div>
-            </div>
-
-            {authMode === 'register' && (
-              <div>
-                <label style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '4px' }}>4. ยืนยันรหัสผ่าน</label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="กรอกรหัสผ่านอีกครั้ง..."
-                    value={confirmPasswordInput}
-                    onChange={e => setConfirmPasswordInput(e.target.value)}
-                    style={{ width: '100%', border: '1.5px solid #fed7aa', borderRadius: '12px', padding: '12px 40px 12px 12px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
-                  />
-                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={{ position: 'absolute', right: '12px', background: 'none', border: 'none' }}>
-                    <EyeIcon show={showConfirmPassword} />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {authMode === 'login' && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#64748b' }}>
-                  <input type="checkbox" id="rem" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} />
-                  <label htmlFor="rem">จดจำไอดีไว้</label>
-                </div>
-                <span onClick={() => { setForgotModalOpen(true); setForgotStep(1); }} style={{ color: '#f97316', cursor: 'pointer', fontWeight: 'bold' }}>ลืมรหัสผ่าน?</span>
-              </div>
-            )}
-
-            <button type="submit" style={{ backgroundColor: '#f97316', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', marginTop: '10px' }}>
-              {authMode === 'login' ? 'เข้าสู่ระบบ (Login)' : 'สมัครสมาชิก'}
+            <button
+              type="submit"
+              className="w-full py-3.5 rounded-xl font-black text-sm bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-400 hover:to-rose-400 text-black shadow-lg shadow-amber-500/25 transition-transform active:scale-95"
+            >
+              {authMode === 'login' ? 'เข้าสู่ระบบ (Login)' : 'ยืนยันการสมัครสมาชิก'}
             </button>
           </form>
 
-          <div style={{ marginTop: '16px', fontSize: '13px', color: '#64748b' }}>
+          <div className="mt-5 text-center text-xs text-neutral-400">
             {authMode === 'login' ? (
-              <>ยังไม่มีบัญชี? <span onClick={() => { setAuthMode('register'); setAuthError(''); }} style={{ color: '#0284c7', cursor: 'pointer', fontWeight: 'bold' }}>สมัครสมาชิก</span></>
+              <span>
+                ยังไม่มีบัญชีใช่ไหม?{' '}
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('register'); setAuthError(''); }}
+                  className="text-amber-500 font-bold hover:underline"
+                >
+                  สมัครสมาชิกที่นี่
+                </button>
+              </span>
             ) : (
-              <>มีบัญชีแล้ว? <span onClick={() => { setAuthMode('login'); setAuthError(''); }} style={{ color: '#0284c7', cursor: 'pointer', fontWeight: 'bold' }}>เข้าสู่ระบบ</span></>
+              <span>
+                มีบัญชีอยู่แล้ว?{' '}
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('login'); setAuthError(''); }}
+                  className="text-amber-500 font-bold hover:underline"
+                >
+                  เข้าสู่ระบบเลย
+                </button>
+              </span>
             )}
           </div>
         </div>
 
-        {/* Modal ลืมรหัสผ่านพร้อม OTP 3 ขั้นตอนแบบเดิม */}
+        {/* Modal OTP ลืมรหัสผ่านแบบเดิม */}
         {forgotModalOpen && (
-          <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-            <div style={{ backgroundColor: '#111827', border: '1.5px solid #a855f7', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '28px', textAlign: 'center', color: '#fff' }}>
-              <button onClick={() => setForgotModalOpen(false)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#9ca3af', fontSize: '20px' }}>✕</button>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '8px' }}>กู้คืนรหัสผ่าน OTP</h3>
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className={`w-full max-w-sm rounded-3xl border p-6 text-center space-y-4 shadow-2xl ${
+              isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white border-amber-200 text-neutral-900'
+            }`}>
+              <div className="flex justify-between items-center border-b pb-2">
+                <h3 className="font-bold text-sm">🔑 กู้คืนรหัสผ่าน OTP</h3>
+                <button onClick={() => setForgotModalOpen(false)} className="text-neutral-400 hover:text-white">✕</button>
+              </div>
+
               {forgotStatusMsg.text && (
-                <div style={{ backgroundColor: forgotStatusMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: forgotStatusMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '8px', fontSize: '12px', marginBottom: '14px' }}>
+                <div className={`p-2.5 rounded-xl text-xs font-bold ${
+                  forgotStatusMsg.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+                }`}>
                   {forgotStatusMsg.text}
                 </div>
               )}
 
               {forgotStep === 1 && (
-                <form onSubmit={handleRequestOtpSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <input type="text" placeholder="กรอกอีเมลหรือชื่อผู้ใช้" value={forgotEmailInput} onChange={e => setForgotEmailInput(e.target.value)} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #374151', backgroundColor: '#030712', color: '#fff' }} />
-                  <button type="submit" style={{ padding: '12px', borderRadius: '10px', background: '#9333ea', color: '#fff', border: 'none', fontWeight: 'bold' }}>ขอรับรหัส OTP</button>
+                <form onSubmit={handleRequestOtp} className="space-y-3">
+                  <input
+                    type="text"
+                    required
+                    placeholder="กรอกชื่อผู้ใช้ หรือ อีเมล"
+                    value={forgotEmailInput}
+                    onChange={(e) => setForgotEmailInput(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl text-xs border bg-neutral-950 border-neutral-700 text-white outline-none"
+                  />
+                  <button type="submit" className="w-full py-2.5 rounded-xl bg-purple-600 text-white text-xs font-bold">
+                    ขอรับรหัส OTP 6 หลัก
+                  </button>
                 </form>
               )}
 
               {forgotStep === 2 && (
-                <form onSubmit={handleVerifyOtpSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <input type="text" maxLength={6} placeholder="• • • • • •" value={forgotOtpInput} onChange={e => setForgotOtpInput(e.target.value.replace(/\D/g, ''))} style={{ padding: '12px', borderRadius: '10px', border: '1.5px solid #a855f7', backgroundColor: '#030712', color: '#fff', textAlign: 'center', fontSize: '24px', letterSpacing: '6px' }} />
-                  <div style={{ fontSize: '12px', color: '#38bdf8' }}>หมดอายุใน: {Math.floor(otpCountdown / 60)}:{String(otpCountdown % 60).padStart(2, '0')}</div>
-                  <button type="submit" style={{ padding: '12px', borderRadius: '10px', background: '#34d399', color: '#000', border: 'none', fontWeight: 'bold' }}>ยืนยันรหัส OTP</button>
+                <form onSubmit={handleVerifyOtp} className="space-y-3">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    placeholder="• • • • • •"
+                    value={forgotOtpInput}
+                    onChange={(e) => setForgotOtpInput(e.target.value.replace(/\D/g, ''))}
+                    className="w-full text-center tracking-widest text-2xl font-mono px-3 py-2.5 rounded-xl border bg-neutral-950 border-purple-500 text-white outline-none"
+                  />
+                  <div className="text-[11px] text-amber-400">หมดอายุใน: {Math.floor(otpCountdown / 60)}:{String(otpCountdown % 60).padStart(2, '0')} นาที</div>
+                  <button type="submit" className="w-full py-2.5 rounded-xl bg-emerald-600 text-white text-xs font-bold">
+                    ยืนยันรหัส OTP
+                  </button>
                 </form>
               )}
 
               {forgotStep === 3 && (
-                <form onSubmit={handleSetNewPasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <input type="password" placeholder="รหัสผ่านใหม่" value={forgotNewPassword} onChange={e => setForgotNewPassword(e.target.value)} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #374151', backgroundColor: '#030712', color: '#fff' }} />
-                  <input type="password" placeholder="ยืนยันรหัสผ่านใหม่" value={forgotConfirmPassword} onChange={e => setForgotConfirmPassword(e.target.value)} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #374151', backgroundColor: '#030712', color: '#fff' }} />
-                  <button type="submit" style={{ padding: '12px', borderRadius: '10px', background: '#9333ea', color: '#fff', border: 'none', fontWeight: 'bold' }}>บันทึกรหัสผ่านใหม่</button>
+                <form onSubmit={handleResetPassword} className="space-y-3">
+                  <input
+                    type="password"
+                    placeholder="รหัสผ่านใหม่ (อย่างน้อย 6 ตัว)"
+                    value={forgotNewPassword}
+                    onChange={(e) => setForgotNewPassword(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl text-xs border bg-neutral-950 border-neutral-700 text-white outline-none"
+                  />
+                  <input
+                    type="password"
+                    placeholder="ยืนยันรหัสผ่านใหม่อีกครั้ง"
+                    value={forgotConfirmPassword}
+                    onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl text-xs border bg-neutral-950 border-neutral-700 text-white outline-none"
+                  />
+                  <button type="submit" className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-black text-xs font-black">
+                    บันทึกรหัสผ่านใหม่
+                  </button>
                 </form>
               )}
             </div>
@@ -814,196 +1047,625 @@ export default function App() {
   }
 
   // ---------------------------------------------------------------------------
-  // RENDER: หน้าจอหลักเมื่อเข้าสู่ระบบแล้ว (Header, Shop, History, Admin)
+  // VIEW: เมื่อล็อกอินแล้ว (หน้าร้าน, เช็คประวัติแบบเดิม, หลังบ้านพับได้ทุกส่วน)
   // ---------------------------------------------------------------------------
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: isDarkMode ? '#0b0f19' : '#fffaf5',
-      color: isDarkMode ? '#f8fafc' : '#0f172a',
-      paddingBottom: '50px'
-    }}>
-      <style>{cyberGlobalStyles}</style>
-
-      {/* แถบเมนูด้านบน Header */}
-      <header style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '12px 24px', position: 'sticky', top: 0, zIndex: 40,
-        backgroundColor: isDarkMode ? 'rgba(15, 23, 42, 0.95)' : 'rgba(254, 243, 235, 0.95)',
-        borderBottom: isDarkMode ? '2px solid #334155' : '2px solid #fed7aa', backdropFilter: 'blur(10px)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
-          <div style={{ width: '44px', height: '44px', borderRadius: '14px', background: 'linear-gradient(135deg, #f97316, #ec4899)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>
-            🐱
-          </div>
-          <div>
-            <div style={{ fontWeight: 900, fontSize: '18px', color: '#ea580c' }}>MEOW TOPUP</div>
-            <div style={{ fontSize: '10px', color: '#f59e0b', fontWeight: 'bold' }}>🐾 FAST GAME STORE 🪙</div>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '14px', background: isDarkMode ? '#1e293b' : '#ffffff', border: '1.5px solid #fed7aa', fontSize: '12px' }}>
-            <RankEmblem tier={currentUserRank.tier} size={18} />
-            <span>👤 <b>{user.username}</b></span>
-            <span style={{ color: '#ea580c', fontWeight: 'bold' }}>🪙 {(user.balance || 0).toLocaleString()} Coin</span>
-            <button onClick={() => setShowWalletModal(true)} style={{ background: '#f97316', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>+ เติมเหรียญ</button>
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-300 ${
+      isDark ? 'bg-neutral-950 text-neutral-100' : 'bg-amber-50/40 text-neutral-900'
+    }`}>
+      {/* HEADER NAVBAR */}
+      <header className={`sticky top-0 z-40 border-b backdrop-blur-md transition-colors ${
+        isDark ? 'bg-neutral-900/90 border-neutral-800' : 'bg-white/90 border-amber-200'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          
+          {/* Logo */}
+          <div 
+            onClick={() => { setTab('shop'); setSelectedGame(null); }}
+            className="flex items-center gap-2.5 cursor-pointer select-none"
+          >
+            <CatLogo size={38} />
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="font-black text-lg tracking-wider bg-gradient-to-r from-amber-500 via-rose-500 to-purple-500 bg-clip-text text-transparent">
+                  MEOW TOPUP
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                  REALTIME 24H
+                </span>
+              </div>
+              <div className="text-[10px] text-neutral-400 font-medium flex items-center gap-1">
+                <span className={`w-2 h-2 rounded-full ${adminOnline ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                {adminOnline ? 'ระบบอัตโนมัติพร้อมให้บริการ' : 'ระบบกำลังปรับปรุง'}
+              </div>
+            </div>
           </div>
 
-          <button onClick={toggleTheme} className="cyber-btn" style={{ padding: '6px 12px', borderRadius: '10px', border: '1px solid #fed7aa', background: isDarkMode ? '#1e293b' : '#ffedd5', color: isDarkMode ? '#fde047' : '#ea580c', fontWeight: 'bold', fontSize: '12px' }}>
-            {isDarkMode ? '🌙 มืด' : '☀️ สว่าง'}
-          </button>
-          <button onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} className="cyber-btn" style={{ padding: '8px 14px', borderRadius: '10px', border: 'none', background: activeTab === 'shop' ? '#ea580c' : '#334155', color: '#fff', fontWeight: 'bold', fontSize: '12px' }}>
-            🐱 หน้าร้าน
-          </button>
-          <button onClick={() => setActiveTab('history')} className="cyber-btn" style={{ padding: '8px 14px', borderRadius: '10px', border: 'none', background: activeTab === 'history' ? '#ea580c' : '#334155', color: '#fff', fontWeight: 'bold', fontSize: '12px' }}>
-            📋 เช็คประวัติ
-          </button>
-          {isUserAdmin && (
-            <button onClick={() => setActiveTab('admin')} className="cyber-btn" style={{ padding: '8px 14px', borderRadius: '10px', border: 'none', background: activeTab === 'admin' ? '#9333ea' : '#334155', color: '#fff', fontWeight: 'bold', fontSize: '12px' }}>
-              ⚙️ หลังบ้าน
+          {/* Controls & Nav */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            
+            {/* โหมดมืด / โหมดสว่าง */}
+            <button
+              onClick={toggleTheme}
+              className={`p-2 rounded-xl border text-xs font-bold transition shadow-sm ${
+                isDark ? 'bg-neutral-800 border-neutral-700 text-amber-400' : 'bg-white border-amber-300 text-amber-800'
+              }`}
+              title="สลับโหมดมืด/สว่าง"
+            >
+              {isDark ? '🌙' : '☀️'}
             </button>
-          )}
-          <button onClick={handleLogout} className="cyber-btn" style={{ padding: '8px 12px', borderRadius: '10px', border: 'none', background: '#fee2e2', color: '#dc2626', fontWeight: 'bold', fontSize: '12px' }}>
-            🚪 ออก
-          </button>
+
+            {/* ปุ่มหน้าร้าน */}
+            <button
+              onClick={() => { setTab('shop'); setSelectedGame(null); }}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                tab === 'shop' 
+                  ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20' 
+                  : isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-black'
+              }`}
+            >
+              🐱 หน้าร้าน
+            </button>
+
+            {/* ปุ่มเช็คประวัติแบบเดิม */}
+            <button
+              onClick={() => setTab('history')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                tab === 'history' 
+                  ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20' 
+                  : isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-black'
+              }`}
+            >
+              📋 เช็คประวัติ
+            </button>
+
+            {/* ปุ่ม VIP */}
+            <button
+              onClick={() => setTab('vip')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                tab === 'vip' 
+                  ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-black font-black' 
+                  : isDark ? 'text-neutral-400 hover:text-white' : 'text-neutral-600 hover:text-black'
+              }`}
+            >
+              👑 สิทธิ VIP
+            </button>
+
+            {/* Wallet Coin Button */}
+            <button
+              onClick={() => setShowWalletModal(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 to-rose-500/15 border border-amber-500/40 text-xs font-bold text-amber-500 hover:border-amber-400 transition"
+            >
+              <CoinIcon size={16} />
+              <span>₵{(user.balance || 0).toLocaleString()}</span>
+              <span className="text-[10px] bg-amber-500 text-black px-1.5 py-0.2 rounded font-black">+</span>
+            </button>
+
+            {/* Super Admin Tab */}
+            {isSuperAdmin && (
+              <button
+                onClick={() => setTab('admin')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                  tab === 'admin' 
+                    ? 'bg-purple-600 text-white shadow-md shadow-purple-500/30' 
+                    : 'bg-purple-900/30 border border-purple-500/50 text-purple-300'
+                }`}
+              >
+                ⚙️ หลังบ้าน
+              </button>
+            )}
+
+            {/* Logout */}
+            <button
+              onClick={handleLogout}
+              className="p-1.5 text-xs text-rose-500 hover:text-rose-400 transition"
+              title="ออกจากระบบ"
+            >
+              🚪
+            </button>
+
+          </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main style={{ maxWidth: '1100px', margin: '25px auto', padding: '0 20px' }}>
-        {/* TAB 1: หน้าร้านค้า (Shop) */}
-        {activeTab === 'shop' && !selectedGame && (
-          <div>
-            {/* Banner แบบ CSS Gradient ประหยัดพื้นที่ */}
-            <div style={{
-              borderRadius: '24px', padding: '35px 30px', marginBottom: '30px',
-              background: 'linear-gradient(135deg, #ea580c 0%, #db2777 50%, #9333ea 100%)',
-              color: '#ffffff', boxShadow: '0 15px 35px rgba(234, 88, 12, 0.25)', position: 'relative', overflow: 'hidden'
-            }}>
-              <h2 style={{ fontSize: '26px', fontWeight: 900, margin: '0 0 8px 0' }}>🐱 MEOW TOPUP STORE</h2>
-              <p style={{ fontSize: '13px', margin: 0, opacity: 0.95 }}>เติมเกมออนไลน์ระบบออเดอร์เรียลไทม์ ปลอดภัย 100% เติมได้ตลอด 24 ชม.</p>
+      {/* VIP STATUS RIBBON */}
+      <div className={`border-b text-xs py-2 px-4 transition-colors ${
+        isDark ? 'bg-neutral-900/60 border-neutral-800' : 'bg-amber-100/60 border-amber-200 text-amber-900'
+      }`}>
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-base">{userRank.badge}</span>
+            <span>ระดับสมาชิก: <b>{userRank.name}</b> (รับส่วนลด <b>{userRank.discount}%</b> อัตโนมัติทุกแพ็กเกจ)</span>
+          </div>
+          {userRank.nextTier ? (
+            <div className="flex items-center gap-2">
+              <span className="text-neutral-400">อีก ฿{userRank.needMore.toLocaleString()} ขึ้น {userRank.nextTier}</span>
+              <div className="w-24 bg-neutral-700 rounded-full h-2 overflow-hidden">
+                <div className="bg-gradient-to-r from-amber-500 to-rose-500 h-2 rounded-full" style={{ width: `${userRank.progress}%` }} />
+              </div>
+            </div>
+          ) : (
+            <span className="text-amber-500 font-bold">🎉 ระดับสมาชิกสูงสุดตลอดชีพ</span>
+          )}
+        </div>
+      </div>
+
+      {/* MAIN CONTENT AREA */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+
+        {/* ------------------------------------------------------------------ */}
+        {/* TAB 1: SHOP (หน้าร้าน) */}
+        {/* ------------------------------------------------------------------ */}
+        {tab === 'shop' && !selectedGame && (
+          <div className="space-y-6">
+            
+            {/* Banner แบบ CSS Gradient ประหยัดพื้นที่ โหลดเร็ว ไม่ใช้ Base64 */}
+            <div className="relative overflow-hidden rounded-3xl p-6 sm:p-9 border border-amber-500/30 bg-gradient-to-br from-amber-950/80 via-neutral-900 to-purple-950/80 shadow-2xl">
+              <div className="relative z-10 max-w-2xl space-y-3">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold">
+                  ✨ ระบบเติมเงินเกมอัตโนมัติ Realtime 24 ชม.
+                </div>
+                <h1 className="text-2xl sm:text-4xl font-black text-white leading-tight">
+                  MEOW TOPUP STORE <br />
+                  <span className="bg-gradient-to-r from-amber-400 via-rose-400 to-purple-400 bg-clip-text text-transparent">
+                    เติมง่าย รวดเร็ว ปลอดภัย 100%
+                  </span>
+                </h1>
+                <p className="text-xs sm:text-sm text-neutral-300">
+                  รองรับเกมชั้นนำทั้ง PC และมือถือ เติมตรงเข้าไอดี พร้อมสะสมยอดสมาชิก VIP รับส่วนลดตลอดชีพ
+                </p>
+                <div className="pt-2 flex flex-wrap gap-3">
+                  <button
+                    onClick={() => setShowWalletModal(true)}
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-500 text-black font-black text-xs shadow-lg shadow-amber-500/25 hover:scale-105 transition"
+                  >
+                    🪙 เติมเงินเข้า Cat Wallet
+                  </button>
+                  <button
+                    onClick={() => setTab('vip')}
+                    className="px-4 py-2.5 rounded-xl bg-neutral-800/80 hover:bg-neutral-700 text-white font-bold text-xs border border-neutral-700 transition"
+                  >
+                    👑 ดูสิทธิประโยชน์ VIP
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', color: isDarkMode ? '#f8fafc' : '#0f172a' }}>🎮 เลือกเกมที่ต้องการเติม</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '18px' }}>
-              {gamesData.map(g => (
-                <div key={g.id} onClick={() => setSelectedGame(g)} className="cyber-game-card">
-                  <img src={g.image} alt={g.name} style={{ width: '100%', height: '140px', objectFit: 'cover' }} />
-                  <div style={{ padding: '14px' }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>{g.name}</div>
-                    <div style={{ fontSize: '11px', color: '#ea580c', fontWeight: 'bold', marginTop: '2px' }}>{g.badge}</div>
+            {/* Search Input */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <input
+                type="text"
+                placeholder="🔍 ค้นหาชื่อเกม..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`w-full sm:w-80 px-4 py-2.5 rounded-xl text-xs border outline-none transition ${
+                  isDark 
+                    ? 'bg-neutral-900 border-neutral-800 focus:border-amber-500 text-white' 
+                    : 'bg-white border-neutral-300 focus:border-amber-500 text-neutral-900'
+                }`}
+              />
+              <div className="text-xs text-neutral-400">
+                มี {GAME_CATALOG.length} เกมพร้อมเปิดบริการ
+              </div>
+            </div>
+
+            {/* Grid แสดงเกม 7 เกมหลัก */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {GAME_CATALOG.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()) || g.category.toLowerCase().includes(searchQuery.toLowerCase())).map((game) => {
+                const isOutOfStock = gameStock[game.id] === false;
+
+                return (
+                  <div
+                    key={game.id}
+                    onClick={() => {
+                      if (!isOutOfStock) {
+                        setSelectedGame(game);
+                        setSelectedPackage(game.packages[0]);
+                      }
+                    }}
+                    className={`group rounded-2xl border transition-all overflow-hidden flex flex-col justify-between select-none ${
+                      isOutOfStock ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:scale-[1.02]'
+                    } ${
+                      isDark 
+                        ? 'bg-neutral-900/90 border-neutral-800 hover:border-amber-500/50' 
+                        : 'bg-white border-neutral-200 hover:border-amber-500 shadow-sm'
+                    }`}
+                  >
+                    <div className="p-4 space-y-3">
+                      <div className={`h-28 rounded-xl bg-gradient-to-br ${game.theme} p-3.5 flex flex-col justify-between text-white relative overflow-hidden shadow-inner`}>
+                        <div className="flex items-center justify-between z-10">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/40 backdrop-blur border border-white/20">
+                            {game.category}
+                          </span>
+                          {isOutOfStock ? (
+                            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-600 text-white">สต็อกหมด</span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white">เปิดรับเติม</span>
+                          )}
+                        </div>
+                        <div className="z-10">
+                          <h3 className="font-black text-base drop-shadow leading-snug">{game.name}</h3>
+                          <p className="text-[11px] text-white/80">จัดส่งเร็ว ภายใน 1-3 นาที</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-neutral-400">ราคาเริ่มต้น</span>
+                          <span className="font-black text-amber-500 text-sm">฿{game.packages[0].price}</span>
+                        </div>
+                        <div className="text-[11px] text-neutral-500">มีให้เลือก {game.packages.length} แพ็กเกจ</div>
+                      </div>
+                    </div>
+
+                    <div className={`px-4 py-2.5 border-t text-xs font-bold flex items-center justify-between transition ${
+                      isDark ? 'bg-neutral-950/50 border-neutral-800 group-hover:text-amber-400' : 'bg-neutral-50 border-neutral-100 group-hover:text-amber-600'
+                    }`}>
+                      <span>{isOutOfStock ? 'ปิดสต็อกชั่วคราว' : 'เลือกแพ็กเกจ'}</span>
+                      <span>➔</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+          </div>
+        )}
+
+        {/* หน้ารายละเอียดสั่งซื้อเกม */}
+        {tab === 'shop' && selectedGame && (
+          <div className="max-w-3xl mx-auto space-y-6">
+            <button
+              onClick={() => setSelectedGame(null)}
+              className="text-xs font-bold text-neutral-400 hover:text-amber-500 transition flex items-center gap-1"
+            >
+              ← กลับไปเลือกเกมอื่น
+            </button>
+
+            <div className={`p-6 rounded-2xl bg-gradient-to-r ${selectedGame.theme} text-white shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4`}>
+              <div>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-black/40 border border-white/20 font-bold">
+                  {selectedGame.category}
+                </span>
+                <h1 className="text-2xl font-black mt-1">{selectedGame.name}</h1>
+                <p className="text-xs text-white/80">กรอกข้อมูลผู้เล่น เลือกแพ็กเกจ และยืนยันการเติมเงินได้ทันที</p>
+              </div>
+              <div className="bg-black/30 backdrop-blur-md px-3.5 py-2 rounded-xl border border-white/20 text-right">
+                <div className="text-[10px] text-amber-300">สิทธิพิเศษ {userRank.name}</div>
+                <div className="text-sm font-black text-amber-400">ลดทันที {userRank.discount}%</div>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmOrder} className="space-y-6">
+              {/* Step 1: Account info */}
+              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                <div className="flex items-center gap-2 border-b pb-2 font-bold text-sm">
+                  <span className="w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center text-xs">1</span>
+                  <span>ข้อมูลบัญชีผู้เล่น</span>
+                </div>
+                <div>
+                  <label className="text-xs font-bold block mb-1">
+                    {selectedGame.idLabel} <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder={`กรอก ${selectedGame.idLabel}`}
+                    value={playerId}
+                    onChange={(e) => setPlayerId(e.target.value)}
+                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs border outline-none font-mono ${
+                      isDark ? 'bg-neutral-950 border-neutral-700 text-white focus:border-amber-500' : 'bg-slate-50 border-neutral-300 focus:border-amber-500'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Step 2: Package Selection */}
+              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                <div className="flex items-center gap-2 border-b pb-2 font-bold text-sm">
+                  <span className="w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center text-xs">2</span>
+                  <span>เลือกแพ็กเกจ</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {selectedGame.packages.map((pkg) => {
+                    const isSelected = selectedPackage?.id === pkg.id;
+                    const isPkgOutOfStock = packageStock[pkg.id] === false;
+                    const finalPkgPrice = calculateFinalPrice(pkg.price);
+
+                    return (
+                      <div
+                        key={pkg.id}
+                        onClick={() => { if (!isPkgOutOfStock) setSelectedPackage(pkg); }}
+                        className={`p-3.5 rounded-xl border transition cursor-pointer flex flex-col justify-between ${
+                          isPkgOutOfStock ? 'opacity-50 cursor-not-allowed bg-neutral-950/40' : ''
+                        } ${
+                          isSelected 
+                            ? 'bg-amber-500/15 border-amber-500' 
+                            : isDark ? 'bg-neutral-950/80 border-neutral-800 hover:border-neutral-700' : 'bg-slate-50 border-neutral-200'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <span className="font-bold text-xs">{pkg.name}</span>
+                          {isPkgOutOfStock && (
+                            <span className="text-[10px] bg-rose-500 text-white px-1.5 py-0.2 rounded font-black">หมด</span>
+                          )}
+                        </div>
+                        <div className="mt-3 flex justify-between items-baseline">
+                          <span className="text-[11px] text-neutral-400 line-through">฿{pkg.price}</span>
+                          <span className="text-sm font-black text-amber-500">฿{finalPkgPrice}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Step 3: Payment Method */}
+              <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                <div className="flex items-center gap-2 border-b pb-2 font-bold text-sm">
+                  <span className="w-6 h-6 rounded-full bg-amber-500 text-black flex items-center justify-center text-xs">3</span>
+                  <span>ช่องทางการชำระเงิน</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div
+                    onClick={() => setPayMethod('wallet')}
+                    className={`p-3.5 rounded-xl border cursor-pointer transition ${
+                      payMethod === 'wallet' 
+                        ? 'bg-amber-500/15 border-amber-500' 
+                        : isDark ? 'bg-neutral-950 border-neutral-800' : 'bg-slate-50 border-neutral-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <CoinIcon size={20} />
+                      <span className="font-bold text-xs">Cat Coin Wallet</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-400 mt-1">ตัดเหรียญทันที อนุมัติออเดอร์อัตโนมัติ</p>
+                    <div className="text-[11px] font-bold text-amber-500 mt-2">
+                      คงเหลือ: ₵{(user.balance || 0).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <div
+                    onClick={() => setPayMethod('promptpay')}
+                    className={`p-3.5 rounded-xl border cursor-pointer transition ${
+                      payMethod === 'promptpay' 
+                        ? 'bg-amber-500/15 border-amber-500' 
+                        : isDark ? 'bg-neutral-950 border-neutral-800' : 'bg-slate-50 border-neutral-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">📱</span>
+                      <span className="font-bold text-xs">PromptPay QR (สลิป)</span>
+                    </div>
+                    <p className="text-[11px] text-neutral-400 mt-1">สแกนจ่ายได้ทุกแอปธนาคาร พร้อมแนบสลิป</p>
+                    <div className="text-[11px] font-bold text-blue-400 mt-2">ฟรีค่าธรรมเนียม</div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* หน้ารายละเอียดเลือกแพ็กเกจของเกม */}
-        {activeTab === 'shop' && selectedGame && (
-          <div style={{ backgroundColor: isDarkMode ? '#111827' : '#ffffff', border: '2px solid #fed7aa', borderRadius: '24px', padding: '30px' }}>
-            <button onClick={() => setSelectedGame(null)} style={{ background: 'none', border: 'none', color: '#ea580c', fontWeight: 'bold', cursor: 'pointer', marginBottom: '16px' }}>⬅ ย้อนกลับ</button>
-            <h2 style={{ fontSize: '20px', fontWeight: 900, marginBottom: '6px' }}>เติมเกม {selectedGame.name}</h2>
-            
-            <div style={{ marginTop: '16px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>ระบุ UID / ชื่อตัวละคร / Riot ID</label>
-              <input type="text" placeholder="เช่น 123456789 หรือ Player#TAG" value={playerId} onChange={e => setPlayerId(e.target.value)} style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1.5px solid #fed7aa', outline: 'none', boxSizing: 'border-box' }} />
-            </div>
-
-            <div style={{ marginTop: '20px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>เลือกแพ็กเกจที่ต้องการ</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '12px' }}>
-                {selectedGame.packages.map(p => (
-                  <div key={p.id} onClick={() => setSelectedPackage(p)} className="package-card-item" style={{
-                    padding: '14px', borderRadius: '14px',
-                    border: selectedPackage?.id === p.id ? '2px solid #ea580c' : '1px solid #fed7aa',
-                    background: selectedPackage?.id === p.id ? 'rgba(249, 115, 22, 0.1)' : 'transparent'
-                  }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{p.name}</div>
-                    <div style={{ color: '#ea580c', fontWeight: 900, fontSize: '16px', marginTop: '4px' }}>฿{p.price}</div>
+                {payMethod === 'promptpay' && selectedPackage && (
+                  <div className={`p-4 rounded-xl border mt-3 text-center space-y-3 ${
+                    isDark ? 'bg-neutral-950 border-neutral-800' : 'bg-amber-50 border-amber-200'
+                  }`}>
+                    <div className="text-xs font-bold text-amber-500">
+                      สแกน QR เพื่อชำระยอด ฿{calculateFinalPrice(selectedPackage.price)}
+                    </div>
+                    <div className="w-36 h-36 mx-auto bg-white p-2 rounded-xl flex items-center justify-center border shadow">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=PROMPTPAY-0956267172-AMT-${calculateFinalPrice(selectedPackage.price)}`}
+                        alt="PromptPay QR"
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <div className="text-[11px] text-neutral-400">
+                      พร้อมเพย์: <b>095-626-7172 (ธนภูมิ รักษี)</b>
+                    </div>
+                    <div className="pt-2 text-left space-y-1">
+                      <label className="text-xs font-bold block">แนบภาพสลิปโอนเงิน <span className="text-rose-500">*</span></label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        required
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = () => setSlipPreview(reader.result);
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="text-xs w-full"
+                      />
+                      {slipPreview && (
+                        <div className="mt-2 text-center">
+                          <img src={slipPreview} alt="Slip" className="h-28 mx-auto rounded border" />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
-            </div>
 
-            <button onClick={() => {
-              if (!playerId.trim() || !selectedPackage) return alert('กรุณากรอกไอดีและเลือกแพ็กเกจ');
-              setShowCheckoutModal(true);
-            }} style={{ width: '100%', marginTop: '25px', padding: '14px', borderRadius: '12px', background: '#ea580c', color: '#fff', border: 'none', fontWeight: 900, fontSize: '15px' }}>
-              ดำเนินการชำระเงิน ➔
-            </button>
+              {/* Submit Button */}
+              {selectedPackage && (
+                <div className={`p-5 rounded-2xl border space-y-3 ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-neutral-400">แพ็กเกจ:</span>
+                    <span className="font-bold">{selectedPackage.name}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-neutral-400">ส่วนลด VIP ({userRank.name}):</span>
+                    <span className="font-bold text-emerald-500">-{userRank.discount}%</span>
+                  </div>
+                  <div className="flex justify-between items-baseline border-t pt-3">
+                    <span className="font-bold text-sm">ยอดชำระสุทธิ:</span>
+                    <span className="text-2xl font-black text-amber-500">
+                      ฿{calculateFinalPrice(selectedPackage.price)}
+                    </span>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className={`w-full py-3.5 rounded-xl font-black text-sm text-black transition shadow-lg ${
+                      isSubmitting 
+                        ? 'bg-neutral-600 cursor-not-allowed' 
+                        : 'bg-gradient-to-r from-amber-500 to-rose-500 hover:scale-[1.01] shadow-amber-500/20'
+                    }`}
+                  >
+                    {isSubmitting ? 'กำลังส่งข้อมูล...' : '⚡ ยืนยันการชำระเงิน'}
+                  </button>
+                </div>
+              )}
+            </form>
           </div>
         )}
 
-        {/* TAB 2: เช็คประวัติแบบเดิม (History Tab พร้อม Today Orders และ Past Orders พับได้) */}
-        {activeTab === 'history' && (
-          <div style={{ backgroundColor: isDarkMode ? '#111827' : '#ffffff', border: '1.5px solid #fed7aa', borderRadius: '24px', padding: '30px' }}>
-            <div style={{ borderBottom: '1px solid #fed7aa', paddingBottom: '15px', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 900, margin: '0 0 6px 0' }}>📋 เช็คสถานะคำสั่งซื้อและประวัติการทำรายการ</h2>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>
-                👤 บัญชี: <b>{user.username}</b> | ยอดเติมสะสม: <b style={{ color: '#10b981' }}>฿{currentUserSpending.toLocaleString()}</b>
+        {/* ------------------------------------------------------------------ */}
+        {/* TAB 2: HISTORY (เช็คประวัติแบบเดิม พร้อมตกแต่งสวยงามและกรองเกมที่ไม่มีออก) */}
+        {/* ------------------------------------------------------------------ */}
+        {tab === 'history' && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            
+            {/* Header เช็คประวัติแบบเดิม */}
+            <div className={`p-6 rounded-2xl border shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${
+              isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-amber-200'
+            }`}>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-black flex items-center gap-2">
+                  📋 เช็คสถานะคำสั่งซื้อและประวัติการทำรายการ
+                </h1>
+                <p className="text-xs text-neutral-400 mt-1">
+                  👤 บัญชี: <b>{user.username}</b> | ยอดเติมสะสม: <b className="text-emerald-500">฿{(user.totalSpent || 0).toLocaleString()}</b>
+                </p>
+              </div>
+              <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs font-bold">
+                ● Live Realtime Sync
               </div>
             </div>
 
-            {/* ช่องค้นหาและตัวกรอง */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              {isUserAdmin && (
-                <input type="text" placeholder="🔍 ค้นหาชื่อลูกค้า..." value={historySearchQuery} onChange={e => setHistorySearchQuery(e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #fed7aa' }} />
+            {/* ช่องค้นหาและตัวกรอง (เอาเกมที่ไม่ได้อยู่ในหน้าแรกออกทั้งหมด) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {isSuperAdmin && (
+                <input
+                  type="text"
+                  placeholder="🔍 ค้นหาชื่อลูกค้า..."
+                  value={historySearchQuery}
+                  onChange={(e) => setHistorySearchQuery(e.target.value)}
+                  className={`px-3.5 py-2.5 rounded-xl text-xs border outline-none ${
+                    isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white border-neutral-300'
+                  }`}
+                />
               )}
-              <input type="text" placeholder="🔍 ค้นหาเลขออร์เดอร์ เช่น ORD-12345..." value={historyOrderSearch} onChange={e => setHistoryOrderSearch(e.target.value)} style={{ flex: 1.5, padding: '10px', borderRadius: '8px', border: '1px solid #fed7aa' }} />
-              <select value={historyGameFilter} onChange={e => setHistoryGameFilter(e.target.value)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #fed7aa' }}>
-                <option value="all">🎮 เลือกดูเกม (ทั้งหมด)</option>
-                {gamesData.map(g => <option key={g.id} value={g.name}>{g.name}</option>)}
+              <input
+                type="text"
+                placeholder="🔍 ค้นหาเลขออเดอร์ เช่น ORD-..."
+                value={historyOrderSearch}
+                onChange={(e) => setHistoryOrderSearch(e.target.value)}
+                className={`px-3.5 py-2.5 rounded-xl text-xs border outline-none ${
+                  isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white border-neutral-300'
+                }`}
+              />
+              <select
+                value={historyGameFilter}
+                onChange={(e) => setHistoryGameFilter(e.target.value)}
+                className={`px-3.5 py-2.5 rounded-xl text-xs border outline-none ${
+                  isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white border-neutral-300'
+                }`}
+              >
+                <option value="all">🎮 เลือกดูเกม (ทั้งหมดในร้าน)</option>
+                <option value="Cat Coin Wallet">Cat Coin Wallet</option>
+                {GAME_CATALOG.map(g => (
+                  <option key={g.id} value={g.name}>{g.name}</option>
+                ))}
               </select>
             </div>
 
-            <div style={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffedd5', padding: '10px 16px', borderRadius: '10px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+            {/* สรุปรายการที่ค้นพบ */}
+            <div className={`p-3.5 rounded-xl border flex justify-between items-center text-xs ${
+              isDark ? 'bg-neutral-900/60 border-neutral-800' : 'bg-amber-100/50 border-amber-200'
+            }`}>
               <span>พบ <b>{searchedOrders.length}</b> รายการ</span>
-              <span>ยอดรวม: <b style={{ color: '#ea580c', fontSize: '14px' }}>฿{totalSpentInSearch.toLocaleString()}</b></span>
+              <span>ยอดรวมค้นหา: <b className="text-amber-500 text-sm">฿{totalAmountInSearch.toLocaleString()}</b></span>
             </div>
 
-            {/* รายการประจำวัน (วันนี้) */}
-            <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#ea580c', marginBottom: '12px' }}>📅 รายการประจำวัน (วันนี้ {nowDayStr})</h3>
-            {todayOrders.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '25px' }}>
-                {todayOrders.map((ord, idx) => (
-                  <div key={ord.firebaseKey || idx} style={{ padding: '14px', borderRadius: '12px', border: '1px solid #fed7aa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <span style={{ background: '#ea580c', color: '#fff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
-                      <span style={{ fontSize: '12px', color: '#64748b', marginLeft: '8px' }}>{ord.time}</span>
-                      <div style={{ fontWeight: 'bold', fontSize: '14px', marginTop: '4px' }}>🎮 {ord.game} ({ord.package})</div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>UID: {ord.gameChar || ord.playerId} | จ่าย: {ord.paymentMethod}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: 900, color: '#10b981', fontSize: '16px' }}>฿{ord.price}</div>
-                      <span style={{ fontSize: '11px', color: ord.status?.includes('สำเร็จ') ? '#10b981' : '#f59e0b', fontWeight: 'bold' }}>{ord.status}</span>
-                    </div>
-                  </div>
-                ))}
+            {/* 1. รายการประจำวัน (วันนี้) */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 font-bold text-sm text-amber-500">
+                <span>📅</span>
+                <span>รายการประจำวัน (วันนี้ {todayStr})</span>
+                <span className="text-xs px-2 py-0.2 rounded-full bg-amber-500/20 text-amber-400">
+                  {todayOrders.length}
+                </span>
               </div>
-            ) : (
-              <div style={{ textAlign: 'center', padding: '20px', color: '#9ca3af', border: '1px dashed #cbd5e1', borderRadius: '10px', marginBottom: '25px', fontSize: '12px' }}>ไม่มีรายการคำสั่งซื้อใหม่ในวันนี้</div>
-            )}
 
-            {/* ประวัติย้อนหลัง (พับได้) */}
-            {pastOrders.length > 0 && (
-              <div style={{ border: '1.5px solid #fed7aa', borderRadius: '14px', overflow: 'hidden' }}>
-                <div onClick={() => setIsPastOrdersOpen(!isPastOrdersOpen)} style={{ padding: '14px 18px', background: isDarkMode ? '#1e293b' : '#fff7ed', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 'bold', fontSize: '13px' }}>📂 ประวัติย้อนหลัง ({pastOrders.length} รายการ)</span>
-                  <span style={{ fontSize: '12px', color: '#ea580c' }}>{isPastOrdersOpen ? '▲ พับเก็บ' : '▼ เปิดดู'}</span>
-                </div>
-                {isPastOrdersOpen && (
-                  <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {pastOrders.map((ord, idx) => (
-                      <div key={ord.firebaseKey || idx} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #fed7aa', display: 'flex', justifyContent: 'space-between' }}>
-                        <div>
-                          <b>{ord.id}</b> - {ord.game} ({ord.package})
-                          <div style={{ fontSize: '11px', color: '#64748b' }}>{ord.time} | UID: {ord.gameChar || ord.playerId}</div>
+              {todayOrders.length > 0 ? (
+                todayOrders.map((ord) => {
+                  const isDone = ord.status?.includes('สำเร็จ');
+                  return (
+                    <div
+                      key={ord.firebaseKey || ord.orderId}
+                      className={`p-4 rounded-2xl border transition flex flex-col sm:flex-row justify-between sm:items-center gap-3 ${
+                        isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200 shadow-sm'
+                      }`}
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded">
+                            {ord.orderId}
+                          </span>
+                          <span className="text-xs text-neutral-400">• {ord.time}</span>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 'bold', color: '#10b981' }}>฿{ord.price}</div>
-                          <div style={{ fontSize: '11px' }}>{ord.status}</div>
+                        <div className="font-bold text-sm">🎮 {ord.game} ({ord.packageName})</div>
+                        <div className="text-xs text-neutral-400 font-mono">
+                          UID: <span className="text-white font-bold">{ord.playerId}</span> | จ่าย: {ord.paymentMethod}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-base font-black text-amber-500">฿{ord.price}</div>
+                        <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
+                          isDone ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400 animate-pulse'
+                        }`}>
+                          {ord.status}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-6 border border-dashed rounded-2xl text-neutral-400 text-xs">
+                  ไม่มีรายการคำสั่งซื้อใหม่ในวันนี้
+                </div>
+              )}
+            </div>
+
+            {/* 2. ประวัติย้อนหลัง (พับได้) */}
+            {pastOrders.length > 0 && (
+              <div className={`rounded-2xl border overflow-hidden transition ${
+                isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'
+              }`}>
+                <div
+                  onClick={() => setIsPastOrdersOpen(!isPastOrdersOpen)}
+                  className={`p-4 flex justify-between items-center cursor-pointer select-none font-bold text-xs ${
+                    isDark ? 'bg-neutral-950/60' : 'bg-amber-50'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span>📂</span>
+                    <span>ประวัติย้อนหลัง ({pastOrders.length} รายการ)</span>
+                  </span>
+                  <span className="text-amber-500">{isPastOrdersOpen ? '▲ พับเก็บ' : '▼ เปิดดู'}</span>
+                </div>
+
+                {isPastOrdersOpen && (
+                  <div className="p-4 divide-y divide-neutral-800 space-y-3">
+                    {pastOrders.map((ord) => (
+                      <div key={ord.firebaseKey || ord.orderId} className="pt-3 flex justify-between items-center text-xs">
+                        <div>
+                          <div className="font-bold">{ord.orderId} - {ord.game} ({ord.packageName})</div>
+                          <div className="text-neutral-400 text-[11px]">{ord.time} | UID: {ord.playerId}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-black text-amber-500">฿{ord.price}</div>
+                          <div className="text-[10px] text-neutral-400">{ord.status}</div>
                         </div>
                       </div>
                     ))}
@@ -1011,160 +1673,617 @@ export default function App() {
                 )}
               </div>
             )}
+
           </div>
         )}
 
-        {/* TAB 3: หลังบ้านแอดมิน (Admin Dashboard แบบเดิมครบชุด) */}
-        {activeTab === 'admin' && isUserAdmin && (
-          <div style={{ maxWidth: '950px', margin: '0 auto' }}>
-            {!isAdminLoggedIn ? (
-              <div style={{ maxWidth: '380px', margin: '40px auto', padding: '30px', background: isDarkMode ? '#111827' : '#ffffff', border: '2px solid #a855f7', borderRadius: '20px', textAlign: 'center' }}>
-                <div style={{ fontSize: '32px', marginBottom: '10px' }}>🔐</div>
-                <h3 style={{ fontWeight: 900, marginBottom: '6px' }}>ยืนยันสิทธิ์แอดมิน</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '16px' }}>กรอกรหัส PIN 6 หลักเพื่อเข้าหลังบ้าน</p>
-                <form onSubmit={handleAdminLogin} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {adminPinError && <div style={{ color: '#ef4444', fontSize: '12px' }}>{adminPinError}</div>}
-                  <input type="password" maxLength={6} placeholder="PIN 6 หลัก" value={adminPinInput} onChange={e => setAdminPinInput(e.target.value.replace(/\D/g, ''))} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', textAlign: 'center', fontSize: '20px', letterSpacing: '6px' }} />
-                  <button type="submit" style={{ padding: '12px', borderRadius: '10px', background: '#9333ea', color: '#fff', border: 'none', fontWeight: 'bold' }}>เข้าสู่ระบบแอดมิน</button>
+        {/* ------------------------------------------------------------------ */}
+        {/* TAB 3: ADMIN DASHBOARD (ระบบหลังบ้าน พับได้ทุกหน้า ไม่รกตา) */}
+        {/* ------------------------------------------------------------------ */}
+        {tab === 'admin' && isSuperAdmin && (
+          <div className="max-w-5xl mx-auto space-y-6">
+            {!isAdminAuthenticated ? (
+              // ใส่รหัส PIN เพื่อยืนยันสิทธิ์แอดมิน
+              <div className={`max-w-sm mx-auto p-8 rounded-3xl border text-center space-y-4 shadow-2xl ${
+                isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'
+              }`}>
+                <div className="text-4xl">🔐</div>
+                <h2 className="text-lg font-black">ยืนยันสิทธิ์แอดมิน</h2>
+                <p className="text-xs text-neutral-400">กรุณาใส่รหัส PIN 6 หลักเพื่อเข้าถึงระบบหลังบ้าน</p>
+
+                <form onSubmit={handleAdminVerifyPin} className="space-y-3">
+                  <input
+                    type="password"
+                    maxLength={6}
+                    placeholder="PIN 6 หลัก"
+                    value={adminPinInput}
+                    onChange={(e) => setAdminPinInput(e.target.value.replace(/\D/g, ''))}
+                    className="w-full text-center text-2xl font-mono tracking-widest px-3 py-2.5 rounded-xl border bg-neutral-950 border-neutral-700 text-white outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition"
+                  >
+                    ยืนยันตัวตน
+                  </button>
                 </form>
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                {/* 1. จัดการคำสั่งซื้อเรียลไทม์ */}
-                <div style={{ background: isDarkMode ? '#111827' : '#ffffff', padding: '24px', borderRadius: '20px', border: '2px solid #fed7aa' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h3 style={{ fontWeight: 'bold', fontSize: '16px', margin: 0 }}>📋 จัดการคำสั่งซื้อของลูกค้า</h3>
-                    <button onClick={() => { setIsAdminLoggedIn(false); localStorage.removeItem('cyber_is_admin_logged'); }} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' }}>ล็อกเอาท์ PIN</button>
+              // แผงควบคุมหลังบ้านแบบพับได้ทุกส่วน (Accordion Cards)
+              <div className="space-y-4">
+                
+                {/* Header หลังบ้าน */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-4">
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-black text-purple-400 flex items-center gap-2">
+                      ⚙️ ระบบจัดการหลังบ้าน (Admin Control Panel)
+                    </h1>
+                    <p className="text-xs text-neutral-400">
+                      แผงควบคุมระบบออเดอร์ สต็อก สมาชิก สถิติ และภาษี (คลิกหัวข้อเพื่อพับ/ขยาย)
+                    </p>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {orders.slice(0, 15).map(o => (
-                      <div key={o.firebaseKey} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #fed7aa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                        <div>
-                          <b>{o.id}</b> - {o.game} ({o.package}) | ลูกค้า: <b>{o.player}</b> (UID: {o.gameChar || o.playerId})
-                          <div style={{ fontSize: '11px', color: '#64748b' }}>{o.time} | ฿{o.price} | {o.status}</div>
+                  <button
+                    onClick={() => {
+                      setIsAdminAuthenticated(false);
+                      localStorage.removeItem('cyber_admin_auth');
+                    }}
+                    className="text-xs px-3 py-1.5 rounded-xl bg-neutral-800 text-neutral-300 hover:bg-neutral-700 transition"
+                  >
+                    🔒 ล็อกหน้าจอหลังบ้าน
+                  </button>
+                </div>
+
+                {/* 1. การ์ดพับได้: จัดการออเดอร์ของลูกค้า */}
+                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                  <div
+                    onClick={() => toggleAdminFold('orders')}
+                    className="p-4 bg-purple-950/20 border-b border-neutral-800 flex justify-between items-center cursor-pointer select-none"
+                  >
+                    <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
+                      <span>📦</span>
+                      <span>1. รายการสั่งซื้อของลูกค้า (Realtime Orders)</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">
+                        {orders.length} รายการ
+                      </span>
+                    </div>
+                    <span className="text-purple-400 font-bold text-xs">{adminFolds.orders ? '▲ พับเก็บ' : '▼ ขยาย'}</span>
+                  </div>
+
+                  {adminFolds.orders && (
+                    <div className="p-4 space-y-3">
+                      {orders.length === 0 ? (
+                        <div className="text-center py-6 text-neutral-400 text-xs">ไม่มีรายการสั่งซื้อในระบบ</div>
+                      ) : (
+                        orders.slice(0, 15).map((o) => (
+                          <div
+                            key={o.firebaseKey}
+                            className={`p-3.5 rounded-xl border flex flex-col md:flex-row justify-between items-start md:items-center gap-3 ${
+                              isDark ? 'bg-neutral-950 border-neutral-800' : 'bg-neutral-50 border-neutral-200'
+                            }`}
+                          >
+                            <div className="text-xs space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-bold text-amber-500">{o.orderId}</span>
+                                <span className="text-neutral-400">({o.time})</span>
+                                <span className="font-bold text-purple-400">ลูกค้า: {o.player}</span>
+                              </div>
+                              <div className="font-bold text-sm">{o.game} - {o.packageName}</div>
+                              <div className="text-neutral-400 font-mono">
+                                UID: <span className="text-white font-bold">{o.playerId}</span> | ยอด: ฿{o.price}
+                              </div>
+                              <div className="text-[11px] text-neutral-400">ช่องทาง: {o.paymentMethod} | สถานะ: {o.status}</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleUpdateOrderStatus(o, '✅ สำเร็จ (เติมเงินแล้ว)')}
+                                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs"
+                              >
+                                ✓ อนุมัติ
+                              </button>
+                              <button
+                                onClick={() => handleUpdateOrderStatus(o, '❌ ยกเลิก (ไม่พบยอดโอน)')}
+                                className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs"
+                              >
+                                ✕ ปฏิเสธ
+                              </button>
+                              <button
+                                onClick={() => handleDeleteOrder(o)}
+                                className="p-1.5 text-xs text-neutral-500 hover:text-rose-500"
+                                title="ลบออเดอร์"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. การ์ดพับได้: จัดการสต็อกเกมและแพ็กเกจ */}
+                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                  <div
+                    onClick={() => toggleAdminFold('stock')}
+                    className="p-4 bg-purple-950/20 border-b border-neutral-800 flex justify-between items-center cursor-pointer select-none"
+                  >
+                    <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
+                      <span>🎮</span>
+                      <span>2. จัดการสต็อกเกม & แพ็กเกจย่อย (เปิด/ปิดรับเติม)</span>
+                    </div>
+                    <span className="text-purple-400 font-bold text-xs">{adminFolds.stock ? '▲ พับเก็บ' : '▼ ขยาย'}</span>
+                  </div>
+
+                  {adminFolds.stock && (
+                    <div className="p-4 space-y-4">
+                      <div>
+                        <div className="text-xs font-bold text-neutral-400 mb-2">สถานะเปิด/ปิดรายเกม</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          {GAME_CATALOG.map((g) => {
+                            const isOpen = gameStock[g.id] ?? true;
+                            return (
+                              <button
+                                key={g.id}
+                                onClick={() => handleToggleGameStock(g.id)}
+                                className={`p-2.5 rounded-xl border text-xs font-bold text-left flex justify-between items-center transition ${
+                                  isOpen ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'bg-rose-500/10 border-rose-500 text-rose-400'
+                                }`}
+                              >
+                                <span className="truncate">{g.name}</span>
+                                <span>{isOpen ? 'เปิด' : 'ปิด'}</span>
+                              </button>
+                            );
+                          })}
                         </div>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button onClick={() => {
-                            set(ref(db, `orders/${o.firebaseKey}/status`), '✅ สำเร็จ (แอดมินอนุมัติแล้ว)');
-                            if (o.type === 'wallet') {
-                              const target = registeredUsers.find(u => u.username?.toLowerCase() === o.player?.toLowerCase());
-                              if (target) set(ref(db, `users/${target.firebaseKey}/balance`), (target.balance || 0) + o.price);
+                      </div>
+
+                      <div className="border-t border-neutral-800 pt-3">
+                        <div className="text-xs font-bold text-neutral-400 mb-2">สถานะรายแพ็กเกจ (คลิกเพื่อสลับมีของ/หมด)</div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {GAME_CATALOG.flatMap(g => g.packages.map(p => ({ ...p, gameName: g.name }))).map((pkg) => {
+                            const isOpen = packageStock[pkg.id] ?? true;
+                            return (
+                              <div
+                                key={pkg.id}
+                                onClick={() => handleTogglePackageStock(pkg.id)}
+                                className="p-2 rounded-lg border bg-neutral-950 flex justify-between items-center text-xs cursor-pointer"
+                              >
+                                <div>
+                                  <div className="font-bold">{pkg.name}</div>
+                                  <div className="text-[10px] text-neutral-400">{pkg.gameName}</div>
+                                </div>
+                                <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                                  isOpen ? 'bg-emerald-500 text-black' : 'bg-rose-500 text-white'
+                                }`}>
+                                  {isOpen ? 'มีของ' : 'หมด'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. การ์ดพับได้: จัดการสมาชิกและเครดิต */}
+                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                  <div
+                    onClick={() => toggleAdminFold('members')}
+                    className="p-4 bg-purple-950/20 border-b border-neutral-800 flex justify-between items-center cursor-pointer select-none"
+                  >
+                    <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
+                      <span>👥</span>
+                      <span>3. จัดการสมาชิก & ปรับยอดเหรียญ Wallet</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">
+                        {registeredUsers.length} คน
+                      </span>
+                    </div>
+                    <span className="text-purple-400 font-bold text-xs">{adminFolds.members ? '▲ พับเก็บ' : '▼ ขยาย'}</span>
+                  </div>
+
+                  {adminFolds.members && (
+                    <div className="p-4 overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="border-b border-neutral-800 text-neutral-400">
+                          <tr>
+                            <th className="p-2">ชื่อผู้ใช้</th>
+                            <th className="p-2">อีเมล</th>
+                            <th className="p-2">Cat Coin</th>
+                            <th className="p-2">ยอดสะสม VIP</th>
+                            <th className="p-2">ปรับยอดเหรียญ</th>
+                            <th className="p-2 text-center">จัดการ</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-800">
+                          {registeredUsers.map((u) => (
+                            <tr key={u.firebaseKey}>
+                              <td className="p-2 font-bold">{u.username}</td>
+                              <td className="p-2 text-neutral-400">{u.email}</td>
+                              <td className="p-2 font-mono text-amber-500 font-bold">₵{(u.balance || 0).toLocaleString()}</td>
+                              <td className="p-2 text-emerald-400 font-bold">฿{(u.totalSpent || 0).toLocaleString()}</td>
+                              <td className="p-2 flex items-center gap-1">
+                                <button
+                                  onClick={() => handleAdjustBalance(u, 50)}
+                                  className="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold"
+                                >
+                                  +50
+                                </button>
+                                <button
+                                  onClick={() => handleAdjustBalance(u, 100)}
+                                  className="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold"
+                                >
+                                  +100
+                                </button>
+                                <button
+                                  onClick={() => handleAdjustBalance(u, -50)}
+                                  className="px-2 py-0.5 rounded bg-rose-600 text-white font-bold"
+                                >
+                                  -50
+                                </button>
+                              </td>
+                              <td className="p-2 text-center">
+                                <button
+                                  onClick={() => handleDeleteUser(u)}
+                                  className="text-rose-500 hover:text-rose-400"
+                                  title="ลบสมาชิก"
+                                >
+                                  🗑️
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. การ์ดพับได้: สถิติ ยอดขาย กำไร และภาษี */}
+                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                  <div
+                    onClick={() => toggleAdminFold('stats')}
+                    className="p-4 bg-purple-950/20 border-b border-neutral-800 flex justify-between items-center cursor-pointer select-none"
+                  >
+                    <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
+                      <span>📊</span>
+                      <span>4. สถิติรายได้ ยอดขาย กำไรสุทธิ และประมาณการภาษี VAT (7%)</span>
+                    </div>
+                    <span className="text-purple-400 font-bold text-xs">{adminFolds.stats ? '▲ พับเก็บ' : '▼ ขยาย'}</span>
+                  </div>
+
+                  {adminFolds.stats && (
+                    <div className="p-4 space-y-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                        <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800">
+                          <div className="text-[11px] text-neutral-400">ยอดขายรวม</div>
+                          <div className="text-lg font-black text-amber-500">฿{totalSales.toLocaleString()}</div>
+                        </div>
+                        <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800">
+                          <div className="text-[11px] text-neutral-400">กำไรสุทธิ</div>
+                          <div className="text-lg font-black text-emerald-400">฿{netProfit.toLocaleString()}</div>
+                        </div>
+                        <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800">
+                          <div className="text-[11px] text-neutral-400">ค่าโฆษณา (Ads)</div>
+                          <div className="text-lg font-black text-rose-400">฿{totalAdSpend.toLocaleString()}</div>
+                        </div>
+                        <div className="p-3 rounded-xl bg-neutral-950 border border-neutral-800">
+                          <div className="text-[11px] text-neutral-400">ภาษี VAT (7%)</div>
+                          <div className="text-lg font-black text-blue-400">฿{estimatedVat.toFixed(2)}</div>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-neutral-800 pt-3 flex gap-2">
+                        <input
+                          type="number"
+                          placeholder="บันทึกค่าโฆษณาเพิ่ม (บาท)"
+                          value={adAmountInput}
+                          onChange={(e) => setAdAmountInput(e.target.value)}
+                          className="px-3 py-2 rounded-xl text-xs bg-neutral-950 border border-neutral-700 text-white outline-none flex-1"
+                        />
+                        <button
+                          onClick={() => {
+                            const val = Number(adAmountInput);
+                            if (val > 0) {
+                              const next = totalAdSpend + val;
+                              setTotalAdSpend(next);
+                              localStorage.setItem('cyber_ad_spend', next.toString());
+                              setAdAmountInput('');
                             }
-                          }} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>อนุมัติ</button>
-                          <button onClick={() => set(ref(db, `orders/${o.firebaseKey}/status`), '❌ ยกเลิก (ไม่พบยอดโอน)')} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '6px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>ยกเลิก</button>
-                        </div>
+                          }}
+                          className="px-4 py-2 rounded-xl bg-purple-600 text-white font-bold text-xs"
+                        >
+                          + เพิ่มค่าใช้จ่าย
+                        </button>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* 2. จัดการสต็อกเกม (เปิด-ปิดรับเติม) */}
-                <div style={{ background: isDarkMode ? '#111827' : '#ffffff', padding: '24px', borderRadius: '20px', border: '2px solid #fed7aa' }}>
-                  <h3 style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '14px' }}>⚙️ เปิด/ปิดรับเติมเกม (สต็อก)</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
-                    {gamesData.map(g => {
-                      const isOpen = gameStockStatus[g.id] !== false;
-                      return (
-                        <div key={g.id} style={{ padding: '12px', borderRadius: '10px', border: '1px solid #fed7aa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 'bold' }}>{g.name}</span>
-                          <button onClick={() => handleToggleGameStock(g.id, g.name)} style={{ background: isOpen ? '#10b981' : '#ef4444', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
-                            {isOpen ? 'เปิดอยู่' : 'สต็อกหมด'}
-                          </button>
-                        </div>
-                      );
-                    })}
+                {/* 5. การ์ดพับได้: ทางลัด LnwTrue / SlipOK */}
+                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                  <div
+                    onClick={() => toggleAdminFold('lnwtrue')}
+                    className="p-4 bg-purple-950/20 border-b border-neutral-800 flex justify-between items-center cursor-pointer select-none"
+                  >
+                    <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
+                      <span>🚀</span>
+                      <span>5. ทางลัดตัวแทนเติมเงิน (Official LnwTrue & SlipOK Dashboard)</span>
+                    </div>
+                    <span className="text-purple-400 font-bold text-xs">{adminFolds.lnwtrue ? '▲ พับเก็บ' : '▼ ขยาย'}</span>
                   </div>
+
+                  {adminFolds.lnwtrue && (
+                    <div className="p-4 flex flex-wrap gap-3">
+                      <a
+                        href="https://lnwtrue.com"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-black font-black text-xs"
+                      >
+                        เข้าสู่เว็บ LnwTrue ↗
+                      </a>
+                      <a
+                        href="https://slipok.com"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-4 py-2 rounded-xl bg-blue-600 text-white font-black text-xs"
+                      >
+                        เข้าสู่แดชบอร์ด SlipOK ↗
+                      </a>
+                    </div>
+                  )}
                 </div>
 
-                {/* 3. จัดการสมาชิกและเครดิต */}
-                <div style={{ background: isDarkMode ? '#111827' : '#ffffff', padding: '24px', borderRadius: '20px', border: '2px solid #fed7aa' }}>
-                  <h3 style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '14px' }}>👥 สมาชิกในระบบ ({registeredUsers.length} คน)</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {registeredUsers.map(u => (
-                      <div key={u.firebaseKey} style={{ padding: '10px 14px', borderRadius: '8px', border: '1px solid #fed7aa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <b>{u.username}</b> ({u.email}) - เครดิต: <b style={{ color: '#ea580c' }}>{(u.balance || 0).toLocaleString()}</b> Coin
-                        </div>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button onClick={() => {
-                            const add = prompt(`เพิ่มเครดิตให้คุณ ${u.username} (จำนวนเหรียญ):`);
-                            if (add && !isNaN(add)) set(ref(db, `users/${u.firebaseKey}/balance`), (u.balance || 0) + parseFloat(add));
-                          }} style={{ background: '#f97316', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>+ เติม</button>
-                          <button onClick={() => {
-                            if (confirm(`ลบบัญชี ${u.username} หรือไม่?`)) remove(ref(db, `users/${u.firebaseKey}`));
-                          }} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>ลบ</button>
-                        </div>
-                      </div>
-                    ))}
+                {/* 6. การ์ดพับได้: ตั้งค่ารหัส PIN แอดมิน */}
+                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+                  <div
+                    onClick={() => toggleAdminFold('settings')}
+                    className="p-4 bg-purple-950/20 border-b border-neutral-800 flex justify-between items-center cursor-pointer select-none"
+                  >
+                    <div className="flex items-center gap-2 font-bold text-sm text-purple-300">
+                      <span>🔒</span>
+                      <span>6. ตั้งค่ารหัส PIN แอดมินใหม่ (Change Admin PIN)</span>
+                    </div>
+                    <span className="text-purple-400 font-bold text-xs">{adminFolds.settings ? '▲ พับเก็บ' : '▼ ขยาย'}</span>
                   </div>
+
+                  {adminFolds.settings && (
+                    <div className="p-4 max-w-sm">
+                      <form onSubmit={handleSavePin} className="space-y-3">
+                        <input
+                          type="password"
+                          maxLength={6}
+                          placeholder="รหัส PIN ใหม่ 6 หลัก"
+                          value={newPinSetting}
+                          onChange={(e) => setNewPinSetting(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl text-xs border bg-neutral-950 border-neutral-700 text-white outline-none"
+                        />
+                        <button
+                          type="submit"
+                          className="w-full py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
+                        >
+                          บันทึก PIN ใหม่
+                        </button>
+                      </form>
+                    </div>
+                  )}
                 </div>
+
               </div>
             )}
           </div>
         )}
+
+        {/* ------------------------------------------------------------------ */}
+        {/* TAB 4: VIP TIERS TABLE */}
+        {/* ------------------------------------------------------------------ */}
+        {tab === 'vip' && (
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="border-b pb-4">
+              <h1 className="text-xl sm:text-2xl font-black flex items-center gap-2">
+                👑 ระดับสมาชิก VIP และส่วนลดตลอดชีพ
+              </h1>
+              <p className="text-xs text-neutral-400">ยิ่งสะสมยอดเติมเงิน ยิ่งได้รับส่วนลดถาวรสูงขึ้น</p>
+            </div>
+
+            {/* Current VIP Card */}
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-amber-950/60 to-purple-950/60 border border-amber-500/40 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <span className="text-4xl">{userRank.badge}</span>
+                <div>
+                  <h2 className="text-lg font-black text-white">{userRank.name}</h2>
+                  <p className="text-xs text-amber-400 font-bold">ระดับที่ {userRank.level} • ส่วนลด {userRank.discount}%</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-xs text-neutral-400">ยอดสะสมตลอดชีพ</div>
+                <div className="text-xl font-black text-amber-400">฿{(user.totalSpent || 0).toLocaleString()}</div>
+              </div>
+            </div>
+
+            {/* VIP Tiers Table */}
+            <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}>
+              <table className="w-full text-left text-xs">
+                <thead className={`border-b ${isDark ? 'bg-neutral-950 text-neutral-400 border-neutral-800' : 'bg-neutral-100 text-neutral-600'}`}>
+                  <tr>
+                    <th className="p-3.5">ระดับ</th>
+                    <th className="p-3.5">ชื่อแรงค์</th>
+                    <th className="p-3.5">ยอดสะสมขั้นต่ำ</th>
+                    <th className="p-3.5">ส่วนลดถาวร</th>
+                    <th className="p-3.5 text-center">สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-800">
+                  {VIP_TIERS.map((tier) => {
+                    const isCurrent = userRank.level === tier.level;
+                    const isUnlocked = (user?.totalSpent || 0) >= tier.minSpend;
+
+                    return (
+                      <tr key={tier.level} className={isCurrent ? 'bg-amber-500/10 font-bold' : ''}>
+                        <td className="p-3.5 font-mono">Lv.{tier.level}</td>
+                        <td className="p-3.5">
+                          <span className="mr-1.5">{tier.badge}</span>
+                          <span style={{ color: tier.color }}>{tier.name}</span>
+                        </td>
+                        <td className="p-3.5">฿{tier.minSpend.toLocaleString()}</td>
+                        <td className="p-3.5 text-emerald-400 font-black">{tier.discount}%</td>
+                        <td className="p-3.5 text-center">
+                          {isCurrent ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] bg-amber-500 text-black font-black">
+                              ปัจจุบัน
+                            </span>
+                          ) : isUnlocked ? (
+                            <span className="text-emerald-400 font-bold">✓ ปลดล็อกแล้ว</span>
+                          ) : (
+                            <span className="text-neutral-500">🔒 ล็อก</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
       </main>
 
-      {/* Modal เติมเหรียญ Cat Coin Wallet */}
+      {/* -------------------------------------------------------------------- */}
+      {/* MODAL: เติมเหรียญ CAT COIN WALLET */}
+      {/* -------------------------------------------------------------------- */}
       {showWalletModal && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-          <div style={{ backgroundColor: isDarkMode ? '#111827' : '#ffffff', border: '2px solid #fed7aa', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '26px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 900, marginBottom: '12px' }}>🪙 เติมเหรียญ Cat Coin</h3>
-            {walletError && <div style={{ color: '#ef4444', fontSize: '12px', marginBottom: '8px' }}>{walletError}</div>}
-            
-            <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>จำนวนเงินที่โอน (บาท)</label>
-            <input type="number" placeholder="เช่น 100" value={walletAmount} onChange={e => setWalletAmount(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #fed7aa', marginBottom: '14px', boxSizing: 'border-box' }} />
-
-            <div style={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffedd5', padding: '12px', borderRadius: '10px', fontSize: '12px', marginBottom: '14px' }}>
-              <div>🏦 <b>ธนาคารไทยพาณิชย์ (SCB)</b></div>
-              <div>เลขบัญชี: <b>558-265124-6</b></div>
-              <div>ชื่อ: นาย ธนภูมิ รักษี</div>
-              <div style={{ marginTop: '4px', color: '#ea580c' }}>หรือพร้อมเพย์: 095-626-7172</div>
-            </div>
-
-            <label style={{ fontSize: '12px', display: 'block', marginBottom: '4px' }}>แนบสลิปโอนเงิน</label>
-            <input type="file" accept="image/*" onChange={e => setWalletSlipFile(e.target.files[0])} style={{ marginBottom: '16px', fontSize: '12px' }} />
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setShowWalletModal(false)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #fed7aa', background: 'none' }}>ยกเลิก</button>
-              <button onClick={handleWalletSlipUpload} disabled={isWalletVerifying} style={{ flex: 1.5, padding: '10px', borderRadius: '8px', border: 'none', background: '#ea580c', color: '#fff', fontWeight: 'bold' }}>
-                {isWalletVerifying ? 'กำลังตรวจสลิป...' : 'ยืนยันสลิป'}
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className={`w-full max-w-md rounded-3xl border p-6 space-y-4 shadow-2xl ${
+            isDark ? 'bg-neutral-900 border-neutral-800 text-white' : 'bg-white border-neutral-200 text-neutral-900'
+          }`}>
+            <div className="flex justify-between items-center border-b pb-3">
+              <div className="flex items-center gap-2">
+                <CoinIcon size={24} />
+                <span className="font-black text-sm">เติมเงิน Cat Coin Wallet</span>
+              </div>
+              <button
+                onClick={() => { setShowWalletModal(false); setWalletMsg({ text: '', type: '' }); }}
+                className="text-neutral-400 hover:text-white"
+              >
+                ✕
               </button>
             </div>
+
+            {walletMsg.text && (
+              <div className={`p-2.5 rounded-xl border text-xs font-bold ${
+                walletMsg.type === 'success' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+              }`}>
+                {walletMsg.text}
+              </div>
+            )}
+
+            <form onSubmit={handleWalletTopup} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold block mb-1">เลือกจำนวนเงินที่ต้องการเติม (บาท)</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[50, 100, 300, 500, 1000, 2000].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setWalletAmount(amt.toString())}
+                      className={`py-2 text-xs font-bold rounded-xl border transition ${
+                        walletAmount === amt.toString()
+                          ? 'bg-amber-500 text-black border-amber-500'
+                          : isDark ? 'bg-neutral-950 border-neutral-700 text-neutral-300' : 'bg-slate-100 border-neutral-300'
+                      }`}
+                    >
+                      ฿{amt}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  min="10"
+                  required
+                  placeholder="หรือระบุจำนวนเงินเอง"
+                  value={walletAmount}
+                  onChange={(e) => setWalletAmount(e.target.value)}
+                  className={`w-full mt-2 px-3 py-2 rounded-xl text-xs border outline-none ${
+                    isDark ? 'bg-neutral-950 border-neutral-700 text-white' : 'bg-slate-50 border-neutral-300'
+                  }`}
+                />
+              </div>
+
+              {walletAmount && Number(walletAmount) >= 10 && (
+                <div className={`p-3 rounded-xl border text-center space-y-2 ${
+                  isDark ? 'bg-neutral-950 border-neutral-800' : 'bg-amber-50 border-amber-200'
+                }`}>
+                  <div className="text-xs font-bold text-amber-500">สแกน QR PromptPay เพื่อโอนเงิน ฿{walletAmount}</div>
+                  <div className="w-36 h-36 mx-auto bg-white p-2 rounded-xl border flex items-center justify-center shadow">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=PROMPTPAY-0956267172-AMT-${walletAmount}`}
+                      alt="PromptPay"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                  <div className="text-[11px] text-neutral-400">
+                    พร้อมเพย์: <b>095-626-7172 (ธนภูมิ รักษี)</b>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs font-bold block mb-1">แนบภาพสลิปโอนเงิน</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  required
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = () => setWalletSlipPreview(reader.result);
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  className="text-xs w-full"
+                />
+                {walletSlipPreview && (
+                  <div className="mt-2 text-center">
+                    <img src={walletSlipPreview} alt="Slip" className="h-24 mx-auto rounded border" />
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isCheckingSlip || !walletAmount || !walletSlipPreview}
+                className={`w-full py-2.5 rounded-xl font-bold text-xs text-black transition ${
+                  isCheckingSlip || !walletAmount || !walletSlipPreview
+                    ? 'bg-neutral-700 text-neutral-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-amber-500 to-rose-500'
+                }`}
+              >
+                {isCheckingSlip ? 'กำลังตรวจสอบสลิป...' : '✓ ยืนยันการเติมเหรียญ'}
+              </button>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Modal ยืนยันชำระเงินคำสั่งซื้อ */}
-      {showCheckoutModal && selectedPackage && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-          <div style={{ backgroundColor: isDarkMode ? '#111827' : '#ffffff', border: '2px solid #fed7aa', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '26px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 900, marginBottom: '14px' }}>ยืนยันการสั่งซื้อ</h3>
-            <div style={{ fontSize: '13px', marginBottom: '14px' }}>
-              <div>เกม: <b>{selectedGame?.name}</b></div>
-              <div>แพ็กเกจ: <b>{selectedPackage.name}</b></div>
-              <div>UID/ไอดี: <b>{playerId}</b></div>
-              <div style={{ fontSize: '16px', color: '#ea580c', fontWeight: 900, marginTop: '6px' }}>ยอดชำระ: ฿{selectedPackage.price * packageQty}</div>
-            </div>
-
-            <label style={{ fontSize: '12px', display: 'block', marginBottom: '6px' }}>เลือกช่องทางชำระเงิน</label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '18px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-                <input type="radio" name="pay" value="wallet" checked={selectedPayment === 'wallet'} onChange={() => setSelectedPayment('wallet')} />
-                <span>🪙 หักจาก Cat Coin Wallet (มี {(user?.balance || 0).toLocaleString()} Coin)</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-                <input type="radio" name="pay" value="bank" checked={selectedPayment === 'bank'} onChange={() => setSelectedPayment('bank')} />
-                <span>🏦 โอนเงินผ่าน SCB / พร้อมเพย์ 095-626-7172</span>
-              </label>
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setShowCheckoutModal(false)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #fed7aa', background: 'none' }}>ยกเลิก</button>
-              <button onClick={handleConfirmGameOrder} style={{ flex: 1.5, padding: '10px', borderRadius: '8px', border: 'none', background: '#ea580c', color: '#fff', fontWeight: 'bold' }}>ยืนยันชำระเงิน</button>
-            </div>
+      {/* FOOTER */}
+      <footer className={`border-t py-6 text-center text-xs mt-12 transition-colors ${
+        isDark ? 'bg-neutral-950 border-neutral-900 text-neutral-500' : 'bg-slate-100 border-neutral-200 text-neutral-600'
+      }`}>
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <CatLogo size={24} />
+            <span className="font-black text-amber-500">MEOW TOPUP</span>
+            <span>— ระบบเติมเกมอัตโนมัติ Realtime Database 24 ชั่วโมง</span>
+          </div>
+          <div className="text-[11px] text-neutral-500">
+            Connected to Firebase Realtime Database
           </div>
         </div>
-      )}
+      </footer>
+
     </div>
   );
 }
