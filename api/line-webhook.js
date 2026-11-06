@@ -97,19 +97,31 @@ export default async function handler(req, res) {
     const paymentMethod = order.paymentMethod || 'โอนเงินธนาคาร';
     const time = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
 
-    const notificationMessage =
-      `🔔 มีรายการออเดอร์ใหม่!\n` +
-      `━━━━━━━━━━━━━━━━━━\n` +
-      `🆔 รหัสออเดอร์: ${orderId}\n` +
-      `🎮 รายการ: ${game}\n` +
-      `📦 แพ็กเกจ: ${pkg}\n` +
-      `💰 ยอดเงิน: ${price}\n` +
-      `👤 ลูกค้า: ${player}\n` +
-      `🎯 UID/ไอดีเกม: ${gameChar}\n` +
-      `💳 ช่องทาง: ${paymentMethod}\n` +
-      `⏱️ เวลา: ${time}\n` +
-      `━━━━━━━━━━━━━━━━━━\n` +
-      `⚡ ระบบกำลังดำเนินการ`;
+    const isWalletTopup = order.type === 'wallet' || (game && game.includes('เติมเครดิต'));
+
+    const notificationMessage = isWalletTopup
+      ? `💰 มีรายการเติมเครดิตร้านใหม่ (Cyber Wallet)!\n` +
+        `━━━━━━━━━━━━━━━━━━\n` +
+        `🆔 รหัสออเดอร์: ${orderId}\n` +
+        `👤 บัญชีลูกค้า: ${player}\n` +
+        `💵 จำนวนเงินที่เติม: ${price}\n` +
+        `💳 ช่องทาง: ${paymentMethod}\n` +
+        `📌 สถานะ: ${order.status || 'เติมเครดิตสำเร็จ'}\n` +
+        `⏱️ เวลา: ${time}\n` +
+        `━━━━━━━━━━━━━━━━━━\n` +
+        `⚡ ยอดเงินเข้าบัญชีร้านเรียบร้อยแล้ว`
+      : `🔔 มีรายการออเดอร์ใหม่!\n` +
+        `━━━━━━━━━━━━━━━━━━\n` +
+        `🆔 รหัสออเดอร์: ${orderId}\n` +
+        `🎮 รายการ: ${game}\n` +
+        `📦 แพ็กเกจ: ${pkg}\n` +
+        `💰 ยอดเงิน: ${price}\n` +
+        `👤 ลูกค้า: ${player}\n` +
+        `🎯 UID/ไอดีเกม: ${gameChar}\n` +
+        `💳 ช่องทาง: ${paymentMethod}\n` +
+        `⏱️ เวลา: ${time}\n` +
+        `━━━━━━━━━━━━━━━━━━\n` +
+        `⚡ ระบบกำลังดำเนินการ`;
 
     await fetch('https://api.line.me/v2/bot/message/push', {
       method: 'POST',
