@@ -1289,12 +1289,12 @@ export default function App() {
       image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิตอันดับ 1 🔥',
       packages: [
-        { id: 'v1', name: '475 VP', price: 145, cost: 130, profit: 15, bonus: '+0 VP' },
-        { id: 'v2', name: '1,000 VP', price: 285, cost: 260, profit: 25, bonus: '🔥 ขายดี' },
-        { id: 'v3', name: '2,050 VP', price: 565, cost: 520, profit: 45, bonus: '+50 VP โบนัส' },
-        { id: 'v4', name: '3,650 VP', price: 990, cost: 920, profit: 70, bonus: '+150 VP โบนัส' },
-        { id: 'v5', name: '5,350 VP', price: 1420, cost: 1320, profit: 100, bonus: '+350 VP โบนัส' },
-        { id: 'v6', name: '11,000 VP (Whale Pack)', price: 2820, cost: 2640, profit: 180, bonus: '+1,000 VP VIP 👑' }
+        { id: 'v1', name: '475 VP', price: 129, cost: 125, profit: 4, bonus: '+0 VP' },
+        { id: 'v2', name: '1,000 VP', price: 258, cost: 249, profit: 9, bonus: '🔥 ขายดีอันดับ 1' },
+        { id: 'v3', name: '2,050 VP', price: 515, cost: 499, profit: 16, bonus: '+50 VP โบนัส' },
+        { id: 'v4', name: '3,650 VP', price: 909, cost: 882, profit: 27, bonus: '+150 VP โบนัส' },
+        { id: 'v5', name: '5,350 VP', price: 1299, cost: 1263, profit: 36, bonus: '+350 VP โบนัส' },
+        { id: 'v6', name: '11,000 VP (Whale Pack)', price: 2599, cost: 2525, profit: 74, bonus: '+1,000 VP VIP 👑' }
       ]
     },
     {
