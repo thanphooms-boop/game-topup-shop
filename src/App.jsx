@@ -813,6 +813,7 @@ export default function App() {
   const [adminOpenFinance, setAdminOpenFinance] = useState(true);
   const [adminOpenOrders, setAdminOpenOrders] = useState(true);
   const [adminOpenStats, setAdminOpenStats] = useState(false);
+  const [adminOpenLinks, setAdminOpenLinks] = useState(false);
   const [adminOpenStock, setAdminOpenStock] = useState(false);
   const [adminOpenUsers, setAdminOpenUsers] = useState(false);
   const [adminOpenAds, setAdminOpenAds] = useState(false);
@@ -5115,12 +5116,26 @@ const [authMode, setAuthMode] = useState('login');
                 </div>
 
                 {/* การ์ดศูนย์รวมลิงก์เว็บเติมเกมทางการสำหรับแอดมิน */}
-                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', border: '1.5px solid #10b981', padding: '22px', boxShadow: '0 0 25px rgba(16,185,129,0.2)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-                    <div>
-                      <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#34d399', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>🌐 ลิงก์เว็บเติมเกมหลังบ้านสำหรับแอดมิน (ยึดเว็บ LnwTRUE เป็นหลัก)</span>
-                      </h3>
+                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', border: '1.5px solid #10b981', overflow: 'hidden', boxShadow: '0 0 25px rgba(16,185,129,0.2)' }}>
+                  <div 
+                    onClick={() => setAdminOpenLinks(!adminOpenLinks)} 
+                    style={{ padding: '16px 22px', backgroundColor: '#0f172a', borderBottom: adminOpenLinks ? '1px solid #374151' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '18px' }}>🌐</span>
+                      <span style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>ลิงก์เว็บเติมเกมหลังบ้านสำหรับแอดมิน (Official Topup Portals)</span>
+                    </div>
+                    <span style={{ fontSize: '12px', color: '#9ca3af', backgroundColor: '#1e293b', padding: '4px 12px', borderRadius: '8px', border: '1px solid #374151' }}>
+                      {adminOpenLinks ? '▼ คลิกเพื่อพับเก็บ' : '▶ คลิกเพื่อกางออก'}
+                    </span>
+                  </div>
+                  {adminOpenLinks && (
+                    <div style={{ padding: '22px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                        <div>
+                          <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#34d399', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>🌐 ลิงก์เว็บเติมเกมหลังบ้านสำหรับแอดมิน (ยึดเว็บ LnwTRUE เป็นหลัก)</span>
+                          </h3>
                       <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0 0' }}>
                         เมื่อลูกค้าสั่งซื้อและโอนเงินแล้ว แอดมินสามารถกดปุ่มเปิดเว็บ LnwTRUE (หรือเว็บทางการ) ของแต่ละเกม เพื่อก๊อปปี้ UID ลูกค้าไปวางเติมได้ทันที
                       </p>
@@ -5162,6 +5177,8 @@ const [authMode, setAuthMode] = useState('login');
                       </div>
                     ))}
                   </div>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', border: '1.5px solid rgba(147,51,234,0.5)', overflow: 'hidden' }}>
