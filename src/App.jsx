@@ -808,7 +808,6 @@ export default function App() {
 
   const [registeredUsers, setRegisteredUsers] = useState([]);
   const [authMode, setAuthMode] = useState('login');
-  const [showAuthModal, setShowAuthModal] = useState(false);
   
   const [usernameInput, setUsernameInput] = useState(() => {
     return localStorage.getItem('cyber_remembered_user') || '';
@@ -2206,11 +2205,6 @@ export default function App() {
   const handleRedeemEventCode = (e) => {
     e.preventDefault();
     setEventMsg({ text: '', type: '' });
-    if (!user) {
-      setEventMsg({ text: '⚠️ กรุณาเข้าสู่ระบบก่อนรับโค้ดของขวัญครับ', type: 'error' });
-      setShowAuthModal(true);
-      return;
-    }
 
     if (!eventPlayerId.trim()) {
       setEventMsg({ text: '⚠️ กรุณากรอก ชื่อในเกม หรือ UID ตัวละครที่ต้องการรับรางวัลให้เรียบร้อย', type: 'error' });
@@ -2544,11 +2538,6 @@ export default function App() {
   };
 
   const handleStartGamePayment = () => {
-    if (!user) {
-      setAuthError('กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อหรือเติมเกมครับ');
-      setShowAuthModal(true);
-      return;
-    }
     if (!playerId.trim()) {
       return;
     }
@@ -2859,12 +2848,7 @@ export default function App() {
   const searchedOrders = orders.filter(o => {
     let matchUser = false;
     if (!isUserAdmin) {
-        if (user && user.username) {
-          matchUser = (o.player && o.player.toLowerCase() === user.username.toLowerCase());
-        } else {
-          // ผู้เยี่ยมชม: สามารถค้นหาและดูสถานะได้หากกรอกเลขออร์เดอร์
-          matchUser = Boolean(orderQuery);
-        }
+      matchUser = user && (o.player.toLowerCase() === user.username.toLowerCase());
     } else {
       const q = exactSearchQuery.trim().toLowerCase();
       matchUser = !q || (o.player.toLowerCase() === q) || (o.id.toLowerCase() === q);
@@ -3035,6 +3019,316 @@ export default function App() {
     setHistoryPage(1);
   };
 
+  if (!user) {
+    return (
+      <div style={{
+        backgroundColor: '#fffaf5',
+        backgroundImage: `radial-gradient(#fdba74 1.2px, transparent 1.2px), radial-gradient(#f472b6 1.2px, #fffaf5 1.2px)`,
+        backgroundSize: '36px 36px', backgroundPosition: '0 0, 18px 18px',
+        color: '#1e293b', minHeight: '100vh', fontFamily: 'sans-serif',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
+      }}>
+        <style>{cyberGlobalStyles}</style>
+        <div style={{
+          backgroundColor: '#ffffff', backdropFilter: 'blur(20px)',
+          border: '3px solid #fed7aa', borderRadius: '28px',
+          padding: '40px 32px', maxWidth: '440px', width: '100%',
+          boxShadow: '0 25px 50px rgba(249, 115, 22, 0.15)', textAlign: 'center'
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '22px' }}>
+            <div style={{ 
+              position: 'relative', width: '70px', height: '70px', borderRadius: '22px', 
+              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)', 
+              border: '3px solid #ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+              boxShadow: '0 10px 25px rgba(249,115,22,0.4)', 
+              marginBottom: '14px',
+              fontSize: '36px'
+            }}>
+              🐱
+            </div>
+            <div style={{ fontSize: '26px', fontWeight: '900', background: 'linear-gradient(135deg, #ea580c 0%, #db2777 50%, #7c3aed 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '1px' }}>
+              MEOW TOPUP
+            </div>
+            <div style={{ fontSize: '11px', fontWeight: '900', color: '#f59e0b', letterSpacing: '1.5px', marginTop: '3px' }}>
+              🐾 CUTE & FAST GAME STORE 🪙
+            </div>
+          </div>
+
+          <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 20px 0' }}>
+            {authMode === 'login' && 'เข้าสู่ระบบด้วยชื่อผู้ใช้งานอัตโนมัติ 24 ชม.'}
+            {authMode === 'register' && 'สมัครสมาชิกใหม่ (กรอกอีเมลกู้คืนขึ้นก่อน แล้วตามด้วยชื่อผู้ใช้งาน)'}
+          </p>
+
+          <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {authError && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authError}</div>}
+            {authSuccessMsg && <div style={{ backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '1px solid #34d399', color: '#34d399', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authSuccessMsg}</div>}
+
+            {authMode === 'login' ? (
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ชื่อผู้ใช้งาน (Username)</label>
+                <input type="text" placeholder="กรอกชื่อผู้ใช้งานของคุณ..." value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+              </div>
+            ) : (
+              <>
+                <div style={{ textAlign: 'left' }}>
+                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>1. อีเมลกู้คืนรหัสผ่าน (Email)</label>
+                  <input type="email" placeholder="example@gmail.com (ใช้ยืนยันตอนลืมรหัส)" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+
+                <div style={{ textAlign: 'left' }}>
+                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. ชื่อผู้ใช้งาน (Username / Display Name)</label>
+                  <input type="text" placeholder="ตั้งชื่อผู้ใช้งาน..." value={regUsernameInput} onChange={(e) => setRegUsernameInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              </>
+            )}
+
+            <div style={{ textAlign: 'left' }}>
+              <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
+                {authMode === 'register' ? '3. รหัสผ่าน (Password อย่างน้อย 6 ตัว)' : 'รหัสผ่าน (Password)'}
+              </label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input 
+                  type={authMode === 'login' ? (showLoginPassword ? 'text' : 'password') : (showRegPassword ? 'text' : 'password')} 
+                  placeholder="กรอกรหัสผ่าน..." 
+                  value={authMode === 'login' ? passwordInput : regPasswordInput} 
+                  onChange={(e) => authMode === 'login' ? setPasswordInput(e.target.value) : setRegPasswordInput(e.target.value)} 
+                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => authMode === 'login' ? setShowLoginPassword(!showLoginPassword) : setShowRegPassword(!showRegPassword)} 
+                  style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                >
+                  <EyeIcon show={authMode === 'login' ? showLoginPassword : showRegPassword} />
+                </button>
+              </div>
+            </div>
+
+            {authMode === 'register' && (
+              <div style={{ textAlign: 'left' }}>
+                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>4. ยืนยันรหัสผ่าน (Confirm Password)</label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input 
+                    type={showConfirmPassword ? 'text' : 'password'} 
+                    placeholder="กรอกรหัสผ่านอีกครั้ง..." 
+                    value={confirmPasswordInput} 
+                    onChange={(e) => setConfirmPasswordInput(e.target.value)} 
+                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
+                    style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                  >
+                    <EyeIcon show={showConfirmPassword} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {authMode === 'login' && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#9ca3af' }}>
+                  <input type="checkbox" id="remember" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ cursor: 'pointer' }} />
+                  <label htmlFor="remember" style={{ cursor: 'pointer' }}>จดจำไอดีไว้</label>
+                </div>
+                <span onClick={() => { setForgotModalOpen(true); resetForgotState(); }} style={{ color: '#f472b6', cursor: 'pointer', fontWeight: 'bold' }}>ลืมรหัสผ่าน?</span>
+              </div>
+            )}
+
+            <button 
+              type="submit" 
+              style={{ 
+                backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', 
+                fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', 
+                boxShadow: '0 0 15px rgba(147,51,234,0.5)', transition: 'all 0.25s ease', transform: 'scale(1)' 
+              }}
+            >
+              {authMode === 'login' && 'เข้าสู่ระบบ (Login)'}
+              {authMode === 'register' && 'สมัครสมาชิก'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: '15px', fontSize: '13px', color: '#9ca3af' }}>
+            {authMode === 'login' && <>ยังไม่มีบัญชี? <span onClick={() => { setAuthMode('register'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>สมัครสมาชิก</span></>}
+            {authMode === 'register' && <>มีบัญชีแล้ว? <span onClick={() => { setAuthMode('login'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>เข้าสู่ระบบ</span></>}
+          </div>
+        </div>
+
+        {forgotModalOpen && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
+            <div style={{ backgroundColor: '#111827', border: '1.5px solid #a855f7', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '28px', textAlign: 'center', boxShadow: '0 0 40px rgba(168,85,247,0.45)', position: 'relative' }}>
+              <button 
+                type="button" 
+                onClick={() => { setForgotModalOpen(false); resetForgotState(); }} 
+                style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#9ca3af', fontSize: '20px', cursor: 'pointer', padding: '4px 8px' }}
+              >
+                ✕
+              </button>
+
+              <div style={{ width: '54px', height: '54px', margin: '0 auto 12px auto', borderRadius: '50%', backgroundColor: 'rgba(168,85,247,0.15)', border: '2px solid #c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+                {forgotStep === 1 ? '🔐' : forgotStep === 2 ? '🔢' : '✨'}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginBottom: '16px' }}>
+                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold', backgroundColor: forgotStep === 1 ? '#9333ea' : 'rgba(55,65,81,0.5)', color: '#ffffff' }}>1. ขอรหัส OTP</span>
+                <span style={{ color: '#4b5563', fontSize: '11px' }}>➔</span>
+                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold', backgroundColor: forgotStep === 2 ? '#9333ea' : 'rgba(55,65,81,0.5)', color: '#ffffff' }}>2. ยืนยัน OTP</span>
+                <span style={{ color: '#4b5563', fontSize: '11px' }}>➔</span>
+                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold', backgroundColor: forgotStep === 3 ? '#9333ea' : 'rgba(55,65,81,0.5)', color: '#ffffff' }}>3. ตั้งรหัสใหม่</span>
+              </div>
+
+              <h3 style={{ fontSize: '19px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#ffffff' }}>
+                {forgotStep === 1 && 'กู้คืนรหัสผ่านด้วยรหัส OTP'}
+                {forgotStep === 2 && 'กรอกรหัสยืนยัน OTP 6 หลัก'}
+                {forgotStep === 3 && 'ตั้งรหัสผ่านใหม่บนหน้าเว็บ'}
+              </h3>
+              
+              <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '16px', lineHeight: '1.4' }}>
+                {forgotStep === 1 && 'กรอกอีเมล หรือ ชื่อผู้ใช้งานของคุณ เพื่อรับรหัส OTP 6 หลัก'}
+                {forgotStep === 2 && (
+                  <>
+                    รหัส OTP ถูกส่งไปที่: <b style={{ color: '#38bdf8' }}>{forgotTargetUser?.email || forgotTargetUser?.username}</b>
+                  </>
+                )}
+                {forgotStep === 3 && (
+                  <>
+                    ตั้งรหัสผ่านใหม่สำหรับบัญชี: <b style={{ color: '#c084fc' }}>{forgotTargetUser?.username}</b>
+                  </>
+                )}
+              </p>
+
+              {forgotStatusMsg.text && (
+                <div style={{ backgroundColor: forgotStatusMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${forgotStatusMsg.type === 'success' ? '#34d399' : '#ef4444'}`, color: forgotStatusMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '12px', borderRadius: '12px', fontSize: '12px', marginBottom: '16px', textAlign: 'left', lineHeight: '1.4' }}>
+                  {forgotStatusMsg.text}
+                </div>
+              )}
+
+              {forgotStep === 1 && (
+                <form onSubmit={handleRequestOtpSubmit}>
+                  <div style={{ textAlign: 'left', marginBottom: '16px' }}>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '5px' }}>อีเมล หรือ ชื่อผู้ใช้งาน (Username)</label>
+                    <input 
+                      type="text" 
+                      placeholder="เช่น user@example.com หรือชื่อผู้ใช้งาน" 
+                      value={forgotEmailInput} 
+                      onChange={(e) => setForgotEmailInput(e.target.value)} 
+                      style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                      autoFocus
+                    />
+                  </div>
+
+                  <div style={{ backgroundColor: 'rgba(55, 65, 81, 0.35)', borderRadius: '10px', padding: '10px 12px', fontSize: '11px', color: '#9ca3af', marginBottom: '18px', textAlign: 'left', border: '1px dashed #4b5563', lineHeight: '1.5' }}>
+                    💡 <b>สะดวก รวดเร็ว จบในหน้าเดียว:</b><br/>
+                    ระบบจะส่งรหัส OTP 6 หลัก และเปิดให้คุณเปลี่ยนรหัสผ่านใหม่ได้ทันทีบนหน้านี้ ไม่ต้องสลับจอไปมา
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button type="button" onClick={() => { setForgotModalOpen(false); resetForgotState(); }} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
+                    <button type="submit" style={{ flex: 1.5, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(147,51,234,0.5)' }}>ขอรับรหัส OTP ➔</button>
+                  </div>
+                </form>
+              )}
+
+              {forgotStep === 2 && (
+                <form onSubmit={handleVerifyOtpSubmit}>
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>กรอกรหัสยืนยัน OTP 6 หลัก</label>
+                    <input 
+                      type="text" 
+                      inputMode="numeric" 
+                      maxLength={6} 
+                      placeholder="• • • • • •" 
+                      value={forgotOtpInput} 
+                      onChange={(e) => setForgotOtpInput(e.target.value.replace(/[^0-9]/g, ''))} 
+                      style={{ width: '100%', maxWidth: '240px', margin: '0 auto', backgroundColor: '#030712', border: '2px solid #a855f7', borderRadius: '12px', padding: '12px', color: '#ffffff', fontSize: '24px', fontWeight: '900', letterSpacing: '8px', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} 
+                      autoFocus
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', marginBottom: '18px', padding: '0 6px' }}>
+                    <div style={{ color: otpCountdown > 60 ? '#38bdf8' : '#ef4444', fontWeight: 'bold' }}>
+                      ⏳ หมดอายุใน: {formatOtpTime(otpCountdown)}
+                    </div>
+                    <button 
+                      type="button" 
+                      disabled={otpResendCountdown > 0} 
+                      onClick={handleResendOtp} 
+                      style={{ background: 'none', border: 'none', color: otpResendCountdown > 0 ? '#6b7280' : '#38bdf8', cursor: otpResendCountdown > 0 ? 'not-allowed' : 'pointer', fontSize: '12px', textDecoration: 'underline' }}
+                    >
+                      {otpResendCountdown > 0 ? `ขอรหัสใหม่ใน (${otpResendCountdown}s)` : '🔄 ขอรหัสใหม่อีกครั้ง'}
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button type="button" onClick={() => setForgotStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ย้อนกลับ</button>
+                    <button type="submit" style={{ flex: 1.5, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(52,211,153,0.5)' }}>ยืนยันรหัส OTP ➔</button>
+                  </div>
+                </form>
+              )}
+
+              {forgotStep === 3 && (
+                <form onSubmit={handleSetNewPasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>1. รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)</label>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <input 
+                        type={showForgotNewPassword ? 'text' : 'password'} 
+                        placeholder="กรอกรหัสผ่านใหม่..." 
+                        value={forgotNewPassword} 
+                        onChange={(e) => setForgotNewPassword(e.target.value)} 
+                        style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                        autoFocus
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowForgotNewPassword(!showForgotNewPassword)} 
+                        style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                      >
+                        <EyeIcon show={showForgotNewPassword} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. ยืนยันรหัสผ่านใหม่อีกครั้ง</label>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <input 
+                        type={showForgotConfirmPassword ? 'text' : 'password'} 
+                        placeholder="กรอกรหัสผ่านใหม่อีกครั้ง..." 
+                        value={forgotConfirmPassword} 
+                        onChange={(e) => setForgotConfirmPassword(e.target.value)} 
+                        style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
+                      />
+                      <button 
+                        type="button" 
+                        onClick={() => setShowForgotConfirmPassword(!showForgotConfirmPassword)} 
+                        style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                      >
+                        <EyeIcon show={showForgotConfirmPassword} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <button 
+                    type="submit" 
+                    style={{ 
+                      backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', 
+                      fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', 
+                      boxShadow: '0 0 20px rgba(147,51,234,0.6)' 
+                    }}
+                  >
+                    💾 บันทึกรหัสผ่านใหม่ทันที
+                  </button>
+                </form>
+              )}
+
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
   return (
     <div style={{
       backgroundColor: tColors.bg,
@@ -3084,7 +3378,6 @@ export default function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          {user ? (
           <div style={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? '2px solid #334155' : '2px solid #fed7aa', borderRadius: '16px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', position: 'relative', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize: '12px', display: 'flex', alignItems: 'center' }}>
               {/* RANK BADGE WITH '!' ICON & HOVER TOOLTIP */}
@@ -3359,37 +3652,6 @@ export default function App() {
               <span>🐾</span>
             </button>
           </div>
-          ) : (
-            <div style={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? '2px solid #334155' : '2px solid #fed7aa', borderRadius: '16px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
-              <span style={{ fontSize: '13px', color: isDarkMode ? '#cbd5e1' : '#64748b' }}>👤 ผู้เยี่ยมชม (Guest)</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthError('');
-                  setAuthSuccessMsg('');
-                  setAuthMode('login');
-                  setShowAuthModal(true);
-                }}
-                style={{
-                  background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '6px 14px',
-                  borderRadius: '10px',
-                  fontSize: '12px',
-                  fontWeight: '900',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 10px rgba(249, 115, 22, 0.35)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <span>🔑</span>
-                <span>เข้าสู่ระบบ / สมัครสมาชิก</span>
-              </button>
-            </div>
-          )}
 
           <nav style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {/* ☀️ / 🌙 THEME TOGGLE BUTTON */}
@@ -3422,9 +3684,7 @@ export default function App() {
             {isUserAdmin && (
               <button onClick={() => setActiveTab('admin')} style={{ background: activeTab === 'admin' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'admin' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '8px 16px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px', boxShadow: activeTab === 'admin' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)' }}>⚙️ หลังบ้าน</button>
             )}
-            {user && (
-              <button onClick={handleLogout} style={{ backgroundColor: '#fee2e2', border: '2px solid #fca5a5', color: '#dc2626', padding: '8px 14px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px' }}>🚪 ออก</button>
-            )}
+            <button onClick={handleLogout} style={{ backgroundColor: '#fee2e2', border: '2px solid #fca5a5', color: '#dc2626', padding: '8px 14px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px' }}>🚪 ออก</button>
           </nav>
         </div>
       </header>
@@ -4100,8 +4360,6 @@ export default function App() {
             <div style={{ borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>📋 เช็คสถานะคำสั่งซื้อและประวัติการทำรายการ</h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#c084fc', flexWrap: 'wrap' }}>
-                {user ? (
-                  <>
                 <span style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -4122,36 +4380,14 @@ export default function App() {
                 <b style={{ color: '#ffffff', backgroundColor: 'rgba(147,51,234,0.3)', padding: '2px 10px', borderRadius: '6px', border: '1px solid #9333ea' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
                 <span style={{ fontSize: '11px', color: '#38bdf8', marginLeft: '4px' }}>(ยอดเติมแพ็กเกจสะสม: ฿{currentUserSpending.toLocaleString()})</span>
                 {!isUserAdmin && <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '4px' }}>| แสดงเฉพาะประวัติของคุณ</span>}
-                  </>
-                ) : (
-                  <>
-                    <span>👤 บัญชีผู้ใช้งาน: <b style={{ color: '#fed7aa' }}>ผู้เยี่ยมชม (Guest)</b></span>
-                    <button
-                      type="button"
-                      onClick={() => setShowAuthModal(true)}
-                      style={{
-                        backgroundColor: '#f97316',
-                        color: '#ffffff',
-                        border: 'none',
-                        padding: '3px 10px',
-                        borderRadius: '8px',
-                        fontSize: '11px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      🔑 เข้าสู่ระบบเพื่อดูประวัติ
-                    </button>
-                  </>
-                )}
               </div>
             </div>
 
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <input 
                 type="text" 
-            placeholder={isUserAdmin ? "🔍 ค้นหาชื่อบัญชีลูกค้า..." : (user?.username || "ผู้เยี่ยมชม (กรอกเลขออร์เดอร์เพื่อค้นหา)")}
-            value={isUserAdmin ? exactSearchQuery : (user ? (user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username) : '')}
+                placeholder={isUserAdmin ? "🔍 ค้นหาชื่อบัญชีลูกค้า..." : user.username}
+                value={isUserAdmin ? exactSearchQuery : (user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username)} 
                 disabled={!isUserAdmin}
                 onChange={(e) => isUserAdmin && setExactSearchQuery(e.target.value)} 
                 style={{ flex: 1, minWidth: '180px', backgroundColor: isUserAdmin ? '#030712' : '#1f2937', border: '1.5px solid #a855f7', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', cursor: isUserAdmin ? 'text' : 'not-allowed', fontWeight: 'bold', boxSizing: 'border-box' }} 
@@ -6692,338 +6928,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-      {/* 🔐 AUTH / LOGIN / REGISTER POPUP MODAL (แสดงเมื่อผู้เยี่ยมชมกดล็อกอิน หรือกดสั่งซื้อ/เติมเงิน) */}
-      {!user && showAuthModal && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(10px)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, padding: '20px'
-        }}>
-          <div style={{
-            position: 'relative', width: '100%', maxWidth: '440px',
-            maxHeight: '92vh', overflowY: 'auto'
-          }}>
-            {/* ปุ่มปิด Modal ✕ */}
-            <button
-              type="button"
-              onClick={() => { setShowAuthModal(false); setAuthError(''); setAuthSuccessMsg(''); }}
-              style={{
-                position: 'absolute', top: '16px', right: '16px', zIndex: 10,
-                width: '32px', height: '32px', borderRadius: '50%',
-                backgroundColor: '#fee2e2', border: '1px solid #fca5a5',
-                color: '#ef4444', fontWeight: '900', fontSize: '15px',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-              }}
-              title="ปิดหน้าต่าง"
-            >
-              ✕
-            </button>
-        <div style={{
-          backgroundColor: '#ffffff', backdropFilter: 'blur(20px)',
-          border: '3px solid #fed7aa', borderRadius: '28px',
-          padding: '40px 32px', maxWidth: '440px', width: '100%',
-          boxShadow: '0 25px 50px rgba(249, 115, 22, 0.15)', textAlign: 'center'
-        }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '22px' }}>
-            <div style={{ 
-              position: 'relative', width: '70px', height: '70px', borderRadius: '22px', 
-              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)', 
-              border: '3px solid #ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-              boxShadow: '0 10px 25px rgba(249,115,22,0.4)', 
-              marginBottom: '14px',
-              fontSize: '36px'
-            }}>
-              🐱
-            </div>
-            <div style={{ fontSize: '26px', fontWeight: '900', background: 'linear-gradient(135deg, #ea580c 0%, #db2777 50%, #7c3aed 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '1px' }}>
-              MEOW TOPUP
-            </div>
-            <div style={{ fontSize: '11px', fontWeight: '900', color: '#f59e0b', letterSpacing: '1.5px', marginTop: '3px' }}>
-              🐾 CUTE & FAST GAME STORE 🪙
-            </div>
-          </div>
-
-          <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 20px 0' }}>
-            {authMode === 'login' && 'เข้าสู่ระบบด้วยชื่อผู้ใช้งานอัตโนมัติ 24 ชม.'}
-            {authMode === 'register' && 'สมัครสมาชิกใหม่ (กรอกอีเมลกู้คืนขึ้นก่อน แล้วตามด้วยชื่อผู้ใช้งาน)'}
-          </p>
-
-          <form onSubmit={handleAuthSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {authError && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authError}</div>}
-            {authSuccessMsg && <div style={{ backgroundColor: 'rgba(52, 211, 153, 0.2)', border: '1px solid #34d399', color: '#34d399', padding: '10px', borderRadius: '10px', fontSize: '12px' }}>{authSuccessMsg}</div>}
-
-            {authMode === 'login' ? (
-              <div style={{ textAlign: 'left' }}>
-                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>ชื่อผู้ใช้งาน (Username)</label>
-                <input type="text" placeholder="กรอกชื่อผู้ใช้งานของคุณ..." value={usernameInput} onChange={(e) => setUsernameInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
-              </div>
-            ) : (
-              <>
-                <div style={{ textAlign: 'left' }}>
-                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>1. อีเมลกู้คืนรหัสผ่าน (Email)</label>
-                  <input type="email" placeholder="example@gmail.com (ใช้ยืนยันตอนลืมรหัส)" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
-                </div>
-
-                <div style={{ textAlign: 'left' }}>
-                  <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. ชื่อผู้ใช้งาน (Username / Display Name)</label>
-                  <input type="text" placeholder="ตั้งชื่อผู้ใช้งาน..." value={regUsernameInput} onChange={(e) => setRegUsernameInput(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
-                </div>
-              </>
-            )}
-
-            <div style={{ textAlign: 'left' }}>
-              <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>
-                {authMode === 'register' ? '3. รหัสผ่าน (Password อย่างน้อย 6 ตัว)' : 'รหัสผ่าน (Password)'}
-              </label>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <input 
-                  type={authMode === 'login' ? (showLoginPassword ? 'text' : 'password') : (showRegPassword ? 'text' : 'password')} 
-                  placeholder="กรอกรหัสผ่าน..." 
-                  value={authMode === 'login' ? passwordInput : regPasswordInput} 
-                  onChange={(e) => authMode === 'login' ? setPasswordInput(e.target.value) : setRegPasswordInput(e.target.value)} 
-                  style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
-                />
-                <button 
-                  type="button" 
-                  onClick={() => authMode === 'login' ? setShowLoginPassword(!showLoginPassword) : setShowRegPassword(!showRegPassword)} 
-                  style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
-                >
-                  <EyeIcon show={authMode === 'login' ? showLoginPassword : showRegPassword} />
-                </button>
-              </div>
-            </div>
-
-            {authMode === 'register' && (
-              <div style={{ textAlign: 'left' }}>
-                <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>4. ยืนยันรหัสผ่าน (Confirm Password)</label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <input 
-                    type={showConfirmPassword ? 'text' : 'password'} 
-                    placeholder="กรอกรหัสผ่านอีกครั้ง..." 
-                    value={confirmPasswordInput} 
-                    onChange={(e) => setConfirmPasswordInput(e.target.value)} 
-                    style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
-                  />
-                  <button 
-                    type="button" 
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)} 
-                    style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
-                  >
-                    <EyeIcon show={showConfirmPassword} />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {authMode === 'login' && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#9ca3af' }}>
-                  <input type="checkbox" id="remember" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} style={{ cursor: 'pointer' }} />
-                  <label htmlFor="remember" style={{ cursor: 'pointer' }}>จดจำไอดีไว้</label>
-                </div>
-                <span onClick={() => { setForgotModalOpen(true); resetForgotState(); }} style={{ color: '#f472b6', cursor: 'pointer', fontWeight: 'bold' }}>ลืมรหัสผ่าน?</span>
-              </div>
-            )}
-
-            <button 
-              type="submit" 
-              style={{ 
-                backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', 
-                fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', 
-                boxShadow: '0 0 15px rgba(147,51,234,0.5)', transition: 'all 0.25s ease', transform: 'scale(1)' 
-              }}
-            >
-              {authMode === 'login' && 'เข้าสู่ระบบ (Login)'}
-              {authMode === 'register' && 'สมัครสมาชิก'}
-            </button>
-          </form>
-
-          <div style={{ marginTop: '15px', fontSize: '13px', color: '#9ca3af' }}>
-            {authMode === 'login' && <>ยังไม่มีบัญชี? <span onClick={() => { setAuthMode('register'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>สมัครสมาชิก</span></>}
-            {authMode === 'register' && <>มีบัญชีแล้ว? <span onClick={() => { setAuthMode('login'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>เข้าสู่ระบบ</span></>}
-          </div>
-        </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* 🔑 MODAL กู้คืนรหัสผ่าน */}
-        {forgotModalOpen && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.88)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
-            <div style={{ backgroundColor: '#111827', border: '1.5px solid #a855f7', borderRadius: '24px', maxWidth: '440px', width: '100%', padding: '28px', textAlign: 'center', boxShadow: '0 0 40px rgba(168,85,247,0.45)', position: 'relative' }}>
-              <button 
-                type="button" 
-                onClick={() => { setForgotModalOpen(false); resetForgotState(); }} 
-                style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#9ca3af', fontSize: '20px', cursor: 'pointer', padding: '4px 8px' }}
-              >
-                ✕
-              </button>
-
-              <div style={{ width: '54px', height: '54px', margin: '0 auto 12px auto', borderRadius: '50%', backgroundColor: 'rgba(168,85,247,0.15)', border: '2px solid #c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
-                {forgotStep === 1 ? '🔐' : forgotStep === 2 ? '🔢' : '✨'}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginBottom: '16px' }}>
-                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold', backgroundColor: forgotStep === 1 ? '#9333ea' : 'rgba(55,65,81,0.5)', color: '#ffffff' }}>1. ขอรหัส OTP</span>
-                <span style={{ color: '#4b5563', fontSize: '11px' }}>➔</span>
-                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold', backgroundColor: forgotStep === 2 ? '#9333ea' : 'rgba(55,65,81,0.5)', color: '#ffffff' }}>2. ยืนยัน OTP</span>
-                <span style={{ color: '#4b5563', fontSize: '11px' }}>➔</span>
-                <span style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '20px', fontWeight: 'bold', backgroundColor: forgotStep === 3 ? '#9333ea' : 'rgba(55,65,81,0.5)', color: '#ffffff' }}>3. ตั้งรหัสใหม่</span>
-              </div>
-
-              <h3 style={{ fontSize: '19px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#ffffff' }}>
-                {forgotStep === 1 && 'กู้คืนรหัสผ่านด้วยรหัส OTP'}
-                {forgotStep === 2 && 'กรอกรหัสยืนยัน OTP 6 หลัก'}
-                {forgotStep === 3 && 'ตั้งรหัสผ่านใหม่บนหน้าเว็บ'}
-              </h3>
-              
-              <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '16px', lineHeight: '1.4' }}>
-                {forgotStep === 1 && 'กรอกอีเมล หรือ ชื่อผู้ใช้งานของคุณ เพื่อรับรหัส OTP 6 หลัก'}
-                {forgotStep === 2 && (
-                  <>
-                    รหัส OTP ถูกส่งไปที่: <b style={{ color: '#38bdf8' }}>{forgotTargetUser?.email || forgotTargetUser?.username}</b>
-                  </>
-                )}
-                {forgotStep === 3 && (
-                  <>
-                    ตั้งรหัสผ่านใหม่สำหรับบัญชี: <b style={{ color: '#c084fc' }}>{forgotTargetUser?.username}</b>
-                  </>
-                )}
-              </p>
-
-              {forgotStatusMsg.text && (
-                <div style={{ backgroundColor: forgotStatusMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${forgotStatusMsg.type === 'success' ? '#34d399' : '#ef4444'}`, color: forgotStatusMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '12px', borderRadius: '12px', fontSize: '12px', marginBottom: '16px', textAlign: 'left', lineHeight: '1.4' }}>
-                  {forgotStatusMsg.text}
-                </div>
-              )}
-
-              {forgotStep === 1 && (
-                <form onSubmit={handleRequestOtpSubmit}>
-                  <div style={{ textAlign: 'left', marginBottom: '16px' }}>
-                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '5px' }}>อีเมล หรือ ชื่อผู้ใช้งาน (Username)</label>
-                    <input 
-                      type="text" 
-                      placeholder="เช่น user@example.com หรือชื่อผู้ใช้งาน" 
-                      value={forgotEmailInput} 
-                      onChange={(e) => setForgotEmailInput(e.target.value)} 
-                      style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
-                      autoFocus
-                    />
-                  </div>
-
-                  <div style={{ backgroundColor: 'rgba(55, 65, 81, 0.35)', borderRadius: '10px', padding: '10px 12px', fontSize: '11px', color: '#9ca3af', marginBottom: '18px', textAlign: 'left', border: '1px dashed #4b5563', lineHeight: '1.5' }}>
-                    💡 <b>สะดวก รวดเร็ว จบในหน้าเดียว:</b><br/>
-                    ระบบจะส่งรหัส OTP 6 หลัก และเปิดให้คุณเปลี่ยนรหัสผ่านใหม่ได้ทันทีบนหน้านี้ ไม่ต้องสลับจอไปมา
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button type="button" onClick={() => { setForgotModalOpen(false); resetForgotState(); }} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
-                    <button type="submit" style={{ flex: 1.5, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(147,51,234,0.5)' }}>ขอรับรหัส OTP ➔</button>
-                  </div>
-                </form>
-              )}
-
-              {forgotStep === 2 && (
-                <form onSubmit={handleVerifyOtpSubmit}>
-                  <div style={{ marginBottom: '16px' }}>
-                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>กรอกรหัสยืนยัน OTP 6 หลัก</label>
-                    <input 
-                      type="text" 
-                      inputMode="numeric" 
-                      maxLength={6} 
-                      placeholder="• • • • • •" 
-                      value={forgotOtpInput} 
-                      onChange={(e) => setForgotOtpInput(e.target.value.replace(/[^0-9]/g, ''))} 
-                      style={{ width: '100%', maxWidth: '240px', margin: '0 auto', backgroundColor: '#030712', border: '2px solid #a855f7', borderRadius: '12px', padding: '12px', color: '#ffffff', fontSize: '24px', fontWeight: '900', letterSpacing: '8px', textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} 
-                      autoFocus
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', marginBottom: '18px', padding: '0 6px' }}>
-                    <div style={{ color: otpCountdown > 60 ? '#38bdf8' : '#ef4444', fontWeight: 'bold' }}>
-                      ⏳ หมดอายุใน: {formatOtpTime(otpCountdown)}
-                    </div>
-                    <button 
-                      type="button" 
-                      disabled={otpResendCountdown > 0} 
-                      onClick={handleResendOtp} 
-                      style={{ background: 'none', border: 'none', color: otpResendCountdown > 0 ? '#6b7280' : '#38bdf8', cursor: otpResendCountdown > 0 ? 'not-allowed' : 'pointer', fontSize: '12px', textDecoration: 'underline' }}
-                    >
-                      {otpResendCountdown > 0 ? `ขอรหัสใหม่ใน (${otpResendCountdown}s)` : '🔄 ขอรหัสใหม่อีกครั้ง'}
-                    </button>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button type="button" onClick={() => setForgotStep(1)} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ย้อนกลับ</button>
-                    <button type="submit" style={{ flex: 1.5, backgroundColor: '#34d399', color: '#000000', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 0 15px rgba(52,211,153,0.5)' }}>ยืนยันรหัส OTP ➔</button>
-                  </div>
-                </form>
-              )}
-
-              {forgotStep === 3 && (
-                <form onSubmit={handleSetNewPasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>1. รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)</label>
-                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                      <input 
-                        type={showForgotNewPassword ? 'text' : 'password'} 
-                        placeholder="กรอกรหัสผ่านใหม่..." 
-                        value={forgotNewPassword} 
-                        onChange={(e) => setForgotNewPassword(e.target.value)} 
-                        style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
-                        autoFocus
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => setShowForgotNewPassword(!showForgotNewPassword)} 
-                        style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
-                      >
-                        <EyeIcon show={showForgotNewPassword} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. ยืนยันรหัสผ่านใหม่อีกครั้ง</label>
-                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                      <input 
-                        type={showForgotConfirmPassword ? 'text' : 'password'} 
-                        placeholder="กรอกรหัสผ่านใหม่อีกครั้ง..." 
-                        value={forgotConfirmPassword} 
-                        onChange={(e) => setForgotConfirmPassword(e.target.value)} 
-                        style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} 
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => setShowForgotConfirmPassword(!showForgotConfirmPassword)} 
-                        style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
-                      >
-                        <EyeIcon show={showForgotConfirmPassword} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <button 
-                    type="submit" 
-                    style={{ 
-                      backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '14px', borderRadius: '12px', 
-                      fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', marginTop: '10px', 
-                      boxShadow: '0 0 20px rgba(147,51,234,0.6)' 
-                    }}
-                  >
-                    💾 บันทึกรหัสผ่านใหม่ทันที
-                  </button>
-                </form>
-              )}
-
-            </div>
-          </div>
-        )}
-
 
       <footer style={{ textAlign: 'center', marginTop: '50px', padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', color: '#9ca3af', fontSize: '13px' }}>
         <p style={{ margin: 0 }}>🐱 <b>MEOW TOPUP</b> - บริการเติมเกมออนไลน์ สดใส รวดเร็ว เติมง่ายด้วย Cat Coin ตลอด 24 ชั่วโมง 🐾</p>
