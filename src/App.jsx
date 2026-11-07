@@ -1684,6 +1684,7 @@ const [authMode, setAuthMode] = useState('login');
 
   const [customerOrderSearch, setCustomerOrderSearch] = useState('');
   const [exactSearchQuery, setExactSearchQuery] = useState('');
+  const [guestTrackQuery, setGuestTrackQuery] = useState('');
   const [selectedGameFilter, setSelectedGameFilter] = useState('all');
   const [customerOrdersPage, setCustomerOrdersPage] = useState(1);
   const [isPastOrdersOpen, setIsPastOrdersOpen] = useState(true);
@@ -2816,18 +2817,73 @@ const [authMode, setAuthMode] = useState('login');
   });
 
   const filteredOrders = orders.filter((ord) => {
-    const q = adminSearchQuery.trim();
-    if (!q) return true;
+    const rawQ = adminSearchQuery.trim();
+    if (!rawQ) return true;
 
-    const lowerQ = q.toLowerCase();
-    const isOrderQuery = lowerQ.startsWith('ord');
+    const lowerQ = rawQ.toLowerCase();
+    // ทำความสะอาดเฉพาะตัวเลข สำหรับค้นหาเบอร์โทรศัพท์ (เช่น 081-234-5678 -> 0812345678)
+    const digitsOnlyQ = rawQ.replace(/[^0-9]/g, '');
 
-    if (isOrderQuery) {
-      return ord.id.toLowerCase() === lowerQ;
-    } else {
-      return ord.player.toLowerCase().includes(lowerQ);
+    // 1. ค้นหาจากเลขออร์เดอร์ (รองรับทั้ง ORD-12345 หรือพิมพ์เฉพาะตัวเลข 12345)
+    if (ord.id && (ord.id.toLowerCase().includes(lowerQ) || (digitsOnlyQ.length >= 4 && ord.id.replace(/[^0-9]/g, '').includes(digitsOnlyQ)))) {
+      return true;
     }
+
+    // 2. ค้นหาจากชื่อบัญชีลูกค้า / ผู้ทำรายการ (player / guest_user)
+    if (ord.player && ord.player.toLowerCase().includes(lowerQ)) {
+      return true;
+    }
+
+    // 3. ค้นหาจากช่องทางจัดส่ง / ข้อมูลติดต่อ (เบอร์โทร, LINE ID หรืออีเมล ที่ลูกค้ากรอกตอนสั่งซื้อ)
+    if (ord.deliveryTarget) {
+      const dtLower = ord.deliveryTarget.toLowerCase();
+      if (dtLower.includes(lowerQ)) return true;
+      if (digitsOnlyQ.length >= 4 && ord.deliveryTarget.replace(/[^0-9]/g, '').includes(digitsOnlyQ)) return true;
+    }
+
+    // 4. ค้นหาจากตัวละคร / UID / LINE / Email ที่บันทึกใน gameChar
+    if (ord.gameChar) {
+      const gcLower = ord.gameChar.toLowerCase();
+      if (gcLower.includes(lowerQ)) return true;
+      if (digitsOnlyQ.length >= 4 && ord.gameChar.replace(/[^0-9]/g, '').includes(digitsOnlyQ)) return true;
+    }
+
+    // 5. ค้นหาจากฟิลด์ข้อมูลติดต่ออื่นๆ หากมี
+    if (ord.email && ord.email.toLowerCase().includes(lowerQ)) return true;
+    if (ord.lineId && ord.lineId.toLowerCase().includes(lowerQ)) return true;
+    if (ord.phone && (ord.phone.includes(lowerQ) || (digitsOnlyQ.length >= 4 && ord.phone.replace(/[^0-9]/g, '').includes(digitsOnlyQ)))) return true;
+    if (ord.customerPhone && (ord.customerPhone.includes(lowerQ) || (digitsOnlyQ.length >= 4 && ord.customerPhone.replace(/[^0-9]/g, '').includes(digitsOnlyQ)))) return true;
+
+    // 6. ค้นหาจากชื่อเกม หรือชื่อแพ็กเกจ
+    if (ord.game && ord.game.toLowerCase().includes(lowerQ)) return true;
+    if (ord.package && ord.package.toLowerCase().includes(lowerQ)) return true;
+
+    return false;
   });
+
+  // ระบบค้นหาประวัติออเดอร์สำหรับลูกค้าทั่วไปที่ไม่ได้สมัครสมาชิก (ค้นหาด้วยเลขออร์เดอร์ / เบอร์โทร / LINE / อีเมล)
+  const guestMatchedOrders = React.useMemo(() => {
+    const raw = guestTrackQuery.trim();
+    if (!raw) return [];
+    const lower = raw.toLowerCase();
+    const digits = raw.replace(/[^0-9]/g, '');
+    return orders.filter(o => {
+      if (o.id && (o.id.toLowerCase().includes(lower) || (digits.length >= 4 && o.id.replace(/[^0-9]/g, '').includes(digits)))) return true;
+      if (o.deliveryTarget) {
+        if (o.deliveryTarget.toLowerCase().includes(lower)) return true;
+        if (digits.length >= 4 && o.deliveryTarget.replace(/[^0-9]/g, '').includes(digits)) return true;
+      }
+      if (o.gameChar) {
+        if (o.gameChar.toLowerCase().includes(lower)) return true;
+        if (digits.length >= 4 && o.gameChar.replace(/[^0-9]/g, '').includes(digits)) return true;
+      }
+      if (o.email && o.email.toLowerCase().includes(lower)) return true;
+      if (o.lineId && o.lineId.toLowerCase().includes(lower)) return true;
+      if (o.phone && (o.phone.includes(lower) || (digits.length >= 4 && o.phone.replace(/[^0-9]/g, '').includes(digits)))) return true;
+      if (o.customerPhone && (o.customerPhone.includes(lower) || (digits.length >= 4 && o.customerPhone.replace(/[^0-9]/g, '').includes(digits)))) return true;
+      return false;
+    });
+  }, [orders, guestTrackQuery]);
 
   const adminItemsPerPage = 10;
   const totalAdminPages = Math.ceil(filteredOrders.length / adminItemsPerPage) || 1;
@@ -4486,6 +4542,100 @@ const [authMode, setAuthMode] = useState('login');
                   🐱 กลับไปหน้าร้าน
                 </button>
               </div>
+
+              {/* สำหรับลูกค้าที่ไม่ได้สมัครบัญชี แต่ต้องการเช็คประวัติ */}
+              <div style={{ marginTop: '30px', paddingTop: '24px', borderTop: isDarkMode ? '1px solid #374151' : '1px solid #e2e8f0', textAlign: 'left' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '16px' }}>🔎</span>
+                  <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: isDarkMode ? '#38bdf8' : '#0284c7', margin: 0 }}>
+                    ค้นหาประวัติคำสั่งซื้อสำหรับลูกค้าทั่วไป (ไม่ต้องเข้าสู่ระบบ)
+                  </h3>
+                </div>
+                <p style={{ fontSize: '12px', color: isDarkMode ? '#9ca3af' : '#64748b', margin: '0 0 14px 0', lineHeight: '1.5' }}>
+                  กรอกเลขออร์เดอร์, เบอร์โทรศัพท์, LINE ID หรืออีเมลที่ท่านกรอกไว้ตอนสั่งซื้อ เพื่อตรวจสอบสถานะคำสั่งซื้อแบบเรียลไทม์
+                </p>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+                  <input
+                    type="text"
+                    placeholder="เช่น 0812345678, my_line_id, customer@gmail.com หรือ ORD-14969..."
+                    value={guestTrackQuery}
+                    onChange={(e) => setGuestTrackQuery(e.target.value)}
+                    style={{
+                      flex: 1,
+                      backgroundColor: isDarkMode ? '#030712' : '#ffffff',
+                      border: '1.5px solid #38bdf8',
+                      borderRadius: '12px',
+                      padding: '10px 14px',
+                      color: isDarkMode ? '#ffffff' : '#0f172a',
+                      fontSize: '13px',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                  {guestTrackQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setGuestTrackQuery('')}
+                      style={{
+                        backgroundColor: '#374151',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '12px',
+                        padding: '0 16px',
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ล้าง
+                    </button>
+                  )}
+                </div>
+
+                {guestTrackQuery.trim() && (
+                  <div>
+                    {guestMatchedOrders.length === 0 ? (
+                      <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', borderRadius: '12px', padding: '14px', textAlign: 'center', color: '#f87171', fontSize: '13px' }}>
+                        ❌ ไม่พบประวัติคำสั่งซื้อที่ตรงกับ <b>"{guestTrackQuery}"</b> กรุณาตรวจสอบเบอร์โทร, LINE, อีเมล หรือติดต่อแอดมินทางหลังบ้าน
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ fontSize: '12px', color: '#34d399', fontWeight: 'bold' }}>
+                          ✅ พบข้อมูลคำสั่งซื้อที่ตรงกัน {guestMatchedOrders.length} รายการ:
+                        </div>
+                        {guestMatchedOrders.map((ord, idx) => (
+                          <div
+                            key={ord.firebaseKey || idx}
+                            style={{
+                              backgroundColor: isDarkMode ? '#030712' : '#ffffff',
+                              border: '1.5px solid #22c55e',
+                              borderRadius: '14px',
+                              padding: '14px 16px',
+                              boxShadow: '0 4px 14px rgba(34, 197, 94, 0.15)'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
+                              <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
+                                {ord.id}
+                              </span>
+                              <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 {ord.time}</span>
+                            </div>
+                            <div style={{ fontSize: '14px', fontWeight: 'bold', color: isDarkMode ? '#ffffff' : '#0f172a', marginBottom: '4px' }}>
+                              🎮 {ord.game} <span style={{ color: '#c084fc' }}>({ord.package})</span>
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '4px' }}>
+                              ยอดชำระ: <b style={{ color: '#34d399' }}>฿{(ord.price || 0).toLocaleString()}</b> | ข้อมูลจัดส่ง: <b style={{ color: '#38bdf8' }}>{ord.deliveryTarget || ord.gameChar}</b>
+                            </div>
+                            <div style={{ fontSize: '12px', color: ord.status?.includes('สำเร็จ') ? '#34d399' : '#f59e0b', fontWeight: 'bold' }}>
+                              📌 สถานะ: {ord.status}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
           <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 0 35px rgba(0,0,0,0.7)' }}>
@@ -4944,7 +5094,7 @@ const [authMode, setAuthMode] = useState('login');
                   </div>
                 </div>
 
-                {/* ส่วนสรุปสถิติหลังบ้าน: เกมที่ลูกค้าเติมเยอะสุด, แพ็กเกจที่เติมเยอะสุด, และระบบแรงค์ลูกค้า VIP */}
+                {/* ส่วนสรุปสถิติหลังบ้าน: เกมที่ลูกค้าเติมเยอะสุด และแพ็กเกจที่ขายดีที่สุด */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 30px rgba(56, 189, 248, 0.2)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                     <div>
@@ -4952,7 +5102,7 @@ const [authMode, setAuthMode] = useState('login');
                         <span>📊 สรุปสถิติเกม & แพ็กเกจยอดนิยม (Analytics)</span>
                       </h2>
                       <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0 0' }}>
-                        วิเคราะห์ว่าเกมไหนขายดีสุด แพ็กเกจไหนลูกค้าเติมเยอะสุด และคำนวณระดับแรงค์ของลูกค้าเพื่อเตรียมแจกโค้ดของขวัญตามแรงค์
+                        วิเคราะห์ว่าเกมไหนขายดีสุด และแพ็กเกจไหนลูกค้าเติมเยอะสุด
                       </p>
                     </div>
 
@@ -5005,22 +5155,7 @@ const [authMode, setAuthMode] = useState('login');
                       >
                         📦 แพ็กเกจขายดี
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setAdminAnalyticsTab('ranks')}
-                        style={{
-                          backgroundColor: adminAnalyticsTab === 'ranks' ? '#0284c7' : 'transparent',
-                          color: '#ffffff',
-                          border: 'none',
-                          padding: '6px 14px',
-                          borderRadius: '8px',
-                          fontSize: '11px',
-                          fontWeight: 'bold',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        🏆 แรงค์ลูกค้า VIP
-                      </button>
+
                     </div>
                   </div>
 
@@ -5073,17 +5208,12 @@ const [authMode, setAuthMode] = useState('login');
                       <div style={{ position: 'absolute', top: '-10px', right: '-10px', fontSize: '64px', opacity: 0.12 }}>🏆</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                         <span style={{ backgroundColor: 'rgba(168, 85, 247, 0.2)', border: '1px solid #a855f7', color: '#c084fc', padding: '2px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 'bold' }}>
-                          🏆 ลูกค้ายอดเติมสูงสุด (Top VIP Spender)
+                          👑 ลูกค้ายอดเติมสูงสุด (Top Spender)
                         </span>
                       </div>
                       <div style={{ fontSize: '18px', fontWeight: '900', color: '#ffffff', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {customerRankStats.length > 0 ? (
-                          <>
-                            <span>{customerRankStats[0].username}</span>
-                            <span style={{ fontSize: '10px', background: customerRankStats[0].rank.bg, border: `1px solid ${customerRankStats[0].rank.border}`, color: customerRankStats[0].rank.color, padding: '2px 6px', borderRadius: '6px' }}>
-                              {customerRankStats[0].rank.shortName}
-                            </span>
-                          </>
+                          <span>{customerRankStats[0].username}</span>
                         ) : 'ยังไม่มีข้อมูลลูกค้า'}
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
@@ -5194,91 +5324,7 @@ const [authMode, setAuthMode] = useState('login');
                       </div>
                     )}
 
-                    {/* TABLE 3: สรุปแรงค์ลูกค้าทั้งหมด (Customer VIP Leaderboard & Tier Distribution) */}
-                    {(adminAnalyticsTab === 'all' || adminAnalyticsTab === 'ranks') && (
-                      <div style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '16px', padding: '16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                          <h4 style={{ fontSize: '14px', fontWeight: 'bold', color: '#a855f7', margin: 0 }}>
-                            🏆 อันดับแรงค์ลูกค้า VIP ทั้งหมด (พร้อมแจกโค้ด)
-                          </h4>
-                          <span style={{ fontSize: '11px', color: '#9ca3af' }}>{customerRankStats.length} บัญชี</span>
-                        </div>
-
-                        {/* RANK DISTRIBUTION: 7 DECORATED TIER CARDS (ตกแต่งสวยงามพิเศษทุกแรงค์ในหน้าแอดมิน) */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px', marginBottom: '16px' }}>
-                          {RANK_TIERS.map(t => (
-                            <div
-                              key={t.tier}
-                              className={t.animationClass ? 'rank-tier-card' : 'rank-tier-card'}
-                              style={{
-                                background: t.cardBg,
-                                border: `1.5px solid ${t.border}`,
-                                borderRadius: '12px',
-                                padding: '10px 8px',
-                                textAlign: 'center',
-                                boxShadow: t.glow,
-                                position: 'relative'
-                              }}
-                            >
-                              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '6px' }}>
-                                <RankEmblem tier={t.tier} size={36} />
-                              </div>
-                              <div style={{ fontSize: '11px', fontWeight: '900', color: t.color, textShadow: `0 0 6px ${t.border}` }}>
-                                {t.shortName}
-                              </div>
-                              <div style={{ fontSize: '14px', fontWeight: '900', color: '#ffffff', margin: '4px 0 2px 0' }}>
-                                {customerRankCounts[t.tier] || 0} <span style={{ fontSize: '10px', color: '#9ca3af', fontWeight: 'normal' }}>คน</span>
-                              </div>
-                              <div style={{ fontSize: '9px', color: '#9ca3af' }}>
-                                {t.rateText}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        {customerRankStats.length === 0 ? (
-                          <div style={{ textAlign: 'center', color: '#9ca3af', padding: '30px', fontSize: '12px' }}>ยังไม่มีข้อมูลลูกค้า</div>
-                        ) : (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '350px', overflowY: 'auto' }}>
-                            {customerRankStats.slice(0, 15).map((item, idx) => (
-                              <div key={item.username} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#111827', border: `1px solid ${item.rank.border}`, borderRadius: '10px', padding: '8px 12px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{ color: '#9ca3af', fontWeight: 'bold', fontSize: '11px', width: '16px' }}>#{idx + 1}</span>
-                                  <div>
-                                    <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>{item.username}</div>
-                                    <div style={{ fontSize: '10px', color: '#9ca3af' }}>เติมไปแล้ว {item.orderCount} ออเดอร์</div>
-                                  </div>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                  <div style={{ textAlign: 'right' }}>
-                                    <div style={{ fontSize: '13px', fontWeight: '900', color: '#34d399' }}>฿{item.totalSpent.toLocaleString()}</div>
-                                    <div style={{ fontSize: '9px', color: '#9ca3af' }}>ยอดเติมสะสม</div>
-                                  </div>
-                                  <span style={{
-                                    fontSize: '10px',
-                                    fontWeight: '900',
-                                    background: item.rank.bg,
-                                    border: `1.5px solid ${item.rank.border}`,
-                                    color: item.rank.color,
-                                    padding: '3px 8px',
-                                    borderRadius: '10px',
-                                    boxShadow: item.rank.glow,
-                                    whiteSpace: 'nowrap',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '5px'
-                                  }}>
-                                    <RankEmblem tier={item.rank.tier} size={15} />
-                                    <span>{item.rank.shortName}</span>
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                                      </div>
                 </div>
 
                 {/* การ์ดศูนย์รวมลิงก์เว็บเติมเกมทางการสำหรับแอดมิน */}
@@ -5358,7 +5404,52 @@ const [authMode, setAuthMode] = useState('login');
 
                   {isAdminOrdersOpen && (
                     <div style={{ padding: '25px' }}>
-                      <input type="text" placeholder="🔍 ค้นหาเลขออร์เดอร์ หรือชื่อบัญชีลูกค้า..." value={adminSearchQuery} onChange={(e) => { setAdminSearchQuery(e.target.value); setAdminOrdersPage(1); }} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', marginBottom: '20px', outline: 'none', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative', marginBottom: '16px' }}>
+                        <input 
+                          type="text" 
+                          placeholder="🔍 ค้นหาเลขออร์เดอร์, ชื่อลูกค้า, เบอร์โทร, LINE ID หรืออีเมลที่ลูกค้ากรอก..." 
+                          value={adminSearchQuery} 
+                          onChange={(e) => { setAdminSearchQuery(e.target.value); setAdminOrdersPage(1); }} 
+                          style={{ 
+                            width: '100%', 
+                            backgroundColor: '#030712', 
+                            border: '1.5px solid #9333ea', 
+                            borderRadius: '12px', 
+                            padding: '12px 42px 12px 14px', 
+                            color: '#ffffff', 
+                            outline: 'none', 
+                            boxSizing: 'border-box',
+                            fontSize: '13px'
+                          }} 
+                        />
+                        {adminSearchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => { setAdminSearchQuery(''); setAdminOrdersPage(1); }}
+                            style={{
+                              position: 'absolute',
+                              right: '12px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'none',
+                              border: 'none',
+                              color: '#9ca3af',
+                              cursor: 'pointer',
+                              fontSize: '14px',
+                              padding: '4px'
+                            }}
+                            title="ล้างคำค้นหา"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                      {adminSearchQuery && (
+                        <div style={{ fontSize: '12px', color: '#c084fc', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                          <span>🔎 ผลการค้นหา: <b style={{ color: '#ffffff' }}>"{adminSearchQuery}"</b> (พบ {filteredOrders.length} รายการ)</span>
+                          <span style={{ fontSize: '11px', color: '#9ca3af' }}>💡 ค้นหาได้ทั้ง เบอร์โทร / LINE ID / อีเมล / เลขออร์เดอร์ / UID</span>
+                        </div>
+                      )}
                       
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
                         {paginatedAdminOrders.map((ord, idx) => {
@@ -5407,7 +5498,16 @@ const [authMode, setAuthMode] = useState('login');
                                     return null;
                                   })()}
                                 </div>
-                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>บัญชีทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> {ord.gameChar && <span style={{ color: '#34d399', fontWeight: 'bold' }}>| UID ลูกค้า: {ord.gameChar}</span>} | ยอดขาย: <b style={{ color: '#ffffff' }}>฿{ord.price.toLocaleString()}</b></div>
+                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>บัญชีทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> {ord.gameChar && <span style={{ color: '#34d399', fontWeight: 'bold' }}>| UID/ข้อมูลลูกค้า: {ord.gameChar}</span>} | ยอดขาย: <b style={{ color: '#ffffff' }}>฿{ord.price.toLocaleString()}</b></div>
+                                {(ord.deliveryTarget || (ord.gameChar && (ord.gameChar.includes('LINE') || ord.gameChar.includes('Email') || ord.gameChar.includes('@')))) && (
+                                  <div style={{ fontSize: '12px', color: '#86efac', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                    <span style={{ backgroundColor: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', border: '1px solid #22c55e', padding: '1px 8px', borderRadius: '6px', fontWeight: 'bold', fontSize: '11px' }}>
+                                      📱 ข้อมูลติดต่อ/จัดส่ง (เบอร์/LINE/Email):
+                                    </span>
+                                    <b>{ord.deliveryTarget || ord.gameChar}</b>
+                                    {ord.deliveryChannel && <span style={{ color: '#cbd5e1', fontSize: '11px' }}>({ord.deliveryChannel})</span>}
+                                  </div>
+                                )}
                                 <div style={{ fontSize: '12px', color: '#f472b6', marginTop: '4px', fontWeight: 'bold' }}>💳 ช่องทางชำระเงิน: {ord.paymentMethod || 'Cyber Wallet (เครดิตร้าน)'}</div>
                               </div>
                               <div style={{ textAlign: 'right' }}>
