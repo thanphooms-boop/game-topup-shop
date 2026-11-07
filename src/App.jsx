@@ -2812,32 +2812,35 @@ export default function App() {
   const nowObj = new Date();
   const currentDayStr = `${nowObj.getFullYear()}-${String(nowObj.getMonth() + 1).padStart(2, '0')}-${String(nowObj.getDate()).padStart(2, '0')}`;
 
-  const searchedOrders = orders.filter(o => {
-    let matchUser = false;
+  // ระบบค้นหาสถานะออเดอร์แบบไม่ผูกกับเครื่อง (Stateless & Safe สำหรับร้านเกม/เครื่องสาธารณะ)
+  const searchedOrders = React.useMemo(() => {
+    const q = customerOrderSearch.trim().toLowerCase();
+    
+    // หากเป็นแอดมิน: สามารถดูทั้งหมดหรือพิมพ์ค้นหาได้
     if (isUserAdmin) {
-      const q = exactSearchQuery.trim().toLowerCase();
-      matchUser = !q || (o.player.toLowerCase() === q) || (o.id.toLowerCase() === q);
-    } else if (user) {
-      matchUser = (o.player.toLowerCase() === user.username.toLowerCase());
-    } else {
-      // Guest mode: can search by Order ID or Player/UID
-      const q = exactSearchQuery.trim().toLowerCase();
-      const orderQ = customerOrderSearch.trim().toLowerCase();
-      if (!q && !orderQ) {
-        matchUser = true;
-      } else {
-        const matchUID = q ? (o.player.toLowerCase().includes(q) || (o.gameChar && o.gameChar.toLowerCase().includes(q))) : false;
-        const matchO = orderQ ? o.id.toLowerCase().includes(orderQ) : false;
-        matchUser = matchUID || matchO;
-      }
+      return orders.filter(o => {
+        const matchGame = selectedGameFilter === 'all' || o.game.toLowerCase() === selectedGameFilter.toLowerCase();
+        if (!q) return matchGame;
+        return matchGame && (
+          o.id.toLowerCase().includes(q) ||
+          o.player.toLowerCase().includes(q) ||
+          (o.gameChar && o.gameChar.toLowerCase().includes(q))
+        );
+      });
     }
 
-    const orderQuery = customerOrderSearch.trim();
-    const matchOrder = !orderQuery || (orderQuery.toUpperCase().startsWith('ORD') ? o.id.toLowerCase() === orderQuery.toLowerCase() : o.id.toLowerCase().includes(orderQuery.toLowerCase()));
-    const matchGame = selectedGameFilter === 'all' || o.game.toLowerCase() === selectedGameFilter.toLowerCase();
+    // สำหรับลูกค้าทั่วไป/ร้านเกม: ถ้ายังไม่พิมพ์ค้นหา จะไม่ดึงประวัติใดๆ ขึ้นมาแสดงเลย (กันคนอื่นมาส่อง)
+    if (!q) {
+      return [];
+    }
 
-    return matchUser && matchOrder && matchGame;
-  });
+    return orders.filter(o => {
+      const matchGame = selectedGameFilter === 'all' || o.game.toLowerCase() === selectedGameFilter.toLowerCase();
+      const matchOrder = o.id.toLowerCase() === q || o.id.toLowerCase().includes(q);
+      const matchPlayer = o.player.toLowerCase() === q || (o.gameChar && o.gameChar.toLowerCase() === q);
+      return matchGame && (matchOrder || matchPlayer);
+    });
+  }, [orders, customerOrderSearch, selectedGameFilter, isUserAdmin]);
 
   const todayOrders = searchedOrders.filter(o => o.dateKey === currentDayStr);
   const pastOrders = searchedOrders.filter(o => o.dateKey !== currentDayStr);
@@ -4203,176 +4206,211 @@ export default function App() {
         )}
 
         {activeTab === 'track' && (
-          <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 0 35px rgba(0,0,0,0.7)' }}>
-            <div style={{ borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>📋 เช็คสถานะคำสั่งซื้อและประวัติการทำรายการ</h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#c084fc', flexWrap: 'wrap' }}>
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: currentUserRank.bg,
-                  border: `1.5px solid ${currentUserRank.border}`,
-                  color: currentUserRank.color,
-                  padding: '3px 10px',
-                  borderRadius: '16px',
-                  fontSize: '11px',
-                  fontWeight: '900',
-                  boxShadow: currentUserRank.glow
-                }}>
-                  <RankEmblem tier={currentUserRank.tier} size={18} />
-                  <span>{currentUserRank.name}</span>
-                </span>
-                <span>👤 บัญชีผู้ใช้งาน:</span>
-                <b style={{ color: '#ffffff', backgroundColor: 'rgba(147,51,234,0.3)', padding: '2px 10px', borderRadius: '6px', border: '1px solid #9333ea' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
-                <span style={{ fontSize: '11px', color: '#38bdf8', marginLeft: '4px' }}>(ยอดเติมแพ็กเกจสะสม: ฿{currentUserSpending.toLocaleString()})</span>
-                {!isUserAdmin && <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '4px' }}>| แสดงเฉพาะประวัติของคุณ</span>}
+          <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '24px', padding: '32px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 20px 60px rgba(0,0,0,0.8)' }}>
+            
+            {/* Header: เน้นความปลอดภัย ไม่บันทึกค้างบนเครื่องร้านเกม */}
+            <div style={{ borderBottom: '1px solid #374151', paddingBottom: '18px', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>📋 ตรวจสอบสถานะคำสั่งซื้อ (Order Tracking)</span>
+                  </h2>
+                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
+                    🔒 ระบบค้นหาตรงตามเลขออเดอร์ ไม่ผูกหรือบันทึกข้อมูลค้างบนเครื่อง (ปลอดภัยสำหรับร้านเกมและคอมพิวเตอร์สาธารณะ)
+                  </p>
+                </div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', color: '#86efac', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '900' }}>
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block', boxShadow: '0 0 6px #22c55e' }}></span>
+                  <span>ความปลอดภัยร้านเกม 100%</span>
+                </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              <input 
-                type="text" 
-                placeholder={isUserAdmin ? "🔍 ค้นหาชื่อบัญชีลูกค้า..." : (user ? user.username : "🔍 ค้นหาด้วยชื่อในเกม หรือ UID")}
-                value={isUserAdmin ? exactSearchQuery : (user ? (user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username) : exactSearchQuery)} 
-                disabled={!isUserAdmin && !!user}
-                onChange={(e) => (isUserAdmin || !user) && setExactSearchQuery(e.target.value)} 
-                style={{ flex: 1, minWidth: '180px', backgroundColor: isUserAdmin ? '#030712' : '#1f2937', border: '1.5px solid #a855f7', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', cursor: isUserAdmin ? 'text' : 'not-allowed', fontWeight: 'bold', boxSizing: 'border-box' }} 
-              />
-              <input 
-                type="text" 
-                placeholder="🔍 กรอกเลขออร์เดอร์ เช่น ORD-14969..." 
-                value={customerOrderSearch} 
-                onChange={(e) => setCustomerOrderSearch(e.target.value)} 
-                style={{ flex: 1.5, minWidth: '220px', backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} 
-              />
-              <select value={selectedGameFilter} onChange={(e) => setSelectedGameFilter(e.target.value)} style={{ flex: 1, minWidth: '150px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', cursor: 'pointer' }}>
+            {/* แถบค้นหาข้อมูลคำสั่งซื้อ */}
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '22px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ flex: 2, minWidth: '240px', position: 'relative' }}>
+                <input 
+                  type="text" 
+                  placeholder="🔍 กรอกเลขออเดอร์ เช่น ORD-14969 หรือ UID ในเกม..." 
+                  value={customerOrderSearch} 
+                  onChange={(e) => setCustomerOrderSearch(e.target.value)} 
+                  style={{ 
+                    width: '100%', 
+                    backgroundColor: '#030712', 
+                    border: '1.5px solid #a855f7', 
+                    borderRadius: '12px', 
+                    padding: '12px 16px', 
+                    color: '#ffffff', 
+                    outline: 'none', 
+                    fontWeight: 'bold', 
+                    fontSize: '13px', 
+                    boxSizing: 'border-box',
+                    boxShadow: '0 4px 15px rgba(0,0,0,0.4)'
+                  }} 
+                />
+              </div>
+
+              <select 
+                value={selectedGameFilter} 
+                onChange={(e) => setSelectedGameFilter(e.target.value)} 
+                style={{ 
+                  flex: 1, 
+                  minWidth: '160px', 
+                  backgroundColor: '#030712', 
+                  border: '1px solid #374151', 
+                  borderRadius: '12px', 
+                  padding: '12px 14px', 
+                  color: '#ffffff', 
+                  outline: 'none', 
+                  cursor: 'pointer',
+                  fontSize: '13px'
+                }}
+              >
                 <option value="all">🎮 เลือกดูเกม (ทั้งหมด)</option>
                 {gamesData.map((g) => (
                   <option key={g.id} value={g.name}>{g.name}</option>
                 ))}
               </select>
+
+              {customerOrderSearch.trim() && (
+                <button
+                  type="button"
+                  onClick={() => { setCustomerOrderSearch(''); setSelectedGameFilter('all'); }}
+                  style={{
+                    backgroundColor: '#1e293b',
+                    border: '1px solid #475569',
+                    color: '#f87171',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: '900',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title="คลิกล้างข้อมูลเพื่อไม่ให้คนอื่นในร้านเกมเห็นข้อมูลของคุณ"
+                >
+                  <span>🗑️ ล้างการค้นหา</span>
+                </button>
+              )}
             </div>
 
-            <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '12px', padding: '12px 18px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '13px', color: '#9ca3af' }}>ผลการค้นหา: <b style={{ color: '#ffffff' }}>{searchedOrders.length}</b> รายการ (วันนี้: {todayOrders.length} | ประวัติย้อนหลัง: {pastOrders.length})</span>
-              <span style={{ fontSize: '14px', color: '#9ca3af' }}>ยอดรวมเงินที่เติม: <b style={{ color: '#34d399', fontSize: '18px' }}>฿{totalSpentInSearch.toLocaleString()}</b></span>
-            </div>
+            {/* ผลการค้นหา หรือ หน้าจอแจ้งให้กรอกเลขออเดอร์ */}
+            {!isUserAdmin && !customerOrderSearch.trim() ? (
+              <div style={{ textAlign: 'center', padding: '50px 24px', backgroundColor: '#090d16', border: '1.5px dashed #374151', borderRadius: '18px', margin: '10px 0' }}>
+                <div style={{ fontSize: '42px', marginBottom: '12px' }}>🛡️</div>
+                <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#ffffff', margin: '0 0 8px 0' }}>
+                  กรุณากรอกเลขคำสั่งซื้อ (Order ID) หรือ UID ของท่าน
+                </h3>
+                <p style={{ fontSize: '13px', color: '#94a3b8', maxWidth: '520px', margin: '0 auto 18px auto', lineHeight: '1.6' }}>
+                  เพื่อความปลอดภัยและความเป็นส่วนตัว (กรณีเติมจากร้านเกมหรือคอมพิวเตอร์สาธารณะ) ระบบจะไม่จดจำหรือแสดงประวัติคำสั่งซื้อค้างไว้บนอุปกรณ์นี้ กรุณาระบุเลขออเดอร์ที่ได้รับเพื่อตรวจสอบสถานะ
+                </p>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(56, 189, 248, 0.12)', border: '1px solid #0284c7', color: '#38bdf8', padding: '7px 18px', borderRadius: '25px', fontSize: '12px', fontWeight: 'bold' }}>
+                  💡 ตัวอย่าง: <span style={{ color: '#fbbf24' }}>ORD-123456</span> หรือระบุ <span style={{ color: '#34d399' }}>UID ตัวละครในเกม</span>
+                </div>
+              </div>
+            ) : searchedOrders.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '45px 20px', backgroundColor: '#090d16', border: '1.5px solid #ef4444', borderRadius: '18px', margin: '10px 0' }}>
+                <div style={{ fontSize: '36px', marginBottom: '10px' }}>🔍</div>
+                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#fca5a5', margin: '0 0 6px 0' }}>
+                  ไม่พบข้อมูลคำสั่งซื้อที่ค้นหา "{customerOrderSearch}"
+                </h3>
+                <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 16px 0' }}>
+                  กรุณาตรวจสอบว่าพิมพ์เลขออเดอร์ถูกต้อง หรือติดต่อสอบถามแอดมินทาง LINE Official
+                </p>
+                <button 
+                  type="button" 
+                  onClick={() => { setCustomerOrderSearch(''); setSelectedGameFilter('all'); }} 
+                  style={{ backgroundColor: '#1e293b', border: '1px solid #475569', color: '#ffffff', padding: '8px 18px', borderRadius: '10px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  ล้างคำค้นหา
+                </button>
+              </div>
+            ) : (
+              <div>
+                {/* แถบสรุปผลลัพธ์พร้อมปุ่มล้างข้อมูลก่อนออกจากร้านเกม */}
+                <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '14px', padding: '12px 18px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <span style={{ fontSize: '13px', color: '#9ca3af' }}>
+                    พบข้อมูล: <b style={{ color: '#38bdf8' }}>{searchedOrders.length}</b> รายการคำสั่งซื้อ
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => { setCustomerOrderSearch(''); setSelectedGameFilter('all'); }}
+                    style={{
+                      backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                      border: '1px solid #ef4444',
+                      color: '#fca5a5',
+                      padding: '5px 12px',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontWeight: '900',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🗑️ ล้างหน้าจอ (ก่อนลุกออกจากร้าน)
+                  </button>
+                </div>
 
-            <div style={{ marginBottom: '25px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '12px' }}>📅 รายการประจำวัน (วันนี้ {currentDayStr})</h3>
-              {paginatedTodayOrders.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '15px' }}>
-                  {paginatedTodayOrders.map((ord, idx) => {
-                    const globalIdx = (customerOrdersPage - 1) * customerItemsPerPage + idx + 1;
-                    let countdownSec = 0;
-                    if (ord.status.includes('รอตรวจสอบ') && ord.timestamp) {
-                      const elapsed = Math.floor((Date.now() - ord.timestamp) / 1000);
-                      countdownSec = Math.max(0, 10 - elapsed);
-                    }
+                {/* รายการออเดอร์ที่ค้นพบ */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+                  {searchedOrders.slice(0, 15).map((ord) => {
+                    const isDone = ord.status && (ord.status.includes('สำเร็จ') || ord.status.includes('เรียบร้อย'));
+                    const isPending = !isDone;
                     return (
-                      <div key={ord.firebaseKey || idx} style={{ backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '14px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div 
+                        key={ord.id} 
+                        style={{ 
+                          backgroundColor: '#090d16', 
+                          border: isDone ? '1px solid #10b981' : '1px solid #f59e0b', 
+                          borderRadius: '16px', 
+                          padding: '16px 20px',
+                          boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          flexWrap: 'wrap',
+                          gap: '12px'
+                        }}
+                      >
                         <div>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-                            <span style={{ color: '#9333ea', fontWeight: 'bold', fontSize: '12px', marginRight: '4px' }}>#{globalIdx}</span>
-                            <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
-                            <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 {ord.time}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
+                            <span style={{ fontSize: '15px', fontWeight: '900', color: '#ffffff' }}>{ord.id}</span>
+                            <span style={{ 
+                              fontSize: '10px', 
+                              fontWeight: '900', 
+                              backgroundColor: isDone ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)', 
+                              color: isDone ? '#34d399' : '#fbbf24', 
+                              border: `1px solid ${isDone ? '#10b981' : '#f59e0b'}`,
+                              padding: '2px 8px', 
+                              borderRadius: '6px' 
+                            }}>
+                              {ord.status || 'รอดำเนินการ'}
+                            </span>
+                            <span style={{ fontSize: '11px', color: '#94a3b8' }}>{ord.time || ''}</span>
                           </div>
-                          <div style={{ fontSize: '16px', fontWeight: 'bold', marginTop: '4px', color: '#ffffff' }}>🎮 {ord.game} <span style={{ color: '#c084fc', fontSize: '13px' }}>({ord.package})</span></div>
-                          <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>บัญชีทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> {ord.gameChar && <span style={{ color: '#34d399' }}>| ตัวละคร/UID: {ord.gameChar}</span>} | ช่องทางจ่าย: <span style={{ color: '#f472b6', fontWeight: 'bold' }}>{ord.paymentMethod || 'Cyber Wallet'}</span></div>
-                          {ord.type !== 'wallet' && (
-                            <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                              <span style={{ backgroundColor: 'rgba(52, 211, 153, 0.15)', border: '1px solid #34d399', color: '#34d399', padding: '3px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
-                                ⚡ เติมเข้าไอดี/UID ({ord.gameChar || ord.player}) สำเร็จ 100%[cite: 1, 2]
-                              </span>
-                              {ord.apiRef && (
-                                <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>Ref: {ord.apiRef}</span>
-                              )}
-                            </div>
-                          )}
+
+                          <div style={{ fontSize: '13px', color: '#c084fc', fontWeight: 'bold' }}>
+                            🎮 {ord.game} • <span style={{ color: '#ffffff' }}>{ord.package}</span>
+                          </div>
+
+                          <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
+                            👤 UID / ตัวละคร: <b style={{ color: '#38bdf8' }}>{ord.gameChar || ord.player}</b> | ช่องทาง: {ord.paymentMethod || 'โอนเงิน'}
+                          </div>
                         </div>
+
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>฿{ord.price.toLocaleString()}</div>
-                          {ord.status.includes('รอตรวจสอบ') ? (
-                            <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '1px solid #f59e0b', borderRadius: '8px', padding: '4px 8px', marginTop: '4px' }}>
-                              <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 'bold' }}>⏱️ ตรวจสอบใน ({countdownSec}s)</span>
-                            </div>
-                          ) : (
-                            <span style={{ fontSize: '11px', color: ord.status.includes('สำเร็จ') ? '#34d399' : '#f59e0b', fontWeight: 'bold' }}>{ord.status}</span>
-                          )}
+                          <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>
+                            ฿{(ord.price || 0).toLocaleString()}
+                          </div>
+                          <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>
+                            จัดส่งตรงเข้าไอดี ⚡
+                          </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '30px', color: '#9ca3af', backgroundColor: '#030712', borderRadius: '14px', border: '1px dashed #374151', marginBottom: '15px' }}>ไม่มีรายการคำสั่งซื้อใหม่ในวันนี้</div>
-              )}
-
-              {totalCustomerTodayPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', marginBottom: '20px' }}>
-                  {Array.from({ length: totalCustomerTodayPages }, (_, i) => i + 1).map((pageNum) => (
-                    <button key={pageNum} onClick={() => setCustomerOrdersPage(pageNum)} style={{ backgroundColor: customerOrdersPage === pageNum ? '#9333ea' : '#030712', color: '#ffffff', border: '1px solid ' + (customerOrdersPage === pageNum ? '#a855f7' : '#374151'), borderRadius: '8px', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>{pageNum}</button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {pastOrders.length > 0 && (
-              <div style={{ backgroundColor: '#030712', border: '1.5px solid rgba(168,85,247,0.4)', borderRadius: '16px', overflow: 'hidden' }}>
-                <div onClick={() => setIsPastOrdersOpen(!isPastOrdersOpen)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none', padding: '16px 20px', backgroundColor: 'rgba(147, 51, 234, 0.12)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: 'rgba(168,85,247,0.3)', border: '1px solid #c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: '#c084fc', fontWeight: 'bold' }}>{isPastOrdersOpen ? '▼' : '▶'}</div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff', margin: 0 }}>📂 ประวัติย้อนหลัง (รายการจากวันก่อนหน้า)</h3>
-                  </div>
-                  <span style={{ backgroundColor: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '2px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }}>{pastOrders.length} รายการ</span>
-                </div>
-
-                {isPastOrdersOpen && (
-                  <div style={{ padding: '20px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
-                      <span style={{ fontSize: '12px', color: '#c084fc', fontWeight: 'bold' }}>📅 เลือกวันที่ประวัติ:</span>
-                      <select value={selectedHistoryDate} onChange={handleHistoryDateChange} style={{ backgroundColor: '#111827', border: '1.5px solid #a855f7', borderRadius: '10px', padding: '8px 14px', color: '#38bdf8', fontWeight: 'bold', fontSize: '12px', outline: 'none', cursor: 'pointer' }}>
-                        <option value="all">🌐 แสดงประวัติย้อนหลังทั้งหมด ({pastOrders.length} รายการ)</option>
-                        {availableHistoryDates.map((dateStr) => (
-                          <option key={dateStr} value={dateStr}>📅 วันที่ {dateStr} ({groupedPastOrders[dateStr].length} รายการ)</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {paginatedPastOrders.map((ord, idx) => {
-                        const globalIdx = (historyPage - 1) * historyItemsPerPage + idx + 1;
-                        return (
-                          <div key={ord.firebaseKey || idx} style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '12px', padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
-                                <span style={{ color: '#9ca3af', fontSize: '11px', fontWeight: 'bold' }}>#{globalIdx}</span>
-                                <span style={{ backgroundColor: '#374151', color: '#d1d5db', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
-                                <span style={{ fontSize: '12px', color: '#9ca3af' }}>📅 {ord.time}</span>
-                              </div>
-                              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d1d5db' }}>🎮 {ord.game} <span style={{ color: '#a855f7', fontSize: '12px' }}>({ord.package})</span></div>
-                              <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>บัญชีทำรายการ: {ord.player} {ord.gameChar && <span style={{ color: '#34d399' }}>| ตัวละคร/UID: {ord.gameChar}</span>} | ช่องทางจ่าย: <span style={{ color: '#f472b6', fontWeight: 'bold' }}>{ord.paymentMethod || 'Cyber Wallet'}</span></div>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price.toLocaleString()}</div>
-                              <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold' }}>{ord.status}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {totalHistoryPages > 1 && (
-                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '18px' }}>
-                        <span style={{ fontSize: '12px', color: '#9ca3af', marginRight: '6px' }}>หน้า {historyPage} จาก {totalHistoryPages}:</span>
-                        {Array.from({ length: totalHistoryPages }, (_, i) => i + 1).map((pageNum) => (
-                          <button key={pageNum} onClick={() => setHistoryPage(pageNum)} style={{ backgroundColor: historyPage === pageNum ? '#9333ea' : '#111827', color: '#ffffff', border: '1px solid ' + (historyPage === pageNum ? '#a855f7' : '#374151'), borderRadius: '8px', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>{pageNum}</button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             )}
           </div>
