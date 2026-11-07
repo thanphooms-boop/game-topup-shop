@@ -2834,11 +2834,18 @@ export default function App() {
       return [];
     }
 
+    // ต้องกรอกอย่างน้อย 4 ตัวอักษรขึ้นไป
+    if (q.length < 4) {
+      return [];
+    }
+
     return orders.filter(o => {
       const matchGame = selectedGameFilter === 'all' || o.game.toLowerCase() === selectedGameFilter.toLowerCase();
-      const matchOrder = o.id.toLowerCase() === q || o.id.toLowerCase().includes(q);
-      const matchPlayer = o.player.toLowerCase() === q || (o.gameChar && o.gameChar.toLowerCase() === q);
-      return matchGame && (matchOrder || matchPlayer);
+      // ระบบความปลอดภัยเข้มงวด: ต้องตรงเป๊ะ 100% ทุกตัวอักษรเท่านั้น (Strict Exact Match)
+      // ป้องกันการพิมพ์แค่บางคำ (เช่น พิมพ์แค่ ORD- หรือเลขสั้นๆ) เพื่อส่องดูข้อมูลของคนอื่น
+      const exactOrderId = o.id && o.id.toLowerCase() === q;
+      const exactUID = (o.gameChar && o.gameChar.toLowerCase() === q) || (o.player && o.player.toLowerCase() === q);
+      return matchGame && (exactOrderId || exactUID);
     });
   }, [orders, customerOrderSearch, selectedGameFilter, isUserAdmin]);
 
@@ -4216,12 +4223,12 @@ export default function App() {
                     <span>📋 ตรวจสอบสถานะคำสั่งซื้อ (Order Tracking)</span>
                   </h2>
                   <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
-                    🔒 ระบบค้นหาตรงตามเลขออเดอร์ ไม่ผูกหรือบันทึกข้อมูลค้างบนเครื่อง (ปลอดภัยสำหรับร้านเกมและคอมพิวเตอร์สาธารณะ)
+                    🔒 ระบบความปลอดภัยเข้มงวด: ต้องกรอกเลขออเดอร์หรือ UID ให้ครบทุกตัวอักษรเท่านั้น เพื่อป้องกันคนอื่นพิมพ์สุ่มดูข้อมูล
                   </p>
                 </div>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', color: '#86efac', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '900' }}>
                   <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block', boxShadow: '0 0 6px #22c55e' }}></span>
-                  <span>ความปลอดภัยร้านเกม 100%</span>
+                  <span>ระบบค้นหาตรงทุกคำ (Exact Match 100%)</span>
                 </div>
               </div>
             </div>
@@ -4231,7 +4238,7 @@ export default function App() {
               <div style={{ flex: 2, minWidth: '240px', position: 'relative' }}>
                 <input 
                   type="text" 
-                  placeholder="🔍 กรอกเลขออเดอร์ เช่น ORD-14969 หรือ UID ในเกม..." 
+                  placeholder="🔍 ต้องกรอกเลขออเดอร์เต็ม (เช่น ORD-14969) หรือ UID เต็ม ให้ครบทุกคำ..." 
                   value={customerOrderSearch} 
                   onChange={(e) => setCustomerOrderSearch(e.target.value)} 
                   style={{ 
@@ -4304,7 +4311,7 @@ export default function App() {
                   กรุณากรอกเลขคำสั่งซื้อ (Order ID) หรือ UID ของท่าน
                 </h3>
                 <p style={{ fontSize: '13px', color: '#94a3b8', maxWidth: '520px', margin: '0 auto 18px auto', lineHeight: '1.6' }}>
-                  เพื่อความปลอดภัยและความเป็นส่วนตัว (กรณีเติมจากร้านเกมหรือคอมพิวเตอร์สาธารณะ) ระบบจะไม่จดจำหรือแสดงประวัติคำสั่งซื้อค้างไว้บนอุปกรณ์นี้ กรุณาระบุเลขออเดอร์ที่ได้รับเพื่อตรวจสอบสถานะ
+                  เพื่อความเป็นส่วนตัวสูงสุดในร้านเกม ระบบจะแสดงผลเมื่อคุณพิมพ์เลขคำสั่งซื้อ (Order ID) หรือ UID ถูกต้องครบทุกตัวอักษรเท่านั้น (ไม่สามารถพิมพ์แค่เศษคำเพื่อส่องดูของคนอื่นได้)
                 </p>
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(56, 189, 248, 0.12)', border: '1px solid #0284c7', color: '#38bdf8', padding: '7px 18px', borderRadius: '25px', fontSize: '12px', fontWeight: 'bold' }}>
                   💡 ตัวอย่าง: <span style={{ color: '#fbbf24' }}>ORD-123456</span> หรือระบุ <span style={{ color: '#34d399' }}>UID ตัวละครในเกม</span>
