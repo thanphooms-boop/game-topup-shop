@@ -1306,23 +1306,7 @@ export default function App() {
         { id: 'g6', name: '6,480 (+1,600) Crystals (Whale)', price: 3990, originalPrice: 4300, cost: 3700, profit: 290, bonus: '👑 Whale Pack ประหยัด ฿310 VIP' }
       ]
     },
-    {
-      id: 'hsr',
-      name: 'Honkai: Star Rail',
-      publisher: 'HoYoverse',
-      category: 'pc',
-      image: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยอดฮิต Turn-Based 🚂',
-      packages: [
-        { id: 'h_pass', name: 'บัตรผ่านรถไฟ 30 วัน (Express Pass)', price: 199, originalPrice: 219, cost: 179, profit: 20, bonus: '🔥 ขายดีสุด ประหยัด ฿20' },
-        { id: 'h1', name: '60 Oneiric Shards', price: 42, originalPrice: 45, cost: 35, profit: 7, bonus: '⚡ เติมตรง ประหยัด ฿3' },
-        { id: 'h2', name: '300 (+30) Oneiric Shards', price: 199, originalPrice: 219, cost: 179, profit: 20, bonus: '⚡ ยอดฮิต ประหยัด ฿20' },
-        { id: 'h3', name: '980 (+110) Oneiric Shards', price: 599, originalPrice: 650, cost: 549, profit: 50, bonus: '⭐ พรีเมียม ประหยัด ฿51' },
-        { id: 'h4', name: '1,980 (+260) Oneiric Shards', price: 1190, originalPrice: 1290, cost: 1100, profit: 90, bonus: '💥 สุดคุ้ม ประหยัด ฿100' },
-        { id: 'h5', name: '3,280 (+600) Oneiric Shards', price: 1950, originalPrice: 2100, cost: 1800, profit: 150, bonus: '🔥 บิ๊กแพ็ก ประหยัด ฿150' },
-        { id: 'h6', name: '6,480 (+1,600) Shards (Whale)', price: 3990, originalPrice: 4300, cost: 3700, profit: 290, bonus: '👑 Whale Pack ประหยัด ฿310 VIP' }
-      ]
-    },
+    
     {
       id: 'pubg',
       name: 'PUBG Mobile',
@@ -1371,22 +1355,7 @@ export default function App() {
         { id: 'fc6', name: '100,000 FC Points (Pro Pack)', price: 980, originalPrice: 1000, cost: 965, profit: 15, bonus: '👑 Pro Pack ประหยัด ฿20 VIP' }
       ]
     },
-    {
-      id: 'avatarstar',
-      name: 'Avatar Star',
-      publisher: 'AS Global',
-      category: 'pc',
-      image: 'https://images.unsplash.com/photo-1579373903781-fd5c0c30c4cd?auto=format&fit=crop&w=500&q=80',
-      badge: 'ยิงปืนสุดมันส์ ⚡',
-      packages: [
-        { id: 'as1', name: '300 Diamonds', price: 45, originalPrice: 50, cost: 35, profit: 10, bonus: '⚡ เติมตรง ประหยัด ฿5' },
-        { id: 'as2', name: '1,000 Diamonds', price: 120, originalPrice: 135, cost: 100, profit: 20, bonus: '🔥 ขายดี ประหยัด ฿15' },
-        { id: 'as3', name: '2,100 Diamonds', price: 235, originalPrice: 260, cost: 200, profit: 35, bonus: '⚡ ยอดฮิต ประหยัด ฿25' },
-        { id: 'as4', name: '3,600 Diamonds', price: 399, originalPrice: 440, cost: 350, profit: 49, bonus: '⭐ สุดคุ้ม ประหยัด ฿41' },
-        { id: 'as5', name: '7,500 Diamonds', price: 790, originalPrice: 870, cost: 700, profit: 90, bonus: '💥 โบนัสจุใจ ประหยัด ฿80' },
-        { id: 'as6', name: '16,000 Diamonds (Super VIP)', price: 1680, originalPrice: 1850, cost: 1500, profit: 180, bonus: '👑 Super VIP ประหยัด ฿170 VIP' }
-      ]
-    },
+    
     {
       id: 'razergold_card',
       name: 'Razer Gold PIN (e-Pin)',
@@ -1736,12 +1705,6 @@ export default function App() {
       url: 'https://www.lnwtrue.com/th/genshin',
       note: 'ใส่ UID และเลือกเซิร์ฟเวอร์ (เช่น Asia) เติม Genesis Crystals / พรแห่งดวงจันทร์'
     },
-    hsr: {
-      name: 'Honkai: Star Rail',
-      provider: 'LnwTrue (เทพทรู Official)',
-      url: 'https://www.lnwtrue.com/th/hsr',
-      note: 'ใส่ UID และเลือกเซิร์ฟเวอร์ (เช่น Asia) เติม Oneiric Shard / บัตรผ่านรถไฟ'
-    },
     pubg: {
       name: 'PUBG Mobile',
       provider: 'LnwTrue (เทพทรู Official)',
@@ -1759,12 +1722,6 @@ export default function App() {
       provider: 'LnwTrue (เทพทรู Official)',
       url: 'https://www.lnwtrue.com/th/fc-online-m',
       note: 'ใส่ UID ของผู้เล่นในเกม หรือซื้อ e-Pin เติมแต้ม FC'
-    },
-    avatarstar: {
-      name: 'Avatar Star',
-      provider: 'AS Global Top-up Portal (ทางการ)',
-      url: 'https://asglobal.com/',
-      note: 'เข้าเว็บทางการ ล็อกอินไอดีหรือใส่ UID เพื่อเติม Diamonds (เกมนี้เติมตรงผ่าน AS Global)'
     },
     razergold_card: {
       name: 'Razer Gold PIN',
@@ -3380,240 +3337,6 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <div style={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? '2px solid #334155' : '2px solid #fed7aa', borderRadius: '16px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', position: 'relative', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize: '12px', display: 'flex', alignItems: 'center' }}>
-              {/* RANK BADGE WITH '!' ICON & HOVER TOOLTIP */}
-              <div 
-                style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', marginRight: '8px' }}
-                onMouseEnter={() => setRankTooltipOpen(true)}
-                onMouseLeave={() => setRankTooltipOpen(false)}
-              >
-                <div
-                  onClick={() => setRankTooltipOpen(prev => !prev)}
-                  className={currentUserRank.animationClass || ''}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: currentUserRank.bg,
-                    border: `1.5px solid ${currentUserRank.border}`,
-                    color: currentUserRank.color,
-                    padding: '3px 10px',
-                    borderRadius: '16px',
-                    fontSize: '11px',
-                    fontWeight: '900',
-                    boxShadow: currentUserRank.glow,
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    letterSpacing: '0.5px',
-                    transition: 'all 0.25s ease'
-                  }}
-                  title="คลิกหรือชี้เมาส์เพื่อดูเรทเติมของแต่ละแรงค์"
-                >
-                  <RankEmblem tier={currentUserRank.tier} size={18} />
-                  <span style={{ textShadow: `0 0 8px ${currentUserRank.border}`, letterSpacing: '0.5px' }}>{currentUserRank.shortName}</span>
-                  <span
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: '15px',
-                      height: '15px',
-                      borderRadius: '50%',
-                      backgroundColor: currentUserRank.border,
-                      color: '#030712',
-                      fontSize: '10px',
-                      fontWeight: '900',
-                      marginLeft: '3px',
-                      boxShadow: '0 0 8px rgba(255,255,255,0.7)',
-                      animation: 'cyberPulse 2s infinite'
-                    }}
-                  >
-                    !
-                  </span>
-                </div>
-
-                {/* THE TOOLTIP (ออกแบบใหม่ให้ชัดเจน ตัวหนังสือเด่น อ่านง่าย สบายตา ไม่ทับซ้อน) */}
-                {rankTooltipOpen && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 14px)',
-                      left: '0',
-                      zIndex: 9999,
-                      width: '450px',
-                      maxWidth: '94vw',
-                      backgroundColor: '#0c111e',
-                      border: '2px solid #a855f7',
-                      borderRadius: '20px',
-                      padding: '20px',
-                      boxShadow: '0 20px 60px rgba(0,0,0,0.95), 0 0 35px rgba(168, 85, 247, 0.4)',
-                      backdropFilter: 'blur(25px)',
-                      color: '#ffffff',
-                      animation: 'fadeIn 0.2s ease-in-out'
-                    }}
-                  >
-                    {/* TOOLTIP HEADER */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid #1e293b', paddingBottom: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, #9333ea, #38bdf8)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>
-                          🏆
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '15px', fontWeight: '900', color: '#ffffff', letterSpacing: '0.3px' }}>
-                            ระดับแรงค์ลูกค้า VIP & เรทเติมสะสม
-                          </div>
-                          <div style={{ fontSize: '11px', color: '#38bdf8', marginTop: '2px' }}>
-                            คำนวณจากยอดเติมแพ็กเกจเกมสะสมจริงทั้งหมด
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setRankTooltipOpen(false); }}
-                        style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#cbd5e1', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-
-                    {/* CURRENT USER STATUS BOX (กล่องสรุปสถานะปัจจุบัน ชัดเจน ตัวหนังสือใหญ่ สบายตา) */}
-                    <div style={{ backgroundColor: '#141c2e', border: `2px solid ${currentUserRank.border}`, borderRadius: '14px', padding: '14px 16px', marginBottom: '16px', boxShadow: `0 4px 20px ${currentUserRank.border}30` }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <RankEmblem tier={currentUserRank.tier} size={42} />
-                          <div>
-                            <div style={{ fontSize: '15px', fontWeight: '900', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span>{currentUserRank.name}</span>
-                              <span style={{ fontSize: '10px', backgroundColor: currentUserRank.border, color: '#030712', padding: '2px 6px', borderRadius: '4px', fontWeight: '900' }}>
-                                TIER {currentUserRank.level}
-                              </span>
-                            </div>
-                            <div style={{ fontSize: '11px', color: currentUserRank.color, fontWeight: 'bold', marginTop: '2px' }}>
-                              ฉายา: {currentUserRank.title}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '11px', color: '#94a3b8' }}>ยอดเติมสะสมของคุณ</div>
-                          <div style={{ fontSize: '19px', fontWeight: '900', color: '#34d399', letterSpacing: '0.5px' }}>
-                            ฿{currentUserSpending.toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Progress Bar To Next Tier */}
-                      {currentUserRank.nextTier ? (
-                        <div style={{ backgroundColor: '#090d16', borderRadius: '10px', padding: '8px 12px', border: '1px solid #1e293b' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '6px' }}>
-                            <span style={{ color: '#cbd5e1' }}>
-                              เป้าหมายถัดไป: <b style={{ color: '#38bdf8' }}>{currentUserRank.nextTier}</b>
-                            </span>
-                            <span style={{ color: '#fbbf24', fontWeight: 'bold' }}>
-                              ขาดอีก ฿{currentUserRank.remainingToNext.toLocaleString()}
-                            </span>
-                          </div>
-                          <div style={{ width: '100%', height: '8px', backgroundColor: '#1e293b', borderRadius: '4px', overflow: 'hidden' }}>
-                            <div style={{ width: `${currentUserRank.progressPercent}%`, height: '100%', background: 'linear-gradient(90deg, #38bdf8, #a855f7)', transition: 'width 0.4s ease' }} />
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ fontSize: '11px', color: '#fbbf24', fontWeight: 'bold', textAlign: 'center', backgroundColor: '#090d16', padding: '6px 10px', borderRadius: '8px', border: '1px solid #fbbf24' }}>
-                          🏆 ยินดีด้วย! ท่านคือสมาชิกระดับสูงสุด (Challenger VIP) ของร้าน
-                        </div>
-                      )}
-                    </div>
-
-                    {/* ALL TIERS RATE TABLE (รายการเรทเติมทุกแรงค์ ชัดเจน 100% ไม่ทับซ้อน) */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#38bdf8' }}>
-                        📋 เกณฑ์เรทเติมและสิทธิ์โค้ดทั้ง 7 ระดับ:
-                      </span>
-                      <span style={{ fontSize: '11px', color: '#94a3b8' }}>เลื่อนดูได้ 7 แรงค์</span>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '9px', maxHeight: '310px', overflowY: 'auto', paddingRight: '6px' }}>
-                      {RANK_TIERS.map(tier => {
-                        const isCurrent = currentUserRank.tier === tier.tier;
-                        return (
-                          <div
-                            key={tier.tier}
-                            style={{
-                              backgroundColor: isCurrent ? '#192238' : '#101726',
-                              border: isCurrent ? `2px solid ${tier.border}` : '1px solid #1e293b',
-                              borderLeft: `5px solid ${tier.border}`,
-                              borderRadius: '12px',
-                              padding: '12px 14px',
-                              boxShadow: isCurrent ? `0 0 16px ${tier.border}45` : '0 3px 10px rgba(0,0,0,0.4)',
-                              position: 'relative'
-                            }}
-                          >
-                            {/* ROW 1: Emblem + Rank Name + Price Pill */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <RankEmblem tier={tier.tier} size={30} />
-                                <div>
-                                  <div style={{ fontSize: '13px', fontWeight: '900', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ color: tier.color }}>{tier.badge}</span>
-                                    <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 'normal' }}>
-                                      ({tier.title})
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Price Rate Pill (ชัดเจน ตัวหนาใหญ่ ไม่ทับข้อความ) */}
-                              <div style={{
-                                backgroundColor: '#070b14',
-                                border: `1.5px solid ${tier.border}`,
-                                color: '#ffffff',
-                                padding: '4px 10px',
-                                borderRadius: '8px',
-                                fontSize: '12px',
-                                fontWeight: '900',
-                                whiteSpace: 'nowrap',
-                                boxShadow: `0 0 8px ${tier.border}30`
-                              }}>
-                                {tier.rateText}
-                              </div>
-                            </div>
-
-                            {/* ROW 2: Perk Description */}
-                            <div style={{ fontSize: '11px', color: '#cbd5e1', lineHeight: '1.4', paddingLeft: '40px' }}>
-                              <span style={{ color: tier.color, fontWeight: 'bold' }}>🎁 สิทธิ์โค้ด: </span>
-                              <span>{tier.rewardSummary}</span>
-                            </div>
-
-                            {/* ROW 3: Active Tag if this is current tier */}
-                            {isCurrent && (
-                              <div style={{ marginTop: '6px', marginLeft: '40px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{
-                                  fontSize: '10px',
-                                  fontWeight: '900',
-                                  backgroundColor: tier.border,
-                                  color: '#070b14',
-                                  padding: '2px 8px',
-                                  borderRadius: '4px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px',
-                                  boxShadow: `0 0 8px ${tier.border}`
-                                }}>
-                                  ⭐ แรงค์ปัจจุบันของคุณ (ACTIVE)
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '12px', textAlign: 'center', borderTop: '1px solid #1e293b', paddingTop: '10px' }}>
-                      🎁 ในอนาคตระบบจะใช้ระดับแรงค์นี้เพื่อแจกโค้ดของขวัญตามแรงค์ลูกค้า
-                    </div>
-                  </div>
-                )}
-              </div>
-
               <span style={{ color: '#9ca3af' }}>👤 ผู้ใช้: </span>
               <b style={{ color: '#c084fc', marginLeft: '4px' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
             </div>
@@ -3923,95 +3646,13 @@ export default function App() {
               })}
             </div>
 
-            <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(56, 189, 248, 0.6)', borderRadius: '20px', padding: '25px 30px', marginBottom: '35px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '15px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>📊 รายการเกมที่รองรับโค้ดของขวัญ</h3>
-                <span style={{ fontSize: '11px', color: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.15)', border: '1px solid #34d399', padding: '4px 10px', borderRadius: '8px', fontWeight: 'bold' }}>
-                  🎁 ระบบกรอกโค้ดรับรางวัล
-                </span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '14px' }}>
-                {gamesData.map((g) => {
-                  const codesForGame = giftCodes.filter(c => c.game === g.name && c.usedCount < c.maxUses);
-                  const totalRemainingForGame = codesForGame.reduce((sum, c) => sum + Math.max(0, c.maxUses - c.usedCount), 0);
-                  const isGameSelected = eventGame === g.name;
-                  return (
-                    <div
-                      key={g.id}
-                      onClick={() => setEventGame(g.name)}
-                      style={{ backgroundColor: isGameSelected ? 'rgba(56, 189, 248, 0.15)' : '#030712', border: isGameSelected ? '1.5px solid #38bdf8' : '1px solid #374151', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', minHeight: '52px', boxSizing: 'border-box', cursor: 'pointer' }}
-                    >
-                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', marginRight: '10px', lineHeight: '1.3', flex: 1 }}>{g.name}</span>
-                      <span style={{ backgroundColor: totalRemainingForGame > 0 ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)', color: totalRemainingForGame > 0 ? '#34d399' : '#fca5a5', border: `1px solid ${totalRemainingForGame > 0 ? '#34d399' : '#ef4444'}`, padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', flexShrink: 0, textAlign: 'center' }}>
-                        {totalRemainingForGame > 0 ? `มีโค้ดแจก (${totalRemainingForGame} สิทธิ์)` : 'หมดแล้ว'}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1.5px solid rgba(56, 189, 248, 0.6)', borderRadius: '20px', padding: '25px 30px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🎁 กรอกโค้ดของขวัญแลกรับรางวัล (Redeem Gift Code)</h3>
-                <span style={{ fontSize: '11px', color: '#c084fc', fontWeight: 'bold' }}>✨ กรอก UID และรหัสโค้ดเพื่อรับรางวัลเข้าเกม</span>
-              </div>
-
-              {/* ป้ายแสดงระดับแรงค์ของลูกค้าปัจจุบัน พร้อมระบุยอดเติมสะสม */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', backgroundColor: '#090d16', border: '1px solid #1e293b', borderRadius: '12px', padding: '10px 14px', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '12px', color: '#9ca3af' }}>ระดับแรงค์ของคุณ:</span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', background: currentUserRank.bg, border: `1.5px solid ${currentUserRank.border}`, color: currentUserRank.color, padding: '2px 8px', borderRadius: '14px', fontSize: '11px', fontWeight: '900', boxShadow: currentUserRank.glow }}>
-                    <RankEmblem tier={currentUserRank.tier} size={16} />
-                    <span>{currentUserRank.name}</span>
-                  </span>
-                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>({currentUserRank.title})</span>
-                </div>
-                <div style={{ fontSize: '11px', color: '#38bdf8' }}>
-                  ยอดเติมแพ็กสะสม: <b style={{ color: '#34d399', fontSize: '13px' }}>฿{currentUserSpending.toLocaleString()}</b>
-                </div>
-              </div>
-              {eventMsg.text && (
-                <div style={{ backgroundColor: eventMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', border: `1px solid ${eventMsg.type === 'success' ? '#34d399' : '#ef4444'}`, color: eventMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '15px' }}>
-                  {eventMsg.text}
-                </div>
-              )}
-              <form onSubmit={handleRedeemEventCode} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', alignItems: 'end' }}>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>1. เลือกเกม</label>
-                  <select value={eventGame} onChange={(e) => setEventGame(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }}>
-                    {gamesData.map((g) => (
-                      <option key={g.id} value={g.name}>{g.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#c084fc', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>2. ชื่อในเกม หรือ UID</label>
-                  <input type="text" placeholder="ระบุไอดีหรือ UID ตัวละคร..." value={eventPlayerId} onChange={(e) => setEventPlayerId(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '10px', padding: '12px', color: '#ffffff', fontSize: '13px', outline: 'none', boxSizing: 'border-box' }} />
-                </div>
-                <div>
-                  <label style={{ fontSize: '12px', color: '#34d399', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>3. กรอกรหัสโค้ดของขวัญ</label>
-                  <input
-                    type="text"
-                    placeholder="เช่น GIFT-VAL-125..."
-                    value={eventGiftCode}
-                    onChange={(e) => setEventGiftCode(e.target.value.toUpperCase())}
-                    style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #34d399', borderRadius: '10px', padding: '12px', color: '#34d399', fontWeight: 'bold', fontSize: '13px', outline: 'none', boxSizing: 'border-box', letterSpacing: '0.5px' }}
-                  />
-                </div>
-                <div>
-                  <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
-                    🎁 แลกรับของขวัญ
-                  </button>
-                </div>
-              </form>
-            </div>
+            
           </div>
         )}
 
         {activeTab === 'shop' && selectedGame && (
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '28px', padding: '35px', border: '2.5px solid #fed7aa', boxShadow: '0 15px 40px rgba(249, 115, 22, 0.12)' }}>
-            <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: '#fff7ed', border: '2px solid #fed7aa', color: '#ea580c', padding: '8px 18px', borderRadius: '12px', cursor: 'pointer', marginBottom: '24px', fontWeight: '900', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.98)', borderRadius: '28px', padding: '35px', border: '1.5px solid rgba(147, 51, 234, 0.35)', boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7)' }}>
+            <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#fb923c', padding: '8px 18px', borderRadius: '12px', cursor: 'pointer', marginBottom: '24px', fontWeight: '900', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span>🐾</span>
               <span>← กลับไปหน้าเลือกเกม</span>
             </button>
@@ -4035,7 +3676,7 @@ export default function App() {
               <img src={selectedGame.image} alt={selectedGame.name} style={{ width: '100px', height: '100px', borderRadius: '16px', objectFit: 'cover', border: '2px solid #a855f7' }} />
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <h2 style={{ fontSize: '26px', fontWeight: '900', margin: '0 0 6px 0' }}>{selectedGame.name}</h2>
+                  <h2 style={{ fontSize: '26px', fontWeight: '900', margin: '0 0 6px 0', color: '#ffffff' }}>{selectedGame.name}</h2>
                   {gameStockStatus[selectedGame.id] === false && (
                     <span style={{ backgroundColor: '#ef4444', color: '#ffffff', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
                       สต็อกหมดชั่วคราว
@@ -4079,13 +3720,13 @@ export default function App() {
                         setPackageQuantity(1); 
                       }} 
                       style={{ 
-                        backgroundColor: isPkgOutOfStock ? '#fef2f2' : isSelected ? '#fff7ed' : '#ffffff', 
-                        border: isPkgOutOfStock ? '2px solid #fca5a5' : isSelected ? '2.5px solid #f97316' : '2px solid #ffedd5', 
+                        backgroundColor: isPkgOutOfStock ? 'rgba(239, 68, 68, 0.1)' : isSelected ? 'rgba(249, 115, 22, 0.15)' : '#030712', 
+                        border: isPkgOutOfStock ? '1.5px solid #ef4444' : isSelected ? '2px solid #f97316' : '1px solid #1f2937', 
                         borderRadius: '18px', padding: '16px', 
                         cursor: isPkgOutOfStock ? 'not-allowed' : 'pointer',
                         transition: 'all 0.25s', position: 'relative', overflow: 'hidden',
                         opacity: isPkgOutOfStock ? 0.75 : 1,
-                        boxShadow: isSelected ? '0 8px 25px rgba(249, 115, 22, 0.2)' : '0 4px 12px rgba(0,0,0,0.03)'
+                        boxShadow: isSelected ? '0 0 20px rgba(249, 115, 22, 0.3)' : 'none'
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
