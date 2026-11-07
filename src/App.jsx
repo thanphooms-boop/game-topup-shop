@@ -125,12 +125,9 @@ const cyberGlobalStyles = `
   /* Cat Game Card Styles */
   .cyber-game-card {
     position: relative;
-    background: #ffffff !important;
-    border: 2.5px solid #fed7aa !important;
     border-radius: 24px !important;
     overflow: hidden;
     cursor: pointer;
-    box-shadow: 0 10px 25px rgba(249, 115, 22, 0.08), 0 2px 6px rgba(0,0,0,0.03) !important;
     transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   }
 
@@ -3503,6 +3500,56 @@ export default function App() {
       <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px', position: 'relative', zIndex: 1 }}>
         {activeTab === 'shop' && !selectedGame && (
           <div>
+            {/* 🔥 LIVE TRANSACTION TICKER & ACTIVITY BAR */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              backgroundColor: isDarkMode ? 'rgba(15, 23, 42, 0.95)' : '#ffffff',
+              border: isDarkMode ? '1px solid rgba(249, 115, 22, 0.35)' : '1.5px solid #fed7aa',
+              borderRadius: '18px',
+              padding: '10px 20px',
+              marginBottom: '30px',
+              boxShadow: isDarkMode ? '0 6px 25px rgba(0,0,0,0.5), 0 0 18px rgba(249, 115, 22, 0.12)' : '0 4px 15px rgba(249, 115, 22, 0.08)',
+              overflow: 'hidden'
+            }}>
+              <div style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '6px', 
+                backgroundColor: 'rgba(239, 68, 68, 0.18)', 
+                border: '1px solid #ef4444', 
+                color: '#fca5a5', 
+                padding: '4px 12px', 
+                borderRadius: '20px', 
+                fontSize: '11px', 
+                fontWeight: '900', 
+                whiteSpace: 'nowrap' 
+              }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block', boxShadow: '0 0 8px #22c55e' }}></span>
+                <span>LIVE 24H</span>
+              </div>
+              <div style={{ 
+                fontSize: '12px', 
+                color: isDarkMode ? '#cbd5e1' : '#475569', 
+                whiteSpace: 'nowrap', 
+                overflow: 'hidden', 
+                textOverflow: 'ellipsis', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '16px', 
+                fontWeight: '600' 
+              }}>
+                <span style={{ color: '#38bdf8' }}>⚡ ระบบอัตโนมัติ 24 ชม. ตรวจสลิปฉับไวใน 1 วินาที</span>
+                <span style={{ color: '#f97316' }}>•</span>
+                <span>🎮 ออเดอร์ล่าสุด: เติม 1,000 VP (VALORANT) สำเร็จแล้ว</span>
+                <span style={{ color: '#f97316' }}>•</span>
+                <span style={{ color: '#34d399' }}>🐱🪙 ปลอดภัย 100% เชื่อมต่อตรง LnwTrue Official</span>
+                <span style={{ color: '#f97316' }}>•</span>
+                <span>🔥 ลูกค้าสะสมคะแนนแลกรับส่วนลดสุดคุ้ม</span>
+              </div>
+            </div>
+
             {/* 🐱 COOL CAT GAMER HERO COVER BANNER */}
             <div style={{ 
               position: 'relative',
@@ -3559,25 +3606,25 @@ export default function App() {
                     <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
                       <input 
                         type="text" 
-                        placeholder="🐾 ค้นหาเกมโปรดของคุณ..." 
+                        placeholder="🐾 ค้นหาเกมโปรดของคุณ เช่น VALORANT, ROV, Free Fire..." 
                         value={searchTerm} 
                         onChange={(e) => setSearchTerm(e.target.value)} 
                         style={{ 
                           width: '100%', 
-                          backgroundColor: '#ffffff', 
-                          border: '2px solid #fdba74', 
+                          backgroundColor: isDarkMode ? '#030712' : '#ffffff', 
+                          border: isDarkMode ? '2px solid #a855f7' : '2px solid #fdba74', 
                           borderRadius: '16px', 
-                          padding: '12px 18px', 
-                          color: '#0f172a', 
+                          padding: '13px 20px', 
+                          color: isDarkMode ? '#ffffff' : '#0f172a', 
                           outline: 'none', 
                           boxSizing: 'border-box',
                           fontSize: '14px',
-                          boxShadow: '0 4px 15px rgba(249, 115, 22, 0.08)'
+                          boxShadow: isDarkMode ? '0 4px 20px rgba(0,0,0,0.6), 0 0 15px rgba(168,85,247,0.2)' : '0 4px 15px rgba(249, 115, 22, 0.08)'
                         }} 
                       />
                     </div>
                     
-                    <div style={{ display: 'flex', gap: '6px', backgroundColor: '#ffffff', padding: '4px', borderRadius: '16px', border: '2px solid #fed7aa', boxShadow: '0 4px 15px rgba(249, 115, 22, 0.08)' }}>
+                    <div style={{ display: 'flex', gap: '6px', backgroundColor: isDarkMode ? '#030712' : '#ffffff', padding: '4px', borderRadius: '16px', border: isDarkMode ? '1.5px solid #374151' : '2px solid #fed7aa', boxShadow: isDarkMode ? '0 4px 20px rgba(0,0,0,0.6)' : '0 4px 15px rgba(249, 115, 22, 0.08)' }}>
                       {[
                         { id: 'all', label: '🐱 ทั้งหมด' },
                         { id: 'pc', label: '🖥️ PC' },
@@ -3632,7 +3679,10 @@ export default function App() {
                     style={{
                       opacity: isOutOfStock ? 0.78 : 1,
                       filter: isOutOfStock ? 'grayscale(0.25)' : 'none',
-                      cursor: isOutOfStock ? 'not-allowed' : 'pointer'
+                      cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                      backgroundColor: isDarkMode ? '#0f172a' : '#ffffff',
+                      border: isDarkMode ? '1.5px solid rgba(147, 51, 234, 0.35)' : '2.5px solid #fed7aa',
+                      boxShadow: isDarkMode ? '0 10px 30px rgba(0,0,0,0.6), 0 0 15px rgba(147, 51, 234, 0.15)' : '0 10px 25px rgba(249, 115, 22, 0.08)'
                     }}
                   >
                     <div className="cyber-game-cover-wrap">
@@ -3674,9 +3724,9 @@ export default function App() {
                       </span>
                     </div>
 
-                    <div style={{ padding: '18px', backgroundColor: '#ffffff' }}>
+                    <div style={{ padding: '18px', backgroundColor: isDarkMode ? '#0f172a' : '#ffffff', transition: 'all 0.3s ease' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
-                        <h3 style={{ fontSize: '17px', fontWeight: '900', margin: 0, color: '#0f172a' }}>{game.name}</h3>
+                        <h3 style={{ fontSize: '17px', fontWeight: '900', margin: 0, color: isDarkMode ? '#ffffff' : '#0f172a' }}>{game.name}</h3>
                         <span style={{ 
                           fontSize: '10px', 
                           color: isOutOfStock ? '#ef4444' : '#34d399', 
@@ -3884,17 +3934,72 @@ export default function App() {
             <div style={{ marginBottom: '30px' }}>
               <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '12px', fontWeight: 'bold' }}>3. เลือกช่องทางชำระเงิน</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
-                {paymentMethods.map((pm) => (
-                  <div key={pm.id} className="cyber-card-clickable" onClick={() => setSelectedPayment(pm)} style={{ 
-                      backgroundColor: selectedPayment?.id === pm.id ? 'rgba(56, 189, 248, 0.2)' : '#030712', 
-                      border: selectedPayment?.id === pm.id ? '2px solid #38bdf8' : '1px solid #374151', 
-                      borderRadius: '14px', padding: '14px', cursor: 'pointer' 
-                    }}
-                  >
-                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#ffffff' }}>{pm.name}</div>
-                    <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>{pm.desc}</div>
-                  </div>
-                ))}
+                {paymentMethods.map((pm) => {
+                  const isWallet = pm.id === 'wallet';
+                  const isLocked = isWallet && !user;
+                  const isSelected = selectedPayment?.id === pm.id;
+                  return (
+                    <div 
+                      key={pm.id} 
+                      className={isLocked ? "" : "cyber-card-clickable"} 
+                      onClick={() => {
+                        if (isLocked) {
+                          alert('🔒 ช่องทางนี้สำหรับสมาชิกเท่านั้น กรุณาเข้าสู่ระบบก่อนเพื่อชำระเงินด้วย Cat Coin วอลเล็ตครับ');
+                          setShowAuthModal(true);
+                          return;
+                        }
+                        setSelectedPayment(pm);
+                      }} 
+                      style={{ 
+                        backgroundColor: isSelected 
+                          ? 'rgba(56, 189, 248, 0.2)' 
+                          : isLocked 
+                            ? 'rgba(15, 23, 42, 0.4)' 
+                            : '#030712', 
+                        border: isSelected 
+                          ? '2px solid #38bdf8' 
+                          : isLocked 
+                            ? '1.5px dashed #475569' 
+                            : '1px solid #374151', 
+                        borderRadius: '14px', 
+                        padding: '14px', 
+                        cursor: isLocked ? 'pointer' : 'pointer',
+                        opacity: isLocked ? 0.65 : 1,
+                        position: 'relative',
+                        transition: 'all 0.25s ease'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 'bold', color: isLocked ? '#94a3b8' : '#ffffff' }}>
+                          {pm.name}
+                        </div>
+                        {isLocked && (
+                          <span style={{ 
+                            fontSize: '10px', 
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)', 
+                            color: '#fca5a5', 
+                            border: '1px solid #ef4444', 
+                            padding: '2px 7px', 
+                            borderRadius: '6px', 
+                            fontWeight: 'bold',
+                            whiteSpace: 'nowrap'
+                          }}>
+                            🔒 ต้องเข้าสู่ระบบ
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '11px', color: isLocked ? '#64748b' : '#9ca3af' }}>
+                        {isLocked 
+                          ? 'เฉพาะสมาชิกที่มีบัญชีร้าน (คลิกที่นี่เพื่อเข้าสู่ระบบ)' 
+                          : (isWallet && user 
+                              ? `ยอดคงเหลือของคุณ: ฿${(user.balance || 0).toLocaleString()} (${(user.balance || 0).toLocaleString()} Coin)` 
+                              : pm.desc
+                            )
+                        }
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -4027,7 +4132,26 @@ export default function App() {
                   </div>
                 )}
                 {selectedPayment.id === 'wallet' && (
-                  <div style={{ fontSize: '13px', color: '#34d399' }}>🔒 เพื่อความปลอดภัย ระบบจะให้ท่านยืนยันรหัสผ่านบัญชีก่อนหักเงินจากเครดิตร้าน (ยอดคงเหลือ: ฿{(user.balance || 0).toLocaleString()})</div>
+                  <div style={{ 
+                    fontSize: '13px', 
+                    color: '#34d399', 
+                    backgroundColor: 'rgba(52, 211, 153, 0.1)', 
+                    border: '1px solid #34d399', 
+                    borderRadius: '12px', 
+                    padding: '14px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <span style={{ fontSize: '20px' }}>🐱🪙</span>
+                    <div>
+                      {user ? (
+                        <>🔒 เพื่อความปลอดภัย ระบบจะให้ท่านยืนยันรหัสผ่านบัญชีก่อนหักเงินจากเครดิตร้าน (ยอดคงเหลือในกระเป๋าของคุณ: <b style={{ color: '#fbbf24', fontSize: '14px' }}>฿{(user.balance || 0).toLocaleString()}</b>)</>
+                      ) : (
+                        <>⚠️ ท่านยังไม่ได้เข้าสู่ระบบ กรุณา <span onClick={() => setShowAuthModal(true)} style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 'bold', color: '#38bdf8' }}>คลิกที่นี่เพื่อเข้าสู่ระบบ</span> ก่อนทำรายการด้วย Cat Coin</>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -4035,7 +4159,8 @@ export default function App() {
             {(() => {
               const isGameOut = gameStockStatus[selectedGame?.id] === false;
               const isPkgOut = selectedPackage && packageStockStatus[`${selectedGame?.id}_${selectedPackage.id}`] === false;
-              const isDisabled = !playerId.trim() || !selectedPackage || !selectedPayment || isGameOut || isPkgOut;
+              const isWalletLocked = selectedPayment?.id === 'wallet' && !user;
+              const isDisabled = !playerId.trim() || !selectedPackage || !selectedPayment || isGameOut || isPkgOut || isWalletLocked;
 
               return (
                 <button 
