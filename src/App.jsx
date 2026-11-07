@@ -805,7 +805,19 @@ export default function App() {
 
   const [registeredUsers, setRegisteredUsers] = useState([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState('login');
+    // State สำหรับเลือกช่องทางรับรหัสบัตร Razer Gold PIN (e-Pin) (LINE หรือ Email)
+  const [cardDeliveryChannel, setCardDeliveryChannel] = useState('line'); // 'line' | 'email'
+  const [cardContactValue, setCardContactValue] = useState('');
+
+  // State สำหรับการพับ/กางแต่ละส่วนในหน้าหลังบ้านแอดมิน เพื่อไม่ให้รก
+  const [adminOpenFinance, setAdminOpenFinance] = useState(true);
+  const [adminOpenOrders, setAdminOpenOrders] = useState(true);
+  const [adminOpenStats, setAdminOpenStats] = useState(false);
+  const [adminOpenStock, setAdminOpenStock] = useState(false);
+  const [adminOpenUsers, setAdminOpenUsers] = useState(false);
+  const [adminOpenAds, setAdminOpenAds] = useState(false);
+  const [adminOpenPin, setAdminOpenPin] = useState(false);
+const [authMode, setAuthMode] = useState('login');
   
   const [usernameInput, setUsernameInput] = useState(() => {
     return localStorage.getItem('cyber_remembered_user') || '';
@@ -2574,9 +2586,10 @@ export default function App() {
       const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
       const dateKey = `${year}-${month}-${day}`;
 
+      const isEpinCard = selectedGame.category === 'card' || selectedGame.id.includes('razer');
       const targetGameChar = playerId.trim();
       const pkgSummary = `${selectedPackage.name} (x${packageQuantity} แพ็ก)`;
-      const initialStatus = '⏳ รอตรวจสอบยอดเงิน';
+      const initialStatus = isEpinCard ? '⏳ รอจัดส่งรหัส PIN' : '⏳ รอตรวจสอบยอดเงิน';
 
       const newOrder = {
         id: newOrderId,
@@ -2585,12 +2598,15 @@ export default function App() {
         bonus: selectedPackage.bonus || '',
         price: totalPrice,
         profit: totalProfit,
-        player: user ? user.username : 'user11',
+        player: user ? user.username : 'guest_user',
         gameChar: targetGameChar,
         paymentMethod: selectedPayment.name,
         status: initialStatus,
         apiRef: apiRef,
-        deliveryType: 'DIRECT_UID_AUTO_100',
+        isEpin: isEpinCard,
+        deliveryChannel: isEpinCard ? (cardDeliveryChannel === 'email' ? 'EMAIL' : 'LINE') : 'UID',
+        deliveryTarget: isEpinCard ? cardContactValue.trim() : targetGameChar,
+        deliveryType: isEpinCard ? 'MANUAL_EPIN_CODE' : 'DIRECT_UID_AUTO_100',
         deliveredCode: null,
         type: 'game',
         time: thaiTime,
@@ -2607,12 +2623,17 @@ export default function App() {
         game: selectedGame.name,
         packageName: pkgSummary,
         price: totalPrice,
-        player: user ? user.username : 'user11',
+        player: user ? user.username : 'guest_user',
         gameChar: targetGameChar,
         paymentMethod: selectedPayment.name,
         apiRef: apiRef,
-        deliveryMode: 'AUTO_100_DIRECT_UID'
+        isEpin: isEpinCard,
+        deliveryChannel: isEpinCard ? (cardDeliveryChannel === 'email' ? 'EMAIL' : 'LINE') : 'UID',
+        deliveryTarget: isEpinCard ? cardContactValue.trim() : targetGameChar,
+        deliveryMode: isEpinCard ? 'MANUAL_EPIN_CODE' : 'AUTO_100_DIRECT_UID',
+        adminAlert: isEpinCard ? `🚨 ออเดอร์บัตร Razer Gold PIN! ต้องส่งรหัสทาง ${cardDeliveryChannel === 'email' ? 'Email' : 'LINE'}: ${cardContactValue.trim()} (ห้ามเติมเข้าไอดี)` : 'เติมตรงเข้าไอดีเกม'
       });
+      setCardContactValue('');
 
       setIsProcessing(false);
       setShowCheckoutModal(false);
@@ -2812,42 +2833,32 @@ export default function App() {
   const nowObj = new Date();
   const currentDayStr = `${nowObj.getFullYear()}-${String(nowObj.getMonth() + 1).padStart(2, '0')}-${String(nowObj.getDate()).padStart(2, '0')}`;
 
-  // ระบบค้นหาสถานะออเดอร์แบบไม่ผูกกับเครื่อง (Stateless & Safe สำหรับร้านเกม/เครื่องสาธารณะ)
-  const searchedOrders = React.useMemo(() => {
-    const q = customerOrderSearch.trim().toLowerCase();
-    
-    // หากเป็นแอดมิน: สามารถดูทั้งหมดหรือพิมพ์ค้นหาได้
+  const searchedOrders = orders.filter(o => {
+    let matchUser = false;
     if (isUserAdmin) {
-      return orders.filter(o => {
-        const matchGame = selectedGameFilter === 'all' || o.game.toLowerCase() === selectedGameFilter.toLowerCase();
-        if (!q) return matchGame;
-        return matchGame && (
-          o.id.toLowerCase().includes(q) ||
-          o.player.toLowerCase().includes(q) ||
-          (o.gameChar && o.gameChar.toLowerCase().includes(q))
-        );
-      });
+      const q = exactSearchQuery.trim().toLowerCase();
+      matchUser = !q || (o.player.toLowerCase() === q) || (o.id.toLowerCase() === q);
+    } else if (user) {
+      matchUser = (o.player.toLowerCase() === user.username.toLowerCase());
+    } else {
+      // Guest mode: can search by Order ID or Player/UID
+      const q = exactSearchQuery.trim().toLowerCase();
+      const orderQ = customerOrderSearch.trim().toLowerCase();
+      if (!q && !orderQ) {
+        matchUser = true;
+      } else {
+        const matchUID = q ? (o.player.toLowerCase().includes(q) || (o.gameChar && o.gameChar.toLowerCase().includes(q))) : false;
+        const matchO = orderQ ? o.id.toLowerCase().includes(orderQ) : false;
+        matchUser = matchUID || matchO;
+      }
     }
 
-    // สำหรับลูกค้าทั่วไป/ร้านเกม: ถ้ายังไม่พิมพ์ค้นหา จะไม่ดึงประวัติใดๆ ขึ้นมาแสดงเลย (กันคนอื่นมาส่อง)
-    if (!q) {
-      return [];
-    }
+    const orderQuery = customerOrderSearch.trim();
+    const matchOrder = !orderQuery || (orderQuery.toUpperCase().startsWith('ORD') ? o.id.toLowerCase() === orderQuery.toLowerCase() : o.id.toLowerCase().includes(orderQuery.toLowerCase()));
+    const matchGame = selectedGameFilter === 'all' || o.game.toLowerCase() === selectedGameFilter.toLowerCase();
 
-    // ต้องกรอกอย่างน้อย 4 ตัวอักษรขึ้นไป
-    if (q.length < 4) {
-      return [];
-    }
-
-    return orders.filter(o => {
-      const matchGame = selectedGameFilter === 'all' || o.game.toLowerCase() === selectedGameFilter.toLowerCase();
-      // ระบบความปลอดภัยเข้มงวด: ต้องตรงเป๊ะ 100% ทุกตัวอักษรเท่านั้น (Strict Exact Match)
-      // ป้องกันการพิมพ์แค่บางคำ (เช่น พิมพ์แค่ ORD- หรือเลขสั้นๆ) เพื่อส่องดูข้อมูลของคนอื่น
-      const exactOrderId = o.id && o.id.toLowerCase() === q;
-      const exactUID = (o.gameChar && o.gameChar.toLowerCase() === q) || (o.player && o.player.toLowerCase() === q);
-      return matchGame && (exactOrderId || exactUID);
-    });
-  }, [orders, customerOrderSearch, selectedGameFilter, isUserAdmin]);
+    return matchUser && matchOrder && matchGame;
+  });
 
   const todayOrders = searchedOrders.filter(o => o.dateKey === currentDayStr);
   const pastOrders = searchedOrders.filter(o => o.dateKey !== currentDayStr);
@@ -3828,20 +3839,118 @@ export default function App() {
               </div>
             </div>
 
-            <div style={{ marginBottom: '25px' }}>
-              <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                {selectedGame.category === 'card' 
-                  ? '1. เบอร์โทร หรือ อีเมล / LINE ID (สำหรับรับรหัส PIN)' 
-                  : '1. ชื่อในเกม หรือ UID'}
-              </label>
-              <input 
-                type="text" 
-                placeholder={selectedGame.category === 'card' ? "ระบุเบอร์โทร หรือ LINE ID สำหรับรับรหัส..." : "ระบุชื่อในเกม หรือ UID ของท่าน..."} 
-                value={playerId} 
-                onChange={(e) => setPlayerId(e.target.value)} 
-                style={{ width: '100%', maxWidth: '400px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} 
-              />
-            </div>
+            {selectedGame.category === 'card' || selectedGame.id.includes('razer') ? (
+              <div style={{ marginBottom: '25px', backgroundColor: '#090d16', border: '1.5px solid #f59e0b', borderRadius: '18px', padding: '20px', boxShadow: '0 0 25px rgba(245, 158, 11, 0.15)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                  <label style={{ fontSize: '14px', color: '#fbbf24', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>🎫 1. เลือกช่องทางรับรหัสบัตร Razer Gold PIN (e-Pin)</span>
+                  </label>
+                  <span style={{ fontSize: '11px', backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', border: '1px solid #f59e0b', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
+                    ⚠️ แอดมินจะจัดส่งรหัส PIN ให้ทางช่องทางที่เลือกนี้
+                  </span>
+                </div>
+
+                {/* ตัวเลือกว่าจะรับทาง LINE หรือ Email */}
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+                  <button
+                    type="button"
+                    onClick={() => { 
+                      setCardDeliveryChannel('line'); 
+                      if (cardContactValue.trim()) setPlayerId(`🟢 LINE: ${cardContactValue.trim()}`);
+                    }}
+                    style={{
+                      flex: 1,
+                      backgroundColor: cardDeliveryChannel === 'line' ? 'rgba(34, 197, 94, 0.25)' : '#111827',
+                      border: cardDeliveryChannel === 'line' ? '2px solid #22c55e' : '1px solid #374151',
+                      color: cardDeliveryChannel === 'line' ? '#86efac' : '#94a3b8',
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      fontWeight: '900',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: cardDeliveryChannel === 'line' ? '0 0 15px rgba(34, 197, 94, 0.3)' : 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <span>🟢 รับรหัสผ่าน LINE ID</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { 
+                      setCardDeliveryChannel('email'); 
+                      if (cardContactValue.trim()) setPlayerId(`📧 Email: ${cardContactValue.trim()}`);
+                    }}
+                    style={{
+                      flex: 1,
+                      backgroundColor: cardDeliveryChannel === 'email' ? 'rgba(56, 189, 248, 0.25)' : '#111827',
+                      border: cardDeliveryChannel === 'email' ? '2px solid #38bdf8' : '1px solid #374151',
+                      color: cardDeliveryChannel === 'email' ? '#7dd3fc' : '#94a3b8',
+                      padding: '12px 16px',
+                      borderRadius: '12px',
+                      fontWeight: '900',
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: cardDeliveryChannel === 'email' ? '0 0 15px rgba(56, 189, 248, 0.3)' : 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <span>📧 รับรหัสผ่าน อีเมล (Email)</span>
+                  </button>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>
+                    {cardDeliveryChannel === 'line' 
+                      ? 'ระบุ LINE ID สำหรับรับรหัสบัตร PIN (แอดมินจะแอดไปส่งรหัสเข้าแชท):' 
+                      : 'ระบุอีเมลสำหรับรับรหัสบัตร PIN (รหัส e-PIN จะถูกส่งเข้ากล่องข้อความนี้):'}
+                  </label>
+                  <input 
+                    type={cardDeliveryChannel === 'email' ? "email" : "text"} 
+                    placeholder={cardDeliveryChannel === 'line' ? "เช่น meow_gamer88 หรือ เบอร์โทรที่ผูก LINE..." : "เช่น customer_meow@gmail.com..."} 
+                    value={cardContactValue} 
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCardContactValue(val);
+                      setPlayerId(val.trim() ? (cardDeliveryChannel === 'line' ? `🟢 LINE: ${val.trim()}` : `📧 Email: ${val.trim()}`) : '');
+                    }} 
+                    style={{ 
+                      width: '100%', 
+                      backgroundColor: '#030712', 
+                      border: `1.5px solid ${cardDeliveryChannel === 'line' ? '#22c55e' : '#38bdf8'}`, 
+                      borderRadius: '12px', 
+                      padding: '12px 16px', 
+                      color: '#ffffff', 
+                      outline: 'none', 
+                      boxSizing: 'border-box', 
+                      fontSize: '14px', 
+                      fontWeight: 'bold' 
+                    }} 
+                  />
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginBottom: '25px' }}>
+                <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                  1. ชื่อในเกม หรือ UID
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="ระบุชื่อในเกม หรือ UID ของท่าน..." 
+                  value={playerId} 
+                  onChange={(e) => setPlayerId(e.target.value)} 
+                  style={{ width: '100%', maxWidth: '400px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} 
+                />
+              </div>
+            )}
 
             <div style={{ marginBottom: '30px' }}>
               <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '12px', fontWeight: 'bold' }}>2. เลือกแพ็กเกจเติมเกม</label>
@@ -4213,211 +4322,249 @@ export default function App() {
         )}
 
         {activeTab === 'track' && (
-          <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '24px', padding: '32px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 20px 60px rgba(0,0,0,0.8)' }}>
-            
-            {/* Header: เน้นความปลอดภัย ไม่บันทึกค้างบนเครื่องร้านเกม */}
-            <div style={{ borderBottom: '1px solid #374151', paddingBottom: '18px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                <div>
-                  <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>📋 ตรวจสอบสถานะคำสั่งซื้อ (Order Tracking)</span>
-                  </h2>
-                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
-                    🔒 ระบบความปลอดภัยเข้มงวด: ต้องกรอกเลขออเดอร์หรือ UID ให้ครบทุกตัวอักษรเท่านั้น เพื่อป้องกันคนอื่นพิมพ์สุ่มดูข้อมูล
-                  </p>
-                </div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', color: '#86efac', padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '900' }}>
-                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block', boxShadow: '0 0 6px #22c55e' }}></span>
-                  <span>ระบบค้นหาตรงทุกคำ (Exact Match 100%)</span>
-                </div>
+          <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 0 35px rgba(0,0,0,0.7)' }}>
+            <div style={{ borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>📋 เช็คสถานะคำสั่งซื้อและประวัติการทำรายการ</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#c084fc', flexWrap: 'wrap' }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: currentUserRank.bg,
+                  border: `1.5px solid ${currentUserRank.border}`,
+                  color: currentUserRank.color,
+                  padding: '3px 10px',
+                  borderRadius: '16px',
+                  fontSize: '11px',
+                  fontWeight: '900',
+                  boxShadow: currentUserRank.glow
+                }}>
+                  <RankEmblem tier={currentUserRank.tier} size={18} />
+                  <span>{currentUserRank.name}</span>
+                </span>
+                <span>👤 บัญชีผู้ใช้งาน:</span>
+                <b style={{ color: '#ffffff', backgroundColor: 'rgba(147,51,234,0.3)', padding: '2px 10px', borderRadius: '6px', border: '1px solid #9333ea' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
+                <span style={{ fontSize: '11px', color: '#38bdf8', marginLeft: '4px' }}>(ยอดเติมแพ็กเกจสะสม: ฿{currentUserSpending.toLocaleString()})</span>
+                {!isUserAdmin && <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '4px' }}>| แสดงเฉพาะประวัติของคุณ</span>}
               </div>
             </div>
 
-            {/* แถบค้นหาข้อมูลคำสั่งซื้อ */}
-            <div style={{ display: 'flex', gap: '10px', marginBottom: '22px', flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ flex: 2, minWidth: '240px', position: 'relative' }}>
-                <input 
-                  type="text" 
-                  placeholder="🔍 ต้องกรอกเลขออเดอร์เต็ม (เช่น ORD-14969) หรือ UID เต็ม ให้ครบทุกคำ..." 
-                  value={customerOrderSearch} 
-                  onChange={(e) => setCustomerOrderSearch(e.target.value)} 
-                  style={{ 
-                    width: '100%', 
-                    backgroundColor: '#030712', 
-                    border: '1.5px solid #a855f7', 
-                    borderRadius: '12px', 
-                    padding: '12px 16px', 
-                    color: '#ffffff', 
-                    outline: 'none', 
-                    fontWeight: 'bold', 
-                    fontSize: '13px', 
-                    boxSizing: 'border-box',
-                    boxShadow: '0 4px 15px rgba(0,0,0,0.4)'
-                  }} 
-                />
-              </div>
-
-              <select 
-                value={selectedGameFilter} 
-                onChange={(e) => setSelectedGameFilter(e.target.value)} 
-                style={{ 
-                  flex: 1, 
-                  minWidth: '160px', 
-                  backgroundColor: '#030712', 
-                  border: '1px solid #374151', 
-                  borderRadius: '12px', 
-                  padding: '12px 14px', 
-                  color: '#ffffff', 
-                  outline: 'none', 
-                  cursor: 'pointer',
-                  fontSize: '13px'
-                }}
-              >
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <input 
+                type="text" 
+                placeholder={isUserAdmin ? "🔍 ค้นหาชื่อบัญชีลูกค้า..." : (user ? user.username : "🔍 ค้นหาด้วยชื่อในเกม หรือ UID")}
+                value={isUserAdmin ? exactSearchQuery : (user ? (user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username) : exactSearchQuery)} 
+                disabled={!isUserAdmin && !!user}
+                onChange={(e) => (isUserAdmin || !user) && setExactSearchQuery(e.target.value)} 
+                style={{ flex: 1, minWidth: '180px', backgroundColor: isUserAdmin ? '#030712' : '#1f2937', border: '1.5px solid #a855f7', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', cursor: isUserAdmin ? 'text' : 'not-allowed', fontWeight: 'bold', boxSizing: 'border-box' }} 
+              />
+              <input 
+                type="text" 
+                placeholder="🔍 กรอกเลขออร์เดอร์ เช่น ORD-14969..." 
+                value={customerOrderSearch} 
+                onChange={(e) => setCustomerOrderSearch(e.target.value)} 
+                style={{ flex: 1.5, minWidth: '220px', backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} 
+              />
+              <select value={selectedGameFilter} onChange={(e) => setSelectedGameFilter(e.target.value)} style={{ flex: 1, minWidth: '150px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', cursor: 'pointer' }}>
                 <option value="all">🎮 เลือกดูเกม (ทั้งหมด)</option>
                 {gamesData.map((g) => (
                   <option key={g.id} value={g.name}>{g.name}</option>
                 ))}
               </select>
-
-              {customerOrderSearch.trim() && (
-                <button
-                  type="button"
-                  onClick={() => { setCustomerOrderSearch(''); setSelectedGameFilter('all'); }}
-                  style={{
-                    backgroundColor: '#1e293b',
-                    border: '1px solid #475569',
-                    color: '#f87171',
-                    padding: '12px 16px',
-                    borderRadius: '12px',
-                    fontSize: '12px',
-                    fontWeight: '900',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                  title="คลิกล้างข้อมูลเพื่อไม่ให้คนอื่นในร้านเกมเห็นข้อมูลของคุณ"
-                >
-                  <span>🗑️ ล้างการค้นหา</span>
-                </button>
-              )}
             </div>
 
-            {/* ผลการค้นหา หรือ หน้าจอแจ้งให้กรอกเลขออเดอร์ */}
-            {!isUserAdmin && !customerOrderSearch.trim() ? (
-              <div style={{ textAlign: 'center', padding: '50px 24px', backgroundColor: '#090d16', border: '1.5px dashed #374151', borderRadius: '18px', margin: '10px 0' }}>
-                <div style={{ fontSize: '42px', marginBottom: '12px' }}>🛡️</div>
-                <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#ffffff', margin: '0 0 8px 0' }}>
-                  กรุณากรอกเลขคำสั่งซื้อ (Order ID) หรือ UID ของท่าน
-                </h3>
-                <p style={{ fontSize: '13px', color: '#94a3b8', maxWidth: '520px', margin: '0 auto 18px auto', lineHeight: '1.6' }}>
-                  เพื่อความเป็นส่วนตัวสูงสุดในร้านเกม ระบบจะแสดงผลเมื่อคุณพิมพ์เลขคำสั่งซื้อ (Order ID) หรือ UID ถูกต้องครบทุกตัวอักษรเท่านั้น (ไม่สามารถพิมพ์แค่เศษคำเพื่อส่องดูของคนอื่นได้)
-                </p>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(56, 189, 248, 0.12)', border: '1px solid #0284c7', color: '#38bdf8', padding: '7px 18px', borderRadius: '25px', fontSize: '12px', fontWeight: 'bold' }}>
-                  💡 ตัวอย่าง: <span style={{ color: '#fbbf24' }}>ORD-123456</span> หรือระบุ <span style={{ color: '#34d399' }}>UID ตัวละครในเกม</span>
-                </div>
-              </div>
-            ) : searchedOrders.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '45px 20px', backgroundColor: '#090d16', border: '1.5px solid #ef4444', borderRadius: '18px', margin: '10px 0' }}>
-                <div style={{ fontSize: '36px', marginBottom: '10px' }}>🔍</div>
-                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#fca5a5', margin: '0 0 6px 0' }}>
-                  ไม่พบข้อมูลคำสั่งซื้อที่ค้นหา "{customerOrderSearch}"
-                </h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 16px 0' }}>
-                  กรุณาตรวจสอบว่าพิมพ์เลขออเดอร์ถูกต้อง หรือติดต่อสอบถามแอดมินทาง LINE Official
-                </p>
-                <button 
-                  type="button" 
-                  onClick={() => { setCustomerOrderSearch(''); setSelectedGameFilter('all'); }} 
-                  style={{ backgroundColor: '#1e293b', border: '1px solid #475569', color: '#ffffff', padding: '8px 18px', borderRadius: '10px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}
-                >
-                  ล้างคำค้นหา
-                </button>
-              </div>
-            ) : (
-              <div>
-                {/* แถบสรุปผลลัพธ์พร้อมปุ่มล้างข้อมูลก่อนออกจากร้านเกม */}
-                <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '14px', padding: '12px 18px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                  <span style={{ fontSize: '13px', color: '#9ca3af' }}>
-                    พบข้อมูล: <b style={{ color: '#38bdf8' }}>{searchedOrders.length}</b> รายการคำสั่งซื้อ
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => { setCustomerOrderSearch(''); setSelectedGameFilter('all'); }}
-                    style={{
-                      backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                      border: '1px solid #ef4444',
-                      color: '#fca5a5',
-                      padding: '5px 12px',
-                      borderRadius: '8px',
-                      fontSize: '11px',
-                      fontWeight: '900',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    🗑️ ล้างหน้าจอ (ก่อนลุกออกจากร้าน)
-                  </button>
-                </div>
+            <div style={{ backgroundColor: '#030712', border: '1px solid #9333ea', borderRadius: '12px', padding: '12px 18px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: '#9ca3af' }}>ผลการค้นหา: <b style={{ color: '#ffffff' }}>{searchedOrders.length}</b> รายการ (วันนี้: {todayOrders.length} | ประวัติย้อนหลัง: {pastOrders.length})</span>
+              <span style={{ fontSize: '14px', color: '#9ca3af' }}>ยอดรวมเงินที่เติม: <b style={{ color: '#34d399', fontSize: '18px' }}>฿{totalSpentInSearch.toLocaleString()}</b></span>
+            </div>
 
-                {/* รายการออเดอร์ที่ค้นพบ */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-                  {searchedOrders.slice(0, 15).map((ord) => {
-                    const isDone = ord.status && (ord.status.includes('สำเร็จ') || ord.status.includes('เรียบร้อย'));
-                    const isPending = !isDone;
+            <div style={{ marginBottom: '25px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '12px' }}>📅 รายการประจำวัน (วันนี้ {currentDayStr})</h3>
+              {paginatedTodayOrders.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '15px' }}>
+                  {paginatedTodayOrders.map((ord, idx) => {
+                    const globalIdx = (customerOrdersPage - 1) * customerItemsPerPage + idx + 1;
+                    let countdownSec = 0;
+                    if (ord.status.includes('รอตรวจสอบ') && ord.timestamp) {
+                      const elapsed = Math.floor((Date.now() - ord.timestamp) / 1000);
+                      countdownSec = Math.max(0, 10 - elapsed);
+                    }
                     return (
-                      <div 
-                        key={ord.id} 
-                        style={{ 
-                          backgroundColor: '#090d16', 
-                          border: isDone ? '1px solid #10b981' : '1px solid #f59e0b', 
-                          borderRadius: '16px', 
-                          padding: '16px 20px',
-                          boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          flexWrap: 'wrap',
-                          gap: '12px'
-                        }}
-                      >
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
-                            <span style={{ fontSize: '15px', fontWeight: '900', color: '#ffffff' }}>{ord.id}</span>
-                            <span style={{ 
-                              fontSize: '10px', 
-                              fontWeight: '900', 
-                              backgroundColor: isDone ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)', 
-                              color: isDone ? '#34d399' : '#fbbf24', 
-                              border: `1px solid ${isDone ? '#10b981' : '#f59e0b'}`,
-                              padding: '2px 8px', 
-                              borderRadius: '6px' 
-                            }}>
-                              {ord.status || 'รอดำเนินการ'}
-                            </span>
-                            <span style={{ fontSize: '11px', color: '#94a3b8' }}>{ord.time || ''}</span>
-                          </div>
+                      (() => {
+                        const isEpin = ord.isEpin || (ord.game && (ord.game.includes('Razer') || ord.game.includes('e-Pin')));
+                        const isLineChannel = ord.deliveryChannel === 'LINE' || (ord.gameChar && ord.gameChar.includes('LINE'));
+                        return (
+                          <div 
+                            key={ord.firebaseKey || idx} 
+                            style={{ 
+                              backgroundColor: isEpin ? '#0e1726' : '#030712', 
+                              border: isEpin ? '2.5px solid #f59e0b' : '1px solid #374151', 
+                              borderRadius: '16px', 
+                              padding: '18px 20px', 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center',
+                              flexWrap: 'wrap',
+                              gap: '15px',
+                              boxShadow: isEpin ? '0 0 25px rgba(245, 158, 11, 0.35)' : '0 4px 15px rgba(0,0,0,0.4)'
+                            }}
+                          >
+                            <div style={{ flex: 1, minWidth: '280px' }}>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap' }}>
+                                <span style={{ color: '#9333ea', fontWeight: 'bold', fontSize: '12px', marginRight: '4px' }}>#{globalIdx}</span>
+                                <span style={{ backgroundColor: '#9333ea', color: '#ffffff', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
+                                {isEpin && (
+                                  <span style={{ backgroundColor: '#f59e0b', color: '#000000', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: '900' }}>
+                                    🎫 บัตร e-PIN (ส่งรหัสผ่าน {isLineChannel ? 'LINE' : 'Email'})
+                                  </span>
+                                )}
+                                <span style={{ fontSize: '12px', color: '#38bdf8' }}>📅 {ord.time}</span>
+                              </div>
 
-                          <div style={{ fontSize: '13px', color: '#c084fc', fontWeight: 'bold' }}>
-                            🎮 {ord.game} • <span style={{ color: '#ffffff' }}>{ord.package}</span>
-                          </div>
+                              <div style={{ fontSize: '16px', fontWeight: 'bold', marginTop: '4px', color: '#ffffff' }}>
+                                🎮 {ord.game} <span style={{ color: '#c084fc', fontSize: '13px' }}>({ord.package})</span>
+                              </div>
 
-                          <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
-                            👤 UID / ตัวละคร: <b style={{ color: '#38bdf8' }}>{ord.gameChar || ord.player}</b> | ช่องทาง: {ord.paymentMethod || 'โอนเงิน'}
-                          </div>
-                        </div>
+                              {isEpin ? (
+                                <div style={{ 
+                                  marginTop: '10px', 
+                                  backgroundColor: 'rgba(245, 158, 11, 0.18)', 
+                                  border: '1.5px solid #f59e0b', 
+                                  borderRadius: '10px', 
+                                  padding: '8px 14px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  gap: '10px'
+                                }}>
+                                  <div>
+                                    <div style={{ fontSize: '11px', color: '#fbbf24', fontWeight: '900' }}>
+                                      ⚠️ ช่องทางรับรหัส e-PIN: {isLineChannel ? '🟢 LINE ID' : '📧 อีเมล (Email)'} (ไม่ใช่เติมเข้าไอดี)
+                                    </div>
+                                    <div style={{ fontSize: '15px', color: '#ffffff', fontWeight: '900', marginTop: '2px' }}>
+                                      {ord.deliveryTarget || ord.gameChar || ord.player}
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const target = ord.deliveryTarget || ord.gameChar || ord.player;
+                                      const clean = target.replace(/^(🟢 LINE:\s*|📧 Email:\s*)/, '');
+                                      navigator.clipboard.writeText(clean);
+                                      alert();
+                                    }}
+                                    style={{ backgroundColor: '#f59e0b', color: '#000000', border: 'none', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '900', cursor: 'pointer' }}
+                                  >
+                                    📋 คัดลอก
+                                  </button>
+                                </div>
+                              ) : (
+                                <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px' }}>
+                                  บัญชีทำรายการ: <b style={{ color: '#38bdf8' }}>{ord.player}</b> {ord.gameChar && <span style={{ color: '#34d399' }}>| ตัวละคร/UID: {ord.gameChar}</span>} | ช่องทางจ่าย: <span style={{ color: '#f472b6', fontWeight: 'bold' }}>{ord.paymentMethod || 'Cyber Wallet'}</span>
+                                </div>
+                              )}
 
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>
-                            ฿{(ord.price || 0).toLocaleString()}
+                              {!isEpin && ord.type !== 'wallet' && (
+                                <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                  <span style={{ backgroundColor: 'rgba(52, 211, 153, 0.15)', border: '1px solid #34d399', color: '#34d399', padding: '3px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
+                                    ⚡ เติมเข้าไอดี/UID ({ord.gameChar || ord.player}) สำเร็จ 100%
+                                  </span>
+                                  {ord.apiRef && (
+                                    <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold' }}>Ref: {ord.apiRef}</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '19px', fontWeight: '900', color: '#34d399' }}>฿{ord.price.toLocaleString()}</div>
+                              {ord.status.includes('รอตรวจสอบ') ? (
+                                <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '1px solid #f59e0b', borderRadius: '8px', padding: '4px 8px', marginTop: '4px' }}>
+                                  <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 'bold' }}>⏱️ ตรวจสอบใน ({countdownSec}s)</span>
+                                </div>
+                              ) : (
+                                <div style={{ marginTop: '4px' }}>
+                                  <span style={{ fontSize: '12px', color: isEpin ? '#fbbf24' : '#34d399', fontWeight: 'bold' }}>{ord.status}</span>
+                                  <div style={{ fontSize: '11px', color: isEpin ? '#fbbf24' : '#9ca3af', marginTop: '2px' }}>
+                                    {isEpin ? (isLineChannel ? '📩 รอรับรหัสทาง LINE' : '📩 รอรับรหัสทาง Email') : 'จัดส่งตรงเข้าไอดี ⚡'}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                          <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '2px' }}>
-                            จัดส่งตรงเข้าไอดี ⚡
-                          </div>
-                        </div>
-                      </div>
+                        );
+                      })()
                     );
                   })}
                 </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '30px', color: '#9ca3af', backgroundColor: '#030712', borderRadius: '14px', border: '1px dashed #374151', marginBottom: '15px' }}>ไม่มีรายการคำสั่งซื้อใหม่ในวันนี้</div>
+              )}
+
+              {totalCustomerTodayPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', marginBottom: '20px' }}>
+                  {Array.from({ length: totalCustomerTodayPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button key={pageNum} onClick={() => setCustomerOrdersPage(pageNum)} style={{ backgroundColor: customerOrdersPage === pageNum ? '#9333ea' : '#030712', color: '#ffffff', border: '1px solid ' + (customerOrdersPage === pageNum ? '#a855f7' : '#374151'), borderRadius: '8px', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>{pageNum}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {pastOrders.length > 0 && (
+              <div style={{ backgroundColor: '#030712', border: '1.5px solid rgba(168,85,247,0.4)', borderRadius: '16px', overflow: 'hidden' }}>
+                <div onClick={() => setIsPastOrdersOpen(!isPastOrdersOpen)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none', padding: '16px 20px', backgroundColor: 'rgba(147, 51, 234, 0.12)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '8px', backgroundColor: 'rgba(168,85,247,0.3)', border: '1px solid #c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', color: '#c084fc', fontWeight: 'bold' }}>{isPastOrdersOpen ? '▼' : '▶'}</div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 'bold', color: '#ffffff', margin: 0 }}>📂 ประวัติย้อนหลัง (รายการจากวันก่อนหน้า)</h3>
+                  </div>
+                  <span style={{ backgroundColor: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', border: '1px solid #38bdf8', padding: '2px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 'bold' }}>{pastOrders.length} รายการ</span>
+                </div>
+
+                {isPastOrdersOpen && (
+                  <div style={{ padding: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
+                      <span style={{ fontSize: '12px', color: '#c084fc', fontWeight: 'bold' }}>📅 เลือกวันที่ประวัติ:</span>
+                      <select value={selectedHistoryDate} onChange={handleHistoryDateChange} style={{ backgroundColor: '#111827', border: '1.5px solid #a855f7', borderRadius: '10px', padding: '8px 14px', color: '#38bdf8', fontWeight: 'bold', fontSize: '12px', outline: 'none', cursor: 'pointer' }}>
+                        <option value="all">🌐 แสดงประวัติย้อนหลังทั้งหมด ({pastOrders.length} รายการ)</option>
+                        {availableHistoryDates.map((dateStr) => (
+                          <option key={dateStr} value={dateStr}>📅 วันที่ {dateStr} ({groupedPastOrders[dateStr].length} รายการ)</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {paginatedPastOrders.map((ord, idx) => {
+                        const globalIdx = (historyPage - 1) * historyItemsPerPage + idx + 1;
+                        return (
+                          <div key={ord.firebaseKey || idx} style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '12px', padding: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+                                <span style={{ color: '#9ca3af', fontSize: '11px', fontWeight: 'bold' }}>#{globalIdx}</span>
+                                <span style={{ backgroundColor: '#374151', color: '#d1d5db', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>{ord.id}</span>
+                                <span style={{ fontSize: '12px', color: '#9ca3af' }}>📅 {ord.time}</span>
+                              </div>
+                              <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#d1d5db' }}>🎮 {ord.game} <span style={{ color: '#a855f7', fontSize: '12px' }}>({ord.package})</span></div>
+                              <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>บัญชีทำรายการ: {ord.player} {ord.gameChar && <span style={{ color: '#34d399' }}>| ตัวละคร/UID: {ord.gameChar}</span>} | ช่องทางจ่าย: <span style={{ color: '#f472b6', fontWeight: 'bold' }}>{ord.paymentMethod || 'Cyber Wallet'}</span></div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>฿{ord.price.toLocaleString()}</div>
+                              <span style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold' }}>{ord.status}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {totalHistoryPages > 1 && (
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '18px' }}>
+                        <span style={{ fontSize: '12px', color: '#9ca3af', marginRight: '6px' }}>หน้า {historyPage} จาก {totalHistoryPages}:</span>
+                        {Array.from({ length: totalHistoryPages }, (_, i) => i + 1).map((pageNum) => (
+                          <button key={pageNum} onClick={() => setHistoryPage(pageNum)} style={{ backgroundColor: historyPage === pageNum ? '#9333ea' : '#111827', color: '#ffffff', border: '1px solid ' + (historyPage === pageNum ? '#a855f7' : '#374151'), borderRadius: '8px', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>{pageNum}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -4440,6 +4587,44 @@ export default function App() {
               </div>
             ) : (
               <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', backgroundColor: 'rgba(17, 24, 39, 0.95)', border: '1px solid #374151', borderRadius: '16px', padding: '12px 20px', marginBottom: '5px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>⚙️</span>
+                <span style={{ fontSize: '15px', fontWeight: '900', color: '#ffffff' }}>แผงควบคุมแอดมินหลังบ้าน (Admin Panel)</span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdminOpenFinance(true);
+                    setIsAdminOrdersOpen(true);
+                    setAdminOpenStats(true);
+                    setAdminOpenStock(true);
+                    setAdminOpenUsers(true);
+                    setAdminOpenAds(true);
+                    setAdminOpenPin(true);
+                  }}
+                  style={{ backgroundColor: '#1e293b', border: '1px solid #475569', color: '#38bdf8', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  ▼ กางออกทุกส่วน
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAdminOpenFinance(false);
+                    setIsAdminOrdersOpen(false);
+                    setAdminOpenStats(false);
+                    setAdminOpenStock(false);
+                    setAdminOpenUsers(false);
+                    setAdminOpenAds(false);
+                    setAdminOpenPin(false);
+                  }}
+                  style={{ backgroundColor: '#1e293b', border: '1px solid #475569', color: '#94a3b8', padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+                >
+                  ▶ พับเก็บทุกส่วน
+                </button>
+              </div>
+            </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px' }}>
                   <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                     <div>
@@ -4597,7 +4782,7 @@ export default function App() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                     <div>
                       <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>📊 สรุปสถิติเกม & แพ็กเกจยอดนิยม + ระบบแรงค์ลูกค้า (VIP Leaderboard)</span>
+                        <span>📊 สรุปสถิติเกม & แพ็กเกจยอดนิยม (Analytics)</span>
                       </h2>
                       <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0 0' }}>
                         วิเคราะห์ว่าเกมไหนขายดีสุด แพ็กเกจไหนลูกค้าเติมเยอะสุด และคำนวณระดับแรงค์ของลูกค้าเพื่อเตรียมแจกโค้ดของขวัญตามแรงค์
@@ -4980,7 +5165,7 @@ export default function App() {
                 </div>
 
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', border: '1.5px solid rgba(147,51,234,0.5)', overflow: 'hidden' }}>
-                  <div onClick={() => setIsAdminOrdersOpen(!isAdminOrdersOpen)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none', padding: '20px 25px', backgroundColor: 'rgba(147, 51, 234, 0.15)' }}>
+                  <div onClick={() => setIsAdminOrdersOpen(!isAdminOrdersOpen)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none', padding: '18px 22px', backgroundColor: '#0f172a' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ fontSize: '16px', color: '#c084fc', fontWeight: 'bold' }}>{isAdminOrdersOpen ? '▼' : '▶'}</span>
                       <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#ffffff' }}>📊 รายการทำรายการหลังบ้าน + ช่องทางที่ลูกค้าชำระเงิน</h2>
@@ -5616,523 +5801,11 @@ export default function App() {
                     );
                   })()}
                 </div>
-
-
-                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '25px', border: '1.5px solid #38bdf8' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap', gap: '10px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', margin: 0 }}>🎁 สร้างและจัดการโค้ดของขวัญพิเศษ (Realtime Cloud)</h3>
-                    <button onClick={handleResetAllRedeemRights} style={{ backgroundColor: '#f59e0b', color: '#000000', border: 'none', padding: '8px 16px', borderRadius: '10px', fontWeight: '900', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }} title="คลิกเพื่อปลดล็อคให้ทุกบัญชีและทุก UID สามารถรับของขวัญรอบใหม่ได้">
-                      <span>🔄 รีเซ็ตสิทธิ์รับของขวัญทั้งหมด</span>
-                      <span style={{ backgroundColor: '#000000', color: '#fbbf24', padding: '1px 7px', borderRadius: '10px', fontSize: '10px' }}>
-                        {globalRedeemedPlayers.length} รายการติดสิทธิ์
-                      </span>
-                    </button>
-                  </div>
-
-                  {adminCodeMsg.text && (
-                    <div style={{ backgroundColor: adminCodeMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: adminCodeMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px', borderRadius: '10px', fontSize: '12px', marginBottom: '15px' }}>{adminCodeMsg.text}</div>
-                  )}
-
-                  <form onSubmit={handleCreateGiftCode} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '20px' }}>
-                    <div>
-                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>1. ชื่อโค้ด (Code Name)</label>
-                      <input type="text" placeholder="ระบุชื่อโค้ด เช่น GIFT2026 (บังคับกรอก)" value={newCodeName} onChange={(e) => setNewCodeName(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>2. เลือกเกม</label>
-                      <select value={newCodeGame} onChange={(e) => setNewCodeGame(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }}>
-                        {gamesData.map((g) => (
-                          <option key={g.id} value={g.name}>{g.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>3. เลือกแพ็กเกจของรางวัล</label>
-                      <select value={newCodeReward} onChange={(e) => setNewCodeReward(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#38bdf8', fontWeight: 'bold', outline: 'none', boxSizing: 'border-box' }}>
-                        {selectedGameForAdminCode?.packages.map((pkg) => (
-                          <option key={pkg.id} value={pkg.name}>{pkg.name} (฿{pkg.price})</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div style={{ position: 'relative' }}>
-                      <label style={{ fontSize: '11px', color: '#c084fc', display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
-                        4. กำหนดแรงค์ขั้นต่ำที่กรอกได้
-                      </label>
-                      {(() => {
-                        const selTier = RANK_TIERS.find(t => t.tier === newCodeMinRank) || RANK_TIERS[RANK_TIERS.length - 1];
-                        return (
-                          <div style={{ position: 'relative' }}>
-                            {/* กล่องเลือกแรงค์ที่ปรับแต่งใหม่ แสดงรูปตราสัญลักษณ์ คมชัด สวยงาม 100% */}
-                            <div
-                              onClick={() => setIsRankSelectOpen(prev => !prev)}
-                              style={{
-                                width: '100%',
-                                backgroundColor: '#030712',
-                                border: `1.5px solid ${isRankSelectOpen ? '#a855f7' : selTier.border}`,
-                                borderRadius: '10px',
-                                padding: '8px 12px',
-                                color: '#ffffff',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                cursor: 'pointer',
-                                boxSizing: 'border-box',
-                                boxShadow: selTier.glow,
-                                transition: 'all 0.2s ease',
-                                userSelect: 'none',
-                                minHeight: '44px'
-                              }}
-                            >
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
-                                <RankEmblem tier={selTier.tier} size={22} />
-                                <div style={{ textAlign: 'left', lineHeight: '1.2' }}>
-                                  <div style={{ fontSize: '12px', fontWeight: '900', color: selTier.color, whiteSpace: 'nowrap' }}>
-                                    {selTier.tier === 'BRONZE' ? 'ทุกระดับแรงค์ (Bronze Member)' : `เฉพาะ ${selTier.badge} ขึ้นไป`}
-                                  </div>
-                                  <div style={{ fontSize: '10px', color: '#94a3b8' }}>
-                                    ยอดเติมสะสม {selTier.rateText}
-                                  </div>
-                                </div>
-                              </div>
-                              <span style={{ fontSize: '11px', color: '#c084fc', fontWeight: 'bold', marginLeft: '6px' }}>
-                                {isRankSelectOpen ? '▲' : '▼'}
-                              </span>
-                            </div>
-
-                            {/* เมนูดรอปดาวน์แสดงตราสัญลักษณ์ประจำแรงค์ทุกระดับ ไม่มีกล่องสี่เหลี่ยมตกหล่น */}
-                            {isRankSelectOpen && (
-                              <div
-                                style={{
-                                  position: 'absolute',
-                                  top: 'calc(100% + 6px)',
-                                  left: 0,
-                                  right: 0,
-                                  minWidth: '290px',
-                                  zIndex: 200,
-                                  backgroundColor: '#0b101d',
-                                  border: '1.5px solid #a855f7',
-                                  borderRadius: '14px',
-                                  padding: '6px',
-                                  boxShadow: '0 16px 45px rgba(0,0,0,0.95), 0 0 25px rgba(168,85,247,0.4)',
-                                  backdropFilter: 'blur(16px)',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: '4px',
-                                  maxHeight: '320px',
-                                  overflowY: 'auto'
-                                }}
-                              >
-                                {RANK_TIERS.map(t => {
-                                  const isSelected = newCodeMinRank === t.tier;
-                                  return (
-                                    <div
-                                      key={t.tier}
-                                      onClick={() => {
-                                        setNewCodeMinRank(t.tier);
-                                        setIsRankSelectOpen(false);
-                                      }}
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        padding: '8px 10px',
-                                        borderRadius: '8px',
-                                        backgroundColor: isSelected ? 'rgba(168, 85, 247, 0.25)' : 'transparent',
-                                        border: isSelected ? `1px solid ${t.border}` : '1px solid transparent',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.15s ease'
-                                      }}
-                                      onMouseEnter={(e) => {
-                                        if (!isSelected) e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.06)';
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
-                                      }}
-                                    >
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <RankEmblem tier={t.tier} size={22} />
-                                        <div style={{ textAlign: 'left', lineHeight: '1.2' }}>
-                                          <div style={{ fontSize: '12px', fontWeight: '900', color: t.color }}>
-                                            {t.tier === 'BRONZE' ? 'ทุกระดับแรงค์ (Bronze Member)' : `เฉพาะ ${t.badge}`}
-                                          </div>
-                                          <div style={{ fontSize: '10px', color: '#94a3b8' }}>
-                                            ยอดเติมสะสม {t.rateText}
-                                          </div>
-                                        </div>
-                                      </div>
-                                      {isSelected && (
-                                        <span style={{ fontSize: '12px', color: '#34d399', fontWeight: 'bold' }}>✓</span>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '11px', color: '#9ca3af', display: 'block', marginBottom: '4px' }}>5. จำนวนสิทธิ์ทั้งหมด</label>
-                      <div style={{ display: 'flex', alignItems: 'center', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', overflow: 'hidden' }}>
-                        <button type="button" onClick={() => setNewCodeMaxUses(Math.max(1, newCodeMaxUses - 1))} style={{ backgroundColor: 'rgba(147,51,234,0.3)', color: '#a855f7', border: 'none', padding: '8px 14px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>-</button>
-                        <input type="text" readOnly value={newCodeMaxUses} style={{ width: '100%', backgroundColor: 'transparent', border: 'none', color: '#ffffff', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', outline: 'none' }} />
-                        <button type="button" onClick={() => setNewCodeMaxUses(newCodeMaxUses + 1)} style={{ backgroundColor: 'rgba(147,51,234,0.3)', color: '#a855f7', border: 'none', padding: '8px 14px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}>+</button>
-                      </div>
-                    </div>
-                    <div style={{ gridColumn: '1 / -1' }}>
-                      <button type="submit" style={{ width: '100%', backgroundColor: '#0284c7', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', cursor: 'pointer' }}>
-                        + สร้างโค้ดของขวัญใหม่ (กำหนดแรงค์ & บันทึกเรียลไทม์)
-                      </button>
-                    </div>
-                  </form>
-
-                  {/* รายการโค้ดของขวัญทั้งหมดที่สร้างไว้ พร้อมปุ่มลบโค้ด */}
-                  <div style={{ marginTop: '28px', borderTop: '1px solid #374151', paddingTop: '22px' }}>
-                    {adminCodeMsg.text && (
-                      <div style={{ backgroundColor: adminCodeMsg.type === 'success' ? 'rgba(52, 211, 153, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: adminCodeMsg.type === 'success' ? '#34d399' : '#fca5a5', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span>{adminCodeMsg.text}</span>
-                        <button type="button" onClick={() => setAdminCodeMsg({ text: '', type: '' })} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '14px' }}>✕</button>
-                      </div>
-                    )}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                        <h4 style={{ fontSize: '16px', fontWeight: 'bold', color: '#ffffff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span>📋 โค้ดของขวัญในระบบทั้งหมด</span>
-                          <span style={{ fontSize: '13px', color: '#38bdf8', fontWeight: 'normal' }}>({giftCodes.length} รายการ)</span>
-                        </h4>
-                        <span style={{ fontSize: '11px', backgroundColor: 'rgba(52, 211, 153, 0.15)', color: '#34d399', border: '1px solid #34d399', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
-                          พร้อมใช้งาน: {giftCodes.filter(c => c.usedCount < c.maxUses).length} โค้ด
-                        </span>
-                        {giftCodes.filter(c => c.usedCount >= c.maxUses).length > 0 && (
-                          <span style={{ fontSize: '11px', backgroundColor: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid #ef4444', padding: '3px 8px', borderRadius: '6px', fontWeight: 'bold' }}>
-                            สิทธิ์เต็มแล้ว: {giftCodes.filter(c => c.usedCount >= c.maxUses).length} โค้ด
-                          </span>
-                        )}
-
-                        {giftCodes.length > 0 && (
-                          confirmClearAllGiftCodes ? (
-                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginLeft: '6px' }}>
-                              <button
-                                type="button"
-                                onClick={handleClearAllGiftCodes}
-                                style={{
-                                  backgroundColor: '#dc2626',
-                                  border: '1px solid #ef4444',
-                                  color: '#ffffff',
-                                  padding: '5px 12px',
-                                  borderRadius: '8px',
-                                  fontSize: '11px',
-                                  fontWeight: 'bold',
-                                  cursor: 'pointer',
-                                  boxShadow: '0 0 12px rgba(239, 68, 68, 0.6)'
-                                }}
-                              >
-                                ⚠️ ยืนยันล้างทั้งหมด (เหลือ 0)?
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setConfirmClearAllGiftCodes(false)}
-                                style={{
-                                  backgroundColor: '#374151',
-                                  border: '1px solid #4b5563',
-                                  color: '#d1d5db',
-                                  padding: '5px 10px',
-                                  borderRadius: '8px',
-                                  fontSize: '11px',
-                                  fontWeight: 'bold',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                ยกเลิก
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => setConfirmClearAllGiftCodes(true)}
-                              style={{
-                                backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                                border: '1px solid #ef4444',
-                                color: '#f87171',
-                                padding: '5px 12px',
-                                borderRadius: '8px',
-                                fontSize: '11px',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                marginLeft: '6px',
-                                transition: 'all 0.2s'
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#ef4444';
-                                e.currentTarget.style.color = '#ffffff';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
-                                e.currentTarget.style.color = '#f87171';
-                              }}
-                            >
-                              🗑️ ลบโค้ดทั้งหมด (เคลียร์ให้เหลือ 0)
-                            </button>
-                          )
-                        )}
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <input
-                          type="text"
-                          placeholder="🔍 ค้นหาโค้ด / รางวัล..."
-                          value={adminGiftCodeSearch}
-                          onChange={(e) => setAdminGiftCodeSearch(e.target.value)}
-                          style={{
-                            backgroundColor: '#030712',
-                            border: '1px solid #374151',
-                            borderRadius: '8px',
-                            padding: '7px 12px',
-                            color: '#ffffff',
-                            fontSize: '12px',
-                            outline: 'none',
-                            minWidth: '170px'
-                          }}
-                        />
-                        <select
-                          value={adminGiftCodeFilterGame}
-                          onChange={(e) => setAdminGiftCodeFilterGame(e.target.value)}
-                          style={{
-                            backgroundColor: '#030712',
-                            border: '1px solid #374151',
-                            borderRadius: '8px',
-                            padding: '7px 12px',
-                            color: '#ffffff',
-                            fontSize: '12px',
-                            outline: 'none',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <option value="all">🎮 ทุกเกม</option>
-                          {gamesData.map(g => (
-                            <option key={g.id} value={g.name}>{g.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {filteredGiftCodes.length === 0 ? (
-                      <div style={{ textAlign: 'center', padding: '35px 20px', backgroundColor: '#030712', borderRadius: '14px', border: '1px dashed #374151', color: '#9ca3af', fontSize: '13px' }}>
-                        {giftCodes.length === 0 ? 'ยังไม่มีการสร้างโค้ดของขวัญในระบบ สามารถสร้างโค้ดใหม่ได้จากแบบฟอร์มด้านบน' : 'ไม่พบโค้ดของขวัญที่ตรงกับคำค้นหาหรือตัวกรองที่เลือก'}
-                      </div>
-                    ) : (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '14px' }}>
-                        {filteredGiftCodes.map((codeItem) => {
-                          const isExhausted = (codeItem.usedCount || 0) >= (codeItem.maxUses || 1);
-                          const remaining = Math.max(0, (codeItem.maxUses || 0) - (codeItem.usedCount || 0));
-                          const percentUsed = Math.min(100, Math.round(((codeItem.usedCount || 0) / (codeItem.maxUses || 1)) * 100));
-                          const isCopied = copiedCodeKey === (codeItem.firebaseKey || codeItem.code);
-
-                          return (
-                            <div
-                              key={codeItem.firebaseKey || codeItem.code}
-                              style={{
-                                backgroundColor: '#030712',
-                                border: `1.5px solid ${isExhausted ? '#ef4444' : '#374151'}`,
-                                borderRadius: '14px',
-                                padding: '16px',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                justifyContent: 'space-between',
-                                boxShadow: isExhausted ? '0 0 15px rgba(239, 68, 68, 0.15)' : 'none',
-                                transition: 'all 0.2s ease'
-                              }}
-                            >
-                              <div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px', gap: '8px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                                    <span style={{
-                                      backgroundColor: 'rgba(147, 51, 234, 0.2)',
-                                      border: '1px solid #9333ea',
-                                      color: '#c084fc',
-                                      padding: '4px 10px',
-                                      borderRadius: '8px',
-                                      fontWeight: 'bold',
-                                      fontSize: '13px',
-                                      fontFamily: 'monospace',
-                                      letterSpacing: '0.5px'
-                                    }}>
-                                      {codeItem.code}
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (navigator && navigator.clipboard) {
-                                          navigator.clipboard.writeText(codeItem.code);
-                                          setCopiedCodeKey(codeItem.firebaseKey || codeItem.code);
-                                          setTimeout(() => setCopiedCodeKey(null), 2000);
-                                        }
-                                      }}
-                                      title="คัดลอกโค้ด"
-                                      style={{
-                                        backgroundColor: isCopied ? '#10b981' : '#1f2937',
-                                        color: isCopied ? '#ffffff' : '#9ca3af',
-                                        border: '1px solid #374151',
-                                        borderRadius: '6px',
-                                        padding: '4px 8px',
-                                        fontSize: '11px',
-                                        cursor: 'pointer',
-                                        fontWeight: 'bold',
-                                        transition: 'all 0.2s'
-                                      }}
-                                    >
-                                      {isCopied ? '✓ คัดลอกแล้ว' : '📋 คัดลอก'}
-                                    </button>
-                                  </div>
-
-                                  <span style={{
-                                    fontSize: '10px',
-                                    fontWeight: 'bold',
-                                    padding: '3px 8px',
-                                    borderRadius: '6px',
-                                    backgroundColor: isExhausted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(52, 211, 153, 0.2)',
-                                    color: isExhausted ? '#fca5a5' : '#34d399',
-                                    border: `1px solid ${isExhausted ? '#ef4444' : '#34d399'}`
-                                  }}>
-                                    {isExhausted ? '🔴 สิทธิ์เต็ม' : '🟢 ใช้งานได้'}
-                                  </span>
-                                </div>
-
-                                <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#ffffff', marginBottom: '4px' }}>
-                                  🎮 เกม: <span style={{ color: '#ffffff' }}>{codeItem.game}</span>
-                                </div>
-                                <div style={{ fontSize: '12px', color: '#38bdf8', marginBottom: '8px' }}>
-                                  🎁 รางวัล: <b>{codeItem.reward}</b>
-                                </div>
-                                {/* ป้ายระดับแรงค์ขั้นต่ำที่กำหนด */}
-                                <div style={{ marginBottom: '10px' }}>
-                                  {(() => {
-                                    const rKey = codeItem.minRank || 'BRONZE';
-                                    const rObj = RANK_TIERS.find(t => t.tier === rKey) || RANK_TIERS[RANK_TIERS.length - 1];
-                                    return (
-                                      <span style={{
-                                        display: 'inline-flex',
-                                        alignItems: 'center',
-                                        gap: '5px',
-                                        backgroundColor: rObj.bg,
-                                        border: `1px solid ${rObj.border}`,
-                                        color: rObj.color,
-                                        padding: '2px 8px',
-                                        borderRadius: '6px',
-                                        fontSize: '10px',
-                                        fontWeight: '900'
-                                      }}>
-                                        <RankEmblem tier={rObj.tier} size={14} />
-                                        <span>{rKey === 'BRONZE' ? 'สิทธิ์: ทุกระดับแรงค์' : `สิทธิ์: ${rObj.name} ขึ้นไป`}</span>
-                                      </span>
-                                    );
-                                  })()}
-                                </div>
-
-                                {/* หลอดแสดงจำนวนสิทธิ์คงเหลือ */}
-                                <div style={{ marginBottom: '12px' }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>
-                                    <span>ใช้ไปแล้ว: <b style={{ color: '#ffffff' }}>{codeItem.usedCount || 0}</b> / {codeItem.maxUses} สิทธิ์</span>
-                                    <span style={{ color: isExhausted ? '#ef4444' : '#34d399', fontWeight: 'bold' }}>
-                                      {isExhausted ? 'หมดแล้ว' : `เหลือ ${remaining} สิทธิ์`}
-                                    </span>
-                                  </div>
-                                  <div style={{ width: '100%', height: '6px', backgroundColor: '#1f2937', borderRadius: '3px', overflow: 'hidden' }}>
-                                    <div style={{
-                                      width: `${percentUsed}%`,
-                                      height: '100%',
-                                      backgroundColor: isExhausted ? '#ef4444' : percentUsed > 80 ? '#f59e0b' : '#38bdf8',
-                                      borderRadius: '3px',
-                                      transition: 'width 0.3s ease'
-                                    }} />
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #1f2937', marginTop: '4px' }}>
-                                <span style={{ fontSize: '11px', color: '#6b7280' }}>
-                                  {codeItem.timestamp ? new Date(codeItem.timestamp).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
-                                </span>
-                                {confirmDeleteCodeKey === (codeItem.firebaseKey || codeItem.code) ? (
-                                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleDeleteGiftCode(codeItem)}
-                                      style={{
-                                        backgroundColor: '#dc2626',
-                                        border: '1px solid #ef4444',
-                                        color: '#ffffff',
-                                        padding: '6px 12px',
-                                        borderRadius: '8px',
-                                        fontSize: '11px',
-                                        fontWeight: 'bold',
-                                        cursor: 'pointer',
-                                        boxShadow: '0 0 10px rgba(239, 68, 68, 0.5)',
-                                        transition: 'all 0.15s ease'
-                                      }}
-                                    >
-                                      ⚠️ ยืนยันลบ
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setConfirmDeleteCodeKey(null)}
-                                      style={{
-                                        backgroundColor: '#374151',
-                                        border: '1px solid #4b5563',
-                                        color: '#d1d5db',
-                                        padding: '6px 10px',
-                                        borderRadius: '8px',
-                                        fontSize: '11px',
-                                        fontWeight: 'bold',
-                                        cursor: 'pointer'
-                                      }}
-                                    >
-                                      ยกเลิก
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => setConfirmDeleteCodeKey(codeItem.firebaseKey || codeItem.code)}
-                                    style={{
-                                      backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                                      border: '1px solid #ef4444',
-                                      color: '#f87171',
-                                      padding: '6px 14px',
-                                      borderRadius: '8px',
-                                      fontSize: '12px',
-                                      fontWeight: 'bold',
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '6px',
-                                      transition: 'all 0.2s ease'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.backgroundColor = '#ef4444';
-                                      e.currentTarget.style.color = '#ffffff';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
-                                      e.currentTarget.style.color = '#f87171';
-                                    }}
-                                  >
-                                    🗑️ ลบโค้ด
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
               </>
             )}
           </div>
         )}
+
             {/* LINE OFFICIAL FLOATING CONTACT WIDGET (เอฟเฟกต์ลอยขยับได้นิดหน่อย สวยงาม ดูเป็นทางการ) */}
       <div style={{ position: 'fixed', bottom: '25px', right: '25px', zIndex: 99 }}>
         <div
