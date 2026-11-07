@@ -2646,7 +2646,11 @@ const [authMode, setAuthMode] = useState('login');
       setSlipFile(null);
       setSlipPreview(null);
       setSlipVerifying(false);
-      setActiveTab('track');
+      if (user) {
+        setActiveTab('track');
+      } else {
+        setActiveTab('shop');
+      }
     }, 900);
   };
   // ฟังก์ชันตรวจสอบสลิปจริง โดยส่งข้อมูลไปยัง /api/verify-slip บนเซิร์ฟเวอร์
@@ -2839,19 +2843,11 @@ const [authMode, setAuthMode] = useState('login');
     if (isUserAdmin) {
       const q = exactSearchQuery.trim().toLowerCase();
       matchUser = !q || (o.player.toLowerCase() === q) || (o.id.toLowerCase() === q);
-    } else if (user) {
+    } else if (user && user.username) {
       matchUser = (o.player.toLowerCase() === user.username.toLowerCase());
     } else {
-      // Guest mode: can search by Order ID or Player/UID
-      const q = exactSearchQuery.trim().toLowerCase();
-      const orderQ = customerOrderSearch.trim().toLowerCase();
-      if (!q && !orderQ) {
-        matchUser = true;
-      } else {
-        const matchUID = q ? (o.player.toLowerCase().includes(q) || (o.gameChar && o.gameChar.toLowerCase().includes(q))) : false;
-        const matchO = orderQ ? o.id.toLowerCase().includes(orderQ) : false;
-        matchUser = matchUID || matchO;
-      }
+      // ถ้าไม่ได้เข้าสู่ระบบ ไม่สามารถดูประวัติคำสั่งซื้อได้
+      return false;
     }
 
     const orderQuery = customerOrderSearch.trim();
@@ -3503,7 +3499,9 @@ const [authMode, setAuthMode] = useState('login');
               <span style={{ fontSize: '11px' }}>🐾</span>
             </button>
             <button onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} style={{ background: activeTab === 'shop' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'shop' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '8px 16px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px', boxShadow: activeTab === 'shop' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)' }}>🐱 หน้าร้าน</button>
-            <button onClick={() => setActiveTab('track')} style={{ background: activeTab === 'track' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'track' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '8px 16px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px', boxShadow: activeTab === 'track' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)' }}>📋 เช็คสถานะ</button>
+            {user && (
+              <button onClick={() => setActiveTab('track')} style={{ background: activeTab === 'track' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'track' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '8px 16px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px', boxShadow: activeTab === 'track' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)' }}>📋 เช็คสถานะ</button>
+            )}
             {isUserAdmin && (
               <button onClick={() => setActiveTab('admin')} style={{ background: activeTab === 'admin' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'admin' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '8px 16px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px', boxShadow: activeTab === 'admin' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)' }}>⚙️ หลังบ้าน</button>
             )}
@@ -4323,6 +4321,61 @@ const [authMode, setAuthMode] = useState('login');
         )}
 
         {activeTab === 'track' && (
+          !user ? (
+            <div style={{ 
+              maxWidth: '650px', 
+              margin: '40px auto', 
+              backgroundColor: isDarkMode ? 'rgba(17, 24, 39, 0.95)' : '#ffffff', 
+              borderRadius: '24px', 
+              padding: '40px 30px', 
+              border: isDarkMode ? '1.5px solid rgba(147, 51, 234, 0.4)' : '2px solid #fed7aa', 
+              textAlign: 'center', 
+              boxShadow: isDarkMode ? '0 10px 40px rgba(0,0,0,0.6)' : '0 10px 30px rgba(249, 115, 22, 0.12)' 
+            }}>
+              <div style={{ fontSize: '56px', marginBottom: '16px' }}>🔒</div>
+              <h2 style={{ fontSize: '22px', fontWeight: '900', color: isDarkMode ? '#ffffff' : '#1e293b', margin: '0 0 10px 0' }}>
+                เข้าสู่ระบบเพื่อดูประวัติการทำรายการ
+              </h2>
+              <p style={{ color: isDarkMode ? '#9ca3af' : '#64748b', fontSize: '14px', lineHeight: '1.6', margin: '0 auto 26px auto', maxWidth: '460px' }}>
+                คุณยังไม่ได้เข้าสู่ระบบ กรุณาเข้าสู่ระบบหรือสมัครสมาชิกก่อน จึงจะสามารถตรวจสอบสถานะคำสั่งซื้อและดูประวัติการทำรายการได้
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                <button 
+                  type="button"
+                  onClick={() => { setShowAuthModal(true); setAuthMode('login'); }}
+                  style={{ 
+                    background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)', 
+                    color: '#ffffff', 
+                    border: 'none', 
+                    padding: '12px 26px', 
+                    borderRadius: '14px', 
+                    fontSize: '13px', 
+                    fontWeight: '900', 
+                    cursor: 'pointer', 
+                    boxShadow: '0 4px 15px rgba(249, 115, 22, 0.35)' 
+                  }}
+                >
+                  🔑 เข้าสู่ระบบ / สมาชิก
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}
+                  style={{ 
+                    backgroundColor: isDarkMode ? '#374151' : '#f1f5f9', 
+                    color: isDarkMode ? '#ffffff' : '#475569', 
+                    border: isDarkMode ? 'none' : '1px solid #e2e8f0', 
+                    padding: '12px 22px', 
+                    borderRadius: '14px', 
+                    fontSize: '13px', 
+                    fontWeight: 'bold', 
+                    cursor: 'pointer' 
+                  }}
+                >
+                  🐱 กลับไปหน้าร้าน
+                </button>
+              </div>
+            </div>
+          ) : (
           <div style={{ maxWidth: '850px', margin: '0 auto', backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '30px', border: '1.5px solid rgba(147,51,234,0.4)', boxShadow: '0 0 35px rgba(0,0,0,0.7)' }}>
             <div style={{ borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>📋 เช็คสถานะคำสั่งซื้อและประวัติการทำรายการ</h2>
@@ -4569,6 +4622,7 @@ const [authMode, setAuthMode] = useState('login');
               </div>
             )}
           </div>
+          )
         )}
 
         {activeTab === 'admin' && isUserAdmin && (
@@ -6486,7 +6540,7 @@ const [authMode, setAuthMode] = useState('login');
                 >
                   📋 คัดลอกรหัสทันที
                 </button>
-              ) : (
+              ) : user ? (
                 <button 
                   type="button" 
                   onClick={() => {
@@ -6498,7 +6552,7 @@ const [authMode, setAuthMode] = useState('login');
                 >
                   📋 ดูสถานะการเติมเงิน
                 </button>
-              )}
+              ) : null}
               <button 
                 type="button" 
                 onClick={() => setDeliveredStockModal(null)} 
