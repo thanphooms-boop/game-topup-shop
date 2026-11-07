@@ -807,6 +807,7 @@ export default function App() {
   });
 
   const [registeredUsers, setRegisteredUsers] = useState([]);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState('login');
   
   const [usernameInput, setUsernameInput] = useState(() => {
@@ -1105,6 +1106,7 @@ export default function App() {
               localStorage.removeItem('cyber_remembered_user');
             }
             setUser(updatedUser);
+            setShowAuthModal(false);
             localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUser));
           })
           .catch((error) => {
@@ -1115,6 +1117,7 @@ export default function App() {
                 localStorage.removeItem('cyber_remembered_user');
               }
               setUser(foundUser);
+              setShowAuthModal(false);
               localStorage.setItem('cyber_current_logged_user', JSON.stringify(foundUser));
             } else {
               if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -1132,6 +1135,7 @@ export default function App() {
             localStorage.removeItem('cyber_remembered_user');
           }
           setUser(foundUser);
+              setShowAuthModal(false);
           localStorage.setItem('cyber_current_logged_user', JSON.stringify(foundUser));
         } else {
           setAuthError('ชื่อผู้ใช้งาน หรือรหัสผ่านไม่ถูกต้อง');
@@ -2501,8 +2505,16 @@ export default function App() {
     setCheckoutPasswordError('');
     
     const totalPrice = selectedPackage.price * packageQuantity;
-    if (selectedPayment.id === 'wallet' && user.balance < totalPrice) {
-      return;
+    if (selectedPayment.id === 'wallet') {
+      if (!user) {
+        alert('กรุณาเข้าสู่ระบบก่อน เพื่อชำระเงินด้วย Cat Coin วอลเล็ต');
+        setShowAuthModal(true);
+        return;
+      }
+      if ((user.balance || 0) < totalPrice) {
+        alert('ยอดเงินคงเหลือในกระเป๋าไม่เพียงพอ');
+        return;
+      }
     }
 
     if (selectedPayment.id === 'qrcode' || selectedPayment.id === 'true') {
@@ -2549,6 +2561,7 @@ export default function App() {
       set(userRef, newBalance);
       const updatedUser = { ...user, balance: newBalance };
       setUser(updatedUser);
+            setShowAuthModal(false);
       try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUser)); } catch (e) {}
     }
 
@@ -2804,11 +2817,22 @@ export default function App() {
 
   const searchedOrders = orders.filter(o => {
     let matchUser = false;
-    if (!isUserAdmin) {
-      matchUser = user && (o.player.toLowerCase() === user.username.toLowerCase());
-    } else {
+    if (isUserAdmin) {
       const q = exactSearchQuery.trim().toLowerCase();
       matchUser = !q || (o.player.toLowerCase() === q) || (o.id.toLowerCase() === q);
+    } else if (user) {
+      matchUser = (o.player.toLowerCase() === user.username.toLowerCase());
+    } else {
+      // Guest mode: can search by Order ID or Player/UID
+      const q = exactSearchQuery.trim().toLowerCase();
+      const orderQ = customerOrderSearch.trim().toLowerCase();
+      if (!q && !orderQ) {
+        matchUser = true;
+      } else {
+        const matchUID = q ? (o.player.toLowerCase().includes(q) || (o.gameChar && o.gameChar.toLowerCase().includes(q))) : false;
+        const matchO = orderQ ? o.id.toLowerCase().includes(orderQ) : false;
+        matchUser = matchUID || matchO;
+      }
     }
 
     const orderQuery = customerOrderSearch.trim();
@@ -2976,22 +3000,70 @@ export default function App() {
     setHistoryPage(1);
   };
 
-  if (!user) {
-    return (
-      <div style={{
-        backgroundColor: '#fffaf5',
-        backgroundImage: `radial-gradient(#fdba74 1.2px, transparent 1.2px), radial-gradient(#f472b6 1.2px, #fffaf5 1.2px)`,
-        backgroundSize: '36px 36px', backgroundPosition: '0 0, 18px 18px',
-        color: '#1e293b', minHeight: '100vh', fontFamily: 'sans-serif',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'
-      }}>
-        <style>{cyberGlobalStyles}</style>
+  
+  return (
+    <div style={{
+      backgroundColor: tColors.bg,
+      backgroundImage: tColors.bgPattern,
+      backgroundSize: '32px 32px',
+      backgroundPosition: '0 0, 16px 16px',
+      color: tColors.textPrimary, minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '60px', position: 'relative',
+      transition: 'background-color 0.3s ease, color 0.3s ease'
+    }}>
+      <style>{cyberGlobalStyles}</style>
+
+      {showAuthModal && (
         <div style={{
-          backgroundColor: '#ffffff', backdropFilter: 'blur(20px)',
-          border: '3px solid #fed7aa', borderRadius: '28px',
-          padding: '40px 32px', maxWidth: '440px', width: '100%',
-          boxShadow: '0 25px 50px rgba(249, 115, 22, 0.15)', textAlign: 'center'
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
         }}>
+          <div style={{
+            backgroundColor: isDarkMode ? '#0f172a' : '#ffffff',
+            backdropFilter: 'blur(20px)',
+            border: isDarkMode ? '2px solid rgba(147, 51, 234, 0.4)' : '3px solid #fed7aa',
+            borderRadius: '28px',
+            padding: '40px 32px',
+            maxWidth: '440px',
+            width: '100%',
+            maxHeight: '92vh',
+            overflowY: 'auto',
+            position: 'relative',
+            boxShadow: isDarkMode ? '0 25px 60px rgba(0,0,0,0.8)' : '0 25px 50px rgba(249, 115, 22, 0.15)',
+            textAlign: 'center',
+            color: isDarkMode ? '#ffffff' : '#1e293b'
+          }}>
+            <button
+              type="button"
+              onClick={() => { setShowAuthModal(false); setAuthError(''); setAuthSuccessMsg(''); }}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                backgroundColor: isDarkMode ? '#1e293b' : '#f1f5f9',
+                border: isDarkMode ? '1px solid #334155' : '1px solid #cbd5e1',
+                color: isDarkMode ? '#cbd5e1' : '#475569',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                fontSize: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 10
+              }}
+            >
+              ✕
+            </button>
+
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: '22px' }}>
             <div style={{ 
               position: 'relative', width: '70px', height: '70px', borderRadius: '22px', 
@@ -3283,19 +3355,10 @@ export default function App() {
             </div>
           </div>
         )}
-      </div>
-    );
-  }
-  return (
-    <div style={{
-      backgroundColor: tColors.bg,
-      backgroundImage: tColors.bgPattern,
-      backgroundSize: '32px 32px',
-      backgroundPosition: '0 0, 16px 16px',
-      color: tColors.textPrimary, minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '60px', position: 'relative',
-      transition: 'background-color 0.3s ease, color 0.3s ease'
-    }}>
-      <style>{cyberGlobalStyles}</style>
+      
+        </div>
+      )}
+
       
       {floatingTimer > 0 && (
         <div style={{
@@ -3335,46 +3398,64 @@ export default function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          <div style={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? '2px solid #334155' : '2px solid #fed7aa', borderRadius: '16px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', position: 'relative', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
-            <div style={{ fontSize: '12px', display: 'flex', alignItems: 'center' }}>
-              <span style={{ color: '#9ca3af' }}>👤 ผู้ใช้: </span>
-              <b style={{ color: '#c084fc', marginLeft: '4px' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
-            </div>
-            {user.email && !user.emailVerified && (
-              <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <button 
-                  type="button" 
-                  onClick={handleResendEmailVerification}
-                  title="คลิกเพื่อส่งลิงก์ยืนยันตัวตนไปยังอีเมลที่ลงทะเบียนไว้"
-                  style={{ 
-                    backgroundColor: 'rgba(245, 158, 11, 0.25)', 
-                    border: '1px solid #f59e0b', 
-                    color: '#fbbf24', 
-                    padding: '2px 8px', 
-                    borderRadius: '6px', 
-                    fontSize: '10px', 
-                    fontWeight: 'bold',
-                    cursor: 'pointer'
-                  }}
-                >
-                  ⚠️ ยืนยันเมล
-                </button>
+          {user ? (
+            <div style={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? '2px solid #334155' : '2px solid #fed7aa', borderRadius: '16px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', position: 'relative', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+              <div style={{ fontSize: '12px', display: 'flex', alignItems: 'center' }}>
+                <span style={{ color: '#9ca3af' }}>👤 ผู้ใช้: </span>
+                <b style={{ color: '#c084fc', marginLeft: '4px' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
               </div>
-            )}
-            <div style={{ borderLeft: '2px solid #fed7aa', paddingLeft: '12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ color: '#64748b' }}>🐱🪙 Cat Coin: </span>
-              <b style={{ color: '#ea580c', fontSize: '14px', fontWeight: '900' }}>{(user.balance || 0).toLocaleString()} Coin</b>
-              <span style={{ color: '#94a3b8', fontSize: '11px' }}>(฿{(user.balance || 0).toLocaleString()})</span>
+              {user.email && !user.emailVerified && (
+                <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <button 
+                    type="button" 
+                    onClick={handleResendEmailVerification}
+                    title="คลิกเพื่อส่งลิงก์ยืนยันตัวตนไปยังอีเมลที่ลงทะเบียนไว้"
+                    style={{ 
+                      backgroundColor: 'rgba(245, 158, 11, 0.25)', 
+                      border: '1px solid #f59e0b', 
+                      color: '#fbbf24', 
+                      padding: '2px 8px', 
+                      borderRadius: '6px', 
+                      fontSize: '10px', 
+                      fontWeight: 'bold',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ⚠️ ยืนยันเมล
+                  </button>
+                </div>
+              )}
+              <div style={{ borderLeft: '2px solid #fed7aa', paddingLeft: '12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <span style={{ color: '#64748b' }}>🐱🪙 Cat Coin: </span>
+                <b style={{ color: '#ea580c', fontSize: '14px', fontWeight: '900' }}>{(user.balance || 0).toLocaleString()} Coin</b>
+                <span style={{ color: '#94a3b8', fontSize: '11px' }}>(฿{(user.balance || 0).toLocaleString()})</span>
+              </div>
+              
+              <button 
+                onClick={() => { setShowTopupWalletModal(true); setWalletStep(1); }} 
+                style={{ background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '10px', fontSize: '11px', fontWeight: '900', cursor: 'pointer', boxShadow: '0 4px 12px rgba(249, 115, 22, 0.35)', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                <span>+ เติม Cat Coin</span>
+                <span>🐾</span>
+              </button>
             </div>
-            
-            <button 
-              onClick={() => { setShowTopupWalletModal(true); setWalletStep(1); }} 
-              style={{ background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '10px', fontSize: '11px', fontWeight: '900', cursor: 'pointer', boxShadow: '0 4px 12px rgba(249, 115, 22, 0.35)', display: 'flex', alignItems: 'center', gap: '4px' }}
-            >
-              <span>+ เติม Cat Coin</span>
-              <span>🐾</span>
-            </button>
-          </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button 
+                type="button"
+                onClick={() => { setShowAuthModal(true); setAuthMode('login'); }} 
+                style={{ 
+                  background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)', 
+                  color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '12px', 
+                  fontSize: '12px', fontWeight: '900', cursor: 'pointer', 
+                  boxShadow: '0 4px 15px rgba(249, 115, 22, 0.35)', 
+                  display: 'flex', alignItems: 'center', gap: '6px' 
+                }}
+              >
+                <span>🔑 เข้าสู่ระบบ / สมาชิก</span>
+              </button>
+            </div>
+          )}
 
           <nav style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {/* ☀️ / 🌙 THEME TOGGLE BUTTON */}
@@ -3407,7 +3488,7 @@ export default function App() {
             {isUserAdmin && (
               <button onClick={() => setActiveTab('admin')} style={{ background: activeTab === 'admin' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'admin' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '8px 16px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px', boxShadow: activeTab === 'admin' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)' }}>⚙️ หลังบ้าน</button>
             )}
-            <button onClick={handleLogout} style={{ backgroundColor: '#fee2e2', border: '2px solid #fca5a5', color: '#dc2626', padding: '8px 14px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px' }}>🚪 ออก</button>
+            {user && <button onClick={handleLogout} style={{ backgroundColor: '#fee2e2', border: '2px solid #fca5a5', color: '#dc2626', padding: '8px 14px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px' }}>🚪 ออก</button>}
           </nav>
         </div>
       </header>
@@ -4027,10 +4108,10 @@ export default function App() {
             <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
               <input 
                 type="text" 
-                placeholder={isUserAdmin ? "🔍 ค้นหาชื่อบัญชีลูกค้า..." : user.username}
-                value={isUserAdmin ? exactSearchQuery : (user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username)} 
-                disabled={!isUserAdmin}
-                onChange={(e) => isUserAdmin && setExactSearchQuery(e.target.value)} 
+                placeholder={isUserAdmin ? "🔍 ค้นหาชื่อบัญชีลูกค้า..." : (user ? user.username : "🔍 ค้นหาด้วยชื่อในเกม หรือ UID")}
+                value={isUserAdmin ? exactSearchQuery : (user ? (user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username) : exactSearchQuery)} 
+                disabled={!isUserAdmin && !!user}
+                onChange={(e) => (isUserAdmin || !user) && setExactSearchQuery(e.target.value)} 
                 style={{ flex: 1, minWidth: '180px', backgroundColor: isUserAdmin ? '#030712' : '#1f2937', border: '1.5px solid #a855f7', borderRadius: '10px', padding: '12px', color: '#ffffff', outline: 'none', cursor: isUserAdmin ? 'text' : 'not-allowed', fontWeight: 'bold', boxSizing: 'border-box' }} 
               />
               <input 
@@ -6572,7 +6653,18 @@ export default function App() {
 
       <footer style={{ textAlign: 'center', marginTop: '50px', padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', color: '#9ca3af', fontSize: '13px' }}>
         <p style={{ margin: 0 }}>🐱 <b>MEOW TOPUP</b> - บริการเติมเกมออนไลน์ สดใส รวดเร็ว เติมง่ายด้วย Cat Coin ตลอด 24 ชั่วโมง 🐾</p>
-      </footer>
+              <div style={{ marginTop: '12px', textAlign: 'center' }}>
+          {!user && (
+            <button 
+              type="button" 
+              onClick={() => { setShowAuthModal(true); setAuthMode('login'); }}
+              style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              ⚙️ เข้าสู่ระบบแอดมินหลังบ้าน
+            </button>
+          )}
+        </div>
+</footer>
     </div>
   );
 }
