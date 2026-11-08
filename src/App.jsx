@@ -3069,16 +3069,27 @@ const [authMode, setAuthMode] = useState('login');
     // กำไรสุทธิ: รักษาผลกำไรของแพ็กเกจไว้เต็ม 100%
     const totalProfit = (selectedPackage.profit || Math.round(selectedPackage.price * 0.15)) * packageQuantity;
 
-    if (selectedPayment.id === 'wallet' && user && user.firebaseKey) {
-      if ((user.balance || 0) < totalPrice) {
+    const isPayingWithWallet = selectedPayment.id === 'wallet';
+    let currentBalance = (user && typeof user.balance === 'number') ? user.balance : 0;
+
+    // 1. ถ้าจ่ายด้วย Cat Coin Wallet: ตรวจสอบและหักยอดเหรียญทันทีแบบถูกต้อง 100%
+    if (isPayingWithWallet) {
+      if (!user || !user.firebaseKey) {
+        alert('กรุณาเข้าสู่ระบบก่อน เพื่อชำระเงินด้วย Cat Coin วอลเล็ต');
+        setShowAuthModal(true);
         return;
       }
-      const newBalance = user.balance - totalPrice;
+      if (currentBalance < totalPrice) {
+        alert(`ยอดเงิน Cat Coin ของคุณไม่เพียงพอ (มี ฿${currentBalance} Coin แต่ต้องชำระ ฿${totalPrice} Coin)`);
+        return;
+      }
+
+      currentBalance = Math.max(0, currentBalance - totalPrice);
       const userRef = ref(db, `users/${user.firebaseKey}/balance`);
-      set(userRef, newBalance);
-      const updatedUser = { ...user, balance: newBalance };
+      set(userRef, currentBalance);
+      const updatedUser = { ...user, balance: currentBalance };
       setUser(updatedUser);
-            setShowAuthModal(false);
+      setShowAuthModal(false);
       try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUser)); } catch (e) {}
     }
 
@@ -3130,17 +3141,17 @@ const [authMode, setAuthMode] = useState('login');
       setFloatingTimer(10);
       setActiveOrderFirebaseKey(newKey);
 
-      // ระบบแจก Cat Coin แคชแบ็กสะสมตลอดชีพ (ได้รับทุกครั้งที่เติมเงิน!)
-      const perPackReward = (selectedPackage && selectedPackage.catCoinReward) ? selectedPackage.catCoinReward : 0;
+      // ระบบแจก Cat Coin แคชแบ็กสะสมตลอดชีพ (เมื่อชำระด้วยเงินสด/โอน/พร้อมเพย์)
+      const perPackReward = (!isPayingWithWallet && selectedPackage && selectedPackage.catCoinReward) ? selectedPackage.catCoinReward : 0;
       const totalCoinGift = perPackReward * (packageQuantity || 1);
 
-      let rewardAlertText = 'ไม่มีของขวัญ Cat Coin ในแพ็กเกจนี้';
+      let rewardAlertText = isPayingWithWallet ? 'ชำระด้วย Cat Coin Wallet (หักเหรียญเรียบร้อย)' : 'ไม่มีของขวัญ Cat Coin ในแพ็กเกจนี้';
 
-      if (!isEpinCard && totalCoinGift > 0) {
+      if (!isEpinCard && !isPayingWithWallet && totalCoinGift > 0) {
         if (user && user.firebaseKey) {
-          const updatedBalance = (user.balance || 0) + totalCoinGift;
-          set(ref(db, `users/${user.firebaseKey}/balance`), updatedBalance);
-          const updatedUserObj = { ...user, balance: updatedBalance };
+          currentBalance = currentBalance + totalCoinGift;
+          set(ref(db, `users/${user.firebaseKey}/balance`), currentBalance);
+          const updatedUserObj = { ...user, balance: currentBalance };
           setUser(updatedUserObj);
           try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUserObj)); } catch (e) {}
           rewardAlertText = `🎁 แคชแบ็ก: มอบ +${totalCoinGift} Cat Coin เข้ากระเป๋าทันที (ได้รับทุกออเดอร์ 🐱🪙)`;
@@ -8064,30 +8075,37 @@ const [authMode, setAuthMode] = useState('login');
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '20px' }}>
           <div style={{ backgroundColor: '#111827', border: '1.5px solid #9333ea', borderRadius: '24px', maxWidth: '420px', width: '100%', padding: '30px', textAlign: 'center', boxShadow: '0 0 30px rgba(147,51,234,0.4)' }}>
             {checkoutStep === 1 && (
-              <form onSubmit={handleVerifyPasswordStep}>
-                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#c084fc' }}>🔐 ยืนยันรหัสผ่านบัญชี</h3>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '20px' }}>กรุณากรอกรหัสผ่านบัญชีของคุณเพื่อยืนยันการทำรายการ</p>
+              <div>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0', color: '#34d399' }}>🐱🪙 ยืนยันชำระเงินด้วย Cat Coin</h3>
+                <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '16px' }}>ระบบจะตัดยอดเหรียญจากกระเป๋าของคุณทันทีเพื่อเติมเข้าไอดีเกม</p>
 
-                <div style={{ backgroundColor: '#030712', borderRadius: '12px', padding: '14px', marginBottom: '20px', textAlign: 'left', border: '1px solid #374151' }}>
-                  <div style={{ fontSize: '13px', color: '#ffffff', marginBottom: '4px' }}>🎮 เกม: <b>{selectedGame.name}</b></div>
-                  <div style={{ fontSize: '13px', color: '#38bdf8', marginBottom: '4px' }}>📦 แพ็กเกจ: <b>{selectedPackage.name} (x{packageQuantity} แพ็ก)</b></div>
-                  <div style={{ fontSize: '13px', color: '#34d399', marginBottom: '4px' }}>💰 ยอดชำระ: <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b></div>
-                  <div style={{ fontSize: '13px', color: '#c084fc', marginBottom: '4px' }}>💳 ช่องทาง: <b>{selectedPayment.name}</b></div>
-                  <div style={{ fontSize: '13px', color: '#c084fc' }}>👤 ตัวละคร/UID: <b>{playerId}</b></div>
-                </div>
-
-                {checkoutPasswordError && <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px', borderRadius: '8px', fontSize: '12px', marginBottom: '15px' }}>{checkoutPasswordError}</div>}
-
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-                  <input type={showCheckoutPassword ? 'text' : 'password'} placeholder="กรอกรหัสผ่านบัญชีของคุณ..." value={checkoutPassword} onChange={(e) => setCheckoutPassword(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 42px 12px 14px', color: '#ffffff', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }} />
-                  <button type="button" onClick={() => setShowCheckoutPassword(!showCheckoutPassword)} style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', cursor: 'pointer' }}><EyeIcon show={showCheckoutPassword} /></button>
+                <div style={{ backgroundColor: '#030712', borderRadius: '14px', padding: '16px', marginBottom: '20px', textAlign: 'left', border: '1.5px solid #34d399', boxShadow: '0 0 20px rgba(52,211,153,0.15)' }}>
+                  <div style={{ fontSize: '13px', color: '#ffffff', marginBottom: '6px' }}>🎮 เกม: <b>{selectedGame.name}</b></div>
+                  <div style={{ fontSize: '13px', color: '#38bdf8', marginBottom: '6px' }}>📦 แพ็กเกจ: <b>{selectedPackage.name} (x{packageQuantity} แพ็ก)</b></div>
+                  <div style={{ fontSize: '13px', color: '#c084fc', marginBottom: '6px' }}>🎯 ไอดีเกม/UID: <b>{playerId}</b></div>
+                  <div style={{ fontSize: '14px', color: '#ffffff', borderTop: '1px solid #1f2937', paddingTop: '8px', marginTop: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>ยอดที่ต้องชำระ:</span>
+                    <b style={{ color: '#34d399', fontSize: '18px' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()} Coin</b>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#fbbf24', marginTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>ยอดเหรียญปัจจุบัน: <b>฿{(user?.balance || 0).toLocaleString()} Coin</b></span>
+                    <span style={{ color: '#38bdf8' }}>คงเหลือหลังหัก: <b>฿{Math.max(0, (user?.balance || 0) - (selectedPackage.price * packageQuantity)).toLocaleString()} Coin</b></span>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
-                  <button type="button" onClick={resetCheckoutModal} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
-                  <button type="submit" style={{ flex: 1, backgroundColor: '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>{selectedPayment.id === 'wallet' ? 'ยืนยันหักเครดิตร้าน' : 'ถัดไป →'}</button>
+                  <button type="button" onClick={resetCheckoutModal} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>
+                    ยกเลิก
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleFinalPaymentSubmit}
+                    style={{ flex: 1.5, backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer', fontSize: '14px', boxShadow: '0 0 20px rgba(16,185,129,0.5)' }}
+                  >
+                    ✅ ยืนยันหัก ฿{(selectedPackage.price * packageQuantity).toLocaleString()} Coin
+                  </button>
                 </div>
-              </form>
+              </div>
             )}
 
             {checkoutStep === 2 && (selectedPayment?.id === 'qrcode' || selectedPayment?.id === 'true') && (
