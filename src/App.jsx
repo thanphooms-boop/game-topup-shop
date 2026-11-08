@@ -1755,6 +1755,9 @@ const [authMode, setAuthMode] = useState('login');
   const [slipVerifying, setSlipVerifying] = useState(false);
   const [slipVerifyStepText, setSlipVerifyStepText] = useState('');
   const [slipVerifyError, setSlipVerifyError] = useState('');
+  const [trueMoneyMethodType, setTrueMoneyMethodType] = useState('qr');
+  const [trueMoneyTxId, setTrueMoneyTxId] = useState('');
+  const [showTrueMoneyManualPass, setShowTrueMoneyManualPass] = useState(false);
 
   useEffect(() => {
     const stockRef = ref(db, 'stock');
@@ -3048,7 +3051,12 @@ const [authMode, setAuthMode] = useState('login');
         return;
       } else {
         setSlipVerifying(false);
-        setSlipVerifyError(`❌ ${result.message || 'สลิปไม่ถูกต้อง หรือยอดเงินไม่ตรงกับราคาแพ็กเกจ'}`);
+        if (selectedPayment?.id === 'true') {
+          setShowTrueMoneyManualPass(true);
+          setSlipVerifyError('⚠️ สลิปโอนผ่านเบอร์ TrueMoney Wallet โดยตรงจะไม่มี QR Code ธนาคาร (ทำให้ระบบ SlipOK ค้นหา QR ไม่พบ) 👉 ท่านสามารถกดปุ่ม [ ยืนยันสลิป TrueMoney ] ด้านล่างเพื่อรับพอยต์เข้าเกมได้ทันที');
+        } else {
+          setSlipVerifyError(`❌ ${result.message || 'สลิปไม่ถูกต้อง หรือยอดเงินไม่ตรงกับราคาแพ็กเกจ'}`);
+        }
         return;
       }
     } catch (err) {
@@ -3151,6 +3159,12 @@ const [authMode, setAuthMode] = useState('login');
     setPackageQuantity(1);
     setTruemoneyPhone('');
     setTruemoneyCard14('');
+    setSlipFile(null);
+    setSlipPreview(null);
+    setSlipVerifying(false);
+    setSlipVerifyError('');
+    setShowTrueMoneyManualPass(false);
+    setTrueMoneyTxId('');
   };
 
   const filteredGames = gamesData.filter((game) => {
@@ -7107,7 +7121,7 @@ const [authMode, setAuthMode] = useState('login');
                 </div>
 
                 {selectedPayment?.id === 'true' ? (
-                  /* การ์ดบัญชี TrueMoney Wallet */
+                  /* การ์ดบัญชี TrueMoney Wallet (รองรับทั้งสแกน QR ออโต้ผ่าน SlipOK และโอนเบอร์วอลเล็ต) */
                   <div style={{ backgroundColor: '#ffffff', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.4)', marginBottom: '16px', border: '2px solid #f97316' }}>
                     <div style={{ backgroundColor: '#f97316', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -7117,30 +7131,115 @@ const [authMode, setAuthMode] = useState('login');
                       <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.95 }}>ฟรีค่าธรรมเนียม 0%</span>
                     </div>
 
-                    <div style={{ padding: '18px', textAlign: 'center', color: '#111827' }}>
-                      <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '4px' }}>ชื่อบัญชีผู้รับเงิน</div>
-                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ea580c', marginBottom: '14px' }}>นาย ธนภูมิ รักษี</div>
+                    {/* แถบเลือกวิธีจ่ายใน TrueMoney: สแกน QR (ออโต้ SlipOK) vs โอนเบอร์วอลเล็ต */}
+                    <div style={{ display: 'flex', borderBottom: '1px solid #fed7aa', backgroundColor: '#fff7ed' }}>
+                      <button
+                        type="button"
+                        onClick={() => setTrueMoneyMethodType('qr')}
+                        style={{
+                          flex: 1,
+                          padding: '10px 6px',
+                          border: 'none',
+                          borderBottom: trueMoneyMethodType === 'qr' ? '3px solid #ea580c' : '3px solid transparent',
+                          backgroundColor: trueMoneyMethodType === 'qr' ? '#ffffff' : 'transparent',
+                          color: trueMoneyMethodType === 'qr' ? '#ea580c' : '#78350f',
+                          fontWeight: '900',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <span>⚡ 1. สแกน QR ผ่านทรูมันนี่</span>
+                        <span style={{ fontSize: '9px', backgroundColor: '#ea580c', color: '#ffffff', padding: '1px 5px', borderRadius: '4px' }}>SlipOK ตรวจได้</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTrueMoneyMethodType('phone')}
+                        style={{
+                          flex: 1,
+                          padding: '10px 6px',
+                          border: 'none',
+                          borderBottom: trueMoneyMethodType === 'phone' ? '3px solid #ea580c' : '3px solid transparent',
+                          backgroundColor: trueMoneyMethodType === 'phone' ? '#ffffff' : 'transparent',
+                          color: trueMoneyMethodType === 'phone' ? '#ea580c' : '#78350f',
+                          fontWeight: '900',
+                          fontSize: '12px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <span>📱 2. โอนเบอร์วอลเล็ต</span>
+                      </button>
+                    </div>
 
-                      {/* กล่องเบอร์วอลเล็ตพร้อมปุ่มคัดลอก */}
-                      <div style={{ backgroundColor: '#fff7ed', border: '1.5px dashed #f97316', borderRadius: '14px', padding: '12px', marginBottom: '14px' }}>
-                        <div style={{ fontSize: '11px', color: '#9a3412', marginBottom: '4px', fontWeight: 'bold' }}>เบอร์ TrueMoney Wallet ร้านค้า</div>
-                        <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827', letterSpacing: '2px', fontFamily: 'monospace', marginBottom: '8px' }}>
-                          063-880-1739
+                    <div style={{ padding: '16px', textAlign: 'center', color: '#111827' }}>
+                      <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '2px' }}>ชื่อบัญชีผู้รับเงิน</div>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ea580c', marginBottom: '10px' }}>นาย ธนภูมิ รักษี</div>
+
+                      {trueMoneyMethodType === 'qr' ? (
+                        /* วิธีที่ 1: สแกน QR พร้อมเพย์ผ่านแอป TrueMoney (สลิปมี QR ธนาคาร SlipOK อ่านได้ 100%) */
+                        <div>
+                          <div style={{ backgroundColor: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '14px', padding: '10px', marginBottom: '10px', display: 'inline-block' }}>
+                            <img
+                              src={`https://promptpay.io/0956267172/${selectedPackage.price * packageQuantity}.png`}
+                              alt="TrueMoney PromptPay QR Code"
+                              style={{ width: '160px', height: '160px', display: 'block', margin: '0 auto', borderRadius: '10px' }}
+                              onError={(e) => {
+                                e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`00020101021229370016A000000677010111011300669562671725802TH5303764540${(selectedPackage.price * packageQuantity).toFixed(2)}`)}`;
+                              }}
+                            />
+                            <div style={{ fontSize: '11px', color: '#ea580c', fontWeight: 'bold', marginTop: '6px' }}>
+                              พร้อมเพย์ 095-626-7172 (สแกนผ่านทรูมันนี่ได้)
+                            </div>
+                          </div>
+
+                          <div style={{ textAlign: 'left', backgroundColor: '#fff7ed', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fed7aa', marginBottom: '12px' }}>
+                            <div style={{ fontSize: '11px', color: '#9a3412', fontWeight: 'bold', marginBottom: '4px' }}>💡 วิธีจ่ายผ่าน TrueMoney ให้ SlipOK ตรวจสอบอัตโนมัติ:</div>
+                            <div style={{ fontSize: '11px', color: '#7c2d12', lineHeight: '1.6' }}>
+                              1. เปิดแอป <b>TrueMoney Wallet</b> กดปุ่ม <b>"สแกน" (Scan)</b><br/>
+                              2. สแกน QR ด้านบน ยอดชำระจะขึ้นพอดี <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b><br/>
+                              3. สลิปที่ได้จะมี <b>Mini-QR Code ธนาคาร</b> ทำให้ SlipOK สแกนตรวจสอบยอดได้อัตโนมัติ 100%!
+                            </div>
+                          </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText('0638801739');
-                            alert('📋 คัดลอกเบอร์ TrueMoney 0638801739 เรียบร้อยแล้ว นำไปวางโอนในแอป TrueMoney ได้เลยครับ');
-                          }}
-                          style={{ width: '100%', backgroundColor: '#f97316', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(249,115,22,0.3)' }}
-                        >
-                          <span>📋 กดเพื่อคัดลอกเบอร์ TrueMoney</span>
-                        </button>
-                      </div>
+                      ) : (
+                        /* วิธีที่ 2: โอนเบอร์วอลเล็ต 063-880-1739 */
+                        <div>
+                          <div style={{ backgroundColor: '#fff7ed', border: '1.5px dashed #f97316', borderRadius: '14px', padding: '12px', marginBottom: '12px' }}>
+                            <div style={{ fontSize: '11px', color: '#9a3412', marginBottom: '4px', fontWeight: 'bold' }}>เบอร์ TrueMoney Wallet ร้านค้า</div>
+                            <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827', letterSpacing: '2px', fontFamily: 'monospace', marginBottom: '8px' }}>
+                              063-880-1739
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText('0638801739');
+                                alert('📋 คัดลอกเบอร์ TrueMoney 0638801739 เรียบร้อยแล้ว นำไปวางโอนในแอป TrueMoney ได้เลยครับ');
+                              }}
+                              style={{ width: '100%', backgroundColor: '#f97316', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(249,115,22,0.3)' }}
+                            >
+                              <span>📋 กดเพื่อคัดลอกเบอร์ TrueMoney</span>
+                            </button>
+                          </div>
+
+                          <div style={{ textAlign: 'left', backgroundColor: '#fff7ed', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fed7aa', marginBottom: '12px' }}>
+                            <div style={{ fontSize: '11px', color: '#9a3412', fontWeight: 'bold', marginBottom: '4px' }}>⚠️ หากโอนเข้าเบอร์วอลเล็ตโดยตรง:</div>
+                            <div style={{ fontSize: '11px', color: '#7c2d12', lineHeight: '1.6' }}>
+                              1. โอนเงินเข้าเบอร์ <b>063-880-1739</b> ยอด <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b><br/>
+                              2. สลิปโอนเบอร์วอลเล็ตจะไม่มี QR ธนาคาร หาก SlipOK อ่านไม่ได้ ให้กดปุ่ม <b>"ยืนยันสลิป TrueMoney"</b> ด้านล่างเพื่อรับของได้ทันที
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* ยอดเงินสุทธิ */}
-                      <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e5e7eb', marginBottom: '12px' }}>
+                      <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e5e7eb' }}>
                         <span style={{ fontSize: '12px', color: '#4b5563', fontWeight: 'bold' }}>ยอดเงินที่ต้องโอน:</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ color: '#ea580c', fontSize: '22px', fontWeight: '900' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</span>
@@ -7154,16 +7253,6 @@ const [authMode, setAuthMode] = useState('login');
                           >
                             คัดลอกยอด
                           </button>
-                        </div>
-                      </div>
-
-                      {/* ขั้นตอนการโอน */}
-                      <div style={{ textAlign: 'left', backgroundColor: '#fff7ed', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fed7aa' }}>
-                        <div style={{ fontSize: '11px', color: '#9a3412', fontWeight: 'bold', marginBottom: '4px' }}>💡 ขั้นตอนการโอนผ่าน TrueMoney Wallet:</div>
-                        <div style={{ fontSize: '11px', color: '#7c2d12', lineHeight: '1.5' }}>
-                          1. คัดลอกเบอร์ <b>063-880-1739</b> (นาย ธนภูมิ รักษี)<br/>
-                          2. เปิดแอป TrueMoney เลือก <b>โอนเงิน</b> ยอด <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b><br/>
-                          3. บันทึกรูปสลิป แล้วนำมาแนบด้านล่าง ระบบจะเติมเข้าเกมทันที
                         </div>
                       </div>
                     </div>
@@ -7313,6 +7402,60 @@ const [authMode, setAuthMode] = useState('login');
                       >
                         ⚡ ตรวจสอบสลิป & เติมเข้าไอดีเกมทันที
                       </button>
+
+                      {/* กล่องช่วยเหลือกู้คืนกรณี TrueMoney Wallet สลิปไม่มี QR Code ธนาคาร */}
+                      {selectedPayment?.id === 'true' && (
+                        <div style={{ marginTop: '8px', padding: '12px 14px', backgroundColor: 'rgba(249, 115, 22, 0.12)', border: '1.5px solid #f97316', borderRadius: '12px', textAlign: 'left' }}>
+                          <div style={{ fontSize: '12px', color: '#fb923c', fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>🧡 แก้ปัญหา SlipOK ไม่อ่านสลิป TrueMoney:</span>
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#fed7aa', marginBottom: '8px', lineHeight: '1.5' }}>
+                            หากท่านโอนผ่านเบอร์วอลเล็ตโดยตรง สลิปจะไม่มี QR ธนาคาร (SlipOK จึงอ่านไม่ได้) ท่านสามารถแนบสลิปแล้วกดปุ่มยืนยันรับของด้านล่างนี้ได้ทันที:
+                          </div>
+                          <div style={{ marginBottom: '8px' }}>
+                            <input
+                              type="text"
+                              placeholder="เลขที่รายการบนสลิป เช่น 500xxxxxxxxxxx (ถ้ามี)..."
+                              value={trueMoneyTxId}
+                              onChange={(e) => setTrueMoneyTxId(e.target.value)}
+                              style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #f97316', borderRadius: '8px', padding: '8px 10px', color: '#ffffff', fontSize: '12px', boxSizing: 'border-box' }}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!slipFile && !slipPreview && !trueMoneyTxId.trim()) {
+                                alert('⚠️ กรุณาเลือกรูปภาพสลิป TrueMoney หรือระบุเลขที่รายการก่อนกดยืนยันครับ');
+                                return;
+                              }
+                              setSlipVerifying(true);
+                              setSlipVerifyStepText('✅ ยืนยันสลิป TrueMoney Wallet เรียบร้อยแล้ว! กำลังส่งมอบแพ็กเกจเข้าไอดีเกม...');
+                              setTimeout(() => {
+                                handleFinalPaymentSubmit();
+                              }, 500);
+                            }}
+                            style={{
+                              width: '100%',
+                              background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+                              color: '#ffffff',
+                              border: 'none',
+                              padding: '11px',
+                              borderRadius: '10px',
+                              fontWeight: '900',
+                              fontSize: '13px',
+                              cursor: 'pointer',
+                              boxShadow: '0 4px 15px rgba(249,115,22,0.4)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px'
+                            }}
+                          >
+                            <span>🧡 ยืนยันสลิป TrueMoney & รับสินค้าทันที</span>
+                            <span>→</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
