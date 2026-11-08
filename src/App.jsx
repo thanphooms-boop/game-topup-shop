@@ -2065,13 +2065,14 @@ const [authMode, setAuthMode] = useState('login');
     if (!game) return null;
     const gid = (game.id || '').toLowerCase();
     const gn = (game.name || '').toLowerCase();
-    if (gid.includes('valo') || gn.includes('valo')) return gameAccountConfig.valorant;
-    if (gid.includes('rov') || gn.includes('rov')) return gameAccountConfig.rov;
-    if (gid.includes('freefire') || gid.includes('free_fire') || gid.includes('ff') || gn.includes('free fire')) return gameAccountConfig.freefire;
+    // ตรวจสอบ ROV ก่อน และใช้คำเฉพาะ เพื่อป้องกันคำว่า 'Valor' ใน 'Arena of Valor' ไปซ้ำกับ 'VALORANT'
+    if (gid.includes('rov') || gn.includes('rov') || gn.includes('arena of valor')) return gameAccountConfig.rov;
+    if (gid.includes('valorant') || gn.includes('valorant') || gid === 'valo') return gameAccountConfig.valorant;
+    if (gid.includes('freefire') || gid.includes('free_fire') || gid.includes('ff') || gn.includes('free fire') || gn.includes('ฟีฟาย')) return gameAccountConfig.freefire;
     if (gid.includes('genshin') || gn.includes('genshin')) return gameAccountConfig.genshin;
     if (gid.includes('pubg') || gn.includes('pubg')) return gameAccountConfig.pubg;
-    if (gid.includes('lol') || gid.includes('league') || gn.includes('league')) return gameAccountConfig.lol;
-    if (gid.includes('fc') || gid.includes('fifa') || gn.includes('fc mobile')) return gameAccountConfig.fcmobile;
+    if (gid.includes('lol') || gid.includes('league') || gn.includes('league') || gn.includes('legends')) return gameAccountConfig.lol;
+    if (gid.includes('fc') || gid.includes('fifa') || gn.includes('fc mobile') || gn.includes('ea sports fc')) return gameAccountConfig.fcmobile;
     return {
       accountType: 'ชื่อในเกม / UID',
       title: `1. กรอกชื่อในเกม หรือ UID ตัวละคร (${game.name})`,
@@ -2091,8 +2092,8 @@ const [authMode, setAuthMode] = useState('login');
   const getTopupLinkForGame = (gameName) => {
     if (!gameName) return null;
     const gn = gameName.toLowerCase();
-    if (gn.includes('valo')) return officialGameTopupLinks.valorant;
-    if (gn.includes('rov')) return officialGameTopupLinks.rov;
+    if (gn.includes('rov') || gn.includes('arena of valor')) return officialGameTopupLinks.rov;
+    if (gn.includes('valorant') || gn === 'valo') return officialGameTopupLinks.valorant;
     if (gn.includes('free fire') || gn.includes('freefire') || gn.includes('ฟีฟาย')) return officialGameTopupLinks.freefire;
     if (gn.includes('genshin')) return officialGameTopupLinks.genshin;
     if (gn.includes('star rail') || gn.includes('hsr')) return officialGameTopupLinks.hsr;
