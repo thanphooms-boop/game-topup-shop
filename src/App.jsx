@@ -21,6 +21,11 @@ const auth = getAuth(app);
 
 // สไตล์ CSS สำหรับเอฟเฟคปุ่มทุกปุ่มและองค์ประกอบที่คลิกได้ในเว็บ (Hover & Active Effects)
 const cyberGlobalStyles = `
+  @keyframes marqueeScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
   @import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700;800;900&display=swap');
 
   body, input, button, select, textarea {
@@ -1139,7 +1144,8 @@ const [authMode, setAuthMode] = useState('login');
       } else if (error.code === 'auth/popup-blocked') {
         setAuthError('⚠️ เบราว์เซอร์บล็อกป๊อปอัป Google กรุณากดอนุญาตป๊อปอัปที่แถบที่อยู่เว็บ แล้วลองใหม่อีกครั้ง');
       } else if (error.code === 'auth/unauthorized-domain') {
-        setAuthError('⚠️ โดเมนนี้ยังไม่ได้รับอนุญาตใน Firebase Console กรุณาเพิ่มโดเมนใน Authorized Domains');
+        const currentDomain = typeof window !== 'undefined' ? window.location.hostname : '';
+        setAuthError();
       } else if (error.code === 'auth/operation-not-allowed') {
         setAuthError('⚠️ ยังไม่ได้เปิดใช้งาน Google Sign-In ใน Firebase Console กรุณาเปิดใช้งานในเมนู Authentication');
       } else {
@@ -1486,6 +1492,113 @@ const [authMode, setAuthMode] = useState('login');
   }, []);
 
   const [showLegacyStockAdmin, setShowLegacyStockAdmin] = useState(false);
+
+  // ค่าเริ่มต้นของข้อความตัววิ่ง (แจ้งลูกค้าเรื่องทยอยเติม / ไม่ AUTO 100%)
+  const DEFAULT_MARQUEE_TEXT = "📢 ประกาศจากทางร้าน: ขณะนี้ระบบทยอยจัดส่งโดยแอดมิน ออเดอร์จะจัดส่งให้ตามลำดับคิวอย่างรวดเร็ว (5-15 นาที) หากต้องการสอบถามหรือเร่งออเดอร์ สามารถทักแชทสอบถามแอดมินได้ตลอด 24 ชม. • 🐱🪙 ปลอดภัย 100% ได้รับของครบถ้วนแน่นอน ขอบพระคุณลูกค้าทุกท่านที่ไว้วางใจร้านเราครับ • 🔥 โปรโมชั่นพิเศษเติมเกมสุดคุ้มทุกวัน";
+  const DEFAULT_MARQUEE_BADGE = "LIVE 24H";
+
+  const [marqueeSettings, setMarqueeSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cyber_marquee_settings');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {
+      text: DEFAULT_MARQUEE_TEXT,
+      badge: DEFAULT_MARQUEE_BADGE,
+      speed: 28,
+      enabled: true
+    };
+  });
+
+  const [adminMarqueeTextInput, setAdminMarqueeTextInput] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cyber_marquee_settings');
+      if (saved) return JSON.parse(saved).text || DEFAULT_MARQUEE_TEXT;
+    } catch (e) {}
+    return DEFAULT_MARQUEE_TEXT;
+  });
+  const [adminMarqueeBadgeInput, setAdminMarqueeBadgeInput] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cyber_marquee_settings');
+      if (saved) return JSON.parse(saved).badge || DEFAULT_MARQUEE_BADGE;
+    } catch (e) {}
+    return DEFAULT_MARQUEE_BADGE;
+  });
+  const [adminMarqueeSpeedInput, setAdminMarqueeSpeedInput] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cyber_marquee_settings');
+      if (saved) return JSON.parse(saved).speed || 28;
+    } catch (e) {}
+    return 28;
+  });
+  const [adminMarqueeEnabledInput, setAdminMarqueeEnabledInput] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cyber_marquee_settings');
+      if (saved) return JSON.parse(saved).enabled !== false;
+    } catch (e) {}
+    return true;
+  });
+  const [adminMarqueeMsg, setAdminMarqueeMsg] = useState({ text: '', type: '' });
+  const [adminOpenMarquee, setAdminOpenMarquee] = useState(true);
+  const [isMarqueeHovered, setIsMarqueeHovered] = useState(false);
+
+  // ซิงค์ข้อความตัววิ่งจาก Firebase Realtime Database
+  useEffect(() => {
+    const marqueeRef = ref(db, 'system_marquee_settings');
+    const unsubscribe = onValue(marqueeRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setMarqueeSettings(data);
+        setAdminMarqueeTextInput(data.text || DEFAULT_MARQUEE_TEXT);
+        setAdminMarqueeBadgeInput(data.badge || DEFAULT_MARQUEE_BADGE);
+        setAdminMarqueeSpeedInput(data.speed || 28);
+        setAdminMarqueeEnabledInput(data.enabled !== false);
+        try { localStorage.setItem('cyber_marquee_settings', JSON.stringify(data)); } catch (e) {}
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleSaveMarqueeSettings = (e) => {
+    if (e) e.preventDefault();
+    if (!adminMarqueeTextInput.trim()) {
+      setAdminMarqueeMsg({ text: '⚠️ กรุณากรอกข้อความประกาศตัววิ่งอย่างน้อย 1 ตัวอักษร', type: 'error' });
+      return;
+    }
+    const newSettings = {
+      text: adminMarqueeTextInput.trim(),
+      badge: adminMarqueeBadgeInput.trim() || 'LIVE 24H',
+      speed: parseInt(adminMarqueeSpeedInput) || 28,
+      enabled: adminMarqueeEnabledInput,
+      updatedAt: new Date().toISOString()
+    };
+    setMarqueeSettings(newSettings);
+    try { localStorage.setItem('cyber_marquee_settings', JSON.stringify(newSettings)); } catch (e) {}
+
+    const marqueeRef = ref(db, 'system_marquee_settings');
+    set(marqueeRef, newSettings)
+      .then(() => {
+        setAdminMarqueeMsg({ text: '✅ บันทึกข้อความประกาศตัววิ่งหน้าร้านเรียบร้อยแล้ว! อัปเดตไปยังหน้าเว็บของลูกค้าทุกคนทันที', type: 'success' });
+        setTimeout(() => setAdminMarqueeMsg({ text: '', type: '' }), 5000);
+      })
+      .catch((err) => {
+        setAdminMarqueeMsg({ text: '✅ บันทึกข้อความตัววิ่งเรียบร้อยแล้ว', type: 'success' });
+        setTimeout(() => setAdminMarqueeMsg({ text: '', type: '' }), 5000);
+      });
+  };
+
+  const handleApplyMarqueePreset = (presetType) => {
+    if (presetType === 'manual_topup') {
+      setAdminMarqueeTextInput('📢 ประกาศจากทางร้าน: ขณะนี้ระบบทยอยจัดส่งโดยแอดมิน ออเดอร์จะจัดส่งให้ตามลำดับคิวอย่างรวดเร็ว (5-15 นาที) หากต้องการสอบถามหรือเร่งออเดอร์ สามารถทักแชทสอบถามแอดมินได้ตลอด 24 ชม. • 🐱🪙 ปลอดภัย 100% ได้รับของครบถ้วนแน่นอน ขอบพระคุณลูกค้าทุกท่านที่ไว้วางใจร้านเราครับ');
+      setAdminMarqueeBadgeInput('⏳ ทยอยจัดส่ง 5-15m');
+    } else if (presetType === 'normal_open') {
+      setAdminMarqueeTextInput('⚡ ร้านเปิดให้บริการปกติ แอดมินพร้อมดูแล 24 ชม. เติมเกมสะดวกรวดเร็ว ปลอดภัย 100% เชื่อมต่อตรง Official • 🎮 ออเดอร์ล่าสุดจัดส่งสำเร็จแล้ว ยินดีต้อนรับทุกท่านครับ');
+      setAdminMarqueeBadgeInput('LIVE 24H');
+    } else if (presetType === 'night_shift') {
+      setAdminMarqueeTextInput('🌙 ประกาศช่วงเวลากลางคืน (01:00 - 08:00 น.): แอดมินอาจตอบกลับช้าเล็กน้อย ออเดอร์ที่สั่งเข้ามาจะจัดส่งทันทีเมื่อแอดมินออนไลน์ ขอบพระคุณลูกค้าที่เข้าใจครับ');
+      setAdminMarqueeBadgeInput('🌙 ประกาศร้าน');
+    }
+  };
 
   // ระบบจัดการสถานะสต็อกเกม (เปิดรับเติม / สต็อกหมด)
   const [gameStockStatus, setGameStockStatus] = useState(() => {
@@ -3691,55 +3804,88 @@ const [authMode, setAuthMode] = useState('login');
       <main style={{ maxWidth: '1200px', margin: '30px auto', padding: '0 20px', position: 'relative', zIndex: 1 }}>
         {activeTab === 'shop' && !selectedGame && (
           <div>
-            {/* 🔥 LIVE TRANSACTION TICKER & ACTIVITY BAR */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              backgroundColor: isDarkMode ? 'rgba(15, 23, 42, 0.95)' : '#ffffff',
-              border: isDarkMode ? '1px solid rgba(249, 115, 22, 0.35)' : '1.5px solid #fed7aa',
-              borderRadius: '18px',
-              padding: '10px 20px',
-              marginBottom: '30px',
-              boxShadow: isDarkMode ? '0 6px 25px rgba(0,0,0,0.5), 0 0 18px rgba(249, 115, 22, 0.12)' : '0 4px 15px rgba(249, 115, 22, 0.08)',
-              overflow: 'hidden'
-            }}>
-              <div style={{ 
-                display: 'inline-flex', 
-                alignItems: 'center', 
-                gap: '6px', 
-                backgroundColor: 'rgba(239, 68, 68, 0.18)', 
-                border: '1px solid #ef4444', 
-                color: '#fca5a5', 
-                padding: '4px 12px', 
-                borderRadius: '20px', 
-                fontSize: '11px', 
-                fontWeight: '900', 
-                whiteSpace: 'nowrap' 
-              }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block', boxShadow: '0 0 8px #22c55e' }}></span>
-                <span>LIVE 24H</span>
+            {/* 🔥 LIVE TRANSACTION TICKER & ACTIVITY BAR (คำวิ่งอัตโนมัติ ปรับแก้ได้จากหลังบ้าน) */}
+            {marqueeSettings.enabled !== false && (
+              <div 
+                onMouseEnter={() => setIsMarqueeHovered(true)}
+                onMouseLeave={() => setIsMarqueeHovered(false)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  backgroundColor: isDarkMode ? 'rgba(15, 23, 42, 0.95)' : '#ffffff',
+                  border: isDarkMode ? '1px solid rgba(249, 115, 22, 0.4)' : '1.5px solid #fed7aa',
+                  borderRadius: '18px',
+                  padding: '9px 18px',
+                  marginBottom: '26px',
+                  boxShadow: isDarkMode ? '0 6px 25px rgba(0,0,0,0.5), 0 0 18px rgba(249, 115, 22, 0.14)' : '0 4px 15px rgba(249, 115, 22, 0.08)',
+                  overflow: 'hidden',
+                  position: 'relative'
+                }}
+              >
+                {/* ป้ายกำกับด้านซ้าย คงที่ ไม่เลื่อนตามคำวิ่ง */}
+                <div style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  backgroundColor: 'rgba(239, 68, 68, 0.18)', 
+                  border: '1px solid #ef4444', 
+                  color: '#fca5a5', 
+                  padding: '4px 12px', 
+                  borderRadius: '20px', 
+                  fontSize: '11px', 
+                  fontWeight: '900', 
+                  whiteSpace: 'nowrap',
+                  zIndex: 2,
+                  flexShrink: 0,
+                  boxShadow: isDarkMode ? '0 0 10px rgba(239, 68, 68, 0.25)' : 'none'
+                }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block', boxShadow: '0 0 8px #22c55e' }}></span>
+                  <span>{marqueeSettings.badge || 'LIVE 24H'}</span>
+                </div>
+
+                {/* แถบตัววิ่งต่อเนื่องแบบ Seamless Infinite Marquee พร้อมหยุดเมื่อนำเมาส์ไปชี้ */}
+                <div style={{ 
+                  overflow: 'hidden', 
+                  whiteSpace: 'nowrap', 
+                  position: 'relative', 
+                  width: '100%',
+                  maskImage: 'linear-gradient(to right, transparent, black 12px, black 96%, transparent)',
+                  WebkitMaskImage: 'linear-gradient(to right, transparent, black 12px, black 96%, transparent)'
+                }}>
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    whiteSpace: 'nowrap',
+                    willChange: 'transform',
+                    animation: `marqueeScroll ${marqueeSettings.speed || 28}s linear infinite`,
+                    animationPlayState: isMarqueeHovered ? 'paused' : 'running'
+                  }}>
+                    <span style={{ 
+                      fontSize: '12px', 
+                      color: isDarkMode ? '#e2e8f0' : '#334155', 
+                      fontWeight: '600',
+                      paddingRight: '60px',
+                      display: 'inline-flex',
+                      alignItems: 'center'
+                    }}>
+                      {marqueeSettings.text}
+                    </span>
+                    {/* ทำซ้ำอีก 1 ชุด เพื่อให้วิ่งต่อกันแบบวนลูป 100% ไร้รอยต่อ */}
+                    <span style={{ 
+                      fontSize: '12px', 
+                      color: isDarkMode ? '#e2e8f0' : '#334155', 
+                      fontWeight: '600',
+                      paddingRight: '60px',
+                      display: 'inline-flex',
+                      alignItems: 'center'
+                    }}>
+                      {marqueeSettings.text}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div style={{ 
-                fontSize: '12px', 
-                color: isDarkMode ? '#cbd5e1' : '#475569', 
-                whiteSpace: 'nowrap', 
-                overflow: 'hidden', 
-                textOverflow: 'ellipsis', 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '16px', 
-                fontWeight: '600' 
-              }}>
-                <span style={{ color: '#38bdf8' }}>⚡ ระบบอัตโนมัติ 24 ชม. ตรวจสลิปฉับไวใน 1 วินาที</span>
-                <span style={{ color: '#f97316' }}>•</span>
-                <span>🎮 ออเดอร์ล่าสุด: เติม 1,000 VP (VALORANT) สำเร็จแล้ว</span>
-                <span style={{ color: '#f97316' }}>•</span>
-                <span style={{ color: '#34d399' }}>🐱🪙 ปลอดภัย 100% เชื่อมต่อตรง LnwTrue Official</span>
-                <span style={{ color: '#f97316' }}>•</span>
-                <span>🔥 ลูกค้าสะสมคะแนนแลกรับส่วนลดสุดคุ้ม</span>
-              </div>
-            </div>
+            )}
 
             {/* 🐱 COOL CAT GAMER HERO COVER BANNER */}
             <div style={{ 
@@ -5504,6 +5650,234 @@ const [authMode, setAuthMode] = useState('login');
                       </div>
                     ))}
                   </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 📢 การ์ดจัดการข้อความตัววิ่ง & ประกาศหน้าร้าน (Admin Marquee Management) */}
+                <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', border: '1.5px solid #f97316', overflow: 'hidden', boxShadow: '0 0 25px rgba(249, 115, 22, 0.2)' }}>
+                  <div 
+                    onClick={() => setAdminOpenMarquee(!adminOpenMarquee)} 
+                    style={{ padding: '16px 22px', backgroundColor: '#0f172a', borderBottom: adminOpenMarquee ? '1px solid #374151' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '18px' }}>📢</span>
+                      <div>
+                        <span style={{ fontSize: '16px', fontWeight: '900', color: '#fb923c' }}>จัดการข้อความตัววิ่ง & ประกาศหน้าร้าน (Marquee Ticker)</span>
+                        <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+                          พิมพ์เปลี่ยนข้อความวิ่งด้านบนหน้าร้าน แจ้งเวลาจัดส่ง หรือสถานะร้านค้า (อัปเดตแบบเรียลไทม์ทันที)
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '11px', backgroundColor: marqueeSettings.enabled ? 'rgba(34, 197, 94, 0.2)' : 'rgba(239, 68, 68, 0.2)', color: marqueeSettings.enabled ? '#4ade80' : '#f87171', border: `1px solid ${marqueeSettings.enabled ? '#22c55e' : '#ef4444'}`, padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                        {marqueeSettings.enabled ? '🟢 กำลังเปิดแสดง' : '🔴 ปิดแสดงชั่วคราว'}
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#9ca3af', backgroundColor: '#1e293b', padding: '4px 12px', borderRadius: '8px', border: '1px solid #374151' }}>
+                        {adminOpenMarquee ? '▼ คลิกเพื่อพับเก็บ' : '▶ คลิกเพื่อกางออก'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {adminOpenMarquee && (
+                    <div style={{ padding: '22px' }}>
+                      {adminMarqueeMsg.text && (
+                        <div style={{ backgroundColor: adminMarqueeMsg.type === 'error' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)', border: `1px solid ${adminMarqueeMsg.type === 'error' ? '#ef4444' : '#22c55e'}`, color: adminMarqueeMsg.type === 'error' ? '#fca5a5' : '#86efac', padding: '10px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 'bold', marginBottom: '16px' }}>
+                          {adminMarqueeMsg.text}
+                        </div>
+                      )}
+
+                      {/* ตัวอย่างผลลัพธ์แบบเรียลไทม์ (Live Preview) */}
+                      <div style={{ marginBottom: '20px' }}>
+                        <div style={{ fontSize: '12px', color: '#fb923c', fontWeight: 'bold', marginBottom: '8px' }}>
+                          👁️ ตัวอย่างข้อความวิ่งหน้าร้านปัจจุบัน (Live Preview):
+                        </div>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '12px', 
+                          backgroundColor: '#030712', 
+                          border: '1px solid rgba(249, 115, 22, 0.4)', 
+                          borderRadius: '14px', 
+                          padding: '8px 14px', 
+                          overflow: 'hidden' 
+                        }}>
+                          <div style={{ 
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            gap: '6px', 
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)', 
+                            border: '1px solid #ef4444', 
+                            color: '#fca5a5', 
+                            padding: '3px 10px', 
+                            borderRadius: '16px', 
+                            fontSize: '11px', 
+                            fontWeight: 'bold',
+                            flexShrink: 0
+                          }}>
+                            <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#22c55e', display: 'inline-block', boxShadow: '0 0 6px #22c55e' }}></span>
+                            <span>{adminMarqueeBadgeInput || 'LIVE 24H'}</span>
+                          </div>
+                          <div style={{ overflow: 'hidden', whiteSpace: 'nowrap', width: '100%' }}>
+                            <div style={{
+                              display: 'inline-flex',
+                              whiteSpace: 'nowrap',
+                              animation: `marqueeScroll ${adminMarqueeSpeedInput || 28}s linear infinite`
+                            }}>
+                              <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', paddingRight: '40px' }}>
+                                {adminMarqueeTextInput || DEFAULT_MARQUEE_TEXT}
+                              </span>
+                              <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', paddingRight: '40px' }}>
+                                {adminMarqueeTextInput || DEFAULT_MARQUEE_TEXT}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* ฟอร์มแก้ไขข้อความตัววิ่ง */}
+                      <form onSubmit={handleSaveMarqueeSettings}>
+                        <div style={{ marginBottom: '14px' }}>
+                          <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>
+                            ✏️ พิมพ์ข้อความประกาศตัววิ่งที่ต้องการให้แสดงหน้าร้าน:
+                          </label>
+                          <textarea 
+                            rows={3} 
+                            placeholder="พิมพ์ข้อความที่ต้องการให้วิ่งหน้าร้าน เช่น แจ้งลูกค้าว่ากำลังทยอยเติมตามคิว (ยังไม่ AUTO 100%), แจ้งโปรโมชั่น หรือแจ้งเวลาปิดปรับปรุง..."
+                            value={adminMarqueeTextInput} 
+                            onChange={(e) => setAdminMarqueeTextInput(e.target.value)} 
+                            style={{ 
+                              width: '100%', 
+                              backgroundColor: '#030712', 
+                              border: '1.5px solid #f97316', 
+                              borderRadius: '12px', 
+                              padding: '12px 14px', 
+                              color: '#ffffff', 
+                              fontSize: '13px', 
+                              lineHeight: '1.5',
+                              outline: 'none', 
+                              boxSizing: 'border-box',
+                              resize: 'vertical'
+                            }} 
+                          />
+                          <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '4px' }}>
+                            💡 แนะนำ: ใส่สัญลักษณ์จุดคั่น (•) ระหว่างข้อความแต่ละท่อน เพื่อให้อ่านง่ายและสวยงาม
+                          </div>
+                        </div>
+
+                        {/* การตั้งค่าเสริม: ป้ายกำกับ, ความเร็ว และสถานะเปิด/ปิด */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '16px' }}>
+                          <div>
+                            <label style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+                              🏷️ ข้อความป้ายกำกับ (Badge):
+                            </label>
+                            <input 
+                              type="text" 
+                              placeholder="เช่น LIVE 24H หรือ ประกาศร้าน..."
+                              value={adminMarqueeBadgeInput} 
+                              onChange={(e) => setAdminMarqueeBadgeInput(e.target.value)} 
+                              style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '9px 12px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+                              ⏱️ ความเร็วในการวิ่ง:
+                            </label>
+                            <select 
+                              value={adminMarqueeSpeedInput} 
+                              onChange={(e) => setAdminMarqueeSpeedInput(e.target.value)}
+                              style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '9px 12px', color: '#ffffff', fontSize: '12px', outline: 'none', boxSizing: 'border-box' }}
+                            >
+                              <option value={38}>🐢 ช้า สบายตา (38 วินาที/รอบ)</option>
+                              <option value={28}>🚶 ปานกลาง มาตรฐาน (28 วินาที/รอบ)</option>
+                              <option value={18}>⚡ เร็ว กระชับ (18 วินาที/รอบ)</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+                              🔘 สถานะการแสดงผล:
+                            </label>
+                            <div style={{ display: 'flex', alignItems: 'center', height: '36px' }}>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '12px', color: '#ffffff' }}>
+                                <input 
+                                  type="checkbox" 
+                                  checked={adminMarqueeEnabledInput} 
+                                  onChange={(e) => setAdminMarqueeEnabledInput(e.target.checked)} 
+                                  style={{ width: '16px', height: '16px', accentColor: '#f97316' }}
+                                />
+                                <span>เปิดแสดงตัววิ่งหน้าร้าน</span>
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ปุ่ม Preset ด่วนสำหรับสถานการณ์ต่างๆ */}
+                        <div style={{ marginBottom: '18px', backgroundColor: '#030712', padding: '12px 14px', borderRadius: '12px', border: '1px solid #1f2937' }}>
+                          <div style={{ fontSize: '11px', color: '#9ca3af', fontWeight: 'bold', marginBottom: '8px' }}>
+                            ⚡ เลือกใส่ข้อความด่วนตามสถานการณ์ (Preset Templates):
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleApplyMarqueePreset('manual_topup')}
+                              style={{ backgroundColor: 'rgba(249, 115, 22, 0.15)', border: '1px solid #f97316', color: '#fb923c', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                            >
+                              ⏳ 1. แจ้งทยอยเติม (ยังไม่ AUTO 100%)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleApplyMarqueePreset('normal_open')}
+                              style={{ backgroundColor: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', color: '#4ade80', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                            >
+                              ⚡ 2. ร้านเปิดให้บริการปกติ
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleApplyMarqueePreset('night_shift')}
+                              style={{ backgroundColor: 'rgba(168, 85, 247, 0.15)', border: '1px solid #a855f7', color: '#c084fc', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                            >
+                              🌙 3. แจ้งช่วงกลางคืน/พักผ่อน
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* ปุ่มบันทึกการเปลี่ยนแปลง */}
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                          <button
+                            type="submit"
+                            style={{ 
+                              backgroundColor: '#f97316', 
+                              color: '#ffffff', 
+                              border: 'none', 
+                              padding: '12px 24px', 
+                              borderRadius: '10px', 
+                              fontWeight: '900', 
+                              fontSize: '13px', 
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              boxShadow: '0 4px 15px rgba(249, 115, 22, 0.35)'
+                            }}
+                          >
+                            <span>💾 บันทึกข้อความตัววิ่ง (อัปเดตหน้าร้านทันที)</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAdminMarqueeTextInput(DEFAULT_MARQUEE_TEXT);
+                              setAdminMarqueeBadgeInput(DEFAULT_MARQUEE_BADGE);
+                              setAdminMarqueeSpeedInput(28);
+                              setAdminMarqueeEnabledInput(true);
+                            }}
+                            style={{ backgroundColor: '#1f2937', color: '#9ca3af', border: '1px solid #374151', padding: '12px 18px', borderRadius: '10px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
+                          >
+                            🔄 คืนค่าเริ่มต้น
+                          </button>
+                        </div>
+                      </form>
                     </div>
                   )}
                 </div>
