@@ -4883,7 +4883,7 @@ const [authMode, setAuthMode] = useState('login');
                         </span>
                       </div>
 <div style={{ fontSize: '12px', color: isPkgOutOfStock ? '#9ca3af' : '#34d399', marginBottom: '8px' }}>
-                        {isPkgOutOfStock ? '⚠️ สินค้าหมดสต็อกชั่วคราว' : `สิทธิพิเศษ: ${pkg.bonus}`}
+                        {isPkgOutOfStock ? '⚠️ สินค้าหมดสต็อกชั่วคราว' : (user ? `สิทธิพิเศษ: ${pkg.bonus}` : (pkg.catCoinReward ? `🐱🪙 สมัครสมาชิกรับ +${pkg.catCoinReward} Coin ฟรี` : `สิทธิพิเศษ: ${pkg.bonus}`))}
                       </div>
 
                       {/* แสดงราคาขาย พร้อมราคาเดิมขีดฆ่า และป้ายประหยัดเงิน */}
@@ -7598,6 +7598,30 @@ const [authMode, setAuthMode] = useState('login');
                     </div>
 
                     <div style={{ padding: '16px', textAlign: 'center', color: '#111827' }}>
+                      {/* แถบแจ้งเตือนสิทธิพิเศษ Cat Coin */}
+                      {user ? (
+                        <div style={{ backgroundColor: 'rgba(52, 211, 153, 0.12)', border: '1px solid #10b981', borderRadius: '10px', padding: '8px 12px', marginBottom: '12px', fontSize: '12px', color: '#047857', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          <span>🎁 ออเดอร์นี้จะได้รับ: +{((selectedPackage?.catCoinReward || 0) * (packageQuantity || 1))} Cat Coin เข้ากระเป๋าหลังชำระเงินสำเร็จ 🐱🪙</span>
+                        </div>
+                      ) : (
+                        <div style={{ backgroundColor: '#fffbeb', border: '1.5px dashed #f59e0b', borderRadius: '12px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px', color: '#92400e', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', textAlign: 'left' }}>
+                          <div>
+                            <span style={{ fontWeight: '900', color: '#d97706' }}>🐱🪙 สิทธิพิเศษ: </span>
+                            <span>สมัครสมาชิกจะได้รับ <b>+{((selectedPackage?.catCoinReward || 0) * (packageQuantity || 1))} Cat Coin (฿{((selectedPackage?.catCoinReward || 0) * (packageQuantity || 1))})</b> ฟรีเมื่อเติมเงิน!</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAuthMode('register');
+                              setShowAuthModal(true);
+                            }}
+                            style={{ backgroundColor: '#f97316', border: 'none', color: '#ffffff', padding: '5px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 2px 8px rgba(249, 115, 22, 0.4)' }}
+                          >
+                            สมัครรับเหรียญฟรี
+                          </button>
+                        </div>
+                      )}
+
                       <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '2px' }}>ชื่อบัญชีผู้รับเงิน</div>
                       <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#4e2a84', marginBottom: '12px' }}>นาย ธนภูมิ รักษี</div>
 
