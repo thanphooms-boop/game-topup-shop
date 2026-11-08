@@ -1269,6 +1269,8 @@ const [authMode, setAuthMode] = useState('login');
   const [gameCategory, setGameCategory] = useState('all');
   const [selectedGame, setSelectedGame] = useState(null);
   const [playerId, setPlayerId] = useState('');
+  const [genshinServer, setGenshinServer] = useState('Asia');
+  const [genshinUidInput, setGenshinUidInput] = useState('');
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [packageQuantity, setPackageQuantity] = useState(1);
   const [selectedPayment, setSelectedPayment] = useState(null);
@@ -4670,17 +4672,172 @@ const [authMode, setAuthMode] = useState('login');
                 </div>
               </div>
             ) : (
-              <div style={{ marginBottom: '25px' }}>
-                <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                  1. ชื่อในเกม หรือ UID
-                </label>
-                <input 
-                  type="text" 
-                  placeholder="ระบุชื่อในเกม หรือ UID ของท่าน..." 
-                  value={playerId} 
-                  onChange={(e) => setPlayerId(e.target.value)} 
-                  style={{ width: '100%', maxWidth: '400px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} 
-                />
+              <div style={{ marginBottom: '25px', backgroundColor: 'rgba(15, 23, 42, 0.75)', border: '1.5px solid #334155', borderRadius: '18px', padding: '18px 22px', maxWidth: '580px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+                {selectedGame.id === 'valorant' && (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                      <label style={{ fontSize: '13px', color: '#f87171', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span>🎯 1. ระบุ Riot ID + Tagline (VALORANT)</span>
+                      </label>
+                      <span style={{ fontSize: '11px', color: '#94a3b8' }}>ต้องมีเครื่องหมาย # คั่น</span>
+                    </div>
+                    <input 
+                      type="text" 
+                      placeholder="ตัวอย่าง: MeowGamer#TH1 หรือ Viper#1234" 
+                      value={playerId} 
+                      onChange={(e) => setPlayerId(e.target.value)} 
+                      style={{ width: '100%', backgroundColor: '#030712', border: playerId && !playerId.includes('#') ? '1.5px solid #ef4444' : '1.5px solid #f87171', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', outline: 'none', boxSizing: 'border-box', fontSize: '14px', fontWeight: 'bold' }} 
+                    />
+                    <div style={{ fontSize: '11px', color: playerId && !playerId.includes('#') ? '#f87171' : '#94a3b8', marginTop: '6px', lineHeight: '1.4' }}>
+                      {playerId && !playerId.includes('#') ? '⚠️ กรุณาพิมพ์เครื่องหมาย # ตามด้วยแท็ก เช่น #TH1' : '💡 ดูได้จากในเกม VALORANT (มุมขวาบน) หรือในหน้าโปรไฟล์ Riot Client'}
+                    </div>
+                  </div>
+                )}
+
+                {selectedGame.id === 'rov' && (
+                  <div>
+                    <label style={{ fontSize: '13px', color: '#38bdf8', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>
+                      ⚔️ 1. ระบุ OpenID ในเกม ROV (เลขประจำตัวผู้เล่น)
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="วาง OpenID ที่คัดลอกมา เช่น a1b2c3d4e5f6..." 
+                      value={playerId} 
+                      onChange={(e) => setPlayerId(e.target.value)} 
+                      style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #38bdf8', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', outline: 'none', boxSizing: 'border-box', fontSize: '14px', fontWeight: 'bold' }} 
+                    />
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px', lineHeight: '1.4' }}>
+                      💡 วิธีดู OpenID: เข้าเกม ROV ➡️ แตะรูปโปรไฟล์มุมซ้ายบน ➡️ การตั้งค่า (รูปฟันเฟือง) ➡️ บัญชี ➡️ กดปุ่ม <b>"คัดลอก OpenID"</b>
+                    </div>
+                  </div>
+                )}
+
+                {selectedGame.id === 'freefire' && (
+                  <div>
+                    <label style={{ fontSize: '13px', color: '#f59e0b', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>
+                      🔥 1. ระบุ UID ในเกม Free Fire (ตัวเลข 8–10 หลัก)
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="ตัวอย่าง UID: 1234567890 (เฉพาะตัวเลข)" 
+                      value={playerId} 
+                      onChange={(e) => setPlayerId(e.target.value.replace(/\D/g, ''))} 
+                      style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #f59e0b', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', outline: 'none', boxSizing: 'border-box', fontSize: '14px', fontWeight: 'bold' }} 
+                    />
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px', lineHeight: '1.4' }}>
+                      💡 วิธีดู UID: เข้าเกม Free Fire ➡️ แตะรูปโปรไฟล์มุมซ้ายบน ➡️ ตัวเลข UID จะแสดงอยู่ใต้ชื่อตัวละคร
+                    </div>
+                  </div>
+                )}
+
+                {selectedGame.id === 'genshin' && (
+                  <div>
+                    <label style={{ fontSize: '13px', color: '#34d399', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>
+                      ✨ 1. ระบุ UID และเลือกเซิร์ฟเวอร์ (Genshin Impact)
+                    </label>
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                      <select
+                        value={genshinServer}
+                        onChange={(e) => {
+                          const s = e.target.value;
+                          setGenshinServer(s);
+                          if (genshinUidInput.trim()) {
+                            setPlayerId(`[${s}] ${genshinUidInput.trim()}`);
+                          }
+                        }}
+                        style={{ backgroundColor: '#030712', border: '1.5px solid #34d399', borderRadius: '12px', padding: '12px', color: '#ffffff', outline: 'none', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}
+                      >
+                        <option value="Asia">เซิร์ฟเวอร์: Asia (ไทย/เอเชีย)</option>
+                        <option value="America">เซิร์ฟเวอร์: America</option>
+                        <option value="Europe">เซิร์ฟเวอร์: Europe</option>
+                        <option value="TW/HK/MO">เซิร์ฟเวอร์: TW/HK/MO</option>
+                      </select>
+                      <input 
+                        type="text" 
+                        placeholder="UID 9 หลัก (เช่น 800123456)" 
+                        value={genshinUidInput} 
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '');
+                          setGenshinUidInput(val);
+                          setPlayerId(val ? `[${genshinServer}] ${val}` : '');
+                        }} 
+                        style={{ flex: 1, minWidth: '180px', backgroundColor: '#030712', border: '1.5px solid #34d399', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', outline: 'none', boxSizing: 'border-box', fontSize: '14px', fontWeight: 'bold' }} 
+                      />
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px', lineHeight: '1.4' }}>
+                      💡 ดูเลข UID 9 หลักได้จากมุมขวาล่างของหน้าจอเกม (ผู้เล่นในไทยส่วนใหญ่คือเซิร์ฟเวอร์ Asia)
+                    </div>
+                  </div>
+                )}
+
+                {selectedGame.id === 'pubg' && (
+                  <div>
+                    <label style={{ fontSize: '13px', color: '#fbbf24', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>
+                      🪂 1. ระบุ Character ID ในเกม PUBG Mobile (เฉพาะตัวเลข)
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="ตัวอย่าง Character ID: 51234567890" 
+                      value={playerId} 
+                      onChange={(e) => setPlayerId(e.target.value.replace(/\D/g, ''))} 
+                      style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #fbbf24', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', outline: 'none', boxSizing: 'border-box', fontSize: '14px', fontWeight: 'bold' }} 
+                    />
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px', lineHeight: '1.4' }}>
+                      💡 วิธีดู ID: เข้าเกม PUBG Mobile ➡️ แตะรูปโปรไฟล์มุมซ้ายบน ➡️ จะมีตัวเลข Character ID อยู่ด้านบน
+                    </div>
+                  </div>
+                )}
+
+                {selectedGame.id === 'lol' && (
+                  <div>
+                    <label style={{ fontSize: '13px', color: '#c084fc', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>
+                      🏆 1. ระบุ Riot ID + Tagline (League of Legends PC)
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="ตัวอย่าง: Summoner#TH2 หรือ YasuoKing#1111" 
+                      value={playerId} 
+                      onChange={(e) => setPlayerId(e.target.value)} 
+                      style={{ width: '100%', backgroundColor: '#030712', border: playerId && !playerId.includes('#') ? '1.5px solid #ef4444' : '1.5px solid #c084fc', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', outline: 'none', boxSizing: 'border-box', fontSize: '14px', fontWeight: 'bold' }} 
+                    />
+                    <div style={{ fontSize: '11px', color: playerId && !playerId.includes('#') ? '#f87171' : '#94a3b8', marginTop: '6px', lineHeight: '1.4' }}>
+                      {playerId && !playerId.includes('#') ? '⚠️ กรุณาพิมพ์เครื่องหมาย # ตามด้วยแท็ก เช่น #TH2' : '💡 ดูได้จากหน้าโปรไฟล์ Riot Client หรือในหน้าแรกของเกม League of Legends'}
+                    </div>
+                  </div>
+                )}
+
+                {selectedGame.id === 'fcmobile' && (
+                  <div>
+                    <label style={{ fontSize: '13px', color: '#22c55e', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>
+                      ⚽ 1. ระบุ UID บัญชีในเกม EA SPORTS FC Mobile
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="ตัวอย่าง UID: 123456789012" 
+                      value={playerId} 
+                      onChange={(e) => setPlayerId(e.target.value)} 
+                      style={{ width: '100%', backgroundColor: '#030712', border: '1.5px solid #22c55e', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', outline: 'none', boxSizing: 'border-box', fontSize: '14px', fontWeight: 'bold' }} 
+                    />
+                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '6px', lineHeight: '1.4' }}>
+                      💡 วิธีดู UID: เข้าเกม FC Mobile ➡️ แตะรูปฟันเฟืองตั้งค่ามุมขวาบน ➡️ โปรไฟล์ ➡️ คัดลอก UID
+                    </div>
+                  </div>
+                )}
+
+                {!['valorant', 'rov', 'freefire', 'genshin', 'pubg', 'lol', 'fcmobile'].includes(selectedGame.id) && (
+                  <div>
+                    <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                      1. ชื่อในเกม หรือ UID ผู้เล่น
+                    </label>
+                    <input 
+                      type="text" 
+                      placeholder="ระบุชื่อในเกม หรือ UID ของท่าน..." 
+                      value={playerId} 
+                      onChange={(e) => setPlayerId(e.target.value)} 
+                      style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px 16px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} 
+                    />
+                  </div>
+                )}
               </div>
             )}
 
