@@ -25,8 +25,17 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'กรุณาแนบไฟล์รูปภาพสลิปโอนเงิน' });
     }
 
-    const branchId = String(process.env.SLIPOK_BRANCH_ID || '80221').trim();
-    const apiKey = String(process.env.SLIPOK_API_KEY || 'SLIPOKQ4IRV70').trim();
+    // ตัดเครื่องหมาย '#' หรือช่องว่างออกให้เหลือเฉพาะตัวเลขไอดีสาขา เช่น '#80221' -> '80221'
+    // ตัดเครื่องหมาย '#' หรือช่องว่างออกจาก Branch ID
+    let rawBranch = String(process.env.SLIPOK_BRANCH_ID || '80221').trim();
+    const branchId = rawBranch.replace(/[^0-9]/g, '') || '80221';
+
+    // ทำความสะอาด API Key (ตัด Bearer, ช่องว่าง, เครื่องหมายคำพูด ออก)
+    let rawApiKey = String(process.env.SLIPOK_API_KEY || 'SLIPOKQ4IRV70').trim();
+    if (rawApiKey.toLowerCase().startsWith('bearer ')) {
+      rawApiKey = rawApiKey.slice(7).trim();
+    }
+    const apiKey = rawApiKey.replace(/^["']|["']$/g, '').trim() || 'SLIPOKQ4IRV70';
 
     let cleanBase64 = imageBase64;
     if (cleanBase64.includes(',')) {
@@ -48,6 +57,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'x-authorization': apiKey,
+        'Authorization': apiKey,
       },
       body: formData,
     });
