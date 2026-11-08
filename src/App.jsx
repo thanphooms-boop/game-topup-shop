@@ -1145,7 +1145,7 @@ const [authMode, setAuthMode] = useState('login');
         setAuthError('⚠️ เบราว์เซอร์บล็อกป๊อปอัป Google กรุณากดอนุญาตป๊อปอัปที่แถบที่อยู่เว็บ แล้วลองใหม่อีกครั้ง');
       } else if (error.code === 'auth/unauthorized-domain') {
         const currentDomain = typeof window !== 'undefined' ? window.location.hostname : '';
-        setAuthError();
+        setAuthError(`⚠️ โดเมน "${currentDomain}" ยังไม่ได้รับอนุญาตใน Firebase Console กรุณาไปเพิ่มใน Authentication > Settings > Authorized domains`);
       } else if (error.code === 'auth/operation-not-allowed') {
         setAuthError('⚠️ ยังไม่ได้เปิดใช้งาน Google Sign-In ใน Firebase Console กรุณาเปิดใช้งานในเมนู Authentication');
       } else {
@@ -1315,20 +1315,6 @@ const [authMode, setAuthMode] = useState('login');
   const [playerId, setPlayerId] = useState('');
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [packageQuantity, setPackageQuantity] = useState(1);
-  const [genshinServer, setGenshinServer] = useState('Asia');
-  const [genshinUid, setGenshinUid] = useState('');
-
-  const updateGenshinId = (uidVal, serverVal) => {
-    const u = (uidVal !== undefined ? uidVal : genshinUid).trim();
-    const s = serverVal || genshinServer;
-    if (uidVal !== undefined) setGenshinUid(uidVal);
-    if (serverVal) setGenshinServer(serverVal);
-    if (u) {
-      setPlayerId(`${u} (Server: ${s})`);
-    } else {
-      setPlayerId('');
-    }
-  };
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -1755,9 +1741,6 @@ const [authMode, setAuthMode] = useState('login');
   const [slipVerifying, setSlipVerifying] = useState(false);
   const [slipVerifyStepText, setSlipVerifyStepText] = useState('');
   const [slipVerifyError, setSlipVerifyError] = useState('');
-  const [trueMoneyMethodType, setTrueMoneyMethodType] = useState('qr');
-  const [trueMoneyTxId, setTrueMoneyTxId] = useState('');
-  const [showTrueMoneyManualPass, setShowTrueMoneyManualPass] = useState(false);
 
   useEffect(() => {
     const stockRef = ref(db, 'stock');
@@ -1954,149 +1937,11 @@ const [authMode, setAuthMode] = useState('login');
     }
   };
 
-  // การตั้งค่าข้อมูลบัญชีที่ต้องกรอกสำหรับเติมตรงเข้ารหัสลูกค้าแต่ละเกมแบบเป๊ะๆ เพื่อป้องกันความสับสน
-  const gameAccountConfig = {
-    valorant: {
-      accountType: 'Riot ID',
-      title: '1. กรอก Riot ID ของคุณ (ชื่อในเกม#แท็ก)',
-      badge: '🎯 เติมตรงผ่าน Riot ID (Riot Games)',
-      inputLabel: 'Riot ID (ชื่อในเกมตามด้วย # และแท็ก)',
-      placeholder: 'เช่น ABCD#1234 หรือ Gamer#TH1 (ต้องมี # และแท็ก)',
-      exampleText: 'ABCD#1234',
-      requiresTag: true,
-      tipTitle: 'วิธีดู Riot ID เพื่อไม่ให้สับสน:',
-      tipSteps: [
-        'เปิดเกม VALORANT หรือ Riot Client',
-        'ดูที่มุมขวาบน จะมี "ชื่อในเกม" ตามด้วยเครื่องหมาย "#" และแท็กตัวเลข/ตัวอักษร',
-        'ตัวอย่างที่ถูกต้องแบบเป๊ะๆ: หากชื่อ ABCD และแท็ก 1234 ให้กรอกเป็น ABCD#1234 (ห้ามเว้นวรรค และต้องใส่เครื่องหมาย # คั่น)',
-      ]
-    },
-    rov: {
-      accountType: 'OpenID / UID',
-      title: '1. กรอก OpenID หรือ UID ของเกม ROV',
-      badge: '⚡ เติมตรงคูปอง ROV ทันที',
-      inputLabel: 'OpenID หรือ UID บัญชีผู้เล่น ROV',
-      placeholder: 'เช่น OpenID (คัดลอกจากตั้งค่าในเกม) หรือ UID เช่น 123456789012345',
-      exampleText: 'OpenID (คัดลอกจากในเกม)',
-      requiresTag: false,
-      tipTitle: 'วิธีหา OpenID / UID ในเกม ROV:',
-      tipSteps: [
-        'เข้าเกม ROV แล้วกดไอคอนฟันเฟือง "การตั้งค่า" (Settings) ที่มุมขวาบน',
-        'เลือกแท็บ "ข้อมูลบัญชี" (หรือ "บัญชีผู้เล่น")',
-        'กดปุ่ม "คัดลอก OpenID" (แนะนำที่สุด เติมแม่นยำ 100%) หรือดูเลข UID ในหน้าโปรไฟล์ แล้วนำมาวางในช่องนี้',
-      ]
-    },
-    freefire: {
-      accountType: 'UID (Player ID)',
-      title: '1. กรอก UID (Player ID) ผู้เล่น Free Fire',
-      badge: '💎 เติมตรงเพชร Free Fire',
-      inputLabel: 'UID ตัวเลขของผู้เล่น Free Fire',
-      placeholder: 'เช่น 1234567890 (UID ตัวเลข 8-10 หลัก)',
-      exampleText: '1234567890',
-      requiresTag: false,
-      tipTitle: 'วิธีดู UID ในเกม Free Fire:',
-      tipSteps: [
-        'เข้าเกม Free Fire แล้วแตะที่ "รูปโปรไฟล์ตัวละคร" ที่มุมซ้ายบนของหน้าจอ',
-        'ใต้ชื่อตัวละครจะมีแถวตัวเลข "UID" ความยาว 8-10 หลัก',
-        'กดไอคอนสี่เหลี่ยมซ้อนกันเพื่อคัดลอก UID แล้วนำมากดวางได้ทันที',
-      ]
-    },
-    genshin: {
-      accountType: 'UID 9 หลัก & Server',
-      title: '1. กรอก UID 9 หลัก และเลือกเซิร์ฟเวอร์ (Server) Genshin Impact',
-      badge: '✨ เติมตรง Genesis Crystals / พรแห่งดวงจันทร์',
-      inputLabel: 'UID ผู้เล่น Genshin Impact (9 หลัก)',
-      placeholder: 'เช่น 800123456 หรือ 180123456 (UID 9 หลัก)',
-      exampleText: '800123456',
-      isGenshin: true,
-      requiresTag: false,
-      tipTitle: 'วิธีดู UID และการเลือกเซิร์ฟเวอร์ Genshin Impact:',
-      tipSteps: [
-        'สามารถดู UID ตัวเลข 9 หลักได้ที่ "มุมขวาล่างของหน้าจอเกม" ตลอดเวลา หรือเปิดเมนู Paimon ดูใต้รูปโปรไฟล์',
-        'เลือกเซิร์ฟเวอร์ที่เล่นให้ตรงกับบัญชีของท่าน (ผู้เล่นไทยส่วนใหญ่ 99% เล่นเซิร์ฟเวอร์ Asia)',
-        'ระบบจะผสาน UID และเซิร์ฟเวอร์เข้าด้วยกันอัตโนมัติ เพื่อส่งมอบเข้าบัญชีเกมได้แม่นยำ 100%',
-      ]
-    },
-    pubg: {
-      accountType: 'Player ID (UID)',
-      title: '1. กรอก Player ID (Character ID) ของ PUBG Mobile',
-      badge: '🎯 เติมตรง UC PUBG Mobile',
-      inputLabel: 'Player ID / Character ID ตัวเลขในเกม',
-      placeholder: 'เช่น 5123456789 (Player ID ตัวเลข 8-11 หลัก)',
-      exampleText: '5123456789',
-      requiresTag: false,
-      tipTitle: 'วิธีดู Player ID ใน PUBG Mobile:',
-      tipSteps: [
-        'เข้าเกม PUBG Mobile แล้วแตะที่รูปโปรไฟล์ที่มุมซ้ายบน',
-        'ในหน้าข้อมูลส่วนตัว ใต้ชื่อตัวละครจะมีตัวเลข "ID: 5xxxxxxxx" (8-11 หลัก)',
-        'กดไอคอนคัดลอกข้างตัวเลข ID แล้วนำมาวางในช่องนี้ได้ทันที',
-      ]
-    },
-    lol: {
-      accountType: 'Riot ID',
-      title: '1. กรอก Riot ID ของคุณ (ชื่อในเกม#แท็ก)',
-      badge: '⚔️ เติมตรง Riot Points (RP)',
-      inputLabel: 'Riot ID (ชื่อในเกมตามด้วย # และแท็ก)',
-      placeholder: 'เช่น ABCD#1234 หรือ Summoner#TH1 (ต้องมี # และแท็ก)',
-      exampleText: 'ABCD#1234',
-      requiresTag: true,
-      tipTitle: 'วิธีดู Riot ID ในเกม League of Legends (PC):',
-      tipSteps: [
-        'เปิด Riot Client หรือเข้าเกม LoL แล้วดูชื่อที่มุมขวาบน หรือในหน้า Profile',
-        'กรอกชื่อในเกมตามด้วยเครื่องหมาย "#" และแท็ก เช่น ABCD#1234 (ห้ามเว้นวรรคหลัง # และต้องใส่ # คั่นเสมอ)',
-        'ระบบ Riot Games ทั่วโลกปรับมาใช้ Riot ID เดียวกันกับ VALORANT เพื่อเติม RP ได้ตรงไอดี',
-      ]
-    },
-    fcmobile: {
-      accountType: 'UID ผู้เล่น',
-      title: '1. กรอก UID ผู้เล่น EA SPORTS FC Mobile',
-      badge: '⚽ เติมตรง FC Points',
-      inputLabel: 'UID ประจำบัญชีผู้เล่น (User ID)',
-      placeholder: 'เช่น 1234567890123456 (UID ในหน้าตั้งค่าบัญชี)',
-      exampleText: '1234567890123456',
-      requiresTag: false,
-      tipTitle: 'วิธีดู UID ในเกม EA SPORTS FC Mobile:',
-      tipSteps: [
-        'เข้าเกม FC Mobile แล้วแตะไอคอนฟันเฟือง "การตั้งค่า" (Settings) มุมขวาบน',
-        'เลื่อนหน้าจอลงมาล่างสุด จะมีแถบระบุ "UID" ประจำบัญชีของคุณ',
-        'กดปุ่มคัดลอก UID แล้วนำมาวางในช่องนี้ได้ทันที',
-      ]
-    }
-  };
-
-  const getGameAccountConfig = (game) => {
-    if (!game) return null;
-    const gid = (game.id || '').toLowerCase();
-    const gn = (game.name || '').toLowerCase();
-    // ตรวจสอบ ROV ก่อน และใช้คำเฉพาะ เพื่อป้องกันคำว่า 'Valor' ใน 'Arena of Valor' ไปซ้ำกับ 'VALORANT'
-    if (gid.includes('rov') || gn.includes('rov') || gn.includes('arena of valor')) return gameAccountConfig.rov;
-    if (gid.includes('valorant') || gn.includes('valorant') || gid === 'valo') return gameAccountConfig.valorant;
-    if (gid.includes('freefire') || gid.includes('free_fire') || gid.includes('ff') || gn.includes('free fire') || gn.includes('ฟีฟาย')) return gameAccountConfig.freefire;
-    if (gid.includes('genshin') || gn.includes('genshin')) return gameAccountConfig.genshin;
-    if (gid.includes('pubg') || gn.includes('pubg')) return gameAccountConfig.pubg;
-    if (gid.includes('lol') || gid.includes('league') || gn.includes('league') || gn.includes('legends')) return gameAccountConfig.lol;
-    if (gid.includes('fc') || gid.includes('fifa') || gn.includes('fc mobile') || gn.includes('ea sports fc')) return gameAccountConfig.fcmobile;
-    return {
-      accountType: 'ชื่อในเกม / UID',
-      title: `1. กรอกชื่อในเกม หรือ UID ตัวละคร (${game.name})`,
-      badge: '⚡ เติมตรงเข้าไอดี',
-      inputLabel: 'ชื่อตัวละครในเกม หรือ UID / Player ID',
-      placeholder: 'ระบุชื่อในเกม หรือ UID ตัวละครของท่าน...',
-      exampleText: 'ชื่อในเกม หรือ UID',
-      requiresTag: false,
-      tipTitle: 'คำแนะนำการกรอกข้อมูล:',
-      tipSteps: [
-        'กรอกชื่อตัวละครในเกม หรือ UID จากหน้าโปรไฟล์ให้ถูกต้องครบถ้วน',
-        'ตรวจสอบตัวสะกดและตัวพิมพ์ใหญ่-เล็ก เพื่อป้องกันการเติมผิดไอดี',
-      ]
-    };
-  };
-
   const getTopupLinkForGame = (gameName) => {
     if (!gameName) return null;
     const gn = gameName.toLowerCase();
-    if (gn.includes('rov') || gn.includes('arena of valor')) return officialGameTopupLinks.rov;
-    if (gn.includes('valorant') || gn === 'valo') return officialGameTopupLinks.valorant;
+    if (gn.includes('valo')) return officialGameTopupLinks.valorant;
+    if (gn.includes('rov')) return officialGameTopupLinks.rov;
     if (gn.includes('free fire') || gn.includes('freefire') || gn.includes('ฟีฟาย')) return officialGameTopupLinks.freefire;
     if (gn.includes('genshin')) return officialGameTopupLinks.genshin;
     if (gn.includes('star rail') || gn.includes('hsr')) return officialGameTopupLinks.hsr;
@@ -3051,12 +2896,7 @@ const [authMode, setAuthMode] = useState('login');
         return;
       } else {
         setSlipVerifying(false);
-        if (selectedPayment?.id === 'true') {
-          setShowTrueMoneyManualPass(true);
-          setSlipVerifyError('⚠️ สลิปโอนผ่านเบอร์ TrueMoney Wallet โดยตรงจะไม่มี QR Code ธนาคาร (ทำให้ระบบ SlipOK ค้นหา QR ไม่พบ) 👉 ท่านสามารถกดปุ่ม [ ยืนยันสลิป TrueMoney ] ด้านล่างเพื่อรับพอยต์เข้าเกมได้ทันที');
-        } else {
-          setSlipVerifyError(`❌ ${result.message || 'สลิปไม่ถูกต้อง หรือยอดเงินไม่ตรงกับราคาแพ็กเกจ'}`);
-        }
+        setSlipVerifyError(`❌ ${result.message || 'สลิปไม่ถูกต้อง หรือยอดเงินไม่ตรงกับราคาแพ็กเกจ'}`);
         return;
       }
     } catch (err) {
@@ -3159,12 +2999,6 @@ const [authMode, setAuthMode] = useState('login');
     setPackageQuantity(1);
     setTruemoneyPhone('');
     setTruemoneyCard14('');
-    setSlipFile(null);
-    setSlipPreview(null);
-    setSlipVerifying(false);
-    setSlipVerifyError('');
-    setShowTrueMoneyManualPass(false);
-    setTrueMoneyTxId('');
   };
 
   const filteredGames = gamesData.filter((game) => {
@@ -4110,7 +3944,7 @@ const [authMode, setAuthMode] = useState('login');
                   </h1>
                   
                   <p style={{ fontSize: '14px', color: tColors.textSecondary, lineHeight: '1.6', margin: '0 0 20px 0' }}>
-                    อาณาจักรเติมเกมของเหล่าทาสแมวและเกมเมอร์! เติมตรง ปลอดภัย 100% ผ่าน LnwTRUE รองรับทั้ง VALORANT, ROV, Free Fire, PUBG, Genshin Impact และอีกมากมาย
+                    อาณาจักรเติมเกมของเหล่าทาสแมวและเกมเมอร์! เติมตรง ปลอดภัย 100% ถูกกว่าเติมเองในเกม รองรับทั้ง VALORANT, ROV, Free Fire, PUBG, Genshin Impact และอีกมากมาย
                   </p>
 
                   <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '22px' }}>
@@ -4121,7 +3955,7 @@ const [authMode, setAuthMode] = useState('login');
                       🐱🪙 ใช้ Cat Coin ลดเพิ่ม
                     </span>
                     <span style={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: '1.5px solid #bbf7d0', color: '#16a34a', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                      🛡️ ยึดราคาทางการ LnwTRUE
+                      🛡️ ถูกกว่าในเกม ปลอดภัย 100%
                     </span>
                   </div>
 
@@ -4289,7 +4123,7 @@ const [authMode, setAuthMode] = useState('login');
                         alert(`⚠️ ขออภัย ขณะนี้สต็อกของเกม "${game.name}" หมดชั่วคราว ทางร้านกำลังเร่งเติมสต็อก กรุณาเลือกรอหรือเติมเกมอื่นแทนครับ`);
                         return;
                       }
-                      setSelectedGame(game); setSelectedPackage(null); setPackageQuantity(1); setPlayerId(''); setGenshinUid(''); setGenshinServer('Asia');
+                      setSelectedGame(game); setSelectedPackage(null); setPackageQuantity(1); setPlayerId('');
                     }} 
                     style={{
                       opacity: isOutOfStock ? 0.78 : 1,
@@ -4531,225 +4365,20 @@ const [authMode, setAuthMode] = useState('login');
                   />
                 </div>
               </div>
-            ) : (() => {
-              const accConfig = getGameAccountConfig(selectedGame);
-              const isValoOrLol = accConfig.requiresTag;
-              const hasTag = playerId.includes('#');
-              const isGenshin = accConfig.isGenshin;
-
-              return (
-                <div style={{ 
-                  marginBottom: '28px', 
-                  backgroundColor: '#090d16', 
-                  border: isValoOrLol && playerId.trim() && !hasTag ? '1.5px solid #f59e0b' : '1.5px solid rgba(168, 85, 247, 0.45)', 
-                  borderRadius: '20px', 
-                  padding: '22px', 
-                  boxShadow: '0 0 25px rgba(168, 85, 247, 0.12)',
-                  transition: 'all 0.3s ease'
-                }}>
-                  {/* หัวข้อขั้นตอนที่ 1 พร้อม Badge */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-                    <label style={{ fontSize: '15px', color: '#c084fc', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span>{accConfig.title}</span>
-                    </label>
-                    <span style={{ fontSize: '11px', backgroundColor: 'rgba(168, 85, 247, 0.2)', color: '#d8b4fe', border: '1px solid #a855f7', padding: '3px 10px', borderRadius: '8px', fontWeight: 'bold' }}>
-                      {accConfig.badge}
-                    </span>
-                  </div>
-
-                  {/* แถบคำอธิบายฟิลด์ที่ต้องกรอก และตัวอย่างเป๊ะๆ */}
-                  <div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                    <span style={{ fontSize: '13px', color: '#e2e8f0', fontWeight: 'bold' }}>
-                      {accConfig.inputLabel}:
-                    </span>
-                    <span style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>📌 ตัวอย่างเป๊ะๆ:</span>
-                      <code style={{ backgroundColor: '#1e293b', color: '#fb923c', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', border: '1px solid #475569', letterSpacing: '0.5px' }}>
-                        {accConfig.exampleText}
-                      </code>
-                    </span>
-                  </div>
-
-                  {/* ฟอร์มกรอกข้อมูล (แยกกรณี Genshin vs เกมทั่วไป) */}
-                  {isGenshin ? (
-                    <div>
-                      {/* เลือกเซิร์ฟเวอร์ Genshin Impact */}
-                      <div style={{ marginBottom: '14px' }}>
-                        <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>
-                          เลือกเซิร์ฟเวอร์ (Server):
-                        </label>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px' }}>
-                          {[
-                            { id: 'Asia', name: '🌏 Asia (เอเชีย)', tip: 'ผู้เล่นไทย 99%' },
-                            { id: 'America', name: '🌎 America', tip: 'อเมริกา' },
-                            { id: 'Europe', name: '🌍 Europe', tip: 'ยุโรป' },
-                            { id: 'TW_HK_MO', name: '🌐 TW, HK, MO', tip: 'ไต้หวัน/ฮ่องกง' }
-                          ].map((srv) => {
-                            const isChosen = genshinServer === srv.id;
-                            return (
-                              <button
-                                key={srv.id}
-                                type="button"
-                                onClick={() => updateGenshinId(undefined, srv.id)}
-                                style={{
-                                  backgroundColor: isChosen ? 'rgba(168, 85, 247, 0.25)' : '#030712',
-                                  border: isChosen ? '2px solid #c084fc' : '1px solid #374151',
-                                  color: isChosen ? '#ffffff' : '#9ca3af',
-                                  padding: '8px 10px',
-                                  borderRadius: '10px',
-                                  cursor: 'pointer',
-                                  textAlign: 'center',
-                                  fontWeight: isChosen ? '900' : 'bold',
-                                  fontSize: '12px',
-                                  transition: 'all 0.2s ease'
-                                }}
-                              >
-                                <div>{srv.name}</div>
-                                <div style={{ fontSize: '10px', color: isChosen ? '#d8b4fe' : '#64748b', marginTop: '2px' }}>{srv.tip}</div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* ช่องกรอก UID Genshin */}
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder={accConfig.placeholder}
-                          value={genshinUid}
-                          onChange={(e) => updateGenshinId(e.target.value, undefined)}
-                          style={{
-                            flex: 1,
-                            minWidth: '240px',
-                            backgroundColor: '#030712',
-                            border: genshinUid.trim().length >= 9 ? '1.5px solid #22c55e' : '1.5px solid #374151',
-                            borderRadius: '12px',
-                            padding: '12px 16px',
-                            color: '#ffffff',
-                            outline: 'none',
-                            fontSize: '14px',
-                            fontWeight: 'bold',
-                            boxSizing: 'border-box'
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => updateGenshinId('800123456', 'Asia')}
-                          style={{
-                            backgroundColor: '#1e293b',
-                            border: '1px solid #475569',
-                            color: '#38bdf8',
-                            padding: '10px 14px',
-                            borderRadius: '12px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          <span>🎯 ลองใส่ตัวอย่าง 800123456</span>
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      {/* ช่องกรอกข้อมูลเกมทั่วไป (VALORANT, ROV, Free Fire, etc.) */}
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <input
-                          type="text"
-                          placeholder={accConfig.placeholder}
-                          value={playerId}
-                          onChange={(e) => setPlayerId(e.target.value)}
-                          style={{
-                            flex: 1,
-                            minWidth: '240px',
-                            backgroundColor: '#030712',
-                            border: isValoOrLol 
-                              ? (playerId.trim() ? (hasTag ? '1.5px solid #22c55e' : '1.5px solid #f59e0b') : '1.5px solid #374151')
-                              : (playerId.trim() ? '1.5px solid #22c55e' : '1.5px solid #374151'),
-                            borderRadius: '12px',
-                            padding: '12px 16px',
-                            color: '#ffffff',
-                            outline: 'none',
-                            fontSize: '14px',
-                            fontWeight: 'bold',
-                            boxSizing: 'border-box',
-                            boxShadow: isValoOrLol && playerId.trim() && !hasTag ? '0 0 10px rgba(245, 158, 11, 0.3)' : 'none'
-                          }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setPlayerId(accConfig.exampleText)}
-                          style={{
-                            backgroundColor: '#1e293b',
-                            border: '1px solid #475569',
-                            color: '#38bdf8',
-                            padding: '10px 14px',
-                            borderRadius: '12px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}
-                        >
-                          <span>🎯 ลองใส่ตัวอย่าง {accConfig.exampleText}</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* แจ้งเตือนสถานะความถูกต้องของข้อมูลที่กรอก (Live Validation Feedback) */}
-                  {isValoOrLol && playerId.trim() && (
-                    hasTag ? (
-                      <div style={{ marginTop: '10px', padding: '10px 14px', backgroundColor: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', borderRadius: '10px', color: '#86efac', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>✅</span>
-                        <span>
-                          <b>รูปแบบ Riot ID ถูกต้อง:</b> ชื่อในเกม <b>"{playerId.split('#')[0]}"</b> แท็ก <b>"#{playerId.split('#')[1]}"</b> (ระบบจะยิงพอยต์เข้าไอดีนี้)
-                        </span>
-                      </div>
-                    ) : (
-                      <div style={{ marginTop: '10px', padding: '10px 14px', backgroundColor: 'rgba(245, 158, 11, 0.18)', border: '1px solid #f59e0b', borderRadius: '10px', color: '#fbbf24', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span>⚠️</span>
-                        <span>
-                          <b>ยังไม่พบเครื่องหมาย # และแท็ก:</b> กรุณากรอกชื่อตามด้วย # และแท็ก เช่น <b>ABCD#1234</b> เพื่อป้องกันการเติมพอยต์ผิดไอดี
-                        </span>
-                      </div>
-                    )
-                  )}
-
-                  {isGenshin && genshinUid.trim() && (
-                    <div style={{ marginTop: '10px', padding: '10px 14px', backgroundColor: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', borderRadius: '10px', color: '#86efac', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span>✅</span>
-                      <span>
-                        <b>บันทึกข้อมูลแล้ว:</b> UID <b>{genshinUid.trim()}</b> (เซิร์ฟเวอร์: <b>{genshinServer}</b>)
-                      </span>
-                    </div>
-                  )}
-
-                  {/* กล่องคำแนะนำขั้นตอนการดูข้อมูลในเกมแบบละเอียด เพื่อไม่ให้ลูกค้าสับสน */}
-                  <div style={{ marginTop: '14px', backgroundColor: '#030712', border: '1px solid #1f2937', borderRadius: '12px', padding: '12px 16px' }}>
-                    <div style={{ fontSize: '12px', color: '#fb923c', fontWeight: 'bold', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>ℹ️ {accConfig.tipTitle}</span>
-                    </div>
-                    <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '11px', color: '#94a3b8', lineHeight: '1.7' }}>
-                      {accConfig.tipSteps.map((step, idx) => (
-                        <li key={idx} style={{ marginBottom: '2px' }}>{step}</li>
-                      ))}
-                    </ul>
-                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #1e293b', fontSize: '11px', color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>🔒</span>
-                      <span><b>ปลอดภัย 100%:</b> เติมตรงผ่านระบบทางการ ไม่ต้องใช้รหัสผ่าน (Password) บัญชีเกม</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
+            ) : (
+              <div style={{ marginBottom: '25px' }}>
+                <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                  1. ชื่อในเกม หรือ UID
+                </label>
+                <input 
+                  type="text" 
+                  placeholder="ระบุชื่อในเกม หรือ UID ของท่าน..." 
+                  value={playerId} 
+                  onChange={(e) => setPlayerId(e.target.value)} 
+                  style={{ width: '100%', maxWidth: '400px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} 
+                />
+              </div>
+            )}
 
             <div style={{ marginBottom: '30px' }}>
               <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '12px', fontWeight: 'bold' }}>2. เลือกแพ็กเกจเติมเกม</label>
@@ -5078,9 +4707,7 @@ const [authMode, setAuthMode] = useState('login');
               const isGameOut = gameStockStatus[selectedGame?.id] === false;
               const isPkgOut = selectedPackage && packageStockStatus[`${selectedGame?.id}_${selectedPackage.id}`] === false;
               const isWalletLocked = selectedPayment?.id === 'wallet' && !user;
-              const accCfg = getGameAccountConfig(selectedGame);
-              const isMissingTag = accCfg?.requiresTag && playerId.trim() && !playerId.includes('#');
-              const isDisabled = !playerId.trim() || isMissingTag || !selectedPackage || !selectedPayment || isGameOut || isPkgOut || isWalletLocked;
+              const isDisabled = !playerId.trim() || !selectedPackage || !selectedPayment || isGameOut || isPkgOut || isWalletLocked;
 
               return (
                 <button 
@@ -5110,11 +4737,7 @@ const [authMode, setAuthMode] = useState('login');
                     : isPkgOut 
                     ? `❌ แพ็กเกจ "${selectedPackage.name}" สินค้าหมดชั่วคราว (ไม่สามารถซื้อได้)`
                     : !playerId.trim() 
-                    ? (selectedGame?.category === 'card' 
-                        ? 'กรุณากรอกเบอร์โทรหรือ LINE ID เพื่อรับรหัส PIN' 
-                        : `กรุณากรอก ${accCfg?.accountType || 'ข้อมูลไอดีเกม'} (เช่น ${accCfg?.exampleText || 'ABCD#1234'})`) 
-                    : isMissingTag
-                    ? `⚠️ กรุณาระบุแท็ก # ให้ครบ เช่น ${accCfg?.exampleText || 'ABCD#1234'} (ป้องกันเติมผิดไอดี)`
+                    ? (selectedGame?.category === 'card' ? 'กรุณากรอกเบอร์โทรหรือ LINE ID เพื่อรับรหัส PIN' : 'กรุณากรอกชื่อในเกม หรือ UID (ห้ามเว้นว่าง)') 
                     : !selectedPackage 
                     ? 'กรุณาเลือกแพ็กเกจเติมเกม' 
                     : !selectedPayment 
@@ -7121,7 +6744,7 @@ const [authMode, setAuthMode] = useState('login');
                 </div>
 
                 {selectedPayment?.id === 'true' ? (
-                  /* การ์ดบัญชี TrueMoney Wallet (รองรับทั้งสแกน QR ออโต้ผ่าน SlipOK และโอนเบอร์วอลเล็ต) */
+                  /* การ์ดบัญชี TrueMoney Wallet */
                   <div style={{ backgroundColor: '#ffffff', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.4)', marginBottom: '16px', border: '2px solid #f97316' }}>
                     <div style={{ backgroundColor: '#f97316', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -7131,115 +6754,30 @@ const [authMode, setAuthMode] = useState('login');
                       <span style={{ color: '#ffffff', fontSize: '11px', opacity: 0.95 }}>ฟรีค่าธรรมเนียม 0%</span>
                     </div>
 
-                    {/* แถบเลือกวิธีจ่ายใน TrueMoney: สแกน QR (ออโต้ SlipOK) vs โอนเบอร์วอลเล็ต */}
-                    <div style={{ display: 'flex', borderBottom: '1px solid #fed7aa', backgroundColor: '#fff7ed' }}>
-                      <button
-                        type="button"
-                        onClick={() => setTrueMoneyMethodType('qr')}
-                        style={{
-                          flex: 1,
-                          padding: '10px 6px',
-                          border: 'none',
-                          borderBottom: trueMoneyMethodType === 'qr' ? '3px solid #ea580c' : '3px solid transparent',
-                          backgroundColor: trueMoneyMethodType === 'qr' ? '#ffffff' : 'transparent',
-                          color: trueMoneyMethodType === 'qr' ? '#ea580c' : '#78350f',
-                          fontWeight: '900',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '4px'
-                        }}
-                      >
-                        <span>⚡ 1. สแกน QR ผ่านทรูมันนี่</span>
-                        <span style={{ fontSize: '9px', backgroundColor: '#ea580c', color: '#ffffff', padding: '1px 5px', borderRadius: '4px' }}>SlipOK ตรวจได้</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setTrueMoneyMethodType('phone')}
-                        style={{
-                          flex: 1,
-                          padding: '10px 6px',
-                          border: 'none',
-                          borderBottom: trueMoneyMethodType === 'phone' ? '3px solid #ea580c' : '3px solid transparent',
-                          backgroundColor: trueMoneyMethodType === 'phone' ? '#ffffff' : 'transparent',
-                          color: trueMoneyMethodType === 'phone' ? '#ea580c' : '#78350f',
-                          fontWeight: '900',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '4px'
-                        }}
-                      >
-                        <span>📱 2. โอนเบอร์วอลเล็ต</span>
-                      </button>
-                    </div>
+                    <div style={{ padding: '18px', textAlign: 'center', color: '#111827' }}>
+                      <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '4px' }}>ชื่อบัญชีผู้รับเงิน</div>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ea580c', marginBottom: '14px' }}>นาย ธนภูมิ รักษี</div>
 
-                    <div style={{ padding: '16px', textAlign: 'center', color: '#111827' }}>
-                      <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '2px' }}>ชื่อบัญชีผู้รับเงิน</div>
-                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#ea580c', marginBottom: '10px' }}>นาย ธนภูมิ รักษี</div>
-
-                      {trueMoneyMethodType === 'qr' ? (
-                        /* วิธีที่ 1: สแกน QR พร้อมเพย์ผ่านแอป TrueMoney (สลิปมี QR ธนาคาร SlipOK อ่านได้ 100%) */
-                        <div>
-                          <div style={{ backgroundColor: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '14px', padding: '10px', marginBottom: '10px', display: 'inline-block' }}>
-                            <img
-                              src={`https://promptpay.io/0956267172/${selectedPackage.price * packageQuantity}.png`}
-                              alt="TrueMoney PromptPay QR Code"
-                              style={{ width: '160px', height: '160px', display: 'block', margin: '0 auto', borderRadius: '10px' }}
-                              onError={(e) => {
-                                e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`00020101021229370016A000000677010111011300669562671725802TH5303764540${(selectedPackage.price * packageQuantity).toFixed(2)}`)}`;
-                              }}
-                            />
-                            <div style={{ fontSize: '11px', color: '#ea580c', fontWeight: 'bold', marginTop: '6px' }}>
-                              พร้อมเพย์ 095-626-7172 (สแกนผ่านทรูมันนี่ได้)
-                            </div>
-                          </div>
-
-                          <div style={{ textAlign: 'left', backgroundColor: '#fff7ed', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fed7aa', marginBottom: '12px' }}>
-                            <div style={{ fontSize: '11px', color: '#9a3412', fontWeight: 'bold', marginBottom: '4px' }}>💡 วิธีจ่ายผ่าน TrueMoney ให้ SlipOK ตรวจสอบอัตโนมัติ:</div>
-                            <div style={{ fontSize: '11px', color: '#7c2d12', lineHeight: '1.6' }}>
-                              1. เปิดแอป <b>TrueMoney Wallet</b> กดปุ่ม <b>"สแกน" (Scan)</b><br/>
-                              2. สแกน QR ด้านบน ยอดชำระจะขึ้นพอดี <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b><br/>
-                              3. สลิปที่ได้จะมี <b>Mini-QR Code ธนาคาร</b> ทำให้ SlipOK สแกนตรวจสอบยอดได้อัตโนมัติ 100%!
-                            </div>
-                          </div>
+                      {/* กล่องเบอร์วอลเล็ตพร้อมปุ่มคัดลอก */}
+                      <div style={{ backgroundColor: '#fff7ed', border: '1.5px dashed #f97316', borderRadius: '14px', padding: '12px', marginBottom: '14px' }}>
+                        <div style={{ fontSize: '11px', color: '#9a3412', marginBottom: '4px', fontWeight: 'bold' }}>เบอร์ TrueMoney Wallet ร้านค้า</div>
+                        <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827', letterSpacing: '2px', fontFamily: 'monospace', marginBottom: '8px' }}>
+                          063-880-1739
                         </div>
-                      ) : (
-                        /* วิธีที่ 2: โอนเบอร์วอลเล็ต 063-880-1739 */
-                        <div>
-                          <div style={{ backgroundColor: '#fff7ed', border: '1.5px dashed #f97316', borderRadius: '14px', padding: '12px', marginBottom: '12px' }}>
-                            <div style={{ fontSize: '11px', color: '#9a3412', marginBottom: '4px', fontWeight: 'bold' }}>เบอร์ TrueMoney Wallet ร้านค้า</div>
-                            <div style={{ fontSize: '24px', fontWeight: '900', color: '#111827', letterSpacing: '2px', fontFamily: 'monospace', marginBottom: '8px' }}>
-                              063-880-1739
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText('0638801739');
-                                alert('📋 คัดลอกเบอร์ TrueMoney 0638801739 เรียบร้อยแล้ว นำไปวางโอนในแอป TrueMoney ได้เลยครับ');
-                              }}
-                              style={{ width: '100%', backgroundColor: '#f97316', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(249,115,22,0.3)' }}
-                            >
-                              <span>📋 กดเพื่อคัดลอกเบอร์ TrueMoney</span>
-                            </button>
-                          </div>
-
-                          <div style={{ textAlign: 'left', backgroundColor: '#fff7ed', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fed7aa', marginBottom: '12px' }}>
-                            <div style={{ fontSize: '11px', color: '#9a3412', fontWeight: 'bold', marginBottom: '4px' }}>⚠️ หากโอนเข้าเบอร์วอลเล็ตโดยตรง:</div>
-                            <div style={{ fontSize: '11px', color: '#7c2d12', lineHeight: '1.6' }}>
-                              1. โอนเงินเข้าเบอร์ <b>063-880-1739</b> ยอด <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b><br/>
-                              2. สลิปโอนเบอร์วอลเล็ตจะไม่มี QR ธนาคาร หาก SlipOK อ่านไม่ได้ ให้กดปุ่ม <b>"ยืนยันสลิป TrueMoney"</b> ด้านล่างเพื่อรับของได้ทันที
-                            </div>
-                          </div>
-                        </div>
-                      )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText('0638801739');
+                            alert('📋 คัดลอกเบอร์ TrueMoney 0638801739 เรียบร้อยแล้ว นำไปวางโอนในแอป TrueMoney ได้เลยครับ');
+                          }}
+                          style={{ width: '100%', backgroundColor: '#f97316', color: '#ffffff', border: 'none', padding: '10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(249,115,22,0.3)' }}
+                        >
+                          <span>📋 กดเพื่อคัดลอกเบอร์ TrueMoney</span>
+                        </button>
+                      </div>
 
                       {/* ยอดเงินสุทธิ */}
-                      <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e5e7eb' }}>
+                      <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #e5e7eb', marginBottom: '12px' }}>
                         <span style={{ fontSize: '12px', color: '#4b5563', fontWeight: 'bold' }}>ยอดเงินที่ต้องโอน:</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ color: '#ea580c', fontSize: '22px', fontWeight: '900' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</span>
@@ -7253,6 +6791,16 @@ const [authMode, setAuthMode] = useState('login');
                           >
                             คัดลอกยอด
                           </button>
+                        </div>
+                      </div>
+
+                      {/* ขั้นตอนการโอน */}
+                      <div style={{ textAlign: 'left', backgroundColor: '#fff7ed', borderRadius: '10px', padding: '10px 12px', border: '1px solid #fed7aa' }}>
+                        <div style={{ fontSize: '11px', color: '#9a3412', fontWeight: 'bold', marginBottom: '4px' }}>💡 ขั้นตอนการโอนผ่าน TrueMoney Wallet:</div>
+                        <div style={{ fontSize: '11px', color: '#7c2d12', lineHeight: '1.5' }}>
+                          1. คัดลอกเบอร์ <b>063-880-1739</b> (นาย ธนภูมิ รักษี)<br/>
+                          2. เปิดแอป TrueMoney เลือก <b>โอนเงิน</b> ยอด <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b><br/>
+                          3. บันทึกรูปสลิป แล้วนำมาแนบด้านล่าง ระบบจะเติมเข้าเกมทันที
                         </div>
                       </div>
                     </div>
@@ -7402,60 +6950,6 @@ const [authMode, setAuthMode] = useState('login');
                       >
                         ⚡ ตรวจสอบสลิป & เติมเข้าไอดีเกมทันที
                       </button>
-
-                      {/* กล่องช่วยเหลือกู้คืนกรณี TrueMoney Wallet สลิปไม่มี QR Code ธนาคาร */}
-                      {selectedPayment?.id === 'true' && (
-                        <div style={{ marginTop: '8px', padding: '12px 14px', backgroundColor: 'rgba(249, 115, 22, 0.12)', border: '1.5px solid #f97316', borderRadius: '12px', textAlign: 'left' }}>
-                          <div style={{ fontSize: '12px', color: '#fb923c', fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span>🧡 แก้ปัญหา SlipOK ไม่อ่านสลิป TrueMoney:</span>
-                          </div>
-                          <div style={{ fontSize: '11px', color: '#fed7aa', marginBottom: '8px', lineHeight: '1.5' }}>
-                            หากท่านโอนผ่านเบอร์วอลเล็ตโดยตรง สลิปจะไม่มี QR ธนาคาร (SlipOK จึงอ่านไม่ได้) ท่านสามารถแนบสลิปแล้วกดปุ่มยืนยันรับของด้านล่างนี้ได้ทันที:
-                          </div>
-                          <div style={{ marginBottom: '8px' }}>
-                            <input
-                              type="text"
-                              placeholder="เลขที่รายการบนสลิป เช่น 500xxxxxxxxxxx (ถ้ามี)..."
-                              value={trueMoneyTxId}
-                              onChange={(e) => setTrueMoneyTxId(e.target.value)}
-                              style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #f97316', borderRadius: '8px', padding: '8px 10px', color: '#ffffff', fontSize: '12px', boxSizing: 'border-box' }}
-                            />
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (!slipFile && !slipPreview && !trueMoneyTxId.trim()) {
-                                alert('⚠️ กรุณาเลือกรูปภาพสลิป TrueMoney หรือระบุเลขที่รายการก่อนกดยืนยันครับ');
-                                return;
-                              }
-                              setSlipVerifying(true);
-                              setSlipVerifyStepText('✅ ยืนยันสลิป TrueMoney Wallet เรียบร้อยแล้ว! กำลังส่งมอบแพ็กเกจเข้าไอดีเกม...');
-                              setTimeout(() => {
-                                handleFinalPaymentSubmit();
-                              }, 500);
-                            }}
-                            style={{
-                              width: '100%',
-                              background: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-                              color: '#ffffff',
-                              border: 'none',
-                              padding: '11px',
-                              borderRadius: '10px',
-                              fontWeight: '900',
-                              fontSize: '13px',
-                              cursor: 'pointer',
-                              boxShadow: '0 4px 15px rgba(249,115,22,0.4)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '6px'
-                            }}
-                          >
-                            <span>🧡 ยืนยันสลิป TrueMoney & รับสินค้าทันที</span>
-                            <span>→</span>
-                          </button>
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
