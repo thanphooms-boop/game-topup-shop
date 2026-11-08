@@ -2210,6 +2210,25 @@ const [authMode, setAuthMode] = useState('login');
   const [trueMoneyPayMode, setTrueMoneyPayMode] = useState('promptpay');
   const [walletTruePayMode, setWalletTruePayMode] = useState('promptpay');
 
+  // โหมดระบบการเติมเกม: 'manual' (แอดมินเติมมือ - ค่าเริ่มต้น) หรือ 'auto_10s' (จำลอง AUTO 10 วินาที)
+  const [fulfillmentMode, setFulfillmentMode] = useState('manual');
+
+  useEffect(() => {
+    const modeRef = ref(db, 'system_admin_settings/fulfillment_mode');
+    const unsubscribe = onValue(modeRef, (snapshot) => {
+      const val = snapshot.val();
+      if (val === 'manual' || val === 'auto_10s') {
+        setFulfillmentMode(val);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleSetFulfillmentMode = (mode) => {
+    setFulfillmentMode(mode);
+    set(ref(db, 'system_admin_settings/fulfillment_mode'), mode);
+  };
+
   useEffect(() => {
     const paySettingsRef = ref(db, 'system_admin_settings/payment_settings');
     const unsubscribe = onValue(paySettingsRef, (snapshot) => {
@@ -3108,7 +3127,7 @@ const [authMode, setAuthMode] = useState('login');
       const isEpinCard = selectedGame.category === 'card' || selectedGame.id.includes('razer');
       const targetGameChar = playerId.trim();
       const pkgSummary = `${selectedPackage.name} (x${packageQuantity} แพ็ก)`;
-      const initialStatus = isEpinCard ? '⏳ รอจัดส่งรหัส PIN' : '⏳ รอตรวจสอบยอดเงิน';
+      const initialStatus = isEpinCard ? '⏳ รอจัดส่งรหัส PIN' : (fulfillmentMode === 'manual' ? '⏳ กำลังดำเนินการ (รอแอดมินเติมเกม)' : '⏳ รอตรวจสอบยอดเงิน');
 
       const newOrder = {
         id: newOrderId,
@@ -3138,7 +3157,7 @@ const [authMode, setAuthMode] = useState('login');
       };
 
       const newKey = createRealtimeOrder(newOrder);
-      setFloatingTimer(10);
+      if (fulfillmentMode === 'auto_10s') { setFloatingTimer(10); }
       setActiveOrderFirebaseKey(newKey);
 
       // E-PIN ไม่ต้องแจก Coin แต่ถ้าจ่ายผ่านเครดิตร้าน (Cat Coin Wallet) ให้บวก Coin เหมือนปกติ!
@@ -3285,7 +3304,7 @@ const [authMode, setAuthMode] = useState('login');
       }
 
       sendLineOrderNotification(newOrder);
-      setFloatingTimer(10);
+      if (fulfillmentMode === 'auto_10s') { setFloatingTimer(10); }
       setActiveOrderFirebaseKey(newKey);
 
       setIsProcessing(false);
@@ -5679,7 +5698,7 @@ const [authMode, setAuthMode] = useState('login');
                   {paginatedTodayOrders.map((ord, idx) => {
                     const globalIdx = (customerOrdersPage - 1) * customerItemsPerPage + idx + 1;
                     let countdownSec = 0;
-                    if (ord.status.includes('รอตรวจสอบ') && ord.timestamp) {
+                    if (fulfillmentMode === 'auto_10s' && ord.status.includes('รอตรวจสอบ') && ord.timestamp) {
                       const elapsed = Math.floor((Date.now() - ord.timestamp) / 1000);
                       countdownSec = Math.max(0, 10 - elapsed);
                     }
@@ -5772,9 +5791,16 @@ const [authMode, setAuthMode] = useState('login');
 
                             <div style={{ textAlign: 'right' }}>
                               <div style={{ fontSize: '19px', fontWeight: '900', color: '#34d399' }}>฿{ord.price.toLocaleString()}</div>
-                              {ord.status.includes('รอตรวจสอบ') ? (
-                                <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '1px solid #f59e0b', borderRadius: '8px', padding: '4px 8px', marginTop: '4px' }}>
-                                  <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 'bold' }}>⏱️ ตรวจสอบใน ({countdownSec}s)</span>
+                              {(ord.status.includes('รอตรวจสอบ') || ord.status.includes('รอแอดมิน') || ord.status.includes('กำลังดำเนินการ')) ? (
+                                <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.2)', border: '1px solid #f59e0b', borderRadius: '8px', padding: '6px 10px', marginTop: '4px' }}>
+                                  {fulfillmentMode === 'auto_10s' && countdownSec > 0 ? (
+                                    <span style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 'bold' }}>⏱️ ตรวจสอบใน ({countdownSec}s)</span>
+                                  ) : (
+                                    <div>
+                                      <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 'bold' }}>⏳ กำลังดำเนินการ</div>
+                                      <div style={{ fontSize: '10px', color: '#cbd5e1' }}>แอดมินกำลังเติมเกมให้คุณ</div>
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
                                 <div style={{ marginTop: '4px' }}>
@@ -5960,6 +5986,81 @@ const [authMode, setAuthMode] = useState('login');
                 </button>
               </div>
             </div>
+                {/* 0. การ์ดเลือกโหมดระบบการเติมเกม: แอดมินเติมเอง vs ระบบจำลอง AUTO 10 วินาที */}
+                <div style={{ backgroundColor: '#0f172a', borderRadius: '18px', padding: '18px 22px', border: '2px solid #38bdf8', boxShadow: '0 0 25px rgba(56,189,248,0.2)', marginBottom: '18px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '24px' }}>⚙️</span>
+                      <div>
+                        <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#ffffff', margin: 0 }}>
+                          โหมดระบบการเติมเกม (Fulfillment Mode)
+                        </h3>
+                        <p style={{ fontSize: '11px', color: '#94a3b8', margin: '2px 0 0 0' }}>
+                          สลับระหว่างโหมดแอดมินเติมมือ (ปัจจุบัน) และโหมดจำลอง AUTO 10 วิ (สำหรับอนาคต)
+                        </p>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleSetFulfillmentMode('manual')}
+                        style={{
+                          backgroundColor: fulfillmentMode === 'manual' ? '#10b981' : '#1e293b',
+                          color: '#ffffff',
+                          border: fulfillmentMode === 'manual' ? '2px solid #34d399' : '1px solid #475569',
+                          padding: '10px 18px',
+                          borderRadius: '12px',
+                          fontWeight: '900',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: fulfillmentMode === 'manual' ? '0 0 15px rgba(16,185,129,0.5)' : 'none'
+                        }}
+                      >
+                        <span>🧑‍💻</span>
+                        <span>โหมดแอดมินเติมเอง (แนะนำ)</span>
+                        {fulfillmentMode === 'manual' && <span style={{ fontSize: '10px', backgroundColor: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '4px' }}>ใช้งานอยู่</span>}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleSetFulfillmentMode('auto_10s')}
+                        style={{
+                          backgroundColor: fulfillmentMode === 'auto_10s' ? '#8b5cf6' : '#1e293b',
+                          color: '#ffffff',
+                          border: fulfillmentMode === 'auto_10s' ? '2px solid #c084fc' : '1px solid #475569',
+                          padding: '10px 18px',
+                          borderRadius: '12px',
+                          fontWeight: '900',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: fulfillmentMode === 'auto_10s' ? '0 0 15px rgba(139,92,246,0.5)' : 'none'
+                        }}
+                      >
+                        <span>⚡</span>
+                        <span>โหมด AUTO 10 วิ</span>
+                        {fulfillmentMode === 'auto_10s' && <span style={{ fontSize: '10px', backgroundColor: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '4px' }}>ใช้งานอยู่</span>}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div style={{ backgroundColor: '#030712', borderRadius: '10px', padding: '10px 14px', border: '1px solid #1e293b', fontSize: '11px', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '14px' }}>💡</span>
+                    <span>
+                      {fulfillmentMode === 'manual' 
+                        ? 'ขณะนี้กำลังใช้ "โหมดแอดมินเติมเอง": หน้าเช็คสถานะของลูกค้าจะไม่มีเวลานับถอยหลังหลอก 10 วิ และจะขึ้นสถานะ "⏳ กำลังดำเนินการ (รอแอดมินเติม)" เมื่อแอดมินเติมเกมให้ลูกค้าเสร็จ ให้กดปุ่ม "✅ เติมเกมสำเร็จแล้ว" ในตารางด้านล่าง'
+                        : 'ขณะนี้กำลังใช้ "โหมด AUTO 10 วิ": ระบบจะจำลองนับเวลาถอยหลัง 10 วินาทีและเปลี่ยนสถานะเป็นสำเร็จอัตโนมัติ (เหมาะสำหรับอนาคตเมื่อมีบอทเติมเกม)'
+                      }
+                    </span>
+                  </div>
+                </div>
+
                 {/* 1. การ์ดจัดการระบบชำระเงิน & ค่าธรรมเนียม (แบบเต็มความกว้าง Full Width ดีไซน์โมเดิร์น 4 คอลัมน์) */}
                 <div style={{ backgroundColor: 'rgba(17, 24, 39, 0.95)', borderRadius: '20px', padding: '22px', border: '1.5px solid #f97316', boxShadow: '0 0 30px rgba(249,115,22,0.25)', marginBottom: '22px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
@@ -7352,24 +7453,24 @@ const [authMode, setAuthMode] = useState('login');
                                   <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '6px' }}>💳 เติมเครดิตร้าน</div>
                                 )}
 
-                                {(ord.status.includes('รอตรวจสอบ') || ord.status.includes('รอจัดส่ง') || ord.status.includes('รอดำเนินการ')) ? (
+                                {(ord.status.includes('รอตรวจสอบ') || ord.status.includes('รอจัดส่ง') || ord.status.includes('รอดำเนินการ') || ord.status.includes('รอแอดมิน')) ? (
                                   <div>
                                     <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 'bold', marginBottom: '6px' }}>
-                                      {ord.status.includes('รอจัดส่ง') ? '🎫 รอแอดมินส่งรหัส PIN' : `⏱️ ตรวจสอบใน (${adminCountdownSec}s)`}
+                                      {ord.status.includes('รอจัดส่ง') ? '🎫 รอแอดมินส่งรหัส PIN' : (fulfillmentMode === 'auto_10s' ? `⏱️ ตรวจสอบใน (${adminCountdownSec}s)` : '🧑‍💻 รอแอดมินเติมเข้าไอดี')}
                                     </div>
                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
                                       <button
                                         type="button"
                                         onClick={() => handleAdminApproveOrder(ord)}
-                                        style={{ backgroundColor: ord.status.includes('รอจัดส่ง') ? '#f59e0b' : '#10b981', color: ord.status.includes('รอจัดส่ง') ? '#000000' : '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: '900', cursor: 'pointer', fontSize: '12px' }}
-                                        title={ord.status.includes('รอจัดส่ง') ? 'คลิกเพื่อยืนยันว่าส่งรหัส PIN ให้ลูกค้าแล้ว' : 'คลิกเพื่ออนุมัติออเดอร์'}
+                                        style={{ backgroundColor: ord.status.includes('รอจัดส่ง') ? '#f59e0b' : '#10b981', color: ord.status.includes('รอจัดส่ง') ? '#000000' : '#ffffff', border: 'none', padding: '7px 14px', borderRadius: '8px', fontWeight: '900', cursor: 'pointer', fontSize: '12px', boxShadow: '0 2px 10px rgba(16,185,129,0.3)' }}
+                                        title={ord.status.includes('รอจัดส่ง') ? 'คลิกเพื่อยืนยันว่าส่งรหัส PIN แล้ว' : 'คลิกเพื่อยืนยันว่าเติมเกมให้ลูกค้าสำเร็จแล้ว'}
                                       >
-                                        {ord.status.includes('รอจัดส่ง') ? '🎫 จัดส่งรหัสแล้ว' : '✅ อนุมัติ'}
+                                        {ord.status.includes('รอจัดส่ง') ? '🎫 จัดส่งรหัสแล้ว' : '✅ เติมเกมสำเร็จแล้ว'}
                                       </button>
                                       <button
                                         type="button"
                                         onClick={() => handleAdminRejectOrder(ord)}
-                                        style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}
+                                        style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '7px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}
                                       >
                                         ❌ ยกเลิก
                                       </button>
