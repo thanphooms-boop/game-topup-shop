@@ -1884,6 +1884,65 @@ const [authMode, setAuthMode] = useState('login');
   const [adminOrdersPage, setAdminOrdersPage] = useState(1);
   const [orders, setOrders] = useState([]);
 
+  // ระบบตัวกรองและบันทึกรายการคำสั่งซื้อหลังบ้าน (ประจำวัน / ประจำเดือน / ประจำปี)
+  const [adminOrderPeriodTab, setAdminOrderPeriodTab] = useState('daily'); // 'daily', 'monthly', 'yearly', 'all'
+  const [adminSelectedDay, setAdminSelectedDay] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+  const [adminSelectedMonth, setAdminSelectedMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [adminSelectedYear, setAdminSelectedYear] = useState(() => {
+    return new Date().getFullYear().toString();
+  });
+
+  // ตัวเลือกปีสำหรับคำนวณภาษีประจำปี (ขึ้นปีใหม่รีเซ็ตเป็น 0 อัตโนมัติ แต่บันทึกปีก่อนหน้าไว้ครบ)
+  const [selectedTaxYear, setSelectedTaxYear] = useState(() => {
+    return new Date().getFullYear().toString();
+  });
+  const [showAnnualTaxHistory, setShowAnnualTaxHistory] = useState(false);
+
+  // ฟังก์ชันแยก วัน/เดือน/ปี ของออเดอร์
+  const getOrderDateParts = (ord) => {
+    let y = '', m = '', d = '';
+    if (ord && ord.dateKey && typeof ord.dateKey === 'string' && ord.dateKey.includes('-')) {
+      const parts = ord.dateKey.split('-');
+      if (parts.length >= 3) {
+        y = parts[0];
+        m = parts[1].padStart(2, '0');
+        d = parts[2].padStart(2, '0');
+      }
+    }
+    if (!y && ord && ord.timestamp) {
+      const dt = new Date(ord.timestamp);
+      if (!isNaN(dt.getTime())) {
+        y = dt.getFullYear().toString();
+        m = String(dt.getMonth() + 1).padStart(2, '0');
+        d = String(dt.getDate()).padStart(2, '0');
+      }
+    }
+    if (!y && ord && ord.time && typeof ord.time === 'string') {
+      const match = ord.time.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (match) {
+        d = match[1].padStart(2, '0');
+        m = match[2].padStart(2, '0');
+        y = match[3];
+      }
+    }
+    const nowD = new Date();
+    const fallbackYear = nowD.getFullYear().toString();
+    const fallbackMonth = String(nowD.getMonth() + 1).padStart(2, '0');
+    const fallbackDay = String(nowD.getDate()).padStart(2, '0');
+    return {
+      year: y || fallbackYear,
+      month: `${y || fallbackYear}-${m || fallbackMonth}`,
+      day: `${y || fallbackYear}-${m || fallbackMonth}-${d || fallbackDay}`,
+      displayDate: `${d || fallbackDay}/${m || fallbackMonth}/${y || fallbackYear}`
+    };
+  };
+
 
   // ลิงก์ช่องทางเติมเงินของแอดมินแยกตามเกม ยึดเว็บ LnwTRUE เป็นหลัก (Official & LnwTRUE Top-up Direct Links)
   const officialGameTopupLinks = {
@@ -2145,28 +2204,128 @@ const [authMode, setAuthMode] = useState('login');
   const totalAdPages = Math.ceil(adPromotions.length / adItemsPerPage) || 1;
   const paginatedAdPromotions = adPromotions.slice((adPage - 1) * adItemsPerPage, adPage * adItemsPerPage);
 
-  const totalAdminSales = orders.reduce((sum, ord) => sum + (ord.type === 'game' ? ord.price : 0), 0);
-  const totalAdminProfits = orders.reduce((sum, ord) => sum + (ord.profit || 0), 0);
+  // 1. ดึงรายการปีภาษีทั้งหมดที่มีในระบบ
+  const availableYearsList = React.useMemo(() => {
+    const curYear = new Date().getFullYear();
+    const yearSet = new Set([curYear.toString(), (curYear - 1).toString()]);
+    orders.forEach(ord => {
+      const { year } = getOrderDateParts(ord);
+      if (year && !isNaN(Number(year))) yearSet.add(year);
+    });
+    adPromotions.forEach(item => {
+      if (item.time) {
+        const match = item.time.match(/(\d{4})/);
+        if (match) yearSet.add(match[1]);
+      }
+    });
+    return Array.from(yearSet).sort((a, b) => Number(b) - Number(a));
+  }, [orders, adPromotions]);
 
-  const netProfitAfterAd = Math.max(0, totalAdminProfits - (parseFloat(adExpense) || 0));
+  // 2. คำนวณสรุปภาษีและผลประกอบการแยกตามปี (Annual Tax & Financial Reports)
+  // บันทึกแยกรายปี เมื่อขึ้นปีใหม่ภาษีของปีใหม่จะเริ่มที่ ฿0 อัตโนมัติ แต่ปีก่อนหน้ายังถูกบันทึกไว้ย้อนหลังครบถ้วน
+  const annualTaxReport = React.useMemo(() => {
+    const report = {};
+    availableYearsList.forEach(yr => {
+      report[yr] = {
+        year: yr,
+        sales: 0,
+        profits: 0,
+        adExpense: 0,
+        netProfitAfterAd: 0,
+        isVatReached: false,
+        vat7: 0,
+        taxableIncome: 0,
+        annualTax: 0,
+        orderCount: 0
+      };
+    });
 
-  const isVatThresholdReached = totalAdminSales >= 1800000;
-  const totalAdminVat = isVatThresholdReached ? Math.round(netProfitAfterAd * 0.07) : 0;
+    orders.forEach(ord => {
+      const { year } = getOrderDateParts(ord);
+      if (report[year]) {
+        if (ord.type === 'game' && !ord.status?.includes('ยกเลิก')) {
+          report[year].sales += (Number(ord.price) || 0);
+          report[year].profits += (Number(ord.profit) || 0);
+        }
+        report[year].orderCount += 1;
+      }
+    });
 
-  const profitForTaxCalculation = netProfitAfterAd - totalAdminVat;
-  const taxableIncome = Math.max(0, profitForTaxCalculation - 150000);
+    adPromotions.forEach(item => {
+      let yr = new Date().getFullYear().toString();
+      if (item.time) {
+        const match = item.time.match(/(\d{4})/);
+        if (match) yr = match[1];
+      }
+      if (report[yr]) {
+        report[yr].adExpense += (parseFloat(item.amount) || 0);
+      }
+    });
 
-  let calculatedTax = 0;
-  if (taxableIncome > 0 && taxableIncome <= 150000) {
-    calculatedTax = taxableIncome * 0.05;
-  } else if (taxableIncome > 150000 && taxableIncome <= 350000) {
-    calculatedTax = 7500 + (taxableIncome - 150000) * 0.10;
-  } else if (taxableIncome > 350000 && taxableIncome <= 600000) {
-    calculatedTax = 27500 + (taxableIncome - 350000) * 0.15;
-  } else if (taxableIncome > 600000) {
-    calculatedTax = 65000 + (taxableIncome - 600000) * 0.20;
-  }
-  const totalAdminTax = Math.round(calculatedTax);
+    Object.keys(report).forEach(yr => {
+      const row = report[yr];
+      row.netProfitAfterAd = Math.max(0, row.profits - row.adExpense);
+      row.isVatReached = row.sales >= 1800000;
+      row.vat7 = row.isVatReached ? Math.round(row.netProfitAfterAd * 0.07) : 0;
+      const profitForTax = row.netProfitAfterAd - row.vat7;
+      row.taxableIncome = Math.max(0, profitForTax - 150000);
+
+      let tax = 0;
+      if (row.taxableIncome > 0 && row.taxableIncome <= 150000) {
+        tax = row.taxableIncome * 0.05;
+      } else if (row.taxableIncome > 150000 && row.taxableIncome <= 350000) {
+        tax = 7500 + (row.taxableIncome - 150000) * 0.10;
+      } else if (row.taxableIncome > 350000 && row.taxableIncome <= 600000) {
+        tax = 27500 + (row.taxableIncome - 350000) * 0.15;
+      } else if (row.taxableIncome > 600000) {
+        tax = 65000 + (row.taxableIncome - 600000) * 0.20;
+      }
+      row.annualTax = Math.round(tax);
+    });
+
+    return report;
+  }, [orders, adPromotions, availableYearsList]);
+
+  const isTaxAllTime = selectedTaxYear === 'all';
+  const currentYearTaxData = annualTaxReport[selectedTaxYear] || {
+    sales: 0, profits: 0, adExpense: 0, netProfitAfterAd: 0, isVatReached: false, vat7: 0, taxableIncome: 0, annualTax: 0, orderCount: 0
+  };
+
+  const totalAdminSales = isTaxAllTime 
+    ? orders.reduce((sum, ord) => sum + (ord.type === 'game' && !ord.status?.includes('ยกเลิก') ? ord.price : 0), 0)
+    : currentYearTaxData.sales;
+
+  const totalAdminProfits = isTaxAllTime 
+    ? orders.reduce((sum, ord) => sum + (!ord.status?.includes('ยกเลิก') ? (ord.profit || 0) : 0), 0)
+    : currentYearTaxData.profits;
+
+  const activeAdExpense = isTaxAllTime
+    ? adExpense
+    : currentYearTaxData.adExpense;
+
+  const netProfitAfterAd = isTaxAllTime
+    ? Math.max(0, totalAdminProfits - activeAdExpense)
+    : currentYearTaxData.netProfitAfterAd;
+
+  const isVatThresholdReached = isTaxAllTime
+    ? totalAdminSales >= 1800000
+    : currentYearTaxData.isVatReached;
+
+  const totalAdminVat = isTaxAllTime
+    ? (isVatThresholdReached ? Math.round(netProfitAfterAd * 0.07) : 0)
+    : currentYearTaxData.vat7;
+
+  const totalAdminTax = isTaxAllTime
+    ? (() => {
+        const taxable = Math.max(0, netProfitAfterAd - totalAdminVat - 150000);
+        let tax = 0;
+        if (taxable > 0 && taxable <= 150000) tax = taxable * 0.05;
+        else if (taxable > 150000 && taxable <= 350000) tax = 7500 + (taxable - 150000) * 0.10;
+        else if (taxable > 350000 && taxable <= 600000) tax = 27500 + (taxable - 350000) * 0.15;
+        else if (taxable > 600000) tax = 65000 + (taxable - 600000) * 0.20;
+        return Math.round(tax);
+      })()
+    : currentYearTaxData.annualTax;
 
   const paymentMethods = [
     { id: 'wallet', name: 'Cat Coin Wallet (เหรียญร้าน 🐱🪙)', desc: 'หักจากยอดเหรียญ Cat Coin ในบัญชีทันที (โอนไว ปลอดภัย 100%)' },
@@ -3007,50 +3166,69 @@ const [authMode, setAuthMode] = useState('login');
     return matchesSearch && matchesCategory;
   });
 
-  const filteredOrders = orders.filter((ord) => {
+  // กรองออเดอร์ตามช่วงเวลาที่แอดมินเลือก (ประจำวัน / ประจำเดือน / ประจำปี / ทั้งหมด)
+  const periodOrders = React.useMemo(() => {
+    return orders.filter(ord => {
+      const { year, month, day } = getOrderDateParts(ord);
+      if (adminOrderPeriodTab === 'daily') {
+        return day === adminSelectedDay;
+      } else if (adminOrderPeriodTab === 'monthly') {
+        return month === adminSelectedMonth;
+      } else if (adminOrderPeriodTab === 'yearly') {
+        return year === adminSelectedYear;
+      }
+      return true; // 'all'
+    });
+  }, [orders, adminOrderPeriodTab, adminSelectedDay, adminSelectedMonth, adminSelectedYear]);
+
+  // สรุปสถิติออเดอร์เฉพาะช่วงเวลาที่เลือก (วัน/เดือน/ปี)
+  const periodStats = React.useMemo(() => {
+    const totalSales = periodOrders.reduce((sum, o) => sum + (o.type === 'game' && !o.status?.includes('ยกเลิก') ? (Number(o.price) || 0) : 0), 0);
+    const totalProfits = periodOrders.reduce((sum, o) => sum + (!o.status?.includes('ยกเลิก') ? (Number(o.profit) || 0) : 0), 0);
+    const pendingOrders = periodOrders.filter(o => o.status && (o.status.includes('รอตรวจสอบ') || o.status.includes('รอแอดมิน')));
+    const completedOrders = periodOrders.filter(o => o.status && (o.status.includes('สำเร็จ') || o.status.includes('AUTO')));
+    return {
+      totalCount: periodOrders.length,
+      totalSales,
+      totalProfits,
+      pendingCount: pendingOrders.length,
+      completedCount: completedOrders.length
+    };
+  }, [periodOrders]);
+
+  const filteredOrders = React.useMemo(() => {
     const rawQ = adminSearchQuery.trim();
-    if (!rawQ) return true;
+    if (!rawQ) return periodOrders;
 
     const lowerQ = rawQ.toLowerCase();
-    // ทำความสะอาดเฉพาะตัวเลข สำหรับค้นหาเบอร์โทรศัพท์ (เช่น 081-234-5678 -> 0812345678)
     const digitsOnlyQ = rawQ.replace(/[^0-9]/g, '');
 
-    // 1. ค้นหาจากเลขออร์เดอร์ (รองรับทั้ง ORD-12345 หรือพิมพ์เฉพาะตัวเลข 12345)
-    if (ord.id && (ord.id.toLowerCase().includes(lowerQ) || (digitsOnlyQ.length >= 4 && ord.id.replace(/[^0-9]/g, '').includes(digitsOnlyQ)))) {
-      return true;
-    }
-
-    // 2. ค้นหาจากชื่อบัญชีลูกค้า / ผู้ทำรายการ (player / guest_user)
-    if (ord.player && ord.player.toLowerCase().includes(lowerQ)) {
-      return true;
-    }
-
-    // 3. ค้นหาจากช่องทางจัดส่ง / ข้อมูลติดต่อ (เบอร์โทร, LINE ID หรืออีเมล ที่ลูกค้ากรอกตอนสั่งซื้อ)
-    if (ord.deliveryTarget) {
-      const dtLower = ord.deliveryTarget.toLowerCase();
-      if (dtLower.includes(lowerQ)) return true;
-      if (digitsOnlyQ.length >= 4 && ord.deliveryTarget.replace(/[^0-9]/g, '').includes(digitsOnlyQ)) return true;
-    }
-
-    // 4. ค้นหาจากตัวละคร / UID / LINE / Email ที่บันทึกใน gameChar
-    if (ord.gameChar) {
-      const gcLower = ord.gameChar.toLowerCase();
-      if (gcLower.includes(lowerQ)) return true;
-      if (digitsOnlyQ.length >= 4 && ord.gameChar.replace(/[^0-9]/g, '').includes(digitsOnlyQ)) return true;
-    }
-
-    // 5. ค้นหาจากฟิลด์ข้อมูลติดต่ออื่นๆ หากมี
-    if (ord.email && ord.email.toLowerCase().includes(lowerQ)) return true;
-    if (ord.lineId && ord.lineId.toLowerCase().includes(lowerQ)) return true;
-    if (ord.phone && (ord.phone.includes(lowerQ) || (digitsOnlyQ.length >= 4 && ord.phone.replace(/[^0-9]/g, '').includes(digitsOnlyQ)))) return true;
-    if (ord.customerPhone && (ord.customerPhone.includes(lowerQ) || (digitsOnlyQ.length >= 4 && ord.customerPhone.replace(/[^0-9]/g, '').includes(digitsOnlyQ)))) return true;
-
-    // 6. ค้นหาจากชื่อเกม หรือชื่อแพ็กเกจ
-    if (ord.game && ord.game.toLowerCase().includes(lowerQ)) return true;
-    if (ord.package && ord.package.toLowerCase().includes(lowerQ)) return true;
-
-    return false;
-  });
+    return periodOrders.filter((ord) => {
+      if (ord.id && (ord.id.toLowerCase().includes(lowerQ) || (digitsOnlyQ.length >= 4 && ord.id.replace(/[^0-9]/g, '').includes(digitsOnlyQ)))) {
+        return true;
+      }
+      if (ord.player && ord.player.toLowerCase().includes(lowerQ)) {
+        return true;
+      }
+      if (ord.deliveryTarget) {
+        const dtLower = ord.deliveryTarget.toLowerCase();
+        if (dtLower.includes(lowerQ)) return true;
+        if (digitsOnlyQ.length >= 4 && ord.deliveryTarget.replace(/[^0-9]/g, '').includes(digitsOnlyQ)) return true;
+      }
+      if (ord.gameChar) {
+        const gcLower = ord.gameChar.toLowerCase();
+        if (gcLower.includes(lowerQ)) return true;
+        if (digitsOnlyQ.length >= 4 && ord.gameChar.replace(/[^0-9]/g, '').includes(digitsOnlyQ)) return true;
+      }
+      if (ord.email && ord.email.toLowerCase().includes(lowerQ)) return true;
+      if (ord.lineId && ord.lineId.toLowerCase().includes(lowerQ)) return true;
+      if (ord.phone && (ord.phone.includes(lowerQ) || (digitsOnlyQ.length >= 4 && ord.phone.replace(/[^0-9]/g, '').includes(digitsOnlyQ)))) return true;
+      if (ord.customerPhone && (ord.customerPhone.includes(lowerQ) || (digitsOnlyQ.length >= 4 && ord.customerPhone.replace(/[^0-9]/g, '').includes(digitsOnlyQ)))) return true;
+      if (ord.game && ord.game.toLowerCase().includes(lowerQ)) return true;
+      if (ord.package && ord.package.toLowerCase().includes(lowerQ)) return true;
+      return false;
+    });
+  }, [periodOrders, adminSearchQuery]);
 
   // ระบบค้นหาประวัติออเดอร์สำหรับลูกค้าทั่วไปที่ไม่ได้สมัครสมาชิก (ค้นหาด้วยเลขออร์เดอร์ / เบอร์โทร / LINE / อีเมล)
   const guestMatchedOrders = React.useMemo(() => {
@@ -5328,27 +5506,150 @@ const [authMode, setAuthMode] = useState('login');
                   </div>
                 </div>
 
+                                {/* แถบเลือกปีภาษีและผลประกอบการ (ขึ้นปีใหม่รีเซ็ตเป็น 0 อัตโนมัติ แต่บันทึกย้อนหลังไว้ครบ) */}
+                <div style={{ backgroundColor: '#0a0f1d', borderRadius: '16px', border: '1.5px solid #f59e0b', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '14px', fontWeight: '900', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      🏛️ เลือกรอบปีภาษี & การเงิน:
+                    </span>
+                    <select 
+                      value={selectedTaxYear} 
+                      onChange={(e) => setSelectedTaxYear(e.target.value)}
+                      style={{
+                        backgroundColor: '#030712',
+                        border: '1.5px solid #f59e0b',
+                        borderRadius: '10px',
+                        padding: '6px 14px',
+                        color: '#ffffff',
+                        fontWeight: 'bold',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        outline: 'none'
+                      }}
+                    >
+                      <option value={new Date().getFullYear().toString()}>ปี {new Date().getFullYear()} (พ.ศ. {new Date().getFullYear() + 543}) - ปีปัจจุบัน</option>
+                      {availableYearsList.filter(y => y !== new Date().getFullYear().toString()).map(yr => (
+                        <option key={yr} value={yr}>ปี {yr} (พ.ศ. {Number(yr) + 543}) - บันทึกย้อนหลัง</option>
+                      ))}
+                      <option value="all">🌟 ยอดรวมตลอดกาล (All-Time)</option>
+                    </select>
+                    {selectedTaxYear === new Date().getFullYear().toString() ? (
+                      <span style={{ backgroundColor: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', border: '1px solid #22c55e', padding: '3px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' }}>
+                        🟢 กำลังคำนวณปีปัจจุบัน (ขึ้นปีใหม่รีเซ็ตภาษีเป็น ฿0 อัตโนมัติ)
+                      </span>
+                    ) : selectedTaxYear === 'all' ? (
+                      <span style={{ backgroundColor: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8', border: '1px solid #0284c7', padding: '3px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' }}>
+                        🌐 ยอดรวมตั้งแต่เปิดร้าน
+                      </span>
+                    ) : (
+                      <span style={{ backgroundColor: 'rgba(168, 85, 247, 0.2)', color: '#c084fc', border: '1px solid #a855f7', padding: '3px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold' }}>
+                        📁 ปิดรอบบัญชีปี {selectedTaxYear} แล้ว (บันทึกไว้ถาวร)
+                      </span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowAnnualTaxHistory(!showAnnualTaxHistory)}
+                    style={{
+                      backgroundColor: showAnnualTaxHistory ? '#374151' : 'rgba(245, 158, 11, 0.15)',
+                      border: '1px solid #f59e0b',
+                      color: '#fbbf24',
+                      padding: '6px 14px',
+                      borderRadius: '10px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {showAnnualTaxHistory ? '▲ ซ่อนตารางประวัติภาษีรายปี' : '📜 เปิดดูตารางภาษีและกำไรรายปีย้อนหลัง'}
+                  </button>
+                </div>
+
+                {/* ตารางประวัติภาษีและผลประกอบการรายปีย้อนหลัง (Annual Tax Records Table) */}
+                {showAnnualTaxHistory && (
+                  <div style={{ backgroundColor: '#030712', borderRadius: '16px', border: '1.5px solid #374151', padding: '16px', overflowX: 'auto' }}>
+                    <div style={{ fontSize: '14px', fontWeight: '900', color: '#f59e0b', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📋 สมุดบันทึกประวัติภาษี & ผลประกอบการแยกตามปี (ข้อมูลถูกเก็บรักษาถาวร)
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left', minWidth: '600px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1.5px solid #374151', color: '#9ca3af' }}>
+                          <th style={{ padding: '8px 10px' }}>รอบปีภาษี</th>
+                          <th style={{ padding: '8px 10px' }}>ออเดอร์</th>
+                          <th style={{ padding: '8px 10px' }}>ยอดขายรวม</th>
+                          <th style={{ padding: '8px 10px' }}>ค่าโฆษณา</th>
+                          <th style={{ padding: '8px 10px' }}>กำไรสุทธิ</th>
+                          <th style={{ padding: '8px 10px' }}>VAT 7%</th>
+                          <th style={{ padding: '8px 10px' }}>ภาษีเงินได้ที่ต้องจ่าย</th>
+                          <th style={{ padding: '8px 10px' }}>สถานะ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {availableYearsList.map(yr => {
+                          const row = annualTaxReport[yr] || {};
+                          const isCurrent = yr === new Date().getFullYear().toString();
+                          return (
+                            <tr key={yr} style={{ borderBottom: '1px solid #1f2937', backgroundColor: selectedTaxYear === yr ? 'rgba(245, 158, 11, 0.1)' : 'transparent' }}>
+                              <td style={{ padding: '10px', fontWeight: 'bold', color: '#ffffff' }}>
+                                ปี {yr} (พ.ศ. {Number(yr) + 543}) {isCurrent && '⚡'}
+                              </td>
+                              <td style={{ padding: '10px', color: '#cbd5e1' }}>{row.orderCount || 0} รายการ</td>
+                              <td style={{ padding: '10px', color: '#38bdf8', fontWeight: 'bold' }}>฿{(row.sales || 0).toLocaleString()}</td>
+                              <td style={{ padding: '10px', color: '#f472b6' }}>-฿{(row.adExpense || 0).toLocaleString()}</td>
+                              <td style={{ padding: '10px', color: '#34d399', fontWeight: 'bold' }}>+฿{(row.netProfitAfterAd || 0).toLocaleString()}</td>
+                              <td style={{ padding: '10px', color: row.isVatReached ? '#c084fc' : '#9ca3af' }}>
+                                {row.isVatReached ? `-฿${(row.vat7 || 0).toLocaleString()}` : '฿0'}
+                              </td>
+                              <td style={{ padding: '10px', color: (row.annualTax || 0) > 0 ? '#f59e0b' : '#34d399', fontWeight: 'bold' }}>
+                                {(row.annualTax || 0) > 0 ? `-฿${(row.annualTax || 0).toLocaleString()}` : '฿0 (ยกเว้น)'}
+                              </td>
+                              <td style={{ padding: '10px' }}>
+                                {isCurrent ? (
+                                  <span style={{ backgroundColor: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>ปีปัจจุบัน</span>
+                                ) : (
+                                  <span style={{ backgroundColor: '#1e293b', color: '#9ca3af', padding: '2px 8px', borderRadius: '6px', fontSize: '11px' }}>บันทึกแล้ว</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #a855f7', borderRadius: '16px', padding: '18px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>💵 ยอดขายรวมทั้งหมด</div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>
+                      💵 ยอดขาย{selectedTaxYear === 'all' ? 'รวมทั้งหมด' : `ปี ${selectedTaxYear}`}
+                    </div>
                     <div style={{ fontSize: '18px', fontWeight: '900', color: '#38bdf8' }}>฿{totalAdminSales.toLocaleString()}</div>
                   </div>
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #34d399', borderRadius: '16px', padding: '18px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>📈 กำไรสุทธิ (หักโฆษณา)</div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>
+                      📈 กำไรสุทธิ{selectedTaxYear === 'all' ? 'รวม' : `ปี ${selectedTaxYear}`}
+                    </div>
                     <div style={{ fontSize: '18px', fontWeight: '900', color: '#34d399' }}>+฿{netProfitAfterAd.toLocaleString()}</div>
                   </div>
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #ec4899', borderRadius: '16px', padding: '18px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>📢 ค่าโฆษณา/โปรโมท</div>
-                    <div style={{ fontSize: '18px', fontWeight: '900', color: '#f472b6' }}>-฿{adExpense.toLocaleString()}</div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>
+                      📢 ค่าโฆษณา{selectedTaxYear === 'all' ? 'รวม' : `ปี ${selectedTaxYear}`}
+                    </div>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: '#f472b6' }}>-฿{activeAdExpense.toLocaleString()}</div>
                   </div>
                   <div style={{ backgroundColor: '#030712', border: isVatThresholdReached ? '1.5px solid #c084fc' : '1.5px dashed #4b5563', borderRadius: '16px', padding: '18px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>🏛️ VAT 7% จากกำไร</div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>
+                      🏛️ VAT 7%{selectedTaxYear === 'all' ? '' : ` ปี ${selectedTaxYear}`}
+                    </div>
                     <div style={{ fontSize: isVatThresholdReached ? '18px' : '12px', fontWeight: '900', color: isVatThresholdReached ? '#c084fc' : '#9ca3af', marginTop: isVatThresholdReached ? '0' : '4px' }}>
                       {isVatThresholdReached ? `-฿${totalAdminVat.toLocaleString()}` : '฿0 (ยังไม่ถึงเกณฑ์ 1.8M)'}
                     </div>
                   </div>
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #f59e0b', borderRadius: '16px', padding: '18px 12px', textAlign: 'center' }}>
-                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>📋 เสียภาษีประจำปี</div>
+                    <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '4px' }}>
+                      📋 ภาษีประจำปี {selectedTaxYear === 'all' ? '(ตลอดกาล)' : selectedTaxYear}
+                    </div>
                     <div style={{ fontSize: totalAdminTax > 0 ? '18px' : '12px', fontWeight: '900', color: '#f59e0b', marginTop: totalAdminTax > 0 ? '0' : '4px' }}>
                       {totalAdminTax > 0 ? `-฿${totalAdminTax.toLocaleString()}` : '฿0 (ยกเว้น 150k แรก)'}
                     </div>
@@ -5886,13 +6187,210 @@ const [authMode, setAuthMode] = useState('login');
                   <div onClick={() => setIsAdminOrdersOpen(!isAdminOrdersOpen)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none', padding: '18px 22px', backgroundColor: '#0f172a' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ fontSize: '16px', color: '#c084fc', fontWeight: 'bold' }}>{isAdminOrdersOpen ? '▼' : '▶'}</span>
-                      <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#ffffff' }}>📊 รายการทำรายการหลังบ้าน + ช่องทางที่ลูกค้าชำระเงิน</h2>
+                      <div>
+                        <h2 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#ffffff' }}>
+                          📊 บันทึกรายการคำสั่งซื้อหลังบ้าน (ประจำวัน / ประจำเดือน / ประจำปี)
+                        </h2>
+                        <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+                          จัดหมวดหมู่ออเดอร์ตามช่วงเวลา ช่วยให้แอดมินเช็คงานง่าย ไม่สับสนแม้ออเดอร์เยอะ
+                        </div>
+                      </div>
                     </div>
-                    <span style={{ backgroundColor: 'rgba(147, 51, 234, 0.3)', color: '#c084fc', border: '1px solid #9333ea', padding: '4px 12px', borderRadius: '14px', fontSize: '12px', fontWeight: 'bold' }}>{filteredOrders.length} รายการ</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ backgroundColor: 'rgba(147, 51, 234, 0.3)', color: '#c084fc', border: '1px solid #9333ea', padding: '4px 12px', borderRadius: '14px', fontSize: '12px', fontWeight: 'bold' }}>
+                        {filteredOrders.length} รายการ
+                      </span>
+                    </div>
                   </div>
 
                   {isAdminOrdersOpen && (
                     <div style={{ padding: '25px' }}>
+                      {/* แถบเลือกโหมดบันทึกรายการ: ประจำวัน / ประจำเดือน / ประจำปี / ทั้งหมด */}
+                      <div style={{ backgroundColor: '#0f172a', padding: '14px 18px', borderRadius: '16px', border: '1.5px solid #6366f1', marginBottom: '18px', boxShadow: '0 4px 20px rgba(99, 102, 241, 0.15)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              onClick={() => { setAdminOrderPeriodTab('daily'); setAdminOrdersPage(1); }}
+                              style={{
+                                backgroundColor: adminOrderPeriodTab === 'daily' ? '#8b5cf6' : '#1e293b',
+                                color: '#ffffff',
+                                border: '1.5px solid ' + (adminOrderPeriodTab === 'daily' ? '#c084fc' : '#334155'),
+                                padding: '8px 16px',
+                                borderRadius: '10px',
+                                fontWeight: '900',
+                                fontSize: '13px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxShadow: adminOrderPeriodTab === 'daily' ? '0 0 12px rgba(139, 92, 246, 0.5)' : 'none'
+                              }}
+                            >
+                              📅 บันทึกประจำวัน (Daily)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setAdminOrderPeriodTab('monthly'); setAdminOrdersPage(1); }}
+                              style={{
+                                backgroundColor: adminOrderPeriodTab === 'monthly' ? '#8b5cf6' : '#1e293b',
+                                color: '#ffffff',
+                                border: '1.5px solid ' + (adminOrderPeriodTab === 'monthly' ? '#c084fc' : '#334155'),
+                                padding: '8px 16px',
+                                borderRadius: '10px',
+                                fontWeight: '900',
+                                fontSize: '13px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxShadow: adminOrderPeriodTab === 'monthly' ? '0 0 12px rgba(139, 92, 246, 0.5)' : 'none'
+                              }}
+                            >
+                              🗓️ บันทึกประจำเดือน (Monthly)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setAdminOrderPeriodTab('yearly'); setAdminOrdersPage(1); }}
+                              style={{
+                                backgroundColor: adminOrderPeriodTab === 'yearly' ? '#8b5cf6' : '#1e293b',
+                                color: '#ffffff',
+                                border: '1.5px solid ' + (adminOrderPeriodTab === 'yearly' ? '#c084fc' : '#334155'),
+                                padding: '8px 16px',
+                                borderRadius: '10px',
+                                fontWeight: '900',
+                                fontSize: '13px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxShadow: adminOrderPeriodTab === 'yearly' ? '0 0 12px rgba(139, 92, 246, 0.5)' : 'none'
+                              }}
+                            >
+                              📆 บันทึกประจำปี (Yearly)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => { setAdminOrderPeriodTab('all'); setAdminOrdersPage(1); }}
+                              style={{
+                                backgroundColor: adminOrderPeriodTab === 'all' ? '#0284c7' : '#1e293b',
+                                color: '#ffffff',
+                                border: '1.5px solid ' + (adminOrderPeriodTab === 'all' ? '#38bdf8' : '#334155'),
+                                padding: '8px 16px',
+                                borderRadius: '10px',
+                                fontWeight: '900',
+                                fontSize: '13px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                boxShadow: adminOrderPeriodTab === 'all' ? '0 0 12px rgba(2, 132, 199, 0.5)' : 'none'
+                              }}
+                            >
+                              🌟 ทั้งหมด (All Time)
+                            </button>
+                          </div>
+
+                          {/* ตัวเลือก วันที่ / เดือน / ปี ตามแท็บที่เลือก */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            {adminOrderPeriodTab === 'daily' && (
+                              <>
+                                <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 'bold' }}>เลือกวันที่:</span>
+                                <input 
+                                  type="date" 
+                                  value={adminSelectedDay} 
+                                  onChange={(e) => { setAdminSelectedDay(e.target.value); setAdminOrdersPage(1); }}
+                                  style={{ backgroundColor: '#030712', border: '1.5px solid #8b5cf6', borderRadius: '8px', padding: '6px 10px', color: '#ffffff', fontSize: '12px', outline: 'none' }}
+                                />
+                                <button 
+                                  type="button" 
+                                  onClick={() => { 
+                                    const d = new Date(); 
+                                    setAdminSelectedDay(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`); 
+                                    setAdminOrdersPage(1); 
+                                  }}
+                                  style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                                >
+                                  ⚡ วันนี้
+                                </button>
+                              </>
+                            )}
+
+                            {adminOrderPeriodTab === 'monthly' && (
+                              <>
+                                <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 'bold' }}>เลือกเดือน:</span>
+                                <input 
+                                  type="month" 
+                                  value={adminSelectedMonth} 
+                                  onChange={(e) => { setAdminSelectedMonth(e.target.value); setAdminOrdersPage(1); }}
+                                  style={{ backgroundColor: '#030712', border: '1.5px solid #8b5cf6', borderRadius: '8px', padding: '6px 10px', color: '#ffffff', fontSize: '12px', outline: 'none' }}
+                                />
+                                <button 
+                                  type="button" 
+                                  onClick={() => { 
+                                    const d = new Date(); 
+                                    setAdminSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`); 
+                                    setAdminOrdersPage(1); 
+                                  }}
+                                  style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                                >
+                                  ⚡ เดือนนี้
+                                </button>
+                              </>
+                            )}
+
+                            {adminOrderPeriodTab === 'yearly' && (
+                              <>
+                                <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 'bold' }}>เลือกปี:</span>
+                                <select 
+                                  value={adminSelectedYear} 
+                                  onChange={(e) => { setAdminSelectedYear(e.target.value); setAdminOrdersPage(1); }}
+                                  style={{ backgroundColor: '#030712', border: '1.5px solid #8b5cf6', borderRadius: '8px', padding: '6px 10px', color: '#ffffff', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
+                                >
+                                  {availableYearsList.map(yr => (
+                                    <option key={yr} value={yr}>ปี {yr} (พ.ศ. {Number(yr) + 543})</option>
+                                  ))}
+                                </select>
+                                <button 
+                                  type="button" 
+                                  onClick={() => { 
+                                    setAdminSelectedYear(new Date().getFullYear().toString()); 
+                                    setAdminOrdersPage(1); 
+                                  }}
+                                  style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
+                                >
+                                  ⚡ ปีปัจจุบัน
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* สรุปสถิติประจำช่วงเวลาที่เลือก (Summary Stats for Period) */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', paddingTop: '12px', borderTop: '1px solid #334155' }}>
+                          <div style={{ backgroundColor: '#030712', padding: '10px 12px', borderRadius: '12px', border: '1px solid #374151', textAlign: 'center' }}>
+                            <div style={{ fontSize: '11px', color: '#9ca3af' }}>📦 ออเดอร์ช่วงนี้</div>
+                            <div style={{ fontSize: '16px', fontWeight: '900', color: '#c084fc' }}>{periodStats.totalCount} รายการ</div>
+                          </div>
+                          <div style={{ backgroundColor: '#030712', padding: '10px 12px', borderRadius: '12px', border: '1px solid #374151', textAlign: 'center' }}>
+                            <div style={{ fontSize: '11px', color: '#9ca3af' }}>💵 ยอดขายช่วงนี้</div>
+                            <div style={{ fontSize: '16px', fontWeight: '900', color: '#38bdf8' }}>฿{periodStats.totalSales.toLocaleString()}</div>
+                          </div>
+                          <div style={{ backgroundColor: '#030712', padding: '10px 12px', borderRadius: '12px', border: '1px solid #374151', textAlign: 'center' }}>
+                            <div style={{ fontSize: '11px', color: '#9ca3af' }}>📈 กำไรสุทธิช่วงนี้</div>
+                            <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>+฿{periodStats.totalProfits.toLocaleString()}</div>
+                          </div>
+                          <div style={{ backgroundColor: '#030712', padding: '10px 12px', borderRadius: '12px', border: '1px solid #374151', textAlign: 'center' }}>
+                            <div style={{ fontSize: '11px', color: '#9ca3af' }}>⏳ รอดำเนินการ</div>
+                            <div style={{ fontSize: '16px', fontWeight: '900', color: periodStats.pendingCount > 0 ? '#fbbf24' : '#9ca3af' }}>{periodStats.pendingCount} รายการ</div>
+                          </div>
+                          <div style={{ backgroundColor: '#030712', padding: '10px 12px', borderRadius: '12px', border: '1px solid #374151', textAlign: 'center' }}>
+                            <div style={{ fontSize: '11px', color: '#9ca3af' }}>✅ สำเร็จแล้ว</div>
+                            <div style={{ fontSize: '16px', fontWeight: '900', color: '#22c55e' }}>{periodStats.completedCount} รายการ</div>
+                          </div>
+                        </div>
+                      </div>
+
                       <div style={{ position: 'relative', marginBottom: '16px' }}>
                         <input 
                           type="text" 
