@@ -137,6 +137,9 @@ export default async function handler(req, res) {
     const gameChar = order.gameChar || order.playerId || '-';
     const paymentMethod = order.paymentMethod || 'โอนเงินธนาคาร';
     const time = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+    const truemoneyCardText = order.truemoneyCard
+      ? `🎟️ รหัสบัตรทรูมันนี่ 14 หลัก: ${order.truemoneyCard}\n` + (order.feeAmount ? `🏷️ ค่าธรรมเนียมบัตร (+${order.feePercent || 0}%): +฿${order.feeAmount}\n` : '')
+      : '';
 
     const isWalletTopup = order.type === 'wallet' || (game && game.includes('เติมเครดิต'));
 
@@ -147,6 +150,7 @@ export default async function handler(req, res) {
         `👤 บัญชีลูกค้า: ${player}\n` +
         `💵 จำนวนเงินที่เติม: ${price}\n` +
         `💳 ช่องทาง: ${paymentMethod}\n` +
+        truemoneyCardText +
         `📌 สถานะ: ${order.status || 'เติมเครดิตสำเร็จ'}\n` +
         `⏱️ เวลา: ${time}\n` +
         `━━━━━━━━━━━━━━━━━━\n` +
@@ -160,6 +164,7 @@ export default async function handler(req, res) {
         `👤 ลูกค้า: ${player}\n` +
         `🎯 UID/ไอดีเกม: ${gameChar}\n` +
         `💳 ช่องทาง: ${paymentMethod}\n` +
+        truemoneyCardText +
         (order.catCoinGiftAlert ? `🎁 ของขวัญ: ${order.catCoinGiftAlert}\n` : '') +
         `⏱️ เวลา: ${time}\n` +
         `━━━━━━━━━━━━━━━━━━\n` +
