@@ -3213,6 +3213,26 @@ const [authMode, setAuthMode] = useState('login');
         deliveryMode: isEpinCard ? 'MANUAL_EPIN_CODE' : 'AUTO_100_DIRECT_UID',
         adminAlert: isEpinCard ? `🚨 ออเดอร์บัตร Razer Gold PIN! ต้องส่งรหัสทาง ${cardDeliveryChannel === 'email' ? 'Email' : 'LINE'}: ${cardContactValue.trim()}` : 'เติมตรงเข้าไอดีเกม'
       });
+
+      // สแตนด์บายยิง Auto-Fulfillment API (พร้อมทำงานอัตโนมัติ 100% ทันทีเมื่อใส่คีย์ผู้ให้บริการ)
+      if (!isEpinCard) {
+        try {
+          fetch('/api/auto-fulfillment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId: newOrderId,
+              gameId: selectedGame.id,
+              gameName: selectedGame.name,
+              packageId: selectedPackage.id,
+              packageName: pkgSummary,
+              playerId: targetGameChar,
+              server: selectedServer || '',
+              price: totalPrice
+            })
+          }).catch(() => {});
+        } catch (e) {}
+      }
       setCardContactValue('');
 
       setIsProcessing(false);
