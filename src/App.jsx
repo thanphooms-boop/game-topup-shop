@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getDatabase, ref, onValue, set, push, remove } from 'firebase/database';
-import { getAuth, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth';
+import { getAuth, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 // ตั้งค่า Firebase Config
 const firebaseConfig = {
@@ -1069,6 +1069,84 @@ const [authMode, setAuthMode] = useState('login');
   }, []);
 
 // ระบบคงยอดเงินเครดิตร้านถาวร ไม่มีการรีเซ็ตอัตโนมัติ
+
+  // ระบบเข้าสู่ระบบด้วย Google (Google Sign-In)
+  const handleGoogleSignIn = async () => {
+    setAuthError('');
+    setAuthSuccessMsg('');
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const googleUser = result.user;
+      const emailClean = (googleUser.email || '').toLowerCase().trim();
+      const baseName = googleUser.displayName || (emailClean ? emailClean.split('@')[0] : 'Gamer');
+      
+      // ตรวจสอบว่ามีผู้ใช้นี้ใน Firebase Database หรือยัง
+      let existingUser = registeredUsers.find(
+        (u) => (u.email && u.email.toLowerCase() === emailClean) || (u.uid && u.uid === googleUser.uid)
+      );
+
+      if (!existingUser) {
+        // สร้างชื่อผู้ใช้ที่ไม่ซ้ำ
+        let candidateName = baseName;
+        let suffix = 1;
+        while (registeredUsers.some((u) => u.username && u.username.toLowerCase() === candidateName.toLowerCase())) {
+          candidateName = `${baseName}${suffix}`;
+          suffix++;
+        }
+
+        const newUserObj = {
+          username: candidateName,
+          email: emailClean,
+          password: `google_oauth_${googleUser.uid.slice(0, 8)}`,
+          emailVerified: true,
+          balance: 0,
+          uid: googleUser.uid,
+          photoURL: googleUser.photoURL || '',
+          provider: 'google',
+          createdAt: new Date().toISOString()
+        };
+
+        const usersRef = ref(db, 'users');
+        const newRef = await push(usersRef, newUserObj);
+        existingUser = {
+          ...newUserObj,
+          firebaseKey: newRef.key
+        };
+      } else {
+        // อัปเดตข้อมูลเพิ่มเติม
+        if (existingUser.firebaseKey) {
+          if (!existingUser.emailVerified) {
+            set(ref(db, `users/${existingUser.firebaseKey}/emailVerified`), true);
+          }
+          if (googleUser.photoURL && !existingUser.photoURL) {
+            set(ref(db, `users/${existingUser.firebaseKey}/photoURL`), googleUser.photoURL);
+          }
+        }
+      }
+
+      setUser(existingUser);
+      setShowAuthModal(false);
+      try {
+        localStorage.setItem('cyber_current_logged_user', JSON.stringify(existingUser));
+      } catch (e) {}
+    } catch (error) {
+      console.error('Google Sign-In Error:', error);
+      if (error.code === 'auth/popup-closed-by-user') {
+        return;
+      } else if (error.code === 'auth/popup-blocked') {
+        setAuthError('⚠️ เบราว์เซอร์บล็อกป๊อปอัป Google กรุณากดอนุญาตป๊อปอัปที่แถบที่อยู่เว็บ แล้วลองใหม่อีกครั้ง');
+      } else if (error.code === 'auth/unauthorized-domain') {
+        setAuthError('⚠️ โดเมนนี้ยังไม่ได้รับอนุญาตใน Firebase Console กรุณาเพิ่มโดเมนใน Authorized Domains');
+      } else if (error.code === 'auth/operation-not-allowed') {
+        setAuthError('⚠️ ยังไม่ได้เปิดใช้งาน Google Sign-In ใน Firebase Console กรุณาเปิดใช้งานในเมนู Authentication');
+      } else {
+        setAuthError('เกิดข้อผิดพลาดในการเข้าสู่ระบบด้วย Google: ' + (error.message || error.code));
+      }
+    }
+  };
 
   const handleAuthSubmit = (e) => {
     e.preventDefault();
@@ -3248,6 +3326,43 @@ const [authMode, setAuthMode] = useState('login');
               {authMode === 'register' && 'สมัครสมาชิก'}
             </button>
           </form>
+
+          {/* เส้นคั่น หรือ ล็อกอินด้วย Google */}
+          <div style={{ display: 'flex', alignItems: 'center', margin: '18px 0 14px 0', gap: '10px' }}>
+            <div style={{ flex: 1, height: '1px', backgroundColor: isDarkMode ? '#374151' : '#e2e8f0' }}></div>
+            <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: 'bold' }}>หรือ</span>
+            <div style={{ flex: 1, height: '1px', backgroundColor: isDarkMode ? '#374151' : '#e2e8f0' }}></div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            style={{
+              width: '100%',
+              backgroundColor: '#ffffff',
+              color: '#1f2937',
+              border: '1.5px solid #cbd5e1',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              fontWeight: '900',
+              fontSize: '14px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '10px',
+              boxShadow: '0 4px 15px rgba(0,0,0,0.12)',
+              transition: 'all 0.25s ease'
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <span>ดำเนินการต่อด้วย Google (เข้าสู่ระบบทันที)</span>
+          </button>
 
           <div style={{ marginTop: '15px', fontSize: '13px', color: '#9ca3af' }}>
             {authMode === 'login' && <>ยังไม่มีบัญชี? <span onClick={() => { setAuthMode('register'); setAuthError(''); setAuthSuccessMsg(''); }} style={{ color: '#38bdf8', cursor: 'pointer', fontWeight: 'bold' }}>สมัครสมาชิก</span></>}
