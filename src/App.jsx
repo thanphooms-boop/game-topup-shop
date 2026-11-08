@@ -3130,114 +3130,54 @@ const [authMode, setAuthMode] = useState('login');
       setFloatingTimer(10);
       setActiveOrderFirebaseKey(newKey);
 
-      // ระบบแจกของขวัญ Cat Coin ล็อกตาม UID เกม (รีเซ็ตสิทธิ์อัตโนมัติทุกขึ้นปีใหม่)
-      const currentYear = new Date().getFullYear();
+      // ระบบแจก Cat Coin แคชแบ็กสะสมตลอดชีพ (ได้รับทุกครั้งที่เติมเงิน!)
       const perPackReward = (selectedPackage && selectedPackage.catCoinReward) ? selectedPackage.catCoinReward : 0;
       const totalCoinGift = perPackReward * (packageQuantity || 1);
-      const cleanUidKey = targetGameChar.replace(/[\.\#\$\[\]\/]/g, '_').toLowerCase();
 
       let rewardAlertText = 'ไม่มีของขวัญ Cat Coin ในแพ็กเกจนี้';
 
-      if (!isEpinCard && totalCoinGift > 0 && cleanUidKey && cleanUidKey.length >= 2) {
-        const uidYearRef = ref(db, `uid_rewards/${currentYear}/${cleanUidKey}`);
-        get(uidYearRef)
-          .then((snapshot) => {
-            if (!snapshot.exists()) {
-              // UID นี้ยังไม่เคยรับสิทธิ์ในปีนี้ -> มอบของขวัญ Cat Coin เข้ากระเป๋า
-              if (user && user.firebaseKey) {
-                const updatedBalance = (user.balance || 0) + totalCoinGift;
-                set(ref(db, `users/${user.firebaseKey}/balance`), updatedBalance);
-                const updatedUserObj = { ...user, balance: updatedBalance };
-                setUser(updatedUserObj);
-                try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUserObj)); } catch (e) {}
-              }
-              // บันทึกสิทธิ์ UID ในปีนี้
-              set(uidYearRef, {
-                claimedAt: new Date().toISOString(),
-                earnedCoins: totalCoinGift,
-                orderId: newOrderId,
-                username: user ? user.username : 'guest',
-                year: currentYear
-              });
-
-              if (user) {
-                rewardAlertText = `🎁 ของขวัญ: มอบ +${totalCoinGift} Cat Coin ให้ลูกค้าแล้ว (สิทธิ์ UID ปี ${currentYear} 🐱🪙)`;
-              } else {
-                rewardAlertText = `🎁 ของขวัญ: มอบสิทธิ์ +${totalCoinGift} Cat Coin สำหรับ UID นี้แล้ว (รอสมัครสมาชิครับเหรียญ)`;
-                // บันทึกสิทธิ์ของขวัญค้างรับสำหรับลูกค้าที่ยังไม่ได้สมัครสมาชิก
-                try {
-                  sessionStorage.setItem('meow_pending_guest_reward', JSON.stringify({
-                    coins: totalCoinGift,
-                    orderId: newOrderId,
-                    uid: targetGameChar,
-                    year: currentYear,
-                    timestamp: Date.now()
-                  }));
-                } catch (e) {}
-                setGuestPendingReward({
-                  coins: totalCoinGift,
-                  orderId: newOrderId,
-                  uid: targetGameChar
-                });
-              }
-            } else {
-              rewardAlertText = `(UID: ${targetGameChar} เคยรับสิทธิ์ Cat Coin ปี ${currentYear} ไปแล้ว)`;
-            }
-
-            // ส่งแจ้งเตือน LINE พร้อมสถานะของขวัญ Cat Coin
-            sendLineOrderNotification({
+      if (!isEpinCard && totalCoinGift > 0) {
+        if (user && user.firebaseKey) {
+          const updatedBalance = (user.balance || 0) + totalCoinGift;
+          set(ref(db, `users/${user.firebaseKey}/balance`), updatedBalance);
+          const updatedUserObj = { ...user, balance: updatedBalance };
+          setUser(updatedUserObj);
+          try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUserObj)); } catch (e) {}
+          rewardAlertText = `🎁 แคชแบ็ก: มอบ +${totalCoinGift} Cat Coin เข้ากระเป๋าทันที (ได้รับทุกออเดอร์ 🐱🪙)`;
+        } else {
+          rewardAlertText = `🎁 ของขวัญ: สิทธิ์รับ +${totalCoinGift} Cat Coin (สมัครสมาชิกเพื่อสะสมเหรียญ)`;
+          try {
+            sessionStorage.setItem('meow_pending_guest_reward', JSON.stringify({
+              coins: totalCoinGift,
               orderId: newOrderId,
-              game: selectedGame.name,
-              packageName: pkgSummary,
-              price: totalPrice,
-              player: user ? user.username : 'guest_user',
-              gameChar: targetGameChar,
-              paymentMethod: selectedPayment.name,
-              apiRef: apiRef,
-              isEpin: isEpinCard,
-              catCoinGiftAlert: rewardAlertText,
-              deliveryChannel: isEpinCard ? (cardDeliveryChannel === 'email' ? 'EMAIL' : 'LINE') : 'UID',
-              deliveryTarget: isEpinCard ? cardContactValue.trim() : targetGameChar,
-              deliveryMode: isEpinCard ? 'MANUAL_EPIN_CODE' : 'AUTO_100_DIRECT_UID',
-              adminAlert: isEpinCard ? `🚨 ออเดอร์บัตร Razer Gold PIN! ต้องส่งรหัสทาง ${cardDeliveryChannel === 'email' ? 'Email' : 'LINE'}: ${cardContactValue.trim()} (ห้ามเติมเข้าไอดี)` : 'เติมตรงเข้าไอดีเกม'
-            });
-          })
-          .catch(() => {
-            sendLineOrderNotification({
-              orderId: newOrderId,
-              game: selectedGame.name,
-              packageName: pkgSummary,
-              price: totalPrice,
-              player: user ? user.username : 'guest_user',
-              gameChar: targetGameChar,
-              paymentMethod: selectedPayment.name,
-              apiRef: apiRef,
-              isEpin: isEpinCard,
-              catCoinGiftAlert: `+${totalCoinGift} Cat Coin`,
-              deliveryChannel: isEpinCard ? (cardDeliveryChannel === 'email' ? 'EMAIL' : 'LINE') : 'UID',
-              deliveryTarget: isEpinCard ? cardContactValue.trim() : targetGameChar,
-              deliveryMode: isEpinCard ? 'MANUAL_EPIN_CODE' : 'AUTO_100_DIRECT_UID',
-              adminAlert: isEpinCard ? `🚨 ออเดอร์บัตร Razer Gold PIN!` : 'เติมตรงเข้าไอดีเกม'
-            });
+              uid: targetGameChar,
+              timestamp: Date.now()
+            }));
+          } catch (e) {}
+          setGuestPendingReward({
+            coins: totalCoinGift,
+            orderId: newOrderId,
+            uid: targetGameChar
           });
-      } else {
-        sendLineOrderNotification({
-          orderId: newOrderId,
-          game: selectedGame.name,
-          packageName: pkgSummary,
-          price: totalPrice,
-          player: user ? user.username : 'guest_user',
-          gameChar: targetGameChar,
-          paymentMethod: selectedPayment.name,
-          apiRef: apiRef,
-          isEpin: isEpinCard,
-          catCoinGiftAlert: isEpinCard ? 'บัตร E-Pin ไม่เข้าร่วมโปรโมชัน' : null,
-          deliveryChannel: isEpinCard ? (cardDeliveryChannel === 'email' ? 'EMAIL' : 'LINE') : 'UID',
-          deliveryTarget: isEpinCard ? cardContactValue.trim() : targetGameChar,
-          deliveryMode: isEpinCard ? 'MANUAL_EPIN_CODE' : 'AUTO_100_DIRECT_UID',
-          adminAlert: isEpinCard ? `🚨 ออเดอร์บัตร Razer Gold PIN! ต้องส่งรหัสทาง ${cardDeliveryChannel === 'email' ? 'Email' : 'LINE'}: ${cardContactValue.trim()} (ห้ามเติมเข้าไอดี)` : 'เติมตรงเข้าไอดีเกม'
-        });
+        }
       }
+
+      sendLineOrderNotification({
+        orderId: newOrderId,
+        game: selectedGame.name,
+        packageName: pkgSummary,
+        price: totalPrice,
+        player: user ? user.username : 'guest_user',
+        gameChar: targetGameChar,
+        paymentMethod: selectedPayment.name,
+        apiRef: apiRef,
+        isEpin: isEpinCard,
+        catCoinGiftAlert: rewardAlertText,
+        deliveryChannel: isEpinCard ? (cardDeliveryChannel === 'email' ? 'EMAIL' : 'LINE') : 'UID',
+        deliveryTarget: isEpinCard ? cardContactValue.trim() : targetGameChar,
+        deliveryMode: isEpinCard ? 'MANUAL_EPIN_CODE' : 'AUTO_100_DIRECT_UID',
+        adminAlert: isEpinCard ? `🚨 ออเดอร์บัตร Razer Gold PIN! ต้องส่งรหัสทาง ${cardDeliveryChannel === 'email' ? 'Email' : 'LINE'}: ${cardContactValue.trim()}` : 'เติมตรงเข้าไอดีเกม'
+      });
       setCardContactValue('');
 
       setIsProcessing(false);
@@ -8392,7 +8332,7 @@ const [authMode, setAuthMode] = useState('login');
                       {/* แถบแจ้งเตือนสิทธิพิเศษ Cat Coin */}
                       {user ? (
                         <div style={{ backgroundColor: 'rgba(52, 211, 153, 0.12)', border: '1px solid #10b981', borderRadius: '10px', padding: '8px 12px', marginBottom: '12px', fontSize: '12px', color: '#047857', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                          <span>🎁 ออเดอร์นี้จะได้รับ: +{((selectedPackage?.catCoinReward || 0) * (packageQuantity || 1))} Cat Coin เข้ากระเป๋าหลังชำระเงินสำเร็จ 🐱🪙</span>
+                          <span>🎁 ออเดอร์นี้จะได้รับ: +{((selectedPackage?.catCoinReward || 0) * (packageQuantity || 1))} Cat Coin เข้ากระเป๋าทันที (สะสมได้ทุกครั้งที่เติม!) 🐱🪙</span>
                         </div>
                       ) : (
                         <div style={{ backgroundColor: '#fffbeb', border: '1.5px dashed #f59e0b', borderRadius: '12px', padding: '10px 14px', marginBottom: '14px', fontSize: '12px', color: '#92400e', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', textAlign: 'left' }}>
