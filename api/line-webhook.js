@@ -21,7 +21,9 @@ export default async function handler(req, res) {
 
     // รหัสกลุ่มแอดมิน [ALERT] ติดต่อแอดมิน CYBER TOPUP
     const ADMIN_GROUP_ID =
-      process.env.ADMIN_LINE_GROUP_ID || 'Cdb2e928ae1941ef9f45380b4ef386387';
+      process.env.ADMIN_LINE_GROUP_ID ||
+      process.env.ADMIN_LINE_USER_ID ||
+      'Cdb2e928ae1941ef9f45380b4ef386387';
 
     // 1. ตรวจจับเหตุการณ์จาก LINE (LINE Webhook Events)
     if (req.body && Array.isArray(req.body.events)) {
