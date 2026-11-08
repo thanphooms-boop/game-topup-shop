@@ -25,8 +25,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'กรุณาแนบไฟล์รูปภาพสลิปโอนเงิน' });
     }
 
-    const branchId = process.env.SLIPOK_BRANCH_ID || '80221';
-    const apiKey = process.env.SLIPOK_API_KEY || 'SLIPOKQ4IRV70';
+    const branchId = String(process.env.SLIPOK_BRANCH_ID || '80221').trim();
+    const apiKey = String(process.env.SLIPOK_API_KEY || 'SLIPOKQ4IRV70').trim();
 
     let cleanBase64 = imageBase64;
     if (cleanBase64.includes(',')) {
