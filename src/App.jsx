@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, onValue, set, push, remove } from 'firebase/database';
+import { getDatabase, ref, onValue, set, push, remove, get } from 'firebase/database';
 import { getAuth, sendPasswordResetEmail, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 // ตั้งค่า Firebase Config
@@ -764,6 +764,7 @@ export default function App() {
 
   const [registeredUsers, setRegisteredUsers] = useState([]);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [guestPendingReward, setGuestPendingReward] = useState(null);
     // State สำหรับเลือกช่องทางรับรหัสบัตร Razer Gold PIN (e-Pin) (LINE หรือ Email)
   const [cardDeliveryChannel, setCardDeliveryChannel] = useState('line'); // 'line' | 'email'
   const [cardContactValue, setCardContactValue] = useState('');
@@ -1137,6 +1138,24 @@ const [authMode, setAuthMode] = useState('login');
             } else {
               localStorage.removeItem('cyber_remembered_user');
             }
+            // ตรวจสอบว่ามีของขวัญ Cat Coin ค้างรับจากออเดอร์ก่อนหน้าในเซสชันนี้หรือไม่ (ป้องกันคนอื่นมาแอบรับต่อ)
+            try {
+              const pendingRaw = sessionStorage.getItem('meow_pending_guest_reward');
+              if (pendingRaw) {
+                const pendingData = JSON.parse(pendingRaw);
+                const isExpired = pendingData.timestamp && (Date.now() - pendingData.timestamp > 10 * 60 * 1000);
+                if (pendingData && pendingData.coins && !isExpired) {
+                  const updatedBalance = (updatedUser.balance || 0) + pendingData.coins;
+                  set(ref(db, `users/${updatedUser.firebaseKey}/balance`), updatedBalance);
+                  updatedUser.balance = updatedBalance;
+                  sessionStorage.removeItem('meow_pending_guest_reward');
+                  alert(`🎉 ยินดีด้วย! โอนของขวัญ +${pendingData.coins} Cat Coin (฿${pendingData.coins}) เข้ากระเป๋าบัญชีของคุณเรียบร้อยแล้ว 🐱🪙`);
+                } else {
+                  sessionStorage.removeItem('meow_pending_guest_reward');
+                }
+              }
+            } catch (e) {}
+
             setUser(updatedUser);
             setShowAuthModal(false);
             localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUser));
@@ -1313,15 +1332,15 @@ const [authMode, setAuthMode] = useState('login');
       image: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดนิยมอันดับ 1 🎯',
       packages: [
-        { id: 'ff1', name: '172 เพชร', price: 49.5, originalPrice: 50, cost: 49, profit: 0.5, bonus: '⚡ เติมไว ประหยัด ฿0.5' },
-        { id: 'ff2', name: '310 เพชร', price: 89, originalPrice: 90, cost: 88, profit: 1, bonus: '🔥 ขายดี ประหยัด ฿1' },
-        { id: 'ff3', name: '517 เพชร', price: 148.5, originalPrice: 150, cost: 147, profit: 1.5, bonus: '⚡ ยอดฮิต ประหยัด ฿1.5' },
-        { id: 'ff4', name: '690 เพชร', price: 197, originalPrice: 200, cost: 195, profit: 2, bonus: '⭐ ยอดนิยม ประหยัด ฿3' },
-        { id: 'ff5', name: '1,052 เพชร', price: 296, originalPrice: 300, cost: 293, profit: 3, bonus: '💥 สุดคุ้ม ประหยัด ฿4' },
-        { id: 'ff6', name: '1,801 เพชร', price: 493, originalPrice: 500, cost: 487, profit: 6, bonus: '🔥 โบนัสเพียบ ประหยัด ฿7' },
-        { id: 'ff7', name: '3,698 เพชร (VIP Mega)', price: 986, originalPrice: 1000, cost: 975, profit: 11, bonus: '👑 VIP Mega ประหยัด ฿14' },
-        { id: 'ff_w', name: 'สมาชิกเพชรรายสัปดาห์ (Weekly)', price: 64.5, originalPrice: 65, cost: 64, profit: 0.5, bonus: '⭐ รับเพชร 7 วัน ประหยัด ฿0.5' },
-        { id: 'ff_m', name: 'สมาชิกเพชรรายเดือน (Monthly)', price: 310, originalPrice: 329, cost: 295, profit: 15, bonus: '💎 รับเพชร 30 วัน ประหยัด ฿19' }
+        { id: 'ff1', name: '172 เพชร', price: 49.5, originalPrice: 50, cost: 49, profit: 0.5, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+        { id: 'ff2', name: '310 เพชร', price: 89, originalPrice: 90, cost: 88, profit: 1, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+        { id: 'ff3', name: '517 เพชร', price: 148.5, originalPrice: 150, cost: 147, profit: 1.5, catCoinReward: 1, bonus: '🔥 +1 Cat Coin 🐱🪙' },
+        { id: 'ff4', name: '690 เพชร', price: 197, originalPrice: 200, cost: 195, profit: 2, catCoinReward: 1, bonus: '🔥 +1 Cat Coin 🐱🪙' },
+        { id: 'ff5', name: '1,052 เพชร', price: 296, originalPrice: 300, cost: 293, profit: 3, catCoinReward: 1.5, bonus: '⭐ +1.5 Cat Coins 🐱🪙' },
+        { id: 'ff6', name: '1,801 เพชร', price: 493, originalPrice: 500, cost: 487, profit: 6, catCoinReward: 3, bonus: '💥 +3 Cat Coins 🐱🪙' },
+        { id: 'ff7', name: '3,698 เพชร (VIP Mega)', price: 986, originalPrice: 1000, cost: 975, profit: 11, catCoinReward: 5, bonus: '👑 +5 Cat Coins 🐱🪙 (VIP Mega)' },
+        { id: 'ff_w', name: 'สมาชิกเพชรรายสัปดาห์ (Weekly)', price: 64.5, originalPrice: 65, cost: 64, profit: 0.5, catCoinReward: 0.5, bonus: '💎 +0.5 Cat Coin 🐱🪙' },
+        { id: 'ff_m', name: 'สมาชิกเพชรรายเดือน (Monthly)', price: 310, originalPrice: 329, cost: 295, profit: 15, catCoinReward: 5, bonus: '👑 +5 Cat Coins 🐱🪙 (รายเดือนสุดคุ้ม)' }
       ]
     },
     {
@@ -1332,13 +1351,13 @@ const [authMode, setAuthMode] = useState('login');
       image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิต Open World ✨',
       packages: [
-        { id: 'g_welkin', name: 'พรแห่งดวงจันทร์ (Blessing 30 วัน)', price: 199, originalPrice: 219, cost: 179, profit: 20, bonus: '🔥 ขายดีสุด ประหยัด ฿20' },
-        { id: 'g1', name: '60 Genesis Crystals', price: 42, originalPrice: 45, cost: 35, profit: 7, bonus: '⚡ เติมตรง ประหยัด ฿3' },
-        { id: 'g2', name: '300 (+30) Genesis Crystals', price: 199, originalPrice: 219, cost: 179, profit: 20, bonus: '⚡ ยอดฮิต ประหยัด ฿20' },
-        { id: 'g3', name: '980 (+110) Genesis Crystals', price: 599, originalPrice: 650, cost: 549, profit: 50, bonus: '⭐ พรีเมียม ประหยัด ฿51' },
-        { id: 'g4', name: '1,980 (+260) Genesis Crystals', price: 1190, originalPrice: 1290, cost: 1100, profit: 90, bonus: '💥 สุดคุ้ม ประหยัด ฿100' },
-        { id: 'g5', name: '3,280 (+600) Genesis Crystals', price: 1950, originalPrice: 2100, cost: 1800, profit: 150, bonus: '🔥 บิ๊กแพ็ก ประหยัด ฿150' },
-        { id: 'g6', name: '6,480 (+1,600) Crystals (Whale)', price: 3990, originalPrice: 4300, cost: 3700, profit: 290, bonus: '👑 Whale Pack ประหยัด ฿310 VIP' }
+        { id: 'g_welkin', name: 'พรแห่งดวงจันทร์ (Blessing 30 วัน)', price: 199, originalPrice: 219, cost: 179, profit: 20, catCoinReward: 6, bonus: '🌙 +6 Cat Coins 🐱🪙 (พรดวงจันทร์)' },
+        { id: 'g1', name: '60 Genesis Crystals', price: 42, originalPrice: 45, cost: 35, profit: 7, catCoinReward: 2, bonus: '⚡ +2 Cat Coins 🐱🪙' },
+        { id: 'g2', name: '300 (+30) Genesis Crystals', price: 199, originalPrice: 219, cost: 179, profit: 20, catCoinReward: 6, bonus: '🔥 +6 Cat Coins 🐱🪙' },
+        { id: 'g3', name: '980 (+110) Genesis Crystals', price: 599, originalPrice: 650, cost: 549, profit: 50, catCoinReward: 15, bonus: '⭐ +15 Cat Coins 🐱🪙' },
+        { id: 'g4', name: '1,980 (+260) Genesis Crystals', price: 1190, originalPrice: 1290, cost: 1100, profit: 90, catCoinReward: 30, bonus: '💥 +30 Cat Coins 🐱🪙' },
+        { id: 'g5', name: '3,280 (+600) Genesis Crystals', price: 1950, originalPrice: 2100, cost: 1800, profit: 150, catCoinReward: 50, bonus: '💎 +50 Cat Coins 🐱🪙' },
+        { id: 'g6', name: '6,480 (+1,600) Crystals (Whale)', price: 3990, originalPrice: 4300, cost: 3700, profit: 290, catCoinReward: 100, bonus: '👑 +100 Cat Coins 🐱🪙 (Whale คุ้มที่สุดในร้าน)' }
       ]
     },
     
@@ -1350,12 +1369,12 @@ const [authMode, setAuthMode] = useState('login');
       image: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=500&q=80',
       badge: 'Battle Royale 🪂',
       packages: [
-        { id: 'p1', name: '60 UC', price: 32.5, originalPrice: 33, cost: 32, profit: 0.5, bonus: '⚡ เติมไว ประหยัด ฿0.5' },
-        { id: 'p2', name: '325 UC', price: 162, originalPrice: 165, cost: 159, profit: 3, bonus: '🔥 ขายดี ประหยัด ฿3' },
-        { id: 'p3', name: '660 UC (Royale Pass ทันที)', price: 322, originalPrice: 330, cost: 315, profit: 7, bonus: '⭐ ซื้อพาสได้ทันที ประหยัด ฿8' },
-        { id: 'p4', name: '1,800 UC', price: 805, originalPrice: 825, cost: 789, profit: 16, bonus: '⚡ ยอดฮิต ประหยัด ฿20' },
-        { id: 'p5', name: '3,850 UC', price: 1610, originalPrice: 1650, cost: 1573, profit: 37, bonus: '💥 สุดคุ้ม ประหยัด ฿40' },
-        { id: 'p6', name: '8,100 UC (Whale Mega Pack)', price: 3219, originalPrice: 3300, cost: 3139, profit: 80, bonus: '👑 Whale Mega ประหยัด ฿81 VIP' }
+        { id: 'p1', name: '60 UC', price: 32.5, originalPrice: 33, cost: 32, profit: 0.5, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+        { id: 'p2', name: '325 UC', price: 162, originalPrice: 165, cost: 159, profit: 3, catCoinReward: 1, bonus: '🔥 +1 Cat Coin 🐱🪙' },
+        { id: 'p3', name: '660 UC (Royale Pass ทันที)', price: 322, originalPrice: 330, cost: 315, profit: 7, catCoinReward: 2.5, bonus: '🎖️ +2.5 Cat Coins 🐱🪙 (Royale Pass)' },
+        { id: 'p4', name: '1,800 UC', price: 805, originalPrice: 825, cost: 789, profit: 16, catCoinReward: 6, bonus: '⭐ +6 Cat Coins 🐱🪙' },
+        { id: 'p5', name: '3,850 UC', price: 1610, originalPrice: 1650, cost: 1573, profit: 37, catCoinReward: 15, bonus: '💥 +15 Cat Coins 🐱🪙' },
+        { id: 'p6', name: '8,100 UC (Whale Mega Pack)', price: 3219, originalPrice: 3300, cost: 3139, profit: 80, catCoinReward: 35, bonus: '👑 +35 Cat Coins 🐱🪙 (Whale Mega)' }
       ]
     },
     {
@@ -1366,12 +1385,12 @@ const [authMode, setAuthMode] = useState('login');
       image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=500&q=80',
       badge: 'MOBA ยอดฮิต 🏆',
       packages: [
-        { id: 'l1', name: '615 RP', price: 136, originalPrice: 139, cost: 133, profit: 3, bonus: '⚡ เติมไว ประหยัด ฿3' },
-        { id: 'l2', name: '1,320 RP', price: 273, originalPrice: 279, cost: 267, profit: 6, bonus: '🔥 ขายดี ประหยัด ฿6' },
-        { id: 'l3', name: '2,795 RP', price: 547, originalPrice: 559, cost: 536, profit: 11, bonus: '⚡ ยอดฮิต ประหยัด ฿12' },
-        { id: 'l4', name: '4,985 RP', price: 959, originalPrice: 979, cost: 939, profit: 20, bonus: '⭐ พรีเมียม ประหยัด ฿20' },
-        { id: 'l5', name: '7,295 RP', price: 1370, originalPrice: 1400, cost: 1344, profit: 26, bonus: '💥 ซูเปอร์คุ้ม ประหยัด ฿30' },
-        { id: 'l6', name: '14,875 RP (Ultra Whale)', price: 2740, originalPrice: 2800, cost: 2688, profit: 52, bonus: '👑 Ultra Whale ประหยัด ฿60 VIP' }
+        { id: 'l1', name: '615 RP', price: 136, originalPrice: 139, cost: 133, profit: 3, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
+        { id: 'l2', name: '1,320 RP', price: 273, originalPrice: 279, cost: 267, profit: 6, catCoinReward: 2, bonus: '🔥 +2 Cat Coins 🐱🪙' },
+        { id: 'l3', name: '2,795 RP', price: 547, originalPrice: 559, cost: 536, profit: 11, catCoinReward: 4, bonus: '⭐ +4 Cat Coins 🐱🪙' },
+        { id: 'l4', name: '4,985 RP', price: 959, originalPrice: 979, cost: 939, profit: 20, catCoinReward: 7, bonus: '💥 +7 Cat Coins 🐱🪙' },
+        { id: 'l5', name: '7,295 RP', price: 1370, originalPrice: 1400, cost: 1344, profit: 26, catCoinReward: 10, bonus: '💎 +10 Cat Coins 🐱🪙' },
+        { id: 'l6', name: '14,875 RP (Ultra Whale)', price: 2740, originalPrice: 2800, cost: 2688, profit: 52, catCoinReward: 20, bonus: '👑 +20 Cat Coins 🐱🪙 (Ultra Whale)' }
       ]
     },
     {
@@ -1382,12 +1401,12 @@ const [authMode, setAuthMode] = useState('login');
       image: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=500&q=80',
       badge: 'ฟุตบอลอันดับ 1 ⚽',
       packages: [
-        { id: 'fc1', name: '4,466 FC Points', price: 49, originalPrice: 50, cost: 48, profit: 1, bonus: '⚡ ประหยัด ฿1' },
-        { id: 'fc2', name: '8,181 FC Points', price: 88.5, originalPrice: 90, cost: 87, profit: 1.5, bonus: '🔥 ขายดี ประหยัด ฿1.5' },
-        { id: 'fc3', name: '15,000 FC Points', price: 147.5, originalPrice: 150, cost: 145, profit: 2.5, bonus: '⚡ ยอดนิยม ประหยัด ฿2.5' },
-        { id: 'fc4', name: '30,000 FC Points', price: 295, originalPrice: 300, cost: 290, profit: 5, bonus: '⭐ คุ้มค่า ประหยัด ฿5' },
-        { id: 'fc5', name: '50,000 FC Points', price: 490, originalPrice: 500, cost: 482, profit: 8, bonus: '💥 สุดคุ้ม ประหยัด ฿10' },
-        { id: 'fc6', name: '100,000 FC Points (Pro Pack)', price: 980, originalPrice: 1000, cost: 965, profit: 15, bonus: '👑 Pro Pack ประหยัด ฿20 VIP' }
+        { id: 'fc1', name: '4,466 FC Points', price: 49, originalPrice: 50, cost: 48, profit: 1, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+        { id: 'fc2', name: '8,181 FC Points', price: 88.5, originalPrice: 90, cost: 87, profit: 1.5, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+        { id: 'fc3', name: '15,000 FC Points', price: 147.5, originalPrice: 150, cost: 145, profit: 2.5, catCoinReward: 1, bonus: '🔥 +1 Cat Coin 🐱🪙' },
+        { id: 'fc4', name: '30,000 FC Points', price: 295, originalPrice: 300, cost: 290, profit: 5, catCoinReward: 2, bonus: '⭐ +2 Cat Coins 🐱🪙' },
+        { id: 'fc5', name: '50,000 FC Points', price: 490, originalPrice: 500, cost: 482, profit: 8, catCoinReward: 3, bonus: '💥 +3 Cat Coins 🐱🪙' },
+        { id: 'fc6', name: '100,000 FC Points (Pro Pack)', price: 980, originalPrice: 1000, cost: 965, profit: 15, catCoinReward: 6, bonus: '👑 +6 Cat Coins 🐱🪙 (Pro Pack)' }
       ]
     },
     
@@ -2931,21 +2950,114 @@ const [authMode, setAuthMode] = useState('login');
       setFloatingTimer(10);
       setActiveOrderFirebaseKey(newKey);
 
-      sendLineOrderNotification({
-        orderId: newOrderId,
-        game: selectedGame.name,
-        packageName: pkgSummary,
-        price: totalPrice,
-        player: user ? user.username : 'guest_user',
-        gameChar: targetGameChar,
-        paymentMethod: selectedPayment.name,
-        apiRef: apiRef,
-        isEpin: isEpinCard,
-        deliveryChannel: isEpinCard ? (cardDeliveryChannel === 'email' ? 'EMAIL' : 'LINE') : 'UID',
-        deliveryTarget: isEpinCard ? cardContactValue.trim() : targetGameChar,
-        deliveryMode: isEpinCard ? 'MANUAL_EPIN_CODE' : 'AUTO_100_DIRECT_UID',
-        adminAlert: isEpinCard ? `🚨 ออเดอร์บัตร Razer Gold PIN! ต้องส่งรหัสทาง ${cardDeliveryChannel === 'email' ? 'Email' : 'LINE'}: ${cardContactValue.trim()} (ห้ามเติมเข้าไอดี)` : 'เติมตรงเข้าไอดีเกม'
-      });
+      // ระบบแจกของขวัญ Cat Coin ล็อกตาม UID เกม (รีเซ็ตสิทธิ์อัตโนมัติทุกขึ้นปีใหม่)
+      const currentYear = new Date().getFullYear();
+      const perPackReward = (selectedPackage && selectedPackage.catCoinReward) ? selectedPackage.catCoinReward : 0;
+      const totalCoinGift = perPackReward * (packageQuantity || 1);
+      const cleanUidKey = targetGameChar.replace(/[\.\#\$\[\]\/]/g, '_').toLowerCase();
+
+      let rewardAlertText = 'ไม่มีของขวัญ Cat Coin ในแพ็กเกจนี้';
+
+      if (!isEpinCard && totalCoinGift > 0 && cleanUidKey && cleanUidKey.length >= 2) {
+        const uidYearRef = ref(db, `uid_rewards/${currentYear}/${cleanUidKey}`);
+        get(uidYearRef)
+          .then((snapshot) => {
+            if (!snapshot.exists()) {
+              // UID นี้ยังไม่เคยรับสิทธิ์ในปีนี้ -> มอบของขวัญ Cat Coin เข้ากระเป๋า
+              if (user && user.firebaseKey) {
+                const updatedBalance = (user.balance || 0) + totalCoinGift;
+                set(ref(db, `users/${user.firebaseKey}/balance`), updatedBalance);
+                const updatedUserObj = { ...user, balance: updatedBalance };
+                setUser(updatedUserObj);
+                try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUserObj)); } catch (e) {}
+              }
+              // บันทึกสิทธิ์ UID ในปีนี้
+              set(uidYearRef, {
+                claimedAt: new Date().toISOString(),
+                earnedCoins: totalCoinGift,
+                orderId: newOrderId,
+                username: user ? user.username : 'guest',
+                year: currentYear
+              });
+
+              if (user) {
+                rewardAlertText = `🎁 ของขวัญ: มอบ +${totalCoinGift} Cat Coin ให้ลูกค้าแล้ว (สิทธิ์ UID ปี ${currentYear} 🐱🪙)`;
+              } else {
+                rewardAlertText = `🎁 ของขวัญ: มอบสิทธิ์ +${totalCoinGift} Cat Coin สำหรับ UID นี้แล้ว (รอสมัครสมาชิครับเหรียญ)`;
+                // บันทึกสิทธิ์ของขวัญค้างรับสำหรับลูกค้าที่ยังไม่ได้สมัครสมาชิก
+                try {
+                  sessionStorage.setItem('meow_pending_guest_reward', JSON.stringify({
+                    coins: totalCoinGift,
+                    orderId: newOrderId,
+                    uid: targetGameChar,
+                    year: currentYear,
+                    timestamp: Date.now()
+                  }));
+                } catch (e) {}
+                setGuestPendingReward({
+                  coins: totalCoinGift,
+                  orderId: newOrderId,
+                  uid: targetGameChar
+                });
+              }
+            } else {
+              rewardAlertText = `(UID: ${targetGameChar} เคยรับสิทธิ์ Cat Coin ปี ${currentYear} ไปแล้ว)`;
+            }
+
+            // ส่งแจ้งเตือน LINE พร้อมสถานะของขวัญ Cat Coin
+            sendLineOrderNotification({
+              orderId: newOrderId,
+              game: selectedGame.name,
+              packageName: pkgSummary,
+              price: totalPrice,
+              player: user ? user.username : 'guest_user',
+              gameChar: targetGameChar,
+              paymentMethod: selectedPayment.name,
+              apiRef: apiRef,
+              isEpin: isEpinCard,
+              catCoinGiftAlert: rewardAlertText,
+              deliveryChannel: isEpinCard ? (cardDeliveryChannel === 'email' ? 'EMAIL' : 'LINE') : 'UID',
+              deliveryTarget: isEpinCard ? cardContactValue.trim() : targetGameChar,
+              deliveryMode: isEpinCard ? 'MANUAL_EPIN_CODE' : 'AUTO_100_DIRECT_UID',
+              adminAlert: isEpinCard ? `🚨 ออเดอร์บัตร Razer Gold PIN! ต้องส่งรหัสทาง ${cardDeliveryChannel === 'email' ? 'Email' : 'LINE'}: ${cardContactValue.trim()} (ห้ามเติมเข้าไอดี)` : 'เติมตรงเข้าไอดีเกม'
+            });
+          })
+          .catch(() => {
+            sendLineOrderNotification({
+              orderId: newOrderId,
+              game: selectedGame.name,
+              packageName: pkgSummary,
+              price: totalPrice,
+              player: user ? user.username : 'guest_user',
+              gameChar: targetGameChar,
+              paymentMethod: selectedPayment.name,
+              apiRef: apiRef,
+              isEpin: isEpinCard,
+              catCoinGiftAlert: `+${totalCoinGift} Cat Coin`,
+              deliveryChannel: isEpinCard ? (cardDeliveryChannel === 'email' ? 'EMAIL' : 'LINE') : 'UID',
+              deliveryTarget: isEpinCard ? cardContactValue.trim() : targetGameChar,
+              deliveryMode: isEpinCard ? 'MANUAL_EPIN_CODE' : 'AUTO_100_DIRECT_UID',
+              adminAlert: isEpinCard ? `🚨 ออเดอร์บัตร Razer Gold PIN!` : 'เติมตรงเข้าไอดีเกม'
+            });
+          });
+      } else {
+        sendLineOrderNotification({
+          orderId: newOrderId,
+          game: selectedGame.name,
+          packageName: pkgSummary,
+          price: totalPrice,
+          player: user ? user.username : 'guest_user',
+          gameChar: targetGameChar,
+          paymentMethod: selectedPayment.name,
+          apiRef: apiRef,
+          isEpin: isEpinCard,
+          catCoinGiftAlert: isEpinCard ? 'บัตร E-Pin ไม่เข้าร่วมโปรโมชัน' : null,
+          deliveryChannel: isEpinCard ? (cardDeliveryChannel === 'email' ? 'EMAIL' : 'LINE') : 'UID',
+          deliveryTarget: isEpinCard ? cardContactValue.trim() : targetGameChar,
+          deliveryMode: isEpinCard ? 'MANUAL_EPIN_CODE' : 'AUTO_100_DIRECT_UID',
+          adminAlert: isEpinCard ? `🚨 ออเดอร์บัตร Razer Gold PIN! ต้องส่งรหัสทาง ${cardDeliveryChannel === 'email' ? 'Email' : 'LINE'}: ${cardContactValue.trim()} (ห้ามเติมเข้าไอดี)` : 'เติมตรงเข้าไอดีเกม'
+        });
+      }
       setCardContactValue('');
 
       setIsProcessing(false);
@@ -3403,6 +3515,68 @@ const [authMode, setAuthMode] = useState('login');
       transition: 'background-color 0.3s ease, color 0.3s ease'
     }}>
       <style>{cyberGlobalStyles}</style>
+
+      {/* Modal แจ้งเตือนลูกค้าที่ไม่ได้สมัครสมาชิก ให้กดรับเหรียญ Cat Coin เข้ากระเป๋า */}
+      {guestPendingReward && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.85)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: '#0f172a', border: '2px solid #f59e0b',
+            borderRadius: '24px', padding: '30px', maxWidth: '440px', width: '100%',
+            textAlign: 'center', boxShadow: '0 0 40px rgba(245, 158, 11, 0.4)',
+            position: 'relative'
+          }}>
+            <div style={{ fontSize: '50px', marginBottom: '10px' }}>
+              🐱🪙
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: '900', color: '#f59e0b', margin: '0 0 10px 0' }}>
+              🎉 สั่งซื้อสำเร็จเรียบร้อย!
+            </h3>
+            <p style={{ fontSize: '15px', color: '#f8fafc', lineHeight: '1.6', margin: '0 0 18px 0' }}>
+              คุณมีของขวัญรอรับ <b style={{ color: '#34d399', fontSize: '18px' }}>+{guestPendingReward.coins} Cat Coin (฿{guestPendingReward.coins})</b> จากออเดอร์นี้!
+            </p>
+            <div style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px dashed #f59e0b', borderRadius: '14px', padding: '12px', marginBottom: '20px', fontSize: '13px', color: '#cbd5e1' }}>
+              🐾 สมัครสมาชิกฟรีใน 10 วินาที เพื่อนำเหรียญนี้เข้ากระเป๋าไปใช้เป็นส่วนลดในการเติมครั้งถัดไปทันที!
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('register');
+                  setShowAuthModal(true);
+                  setGuestPendingReward(null);
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
+                  border: 'none', color: '#ffffff', padding: '14px', borderRadius: '14px',
+                  fontWeight: '900', fontSize: '15px', cursor: 'pointer',
+                  boxShadow: '0 6px 20px rgba(249, 115, 22, 0.4)'
+                }}
+              >
+                🐱🪙 สมัครสมาชิกรับเหรียญฟรีทันที
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setGuestPendingReward(null);
+                  try { sessionStorage.removeItem('meow_pending_guest_reward'); } catch (e) {}
+                }}
+                style={{
+                  backgroundColor: 'transparent', border: '1px solid #475569',
+                  color: '#94a3b8', padding: '10px', borderRadius: '12px',
+                  fontSize: '13px', cursor: 'pointer'
+                }}
+              >
+                ไว้คราวหลัง (สละสิทธิ์)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showAuthModal && (
         <div style={{
