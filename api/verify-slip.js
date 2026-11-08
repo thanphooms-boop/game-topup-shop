@@ -25,8 +25,8 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, message: 'กรุณาแนบไฟล์รูปภาพสลิปโอนเงิน' });
     }
 
-    const branchId = '80221';
-    const apiKey = 'SLIPOKQ4IRV70';
+    const branchId = process.env.SLIPOK_BRANCH_ID || '80221';
+    const apiKey = process.env.SLIPOK_API_KEY || 'SLIPOKQ4IRV70';
 
     let cleanBase64 = imageBase64;
     if (cleanBase64.includes(',')) {
@@ -65,6 +65,38 @@ export default async function handler(req, res) {
 
     const transaction = slipData.data || {};
     const transRef = transaction.transRef || transaction.transNo || orderId;
+
+    // ป้องกันการนำสลิปเดิมมาใช้ซ้ำ (Slip Replay Attack)
+    const DB_URL = 'https://cyber-topup-game-default-rtdb.asia-southeast1.firebasedatabase.app';
+    if (transRef) {
+      try {
+        const checkSlipRes = await fetch(`${DB_URL}/usedSlips/${transRef}.json`);
+        if (checkSlipRes.ok) {
+          const alreadyUsed = await checkSlipRes.json();
+          if (alreadyUsed) {
+            return res.status(400).json({
+              success: false,
+              message: `สลิปนี้ถูกใช้งานไปแล้ว ไม่สามารถใช้ซ้ำได้ (รหัสสลิป: ${transRef})`,
+            });
+          }
+        }
+        // บันทึกรหัสสลิปที่ผ่านการตรวจสอบแล้ว
+        await fetch(`${DB_URL}/usedSlips/${transRef}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: transaction.amount,
+            orderId: orderId || null,
+            sender: transaction.sender?.name || null,
+            receiver: transaction.receiver?.name || null,
+            game: game || null,
+            verifiedAt: new Date().toISOString(),
+          }),
+        });
+      } catch (dbErr) {
+        console.warn('Check used slip warning:', dbErr);
+      }
+    }
 
     return res.status(200).json({
       success: true,
