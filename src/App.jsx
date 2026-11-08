@@ -1315,6 +1315,20 @@ const [authMode, setAuthMode] = useState('login');
   const [playerId, setPlayerId] = useState('');
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [packageQuantity, setPackageQuantity] = useState(1);
+  const [genshinServer, setGenshinServer] = useState('Asia');
+  const [genshinUid, setGenshinUid] = useState('');
+
+  const updateGenshinId = (uidVal, serverVal) => {
+    const u = (uidVal !== undefined ? uidVal : genshinUid).trim();
+    const s = serverVal || genshinServer;
+    if (uidVal !== undefined) setGenshinUid(uidVal);
+    if (serverVal) setGenshinServer(serverVal);
+    if (u) {
+      setPlayerId(`${u} (Server: ${s})`);
+    } else {
+      setPlayerId('');
+    }
+  };
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -1935,6 +1949,143 @@ const [authMode, setAuthMode] = useState('login');
       url: 'https://www.lnwtrue.com/th/razer-gold-pin',
       note: 'ซื้อรหัส Serial & PIN ส่งให้ลูกค้าทันที'
     }
+  };
+
+  // การตั้งค่าข้อมูลบัญชีที่ต้องกรอกสำหรับเติมตรงเข้ารหัสลูกค้าแต่ละเกมแบบเป๊ะๆ เพื่อป้องกันความสับสน
+  const gameAccountConfig = {
+    valorant: {
+      accountType: 'Riot ID',
+      title: '1. กรอก Riot ID ของคุณ (ชื่อในเกม#แท็ก)',
+      badge: '🎯 เติมตรงผ่าน Riot ID (Riot Games)',
+      inputLabel: 'Riot ID (ชื่อในเกมตามด้วย # และแท็ก)',
+      placeholder: 'เช่น ABCD#1234 หรือ Gamer#TH1 (ต้องมี # และแท็ก)',
+      exampleText: 'ABCD#1234',
+      requiresTag: true,
+      tipTitle: 'วิธีดู Riot ID เพื่อไม่ให้สับสน:',
+      tipSteps: [
+        'เปิดเกม VALORANT หรือ Riot Client',
+        'ดูที่มุมขวาบน จะมี "ชื่อในเกม" ตามด้วยเครื่องหมาย "#" และแท็กตัวเลข/ตัวอักษร',
+        'ตัวอย่างที่ถูกต้องแบบเป๊ะๆ: หากชื่อ ABCD และแท็ก 1234 ให้กรอกเป็น ABCD#1234 (ห้ามเว้นวรรค และต้องใส่เครื่องหมาย # คั่น)',
+      ]
+    },
+    rov: {
+      accountType: 'OpenID / UID',
+      title: '1. กรอก OpenID หรือ UID ของเกม ROV',
+      badge: '⚡ เติมตรงคูปอง ROV ทันที',
+      inputLabel: 'OpenID หรือ UID บัญชีผู้เล่น ROV',
+      placeholder: 'เช่น OpenID (คัดลอกจากตั้งค่าในเกม) หรือ UID เช่น 123456789012345',
+      exampleText: 'OpenID (คัดลอกจากในเกม)',
+      requiresTag: false,
+      tipTitle: 'วิธีหา OpenID / UID ในเกม ROV:',
+      tipSteps: [
+        'เข้าเกม ROV แล้วกดไอคอนฟันเฟือง "การตั้งค่า" (Settings) ที่มุมขวาบน',
+        'เลือกแท็บ "ข้อมูลบัญชี" (หรือ "บัญชีผู้เล่น")',
+        'กดปุ่ม "คัดลอก OpenID" (แนะนำที่สุด เติมแม่นยำ 100%) หรือดูเลข UID ในหน้าโปรไฟล์ แล้วนำมาวางในช่องนี้',
+      ]
+    },
+    freefire: {
+      accountType: 'UID (Player ID)',
+      title: '1. กรอก UID (Player ID) ผู้เล่น Free Fire',
+      badge: '💎 เติมตรงเพชร Free Fire',
+      inputLabel: 'UID ตัวเลขของผู้เล่น Free Fire',
+      placeholder: 'เช่น 1234567890 (UID ตัวเลข 8-10 หลัก)',
+      exampleText: '1234567890',
+      requiresTag: false,
+      tipTitle: 'วิธีดู UID ในเกม Free Fire:',
+      tipSteps: [
+        'เข้าเกม Free Fire แล้วแตะที่ "รูปโปรไฟล์ตัวละคร" ที่มุมซ้ายบนของหน้าจอ',
+        'ใต้ชื่อตัวละครจะมีแถวตัวเลข "UID" ความยาว 8-10 หลัก',
+        'กดไอคอนสี่เหลี่ยมซ้อนกันเพื่อคัดลอก UID แล้วนำมากดวางได้ทันที',
+      ]
+    },
+    genshin: {
+      accountType: 'UID 9 หลัก & Server',
+      title: '1. กรอก UID 9 หลัก และเลือกเซิร์ฟเวอร์ (Server) Genshin Impact',
+      badge: '✨ เติมตรง Genesis Crystals / พรแห่งดวงจันทร์',
+      inputLabel: 'UID ผู้เล่น Genshin Impact (9 หลัก)',
+      placeholder: 'เช่น 800123456 หรือ 180123456 (UID 9 หลัก)',
+      exampleText: '800123456',
+      isGenshin: true,
+      requiresTag: false,
+      tipTitle: 'วิธีดู UID และการเลือกเซิร์ฟเวอร์ Genshin Impact:',
+      tipSteps: [
+        'สามารถดู UID ตัวเลข 9 หลักได้ที่ "มุมขวาล่างของหน้าจอเกม" ตลอดเวลา หรือเปิดเมนู Paimon ดูใต้รูปโปรไฟล์',
+        'เลือกเซิร์ฟเวอร์ที่เล่นให้ตรงกับบัญชีของท่าน (ผู้เล่นไทยส่วนใหญ่ 99% เล่นเซิร์ฟเวอร์ Asia)',
+        'ระบบจะผสาน UID และเซิร์ฟเวอร์เข้าด้วยกันอัตโนมัติ เพื่อส่งมอบเข้าบัญชีเกมได้แม่นยำ 100%',
+      ]
+    },
+    pubg: {
+      accountType: 'Player ID (UID)',
+      title: '1. กรอก Player ID (Character ID) ของ PUBG Mobile',
+      badge: '🎯 เติมตรง UC PUBG Mobile',
+      inputLabel: 'Player ID / Character ID ตัวเลขในเกม',
+      placeholder: 'เช่น 5123456789 (Player ID ตัวเลข 8-11 หลัก)',
+      exampleText: '5123456789',
+      requiresTag: false,
+      tipTitle: 'วิธีดู Player ID ใน PUBG Mobile:',
+      tipSteps: [
+        'เข้าเกม PUBG Mobile แล้วแตะที่รูปโปรไฟล์ที่มุมซ้ายบน',
+        'ในหน้าข้อมูลส่วนตัว ใต้ชื่อตัวละครจะมีตัวเลข "ID: 5xxxxxxxx" (8-11 หลัก)',
+        'กดไอคอนคัดลอกข้างตัวเลข ID แล้วนำมาวางในช่องนี้ได้ทันที',
+      ]
+    },
+    lol: {
+      accountType: 'Riot ID',
+      title: '1. กรอก Riot ID ของคุณ (ชื่อในเกม#แท็ก)',
+      badge: '⚔️ เติมตรง Riot Points (RP)',
+      inputLabel: 'Riot ID (ชื่อในเกมตามด้วย # และแท็ก)',
+      placeholder: 'เช่น ABCD#1234 หรือ Summoner#TH1 (ต้องมี # และแท็ก)',
+      exampleText: 'ABCD#1234',
+      requiresTag: true,
+      tipTitle: 'วิธีดู Riot ID ในเกม League of Legends (PC):',
+      tipSteps: [
+        'เปิด Riot Client หรือเข้าเกม LoL แล้วดูชื่อที่มุมขวาบน หรือในหน้า Profile',
+        'กรอกชื่อในเกมตามด้วยเครื่องหมาย "#" และแท็ก เช่น ABCD#1234 (ห้ามเว้นวรรคหลัง # และต้องใส่ # คั่นเสมอ)',
+        'ระบบ Riot Games ทั่วโลกปรับมาใช้ Riot ID เดียวกันกับ VALORANT เพื่อเติม RP ได้ตรงไอดี',
+      ]
+    },
+    fcmobile: {
+      accountType: 'UID ผู้เล่น',
+      title: '1. กรอก UID ผู้เล่น EA SPORTS FC Mobile',
+      badge: '⚽ เติมตรง FC Points',
+      inputLabel: 'UID ประจำบัญชีผู้เล่น (User ID)',
+      placeholder: 'เช่น 1234567890123456 (UID ในหน้าตั้งค่าบัญชี)',
+      exampleText: '1234567890123456',
+      requiresTag: false,
+      tipTitle: 'วิธีดู UID ในเกม EA SPORTS FC Mobile:',
+      tipSteps: [
+        'เข้าเกม FC Mobile แล้วแตะไอคอนฟันเฟือง "การตั้งค่า" (Settings) มุมขวาบน',
+        'เลื่อนหน้าจอลงมาล่างสุด จะมีแถบระบุ "UID" ประจำบัญชีของคุณ',
+        'กดปุ่มคัดลอก UID แล้วนำมาวางในช่องนี้ได้ทันที',
+      ]
+    }
+  };
+
+  const getGameAccountConfig = (game) => {
+    if (!game) return null;
+    const gid = (game.id || '').toLowerCase();
+    const gn = (game.name || '').toLowerCase();
+    if (gid.includes('valo') || gn.includes('valo')) return gameAccountConfig.valorant;
+    if (gid.includes('rov') || gn.includes('rov')) return gameAccountConfig.rov;
+    if (gid.includes('freefire') || gid.includes('free_fire') || gid.includes('ff') || gn.includes('free fire')) return gameAccountConfig.freefire;
+    if (gid.includes('genshin') || gn.includes('genshin')) return gameAccountConfig.genshin;
+    if (gid.includes('pubg') || gn.includes('pubg')) return gameAccountConfig.pubg;
+    if (gid.includes('lol') || gid.includes('league') || gn.includes('league')) return gameAccountConfig.lol;
+    if (gid.includes('fc') || gid.includes('fifa') || gn.includes('fc mobile')) return gameAccountConfig.fcmobile;
+    return {
+      accountType: 'ชื่อในเกม / UID',
+      title: `1. กรอกชื่อในเกม หรือ UID ตัวละคร (${game.name})`,
+      badge: '⚡ เติมตรงเข้าไอดี',
+      inputLabel: 'ชื่อตัวละครในเกม หรือ UID / Player ID',
+      placeholder: 'ระบุชื่อในเกม หรือ UID ตัวละครของท่าน...',
+      exampleText: 'ชื่อในเกม หรือ UID',
+      requiresTag: false,
+      tipTitle: 'คำแนะนำการกรอกข้อมูล:',
+      tipSteps: [
+        'กรอกชื่อตัวละครในเกม หรือ UID จากหน้าโปรไฟล์ให้ถูกต้องครบถ้วน',
+        'ตรวจสอบตัวสะกดและตัวพิมพ์ใหญ่-เล็ก เพื่อป้องกันการเติมผิดไอดี',
+      ]
+    };
   };
 
   const getTopupLinkForGame = (gameName) => {
@@ -4123,7 +4274,7 @@ const [authMode, setAuthMode] = useState('login');
                         alert(`⚠️ ขออภัย ขณะนี้สต็อกของเกม "${game.name}" หมดชั่วคราว ทางร้านกำลังเร่งเติมสต็อก กรุณาเลือกรอหรือเติมเกมอื่นแทนครับ`);
                         return;
                       }
-                      setSelectedGame(game); setSelectedPackage(null); setPackageQuantity(1); setPlayerId('');
+                      setSelectedGame(game); setSelectedPackage(null); setPackageQuantity(1); setPlayerId(''); setGenshinUid(''); setGenshinServer('Asia');
                     }} 
                     style={{
                       opacity: isOutOfStock ? 0.78 : 1,
@@ -4365,20 +4516,225 @@ const [authMode, setAuthMode] = useState('login');
                   />
                 </div>
               </div>
-            ) : (
-              <div style={{ marginBottom: '25px' }}>
-                <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                  1. ชื่อในเกม หรือ UID
-                </label>
-                <input 
-                  type="text" 
-                  placeholder="ระบุชื่อในเกม หรือ UID ของท่าน..." 
-                  value={playerId} 
-                  onChange={(e) => setPlayerId(e.target.value)} 
-                  style={{ width: '100%', maxWidth: '400px', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }} 
-                />
-              </div>
-            )}
+            ) : (() => {
+              const accConfig = getGameAccountConfig(selectedGame);
+              const isValoOrLol = accConfig.requiresTag;
+              const hasTag = playerId.includes('#');
+              const isGenshin = accConfig.isGenshin;
+
+              return (
+                <div style={{ 
+                  marginBottom: '28px', 
+                  backgroundColor: '#090d16', 
+                  border: isValoOrLol && playerId.trim() && !hasTag ? '1.5px solid #f59e0b' : '1.5px solid rgba(168, 85, 247, 0.45)', 
+                  borderRadius: '20px', 
+                  padding: '22px', 
+                  boxShadow: '0 0 25px rgba(168, 85, 247, 0.12)',
+                  transition: 'all 0.3s ease'
+                }}>
+                  {/* หัวข้อขั้นตอนที่ 1 พร้อม Badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                    <label style={{ fontSize: '15px', color: '#c084fc', fontWeight: '900', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>{accConfig.title}</span>
+                    </label>
+                    <span style={{ fontSize: '11px', backgroundColor: 'rgba(168, 85, 247, 0.2)', color: '#d8b4fe', border: '1px solid #a855f7', padding: '3px 10px', borderRadius: '8px', fontWeight: 'bold' }}>
+                      {accConfig.badge}
+                    </span>
+                  </div>
+
+                  {/* แถบคำอธิบายฟิลด์ที่ต้องกรอก และตัวอย่างเป๊ะๆ */}
+                  <div style={{ marginBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                    <span style={{ fontSize: '13px', color: '#e2e8f0', fontWeight: 'bold' }}>
+                      {accConfig.inputLabel}:
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>📌 ตัวอย่างเป๊ะๆ:</span>
+                      <code style={{ backgroundColor: '#1e293b', color: '#fb923c', padding: '2px 8px', borderRadius: '6px', fontSize: '12px', border: '1px solid #475569', letterSpacing: '0.5px' }}>
+                        {accConfig.exampleText}
+                      </code>
+                    </span>
+                  </div>
+
+                  {/* ฟอร์มกรอกข้อมูล (แยกกรณี Genshin vs เกมทั่วไป) */}
+                  {isGenshin ? (
+                    <div>
+                      {/* เลือกเซิร์ฟเวอร์ Genshin Impact */}
+                      <div style={{ marginBottom: '14px' }}>
+                        <label style={{ fontSize: '12px', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: 'bold' }}>
+                          เลือกเซิร์ฟเวอร์ (Server):
+                        </label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px' }}>
+                          {[
+                            { id: 'Asia', name: '🌏 Asia (เอเชีย)', tip: 'ผู้เล่นไทย 99%' },
+                            { id: 'America', name: '🌎 America', tip: 'อเมริกา' },
+                            { id: 'Europe', name: '🌍 Europe', tip: 'ยุโรป' },
+                            { id: 'TW_HK_MO', name: '🌐 TW, HK, MO', tip: 'ไต้หวัน/ฮ่องกง' }
+                          ].map((srv) => {
+                            const isChosen = genshinServer === srv.id;
+                            return (
+                              <button
+                                key={srv.id}
+                                type="button"
+                                onClick={() => updateGenshinId(undefined, srv.id)}
+                                style={{
+                                  backgroundColor: isChosen ? 'rgba(168, 85, 247, 0.25)' : '#030712',
+                                  border: isChosen ? '2px solid #c084fc' : '1px solid #374151',
+                                  color: isChosen ? '#ffffff' : '#9ca3af',
+                                  padding: '8px 10px',
+                                  borderRadius: '10px',
+                                  cursor: 'pointer',
+                                  textAlign: 'center',
+                                  fontWeight: isChosen ? '900' : 'bold',
+                                  fontSize: '12px',
+                                  transition: 'all 0.2s ease'
+                                }}
+                              >
+                                <div>{srv.name}</div>
+                                <div style={{ fontSize: '10px', color: isChosen ? '#d8b4fe' : '#64748b', marginTop: '2px' }}>{srv.tip}</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* ช่องกรอก UID Genshin */}
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder={accConfig.placeholder}
+                          value={genshinUid}
+                          onChange={(e) => updateGenshinId(e.target.value, undefined)}
+                          style={{
+                            flex: 1,
+                            minWidth: '240px',
+                            backgroundColor: '#030712',
+                            border: genshinUid.trim().length >= 9 ? '1.5px solid #22c55e' : '1.5px solid #374151',
+                            borderRadius: '12px',
+                            padding: '12px 16px',
+                            color: '#ffffff',
+                            outline: 'none',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateGenshinId('800123456', 'Asia')}
+                          style={{
+                            backgroundColor: '#1e293b',
+                            border: '1px solid #475569',
+                            color: '#38bdf8',
+                            padding: '10px 14px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <span>🎯 ลองใส่ตัวอย่าง 800123456</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      {/* ช่องกรอกข้อมูลเกมทั่วไป (VALORANT, ROV, Free Fire, etc.) */}
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <input
+                          type="text"
+                          placeholder={accConfig.placeholder}
+                          value={playerId}
+                          onChange={(e) => setPlayerId(e.target.value)}
+                          style={{
+                            flex: 1,
+                            minWidth: '240px',
+                            backgroundColor: '#030712',
+                            border: isValoOrLol 
+                              ? (playerId.trim() ? (hasTag ? '1.5px solid #22c55e' : '1.5px solid #f59e0b') : '1.5px solid #374151')
+                              : (playerId.trim() ? '1.5px solid #22c55e' : '1.5px solid #374151'),
+                            borderRadius: '12px',
+                            padding: '12px 16px',
+                            color: '#ffffff',
+                            outline: 'none',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxSizing: 'border-box',
+                            boxShadow: isValoOrLol && playerId.trim() && !hasTag ? '0 0 10px rgba(245, 158, 11, 0.3)' : 'none'
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setPlayerId(accConfig.exampleText)}
+                          style={{
+                            backgroundColor: '#1e293b',
+                            border: '1px solid #475569',
+                            color: '#38bdf8',
+                            padding: '10px 14px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <span>🎯 ลองใส่ตัวอย่าง {accConfig.exampleText}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* แจ้งเตือนสถานะความถูกต้องของข้อมูลที่กรอก (Live Validation Feedback) */}
+                  {isValoOrLol && playerId.trim() && (
+                    hasTag ? (
+                      <div style={{ marginTop: '10px', padding: '10px 14px', backgroundColor: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', borderRadius: '10px', color: '#86efac', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>✅</span>
+                        <span>
+                          <b>รูปแบบ Riot ID ถูกต้อง:</b> ชื่อในเกม <b>"{playerId.split('#')[0]}"</b> แท็ก <b>"#{playerId.split('#')[1]}"</b> (ระบบจะยิงพอยต์เข้าไอดีนี้)
+                        </span>
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: '10px', padding: '10px 14px', backgroundColor: 'rgba(245, 158, 11, 0.18)', border: '1px solid #f59e0b', borderRadius: '10px', color: '#fbbf24', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>⚠️</span>
+                        <span>
+                          <b>ยังไม่พบเครื่องหมาย # และแท็ก:</b> กรุณากรอกชื่อตามด้วย # และแท็ก เช่น <b>ABCD#1234</b> เพื่อป้องกันการเติมพอยต์ผิดไอดี
+                        </span>
+                      </div>
+                    )
+                  )}
+
+                  {isGenshin && genshinUid.trim() && (
+                    <div style={{ marginTop: '10px', padding: '10px 14px', backgroundColor: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', borderRadius: '10px', color: '#86efac', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>✅</span>
+                      <span>
+                        <b>บันทึกข้อมูลแล้ว:</b> UID <b>{genshinUid.trim()}</b> (เซิร์ฟเวอร์: <b>{genshinServer}</b>)
+                      </span>
+                    </div>
+                  )}
+
+                  {/* กล่องคำแนะนำขั้นตอนการดูข้อมูลในเกมแบบละเอียด เพื่อไม่ให้ลูกค้าสับสน */}
+                  <div style={{ marginTop: '14px', backgroundColor: '#030712', border: '1px solid #1f2937', borderRadius: '12px', padding: '12px 16px' }}>
+                    <div style={{ fontSize: '12px', color: '#fb923c', fontWeight: 'bold', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>ℹ️ {accConfig.tipTitle}</span>
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '11px', color: '#94a3b8', lineHeight: '1.7' }}>
+                      {accConfig.tipSteps.map((step, idx) => (
+                        <li key={idx} style={{ marginBottom: '2px' }}>{step}</li>
+                      ))}
+                    </ul>
+                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed #1e293b', fontSize: '11px', color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🔒</span>
+                      <span><b>ปลอดภัย 100%:</b> เติมตรงผ่านระบบทางการ ไม่ต้องใช้รหัสผ่าน (Password) บัญชีเกม</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div style={{ marginBottom: '30px' }}>
               <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '12px', fontWeight: 'bold' }}>2. เลือกแพ็กเกจเติมเกม</label>
@@ -4707,7 +5063,9 @@ const [authMode, setAuthMode] = useState('login');
               const isGameOut = gameStockStatus[selectedGame?.id] === false;
               const isPkgOut = selectedPackage && packageStockStatus[`${selectedGame?.id}_${selectedPackage.id}`] === false;
               const isWalletLocked = selectedPayment?.id === 'wallet' && !user;
-              const isDisabled = !playerId.trim() || !selectedPackage || !selectedPayment || isGameOut || isPkgOut || isWalletLocked;
+              const accCfg = getGameAccountConfig(selectedGame);
+              const isMissingTag = accCfg?.requiresTag && playerId.trim() && !playerId.includes('#');
+              const isDisabled = !playerId.trim() || isMissingTag || !selectedPackage || !selectedPayment || isGameOut || isPkgOut || isWalletLocked;
 
               return (
                 <button 
@@ -4737,7 +5095,11 @@ const [authMode, setAuthMode] = useState('login');
                     : isPkgOut 
                     ? `❌ แพ็กเกจ "${selectedPackage.name}" สินค้าหมดชั่วคราว (ไม่สามารถซื้อได้)`
                     : !playerId.trim() 
-                    ? (selectedGame?.category === 'card' ? 'กรุณากรอกเบอร์โทรหรือ LINE ID เพื่อรับรหัส PIN' : 'กรุณากรอกชื่อในเกม หรือ UID (ห้ามเว้นว่าง)') 
+                    ? (selectedGame?.category === 'card' 
+                        ? 'กรุณากรอกเบอร์โทรหรือ LINE ID เพื่อรับรหัส PIN' 
+                        : `กรุณากรอก ${accCfg?.accountType || 'ข้อมูลไอดีเกม'} (เช่น ${accCfg?.exampleText || 'ABCD#1234'})`) 
+                    : isMissingTag
+                    ? `⚠️ กรุณาระบุแท็ก # ให้ครบ เช่น ${accCfg?.exampleText || 'ABCD#1234'} (ป้องกันเติมผิดไอดี)`
                     : !selectedPackage 
                     ? 'กรุณาเลือกแพ็กเกจเติมเกม' 
                     : !selectedPayment 
