@@ -1862,6 +1862,100 @@ const [authMode, setAuthMode] = useState('login');
   });
   const [showAnnualTaxHistory, setShowAnnualTaxHistory] = useState(false);
 
+  // รายชื่อเดือนภาษาไทย 12 เดือนสำหรับ Dropdown
+  const thaiMonthsList = [
+    { value: '01', name: 'มกราคม (ม.ค.)' },
+    { value: '02', name: 'กุมภาพันธ์ (ก.พ.)' },
+    { value: '03', name: 'มีนาคม (มี.ค.)' },
+    { value: '04', name: 'เมษายน (เม.ย.)' },
+    { value: '05', name: 'พฤษภาคม (พ.ค.)' },
+    { value: '06', name: 'มิถุนายน (มิ.ย.)' },
+    { value: '07', name: 'กรกฎาคม (ก.ค.)' },
+    { value: '08', name: 'สิงหาคม (ส.ค.)' },
+    { value: '09', name: 'กันยายน (ก.ย.)' },
+    { value: '10', name: 'ตุลาคม (ต.ค.)' },
+    { value: '11', name: 'พฤศจิกายน (พ.ย.)' },
+    { value: '12', name: 'ธันวาคม (ธ.ค.)' },
+  ];
+
+  const formatThaiDateFull = (dateStr) => {
+    if (!dateStr || typeof dateStr !== 'string') return '';
+    const parts = dateStr.split('-');
+    if (parts.length < 3) return dateStr;
+    const y = Number(parts[0]);
+    const m = Number(parts[1]);
+    const d = Number(parts[2]);
+    const thaiMonthNames = [
+      '', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+    ];
+    const dateObj = new Date(y, m - 1, d);
+    const daysOfWeek = ['วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'];
+    const dayName = isNaN(dateObj.getTime()) ? 'วัน' : daysOfWeek[dateObj.getDay()];
+    const thaiYear = y + 543;
+    return `${dayName}ที่ ${d} ${thaiMonthNames[m] || ''} พ.ศ. ${thaiYear}`;
+  };
+
+  const formatThaiMonthFull = (monthStr) => {
+    if (!monthStr || typeof monthStr !== 'string') return '';
+    const parts = monthStr.split('-');
+    if (parts.length < 2) return monthStr;
+    const y = Number(parts[0]);
+    const m = Number(parts[1]);
+    const thaiMonthNames = [
+      '', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+      'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+    ];
+    const thaiYear = y + 543;
+    return `${thaiMonthNames[m] || ''} พ.ศ. ${thaiYear} (${y})`;
+  };
+
+  const handlePrevDayNav = () => {
+    const parts = adminSelectedDay.split('-').map(Number);
+    if (parts.length < 3) return;
+    const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+    dt.setDate(dt.getDate() - 1);
+    const nextVal = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    setAdminSelectedDay(nextVal);
+    setAdminOrdersPage(1);
+  };
+
+  const handleNextDayNav = () => {
+    const parts = adminSelectedDay.split('-').map(Number);
+    if (parts.length < 3) return;
+    const dt = new Date(parts[0], parts[1] - 1, parts[2]);
+    dt.setDate(dt.getDate() + 1);
+    const nextVal = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+    setAdminSelectedDay(nextVal);
+    setAdminOrdersPage(1);
+  };
+
+  const handlePrevMonthNav = () => {
+    const parts = adminSelectedMonth.split('-').map(Number);
+    if (parts.length < 2) return;
+    let y = parts[0];
+    let m = parts[1] - 1;
+    if (m < 1) {
+      m = 12;
+      y -= 1;
+    }
+    setAdminSelectedMonth(`${y}-${String(m).padStart(2, '0')}`);
+    setAdminOrdersPage(1);
+  };
+
+  const handleNextMonthNav = () => {
+    const parts = adminSelectedMonth.split('-').map(Number);
+    if (parts.length < 2) return;
+    let y = parts[0];
+    let m = parts[1] + 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+    setAdminSelectedMonth(`${y}-${String(m).padStart(2, '0')}`);
+    setAdminOrdersPage(1);
+  };
+
   // ฟังก์ชันแยก วัน/เดือน/ปี ของออเดอร์
   const getOrderDateParts = (ord) => {
     let y = '', m = '', d = '';
@@ -6840,8 +6934,9 @@ const [authMode, setAuthMode] = useState('login');
                   {isAdminOrdersOpen && (
                     <div style={{ padding: '25px' }}>
                       {/* แถบเลือกโหมดบันทึกรายการ: ประจำวัน / ประจำเดือน / ประจำปี / ทั้งหมด */}
-                      <div style={{ backgroundColor: '#0f172a', padding: '14px 18px', borderRadius: '16px', border: '1.5px solid #6366f1', marginBottom: '18px', boxShadow: '0 4px 20px rgba(99, 102, 241, 0.15)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '14px' }}>
+                      <div style={{ backgroundColor: '#0f172a', padding: '18px 20px', borderRadius: '18px', border: '1.5px solid #6366f1', marginBottom: '20px', boxShadow: '0 8px 30px rgba(99, 102, 241, 0.2)' }}>
+                        {/* 1. ปุ่มเลือกแท็บช่วงเวลา */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                             <button
                               type="button"
@@ -6850,15 +6945,16 @@ const [authMode, setAuthMode] = useState('login');
                                 backgroundColor: adminOrderPeriodTab === 'daily' ? '#8b5cf6' : '#1e293b',
                                 color: '#ffffff',
                                 border: '1.5px solid ' + (adminOrderPeriodTab === 'daily' ? '#c084fc' : '#334155'),
-                                padding: '8px 16px',
-                                borderRadius: '10px',
+                                padding: '10px 18px',
+                                borderRadius: '12px',
                                 fontWeight: '900',
                                 fontSize: '13px',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '6px',
-                                boxShadow: adminOrderPeriodTab === 'daily' ? '0 0 12px rgba(139, 92, 246, 0.5)' : 'none'
+                                boxShadow: adminOrderPeriodTab === 'daily' ? '0 4px 15px rgba(139, 92, 246, 0.5)' : 'none',
+                                transition: 'all 0.2s'
                               }}
                             >
                               📅 บันทึกประจำวัน (Daily)
@@ -6870,15 +6966,16 @@ const [authMode, setAuthMode] = useState('login');
                                 backgroundColor: adminOrderPeriodTab === 'monthly' ? '#8b5cf6' : '#1e293b',
                                 color: '#ffffff',
                                 border: '1.5px solid ' + (adminOrderPeriodTab === 'monthly' ? '#c084fc' : '#334155'),
-                                padding: '8px 16px',
-                                borderRadius: '10px',
+                                padding: '10px 18px',
+                                borderRadius: '12px',
                                 fontWeight: '900',
                                 fontSize: '13px',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '6px',
-                                boxShadow: adminOrderPeriodTab === 'monthly' ? '0 0 12px rgba(139, 92, 246, 0.5)' : 'none'
+                                boxShadow: adminOrderPeriodTab === 'monthly' ? '0 4px 15px rgba(139, 92, 246, 0.5)' : 'none',
+                                transition: 'all 0.2s'
                               }}
                             >
                               🗓️ บันทึกประจำเดือน (Monthly)
@@ -6890,15 +6987,16 @@ const [authMode, setAuthMode] = useState('login');
                                 backgroundColor: adminOrderPeriodTab === 'yearly' ? '#8b5cf6' : '#1e293b',
                                 color: '#ffffff',
                                 border: '1.5px solid ' + (adminOrderPeriodTab === 'yearly' ? '#c084fc' : '#334155'),
-                                padding: '8px 16px',
-                                borderRadius: '10px',
+                                padding: '10px 18px',
+                                borderRadius: '12px',
                                 fontWeight: '900',
                                 fontSize: '13px',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '6px',
-                                boxShadow: adminOrderPeriodTab === 'yearly' ? '0 0 12px rgba(139, 92, 246, 0.5)' : 'none'
+                                boxShadow: adminOrderPeriodTab === 'yearly' ? '0 4px 15px rgba(139, 92, 246, 0.5)' : 'none',
+                                transition: 'all 0.2s'
                               }}
                             >
                               📆 บันทึกประจำปี (Yearly)
@@ -6910,117 +7008,215 @@ const [authMode, setAuthMode] = useState('login');
                                 backgroundColor: adminOrderPeriodTab === 'all' ? '#0284c7' : '#1e293b',
                                 color: '#ffffff',
                                 border: '1.5px solid ' + (adminOrderPeriodTab === 'all' ? '#38bdf8' : '#334155'),
-                                padding: '8px 16px',
-                                borderRadius: '10px',
+                                padding: '10px 18px',
+                                borderRadius: '12px',
                                 fontWeight: '900',
                                 fontSize: '13px',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '6px',
-                                boxShadow: adminOrderPeriodTab === 'all' ? '0 0 12px rgba(2, 132, 199, 0.5)' : 'none'
+                                boxShadow: adminOrderPeriodTab === 'all' ? '0 4px 15px rgba(2, 132, 199, 0.5)' : 'none',
+                                transition: 'all 0.2s'
                               }}
                             >
                               🌟 ทั้งหมด (All Time)
                             </button>
                           </div>
-
-                          {/* ตัวเลือก วันที่ / เดือน / ปี ตามแท็บที่เลือก */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            {adminOrderPeriodTab === 'daily' && (
-                              <>
-                                <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 'bold' }}>เลือกวันที่:</span>
-                                <input 
-                                  type="date" 
-                                  value={adminSelectedDay} 
-                                  onChange={(e) => { setAdminSelectedDay(e.target.value); setAdminOrdersPage(1); }}
-                                  style={{ backgroundColor: '#030712', border: '1.5px solid #8b5cf6', borderRadius: '8px', padding: '6px 10px', color: '#ffffff', fontSize: '12px', outline: 'none' }}
-                                />
-                                <button 
-                                  type="button" 
-                                  onClick={() => { 
-                                    const d = new Date(); 
-                                    setAdminSelectedDay(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`); 
-                                    setAdminOrdersPage(1); 
-                                  }}
-                                  style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                                >
-                                  ⚡ วันนี้
-                                </button>
-                              </>
-                            )}
-
-                            {adminOrderPeriodTab === 'monthly' && (
-                              <>
-                                <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 'bold' }}>เลือกเดือน:</span>
-                                <input 
-                                  type="month" 
-                                  value={adminSelectedMonth} 
-                                  onChange={(e) => { setAdminSelectedMonth(e.target.value); setAdminOrdersPage(1); }}
-                                  style={{ backgroundColor: '#030712', border: '1.5px solid #8b5cf6', borderRadius: '8px', padding: '6px 10px', color: '#ffffff', fontSize: '12px', outline: 'none' }}
-                                />
-                                <button 
-                                  type="button" 
-                                  onClick={() => { 
-                                    const d = new Date(); 
-                                    setAdminSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`); 
-                                    setAdminOrdersPage(1); 
-                                  }}
-                                  style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                                >
-                                  ⚡ เดือนนี้
-                                </button>
-                              </>
-                            )}
-
-                            {adminOrderPeriodTab === 'yearly' && (
-                              <>
-                                <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 'bold' }}>เลือกปี:</span>
-                                <select 
-                                  value={adminSelectedYear} 
-                                  onChange={(e) => { setAdminSelectedYear(e.target.value); setAdminOrdersPage(1); }}
-                                  style={{ backgroundColor: '#030712', border: '1.5px solid #8b5cf6', borderRadius: '8px', padding: '6px 10px', color: '#ffffff', fontSize: '12px', outline: 'none', cursor: 'pointer' }}
-                                >
-                                  {availableYearsList.map(yr => (
-                                    <option key={yr} value={yr}>ปี {yr} (พ.ศ. {Number(yr) + 543})</option>
-                                  ))}
-                                </select>
-                                <button 
-                                  type="button" 
-                                  onClick={() => { 
-                                    setAdminSelectedYear(new Date().getFullYear().toString()); 
-                                    setAdminOrdersPage(1); 
-                                  }}
-                                  style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer' }}
-                                >
-                                  ⚡ ปีปัจจุบัน
-                                </button>
-                              </>
-                            )}
-                          </div>
                         </div>
 
-                        {/* สรุปสถิติประจำช่วงเวลาที่เลือก (Summary Stats for Period) */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', paddingTop: '12px', borderTop: '1px solid #334155' }}>
-                          <div style={{ backgroundColor: '#030712', padding: '10px 12px', borderRadius: '12px', border: '1px solid #374151', textAlign: 'center' }}>
-                            <div style={{ fontSize: '11px', color: '#9ca3af' }}>📦 ออเดอร์ช่วงนี้</div>
-                            <div style={{ fontSize: '16px', fontWeight: '900', color: '#c084fc' }}>{periodStats.totalCount} รายการ</div>
+                        {/* 2. กล่องควบคุมเลือก วัน / เดือน / ปี ภาษาไทยชัดเจน อ่านง่ายมาก */}
+                        {adminOrderPeriodTab === 'daily' && (
+                          <div style={{ backgroundColor: '#1e1b4b', border: '1.5px solid #8b5cf6', borderRadius: '14px', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                              <div style={{ fontSize: '16px', fontWeight: '900', color: '#ffffff', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '20px' }}>📅</span>
+                                <span style={{ color: '#c084fc' }}>{formatThaiDateFull(adminSelectedDay)}</span>
+                              </div>
+                              <span style={{ fontSize: '11px', color: '#a5b4fc', backgroundColor: 'rgba(165,180,252,0.15)', border: '1px solid rgba(165,180,252,0.3)', padding: '2px 8px', borderRadius: '6px', fontFamily: 'monospace' }}>
+                                {adminSelectedDay}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <button
+                                type="button"
+                                onClick={handlePrevDayNav}
+                                style={{ backgroundColor: '#312e81', color: '#ffffff', border: '1px solid #818cf8', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                title="ดูออเดอร์วันก่อนหน้า"
+                              >
+                                ◀ วันก่อนหน้า
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const d = new Date();
+                                  setAdminSelectedDay(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+                                  setAdminOrdersPage(1);
+                                }}
+                                style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '900', cursor: 'pointer', boxShadow: '0 2px 10px rgba(16,185,129,0.35)' }}
+                              >
+                                ⚡ วันนี้
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleNextDayNav}
+                                style={{ backgroundColor: '#312e81', color: '#ffffff', border: '1px solid #818cf8', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                title="ดูออเดอร์วันถัดไป"
+                              >
+                                วันถัดไป ▶
+                              </button>
+
+                              {/* ตัวเลือกวันที่แบบเจาะจง ตัวหนังสือสว่าง อ่านง่าย */}
+                              <input
+                                type="date"
+                                value={adminSelectedDay}
+                                onChange={(e) => {
+                                  if (e.target.value) {
+                                    setAdminSelectedDay(e.target.value);
+                                    setAdminOrdersPage(1);
+                                  }
+                                }}
+                                style={{ backgroundColor: '#0f172a', border: '1.5px solid #a855f7', borderRadius: '8px', padding: '8px 12px', color: '#ffffff', fontSize: '13px', fontWeight: 'bold', outline: 'none', cursor: 'pointer', colorScheme: 'dark' }}
+                              />
+                            </div>
                           </div>
-                          <div style={{ backgroundColor: '#030712', padding: '10px 12px', borderRadius: '12px', border: '1px solid #374151', textAlign: 'center' }}>
-                            <div style={{ fontSize: '11px', color: '#9ca3af' }}>💵 ยอดขายช่วงนี้</div>
-                            <div style={{ fontSize: '16px', fontWeight: '900', color: '#38bdf8' }}>฿{periodStats.totalSales.toLocaleString()}</div>
+                        )}
+
+                        {adminOrderPeriodTab === 'monthly' && (
+                          <div style={{ backgroundColor: '#1e1b4b', border: '1.5px solid #8b5cf6', borderRadius: '14px', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '20px' }}>🗓️</span>
+                              <div>
+                                <div style={{ fontSize: '11px', color: '#9ca3af' }}>กำลังดูรายงานประจำเดือน:</div>
+                                <div style={{ fontSize: '17px', fontWeight: '900', color: '#c084fc' }}>
+                                  {formatThaiMonthFull(adminSelectedMonth)}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <button
+                                type="button"
+                                onClick={handlePrevMonthNav}
+                                style={{ backgroundColor: '#312e81', color: '#ffffff', border: '1px solid #818cf8', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                title="ดูออเดอร์เดือนก่อนหน้า"
+                              >
+                                ◀ เดือนก่อน
+                              </button>
+
+                              {/* Dropdown เลือกเดือนภาษาไทย 100% ตัวหนังสือใหญ่ คมชัด ไม่ต้องกด popup ฝรั่ง */}
+                              <select
+                                value={adminSelectedMonth.split('-')[1] || '01'}
+                                onChange={(e) => {
+                                  const curY = adminSelectedMonth.split('-')[0] || new Date().getFullYear().toString();
+                                  setAdminSelectedMonth(`${curY}-${e.target.value}`);
+                                  setAdminOrdersPage(1);
+                                }}
+                                style={{ backgroundColor: '#0f172a', border: '1.5px solid #a855f7', borderRadius: '8px', padding: '8px 14px', color: '#ffffff', fontSize: '14px', fontWeight: 'bold', outline: 'none', cursor: 'pointer' }}
+                              >
+                                {thaiMonthsList.map(m => (
+                                  <option key={m.value} value={m.value}>เดือน {m.name}</option>
+                                ))}
+                              </select>
+
+                              {/* Dropdown เลือกปี */}
+                              <select
+                                value={adminSelectedMonth.split('-')[0] || new Date().getFullYear().toString()}
+                                onChange={(e) => {
+                                  const curM = adminSelectedMonth.split('-')[1] || '01';
+                                  setAdminSelectedMonth(`${e.target.value}-${curM}`);
+                                  setAdminOrdersPage(1);
+                                }}
+                                style={{ backgroundColor: '#0f172a', border: '1.5px solid #a855f7', borderRadius: '8px', padding: '8px 14px', color: '#ffffff', fontSize: '14px', fontWeight: 'bold', outline: 'none', cursor: 'pointer' }}
+                              >
+                                {availableYearsList.map(yr => (
+                                  <option key={yr} value={yr}>ปี {yr} (พ.ศ. {Number(yr) + 543})</option>
+                                ))}
+                              </select>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const d = new Date();
+                                  setAdminSelectedMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+                                  setAdminOrdersPage(1);
+                                }}
+                                style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '900', cursor: 'pointer', boxShadow: '0 2px 10px rgba(16,185,129,0.35)' }}
+                              >
+                                ⚡ เดือนนี้
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={handleNextMonthNav}
+                                style={{ backgroundColor: '#312e81', color: '#ffffff', border: '1px solid #818cf8', padding: '8px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                                title="ดูออเดอร์เดือนถัดไป"
+                              >
+                                เดือนถัดไป ▶
+                              </button>
+                            </div>
                           </div>
-                          <div style={{ backgroundColor: '#030712', padding: '10px 12px', borderRadius: '12px', border: '1px solid #374151', textAlign: 'center' }}>
-                            <div style={{ fontSize: '11px', color: '#9ca3af' }}>📈 กำไรสุทธิช่วงนี้</div>
-                            <div style={{ fontSize: '16px', fontWeight: '900', color: '#34d399' }}>+฿{periodStats.totalProfits.toLocaleString()}</div>
+                        )}
+
+                        {adminOrderPeriodTab === 'yearly' && (
+                          <div style={{ backgroundColor: '#1e1b4b', border: '1.5px solid #8b5cf6', borderRadius: '14px', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '20px' }}>📆</span>
+                              <div>
+                                <div style={{ fontSize: '11px', color: '#9ca3af' }}>กำลังดูรายงานประจำปี:</div>
+                                <div style={{ fontSize: '17px', fontWeight: '900', color: '#c084fc' }}>
+                                  ปี {adminSelectedYear} (พ.ศ. {Number(adminSelectedYear) + 543})
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: 'bold' }}>เลือกปี:</span>
+                              <select
+                                value={adminSelectedYear}
+                                onChange={(e) => { setAdminSelectedYear(e.target.value); setAdminOrdersPage(1); }}
+                                style={{ backgroundColor: '#0f172a', border: '1.5px solid #a855f7', borderRadius: '8px', padding: '8px 14px', color: '#ffffff', fontSize: '14px', fontWeight: 'bold', outline: 'none', cursor: 'pointer' }}
+                              >
+                                {availableYearsList.map(yr => (
+                                  <option key={yr} value={yr}>ปี {yr} (พ.ศ. {Number(yr) + 543})</option>
+                                ))}
+                              </select>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setAdminSelectedYear(new Date().getFullYear().toString());
+                                  setAdminOrdersPage(1);
+                                }}
+                                style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: '900', cursor: 'pointer', boxShadow: '0 2px 10px rgba(16,185,129,0.35)' }}
+                              >
+                                ⚡ ปีปัจจุบัน
+                              </button>
+                            </div>
                           </div>
-                          <div style={{ backgroundColor: '#030712', padding: '10px 12px', borderRadius: '12px', border: '1px solid #374151', textAlign: 'center' }}>
-                            <div style={{ fontSize: '11px', color: '#9ca3af' }}>⏳ รอดำเนินการ</div>
-                            <div style={{ fontSize: '16px', fontWeight: '900', color: periodStats.pendingCount > 0 ? '#fbbf24' : '#9ca3af' }}>{periodStats.pendingCount} รายการ</div>
+                        )}
+
+                        {/* 3. สรุปสถิติประจำช่วงเวลาที่เลือก (Summary Stats Cards ดีไซน์ใหม่ สว่าง ชัดเจน ตัวเลขเด่นมาก) */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', paddingTop: '10px' }}>
+                          <div style={{ backgroundColor: '#030712', padding: '12px 14px', borderRadius: '14px', border: '1.5px solid #8b5cf6', textAlign: 'center', boxShadow: '0 4px 15px rgba(139,92,246,0.15)' }}>
+                            <div style={{ fontSize: '11px', color: '#c084fc', fontWeight: 'bold', marginBottom: '2px' }}>📦 ออเดอร์ช่วงนี้</div>
+                            <div style={{ fontSize: '20px', fontWeight: '900', color: '#ffffff' }}>{periodStats.totalCount} รายการ</div>
                           </div>
-                          <div style={{ backgroundColor: '#030712', padding: '10px 12px', borderRadius: '12px', border: '1px solid #374151', textAlign: 'center' }}>
-                            <div style={{ fontSize: '11px', color: '#9ca3af' }}>✅ สำเร็จแล้ว</div>
-                            <div style={{ fontSize: '16px', fontWeight: '900', color: '#22c55e' }}>{periodStats.completedCount} รายการ</div>
+                          <div style={{ backgroundColor: '#030712', padding: '12px 14px', borderRadius: '14px', border: '1.5px solid #38bdf8', textAlign: 'center', boxShadow: '0 4px 15px rgba(56,189,248,0.15)' }}>
+                            <div style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 'bold', marginBottom: '2px' }}>💵 ยอดขายช่วงนี้</div>
+                            <div style={{ fontSize: '20px', fontWeight: '900', color: '#ffffff' }}>฿{periodStats.totalSales.toLocaleString()}</div>
+                          </div>
+                          <div style={{ backgroundColor: '#030712', padding: '12px 14px', borderRadius: '14px', border: '1.5px solid #10b981', textAlign: 'center', boxShadow: '0 4px 15px rgba(16,185,129,0.2)' }}>
+                            <div style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold', marginBottom: '2px' }}>📈 กำไรสุทธิช่วงนี้</div>
+                            <div style={{ fontSize: '20px', fontWeight: '900', color: '#34d399' }}>+฿{periodStats.totalProfits.toLocaleString()}</div>
+                          </div>
+                          <div style={{ backgroundColor: '#030712', padding: '12px 14px', borderRadius: '14px', border: '1.5px solid #f59e0b', textAlign: 'center', boxShadow: '0 4px 15px rgba(245,158,11,0.15)' }}>
+                            <div style={{ fontSize: '11px', color: '#fbbf24', fontWeight: 'bold', marginBottom: '2px' }}>⏳ รอดำเนินการ</div>
+                            <div style={{ fontSize: '20px', fontWeight: '900', color: periodStats.pendingCount > 0 ? '#f59e0b' : '#9ca3af' }}>{periodStats.pendingCount} รายการ</div>
+                          </div>
+                          <div style={{ backgroundColor: '#030712', padding: '12px 14px', borderRadius: '14px', border: '1.5px solid #22c55e', textAlign: 'center', boxShadow: '0 4px 15px rgba(34,197,94,0.15)' }}>
+                            <div style={{ fontSize: '11px', color: '#4ade80', fontWeight: 'bold', marginBottom: '2px' }}>✅ สำเร็จแล้ว</div>
+                            <div style={{ fontSize: '20px', fontWeight: '900', color: '#22c55e' }}>{periodStats.completedCount} รายการ</div>
                           </div>
                         </div>
                       </div>
