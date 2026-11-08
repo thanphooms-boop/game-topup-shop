@@ -2200,10 +2200,10 @@ const [authMode, setAuthMode] = useState('login');
 
   // ระบบตั้งค่าเปิด/ปิด ช่องทางชำระเงิน และคิดค่าธรรมเนียม ซิงค์ Firebase Realtime Database
   const [paymentSettings, setPaymentSettings] = useState({
-    wallet: { enabled: true, feePercent: 0, label: 'Cat Coin Wallet (เหรียญร้าน 🐱🪙)' },
-    qrcode: { enabled: true, feePercent: 0, label: 'โอนเงินธนาคาร (SCB) / พร้อมเพย์' },
-    true: { enabled: true, feePercent: 3.5, label: 'TrueMoney Wallet (โอนเงิน)' },
-    truemoneycard: { enabled: true, feePercent: 25, label: 'บัตรเติมเงินทรูมันนี่ (14 หลัก)' }
+    wallet: { enabled: true, feeBaht: 0, label: 'Cat Coin Wallet (เหรียญร้าน 🐱🪙)' },
+    qrcode: { enabled: true, feeBaht: 0, label: 'โอนเงินธนาคาร (SCB) / พร้อมเพย์' },
+    true: { enabled: true, feeBaht: 3, label: 'TrueMoney Wallet (โอนเงิน)' },
+    truemoneycard: { enabled: true, feeBaht: 10, label: 'บัตรเติมเงินทรูมันนี่ (14 หลัก)' }
   });
   const [adminOpenPaymentSettings, setAdminOpenPaymentSettings] = useState(true);
   // โหมดการจ่ายของ TrueMoney: 'promptpay' (สแกน QR อัตโนมัติ) หรือ 'transfer' (โอนเบอร์ส่งแอดมินตรวจ)
@@ -2221,12 +2221,12 @@ const [authMode, setAuthMode] = useState('login');
           true: {
             ...prev.true,
             ...(val.true || {}),
-            feePercent: val.true?.feePercent !== undefined ? Number(val.true.feePercent) : 3.5
+            feeBaht: val.true?.feeBaht !== undefined ? Number(val.true.feeBaht) : (val.true?.feePercent !== undefined && Number(val.true.feePercent) <= 10 ? Number(val.true.feePercent) : 3)
           },
           truemoneycard: {
             ...prev.truemoneycard,
             ...(val.truemoneycard || {}),
-            feePercent: val.truemoneycard?.feePercent !== undefined ? Number(val.truemoneycard.feePercent) : 25
+            feeBaht: val.truemoneycard?.feeBaht !== undefined ? Number(val.truemoneycard.feeBaht) : (val.truemoneycard?.feePercent !== undefined && Number(val.truemoneycard.feePercent) <= 50 ? Number(val.truemoneycard.feePercent) : 10)
           }
         }));
       }
@@ -2253,10 +2253,10 @@ const [authMode, setAuthMode] = useState('login');
       ...prev,
       [methodId]: {
         ...prev[methodId],
-        feePercent: feeNum
+        feeBaht: feeNum
       }
     }));
-    set(ref(db, `system_admin_settings/payment_settings/${methodId}/feePercent`), feeNum);
+    set(ref(db, `system_admin_settings/payment_settings/${methodId}/feeBaht`), feeNum);
   };
   const [adminPinError, setAdminPinError] = useState('');
   const [adminSearchQuery, setAdminSearchQuery] = useState('');
@@ -2454,24 +2454,24 @@ const [authMode, setAuthMode] = useState('login');
     : currentYearTaxData.annualTax;
 
   const basePaymentList = [
-    { id: 'wallet', name: 'Cat Coin Wallet (เหรียญร้าน 🐱🪙)', desc: 'หักจากยอดเหรียญ Cat Coin ในบัญชีทันที (โอนไว ปลอดภัย 100%)', defaultFee: 0 },
-    { id: 'qrcode', name: 'โอนเงินธนาคาร (SCB) / พร้อมเพย์', desc: 'สแกน QR พร้อมเพย์ หรือโอนเลขบัญชี SCB (ตรวจสลิป 24 ชม.)', defaultFee: 0 },
-    { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนเข้าวอลเล็ต 063-880-1739 (มีค่าธรรมเนียม 3.5%)', defaultFee: 3.5 },
-    { id: 'truemoneycard', name: 'บัตรเติมเงินทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก (มีค่าธรรมเนียมบัตร)', defaultFee: 25 }
+    { id: 'wallet', name: 'Cat Coin Wallet (เหรียญร้าน 🐱🪙)', desc: 'หักจากยอดเหรียญ Cat Coin ในบัญชีทันที (โอนไว ปลอดภัย 100%)', defaultFeeBaht: 0 },
+    { id: 'qrcode', name: 'โอนเงินธนาคาร (SCB) / พร้อมเพย์', desc: 'สแกน QR พร้อมเพย์ หรือโอนเลขบัญชี SCB (ตรวจสลิป 24 ชม.)', defaultFeeBaht: 0 },
+    { id: 'true', name: 'TrueMoney Wallet', desc: 'โอนเข้าวอลเล็ต 063-880-1739', defaultFeeBaht: 3 },
+    { id: 'truemoneycard', name: 'บัตรเติมเงินทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก', defaultFeeBaht: 10 }
   ];
 
   const paymentMethods = basePaymentList.map(pm => {
     const setting = paymentSettings[pm.id] || {};
     const isEnabled = setting.enabled !== false;
-    const fee = setting.feePercent !== undefined ? Number(setting.feePercent) : pm.defaultFee;
+    const fee = setting.feeBaht !== undefined ? Number(setting.feeBaht) : (setting.feePercent !== undefined ? Number(setting.feePercent) : pm.defaultFeeBaht);
     let desc = pm.desc;
     if (fee > 0) {
-      desc = `${pm.desc} (+ค่าธรรมเนียม ${fee}%)`;
+      desc = `${pm.desc} (+ค่าธรรมเนียม ฿${fee})`;
     }
     return {
       ...pm,
       enabled: isEnabled,
-      feePercent: fee,
+      feeBaht: fee,
       desc: isEnabled ? desc : '🔴 ปิดปรับปรุงชั่วคราว (กรุณาเลือกช่องทางอื่น)'
     };
   });
@@ -3064,8 +3064,7 @@ const [authMode, setAuthMode] = useState('login');
 
   const handleFinalPaymentSubmit = () => {
     const basePrice = selectedPackage.price * packageQuantity;
-    const feePct = (selectedPayment && selectedPayment.feePercent) || 0;
-    const feeAmt = Math.ceil(basePrice * (feePct / 100));
+    const feeAmt = (selectedPayment && selectedPayment.feeBaht !== undefined) ? Number(selectedPayment.feeBaht) : 0;
     const totalPrice = basePrice + feeAmt;
     // กำไรสุทธิ: รักษาผลกำไรของแพ็กเกจไว้เต็ม 100%
     const totalProfit = (selectedPackage.profit || Math.round(selectedPackage.price * 0.15)) * packageQuantity;
@@ -3108,7 +3107,7 @@ const [authMode, setAuthMode] = useState('login');
         price: totalPrice,
         basePrice: basePrice,
         feeAmount: feeAmt,
-        feePercent: feePct,
+        feeBaht: feeAmt,
         profit: totalProfit,
         player: user ? user.username : 'guest_user',
         gameChar: targetGameChar,
@@ -3267,8 +3266,7 @@ const [authMode, setAuthMode] = useState('login');
     }
 
     const basePrice = selectedPackage.price * packageQuantity;
-    const feePct = paymentSettings.true?.feePercent !== undefined ? Number(paymentSettings.true.feePercent) : 3.5;
-    const feeAmt = Math.round((basePrice * (feePct / 100)) * 100) / 100;
+    const feeAmt = paymentSettings.true?.feeBaht !== undefined ? Number(paymentSettings.true.feeBaht) : 3;
     const totalPrice = basePrice + feeAmt;
     const totalProfit = (selectedPackage.profit || Math.round(selectedPackage.price * 0.15)) * packageQuantity;
 
@@ -3296,7 +3294,7 @@ const [authMode, setAuthMode] = useState('login');
         price: totalPrice,
         basePrice: basePrice,
         feeAmount: feeAmt,
-        feePercent: feePct,
+        feeBaht: feeAmt,
         profit: totalProfit,
         player: user ? user.username : 'guest_user',
         gameChar: targetGameChar,
@@ -3347,8 +3345,8 @@ const [authMode, setAuthMode] = useState('login');
     setSlipVerifyStepText('🔍 กำลังเชื่อมต่อระบบเซิร์ฟเวอร์ตรวจสอบสลิป (/api/verify-slip)...');
 
     const baseExpectedAmt = selectedPackage ? (selectedPackage.price * packageQuantity) : 0;
-    const feePct = (selectedPayment && selectedPayment.feePercent) || 0;
-    const expectedAmount = baseExpectedAmt + (feePct > 0 ? Math.round((baseExpectedAmt * (feePct / 100)) * 100) / 100 : 0);
+    const feeAmt = (selectedPayment && selectedPayment.feeBaht !== undefined) ? Number(selectedPayment.feeBaht) : 0;
+    const expectedAmount = baseExpectedAmt + feeAmt;
     const generatedOrderId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
 
     // ฟังก์ชันแปลง File เป็น Base64
@@ -3449,7 +3447,12 @@ const [authMode, setAuthMode] = useState('login');
         }
         updateRealtimeOrderStatus(order.firebaseKey, '✅ เติมเครดิตสำเร็จ (แอดมินอนุมัติแล้ว)');
       } else if (order.type === 'game') {
-        updateRealtimeOrderStatus(order.firebaseKey, '✅ เติมเข้าไอดีเกมสำเร็จทันที (AUTO 100%)');
+        const isEpin = order.isEpin || (order.game && (order.game.includes('Razer') || order.game.includes('e-Pin')));
+        if (isEpin) {
+          updateRealtimeOrderStatus(order.firebaseKey, '✅ ได้รับรหัส PIN เรียบร้อยแล้ว');
+        } else {
+          updateRealtimeOrderStatus(order.firebaseKey, '✅ เติมเข้าไอดีเกมสำเร็จทันที (AUTO 100%)');
+        }
       } else {
         updateRealtimeOrderStatus(order.firebaseKey, '✅ สำเร็จ (แอดมินอนุมัติแล้ว)');
       }
@@ -5242,9 +5245,9 @@ const [authMode, setAuthMode] = useState('login');
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                         <div style={{ fontSize: '14px', fontWeight: 'bold', color: isClosed ? '#ef4444' : isLocked ? '#94a3b8' : '#ffffff', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                           <span>{pm.name}</span>
-                          {pm.feePercent > 0 && pm.enabled && (
+                          {pm.feeBaht > 0 && pm.enabled && (
                             <span style={{ fontSize: '10px', backgroundColor: 'rgba(249, 115, 22, 0.2)', color: '#fb923c', border: '1px solid #f97316', padding: '1px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                              +{pm.feePercent}%
+                              +฿{pm.feeBaht}
                             </span>
                           )}
                         </div>
@@ -5269,11 +5272,11 @@ const [authMode, setAuthMode] = useState('login');
                       </div>
                       {selectedPackage && !isClosed && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0f172a', padding: '6px 10px', borderRadius: '8px', border: '1px solid #1e293b', fontSize: '11px' }}>
-                          <span style={{ color: pm.feePercent > 0 ? '#fb923c' : '#34d399', fontWeight: 'bold' }}>
-                            {pm.feePercent > 0 ? `ค่าธรรมเนียม +${pm.feePercent}%` : 'ฟรีค่าธรรมเนียม 0%'}
+                          <span style={{ color: pm.feeBaht > 0 ? '#fb923c' : '#34d399', fontWeight: 'bold' }}>
+                            {pm.feeBaht > 0 ? `ค่าธรรมเนียม +฿${pm.feeBaht}` : 'ฟรีค่าธรรมเนียม 0%'}
                           </span>
                           <span style={{ color: '#ffffff', fontWeight: '900', fontSize: '13px' }}>
-                            ฿{((selectedPackage.price * packageQuantity) + (pm.feePercent > 0 ? Math.round((selectedPackage.price * packageQuantity) * (pm.feePercent / 100) * 100) / 100 : 0)).toLocaleString(undefined, { minimumFractionDigits: pm.feePercent > 0 ? 2 : 0, maximumFractionDigits: 2 })}
+                            ฿{((selectedPackage.price * packageQuantity) + (pm.feeBaht || 0)).toLocaleString()}
                           </span>
                         </div>
                       )}
@@ -5289,27 +5292,27 @@ const [authMode, setAuthMode] = useState('login');
                   <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#38bdf8' }}>
                     📝 กรอกข้อมูลช่องทาง: {selectedPayment.name}
                   </div>
-                  {selectedPayment.feePercent > 0 && selectedPackage && (
+                  {selectedPayment.feeBaht > 0 && selectedPackage && (
                     <div style={{ fontSize: '12px', color: '#fb923c', backgroundColor: 'rgba(249,115,22,0.15)', border: '1px solid #f97316', padding: '4px 10px', borderRadius: '8px', fontWeight: 'bold' }}>
-                      ⚡ ช่องทางนี้มีค่าธรรมเนียม +{selectedPayment.feePercent}%
+                      ⚡ ช่องทางนี้มีค่าธรรมเนียม +฿{selectedPayment.feeBaht}
                     </div>
                   )}
                 </div>
 
-                {selectedPayment.feePercent > 0 && selectedPackage && (
+                {selectedPayment.feeBaht > 0 && selectedPackage && (
                   <div style={{ backgroundColor: '#111827', border: '1px dashed #f97316', borderRadius: '12px', padding: '12px 16px', marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                     <div>
                       <div style={{ fontSize: '12px', color: '#cbd5e1' }}>
-                        ราคาสินค้า: <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b> + ค่าธรรมเนียม ({selectedPayment.feePercent}%): <b style={{ color: '#fb923c' }}>+฿{Math.ceil((selectedPackage.price * packageQuantity) * (selectedPayment.feePercent / 100)).toLocaleString()}</b>
+                        ราคาสินค้า: <b>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b> + ค่าธรรมเนียม: <b style={{ color: '#fb923c' }}>+฿{selectedPayment.feeBaht}</b>
                       </div>
                       <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
-                        💡 ระบบคำนวณรวมค่าธรรมเนียมเพื่อป้องกันการขาดทุนจากการแลกบัตรเข้าบัญชีร้าน
+                        💡 บวกค่าธรรมเนียมคงที่เพียง ฿{selectedPayment.feeBaht} บาทต่อออเดอร์ คุ้มค่าทั้งแพ็กเล็กและแพ็กใหญ่
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: '11px', color: '#9ca3af' }}>ยอดรวมที่ต้องชำระ</div>
                       <div style={{ fontSize: '20px', fontWeight: '900', color: '#f97316' }}>
-                        ฿{((selectedPackage.price * packageQuantity) + Math.ceil((selectedPackage.price * packageQuantity) * (selectedPayment.feePercent / 100))).toLocaleString()}
+                        ฿{((selectedPackage.price * packageQuantity) + selectedPayment.feeBaht).toLocaleString()}
                       </div>
                     </div>
                   </div>
@@ -5804,9 +5807,16 @@ const [authMode, setAuthMode] = useState('login');
                                 </div>
                               ) : (
                                 <div style={{ marginTop: '4px' }}>
-                                  <span style={{ fontSize: '12px', color: isEpin ? '#fbbf24' : '#34d399', fontWeight: 'bold' }}>{ord.status}</span>
-                                  <div style={{ fontSize: '11px', color: isEpin ? '#fbbf24' : '#9ca3af', marginTop: '2px' }}>
-                                    {isEpin ? (isLineChannel ? '📩 รอรับรหัสทาง LINE' : '📩 รอรับรหัสทาง Email') : 'จัดส่งตรงเข้าไอดี ⚡'}
+                                  <span style={{ fontSize: '12px', color: (ord.status.includes('สำเร็จ') || ord.status.includes('ได้รับรหัส')) ? '#34d399' : (isEpin ? '#fbbf24' : '#34d399'), fontWeight: 'bold' }}>
+                                    {ord.status}
+                                  </span>
+                                  <div style={{ fontSize: '11px', color: (ord.status.includes('สำเร็จ') || ord.status.includes('ได้รับรหัส')) ? '#34d399' : (isEpin ? '#fbbf24' : '#9ca3af'), marginTop: '2px' }}>
+                                    {isEpin
+                                      ? ((ord.status.includes('สำเร็จ') || ord.status.includes('ได้รับรหัส'))
+                                          ? `✅ จัดส่งรหัส PIN ทาง ${isLineChannel ? 'LINE' : 'Email'} เรียบร้อยแล้ว`
+                                          : (isLineChannel ? '📩 รอรับรหัสทาง LINE' : '📩 รอรับรหัสทาง Email'))
+                                      : 'จัดส่งตรงเข้าไอดี ⚡'
+                                    }
                                   </div>
                                 </div>
                               )}
@@ -6053,23 +6063,22 @@ const [authMode, setAuthMode] = useState('login');
                           สแกน QR ออโต้ / โอนเบอร์ 063-880-1739
                         </div>
 
-                        {/* แถบตั้งค่า % ค่าธรรมเนียม TrueMoney */}
+                        {/* แถบตั้งค่า ค่าธรรมเนียม TrueMoney เป็นบาท */}
                         <div style={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px 10px', marginBottom: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                             <span style={{ fontSize: '10px', color: '#cbd5e1' }}>ค่าธรรมเนียมบวกเพิ่ม:</span>
-                            <span style={{ fontSize: '12px', fontWeight: '900', color: '#fb923c' }}>{paymentSettings.true?.feePercent ?? 3.5}%</span>
+                            <span style={{ fontSize: '12px', fontWeight: '900', color: '#fb923c' }}>+฿{paymentSettings.true?.feeBaht ?? 3}</span>
                           </div>
                           <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                             <input
                               type="number"
-                              step="0.1"
                               min="0"
-                              max="100"
-                              value={paymentSettings.true?.feePercent ?? 3.5}
+                              max="500"
+                              value={paymentSettings.true?.feeBaht ?? 3}
                               onChange={(e) => handleUpdatePaymentFee('true', e.target.value)}
                               style={{ width: '65px', backgroundColor: '#030712', border: '1px solid #f97316', borderRadius: '6px', padding: '4px', color: '#ffffff', fontSize: '12px', textAlign: 'center', fontWeight: 'bold', outline: 'none' }}
                             />
-                            <span style={{ fontSize: '10px', color: '#9ca3af' }}>% (ค่าเริ่มต้น 3.5%)</span>
+                            <span style={{ fontSize: '10px', color: '#9ca3af' }}>บาท (บวกเป็นบาทต่อออเดอร์)</span>
                           </div>
                         </div>
                       </div>
@@ -6095,22 +6104,22 @@ const [authMode, setAuthMode] = useState('login');
                           รหัสบัตร 14 หลัก แอดมินเติมเข้าแอป
                         </div>
 
-                        {/* แถบตั้งค่า % ค่าธรรมเนียมบัตร */}
+                        {/* แถบตั้งค่า ค่าธรรมเนียมบัตร เป็นบาท */}
                         <div style={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px', padding: '8px 10px', marginBottom: '8px' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
                             <span style={{ fontSize: '10px', color: '#cbd5e1' }}>ค่าธรรมเนียมบัตร:</span>
-                            <span style={{ fontSize: '12px', fontWeight: '900', color: '#fb923c' }}>{paymentSettings.truemoneycard?.feePercent ?? 25}%</span>
+                            <span style={{ fontSize: '12px', fontWeight: '900', color: '#fb923c' }}>+฿{paymentSettings.truemoneycard?.feeBaht ?? 10}</span>
                           </div>
                           <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                             <input
                               type="number"
                               min="0"
-                              max="100"
-                              value={paymentSettings.truemoneycard?.feePercent ?? 25}
+                              max="500"
+                              value={paymentSettings.truemoneycard?.feeBaht ?? 10}
                               onChange={(e) => handleUpdatePaymentFee('truemoneycard', e.target.value)}
                               style={{ width: '65px', backgroundColor: '#030712', border: '1px solid #f97316', borderRadius: '6px', padding: '4px', color: '#ffffff', fontSize: '12px', textAlign: 'center', fontWeight: 'bold', outline: 'none' }}
                             />
-                            <span style={{ fontSize: '10px', color: '#9ca3af' }}>% (ชดเชยทรูหัก 25%)</span>
+                            <span style={{ fontSize: '10px', color: '#9ca3af' }}>บาท (บวกเป็นบาทต่อออเดอร์)</span>
                           </div>
                         </div>
                       </div>
@@ -7372,12 +7381,27 @@ const [authMode, setAuthMode] = useState('login');
                                   <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '6px' }}>💳 เติมเครดิตร้าน</div>
                                 )}
 
-                                {ord.status.includes('รอตรวจสอบ') ? (
+                                {(ord.status.includes('รอตรวจสอบ') || ord.status.includes('รอจัดส่ง') || ord.status.includes('รอดำเนินการ')) ? (
                                   <div>
-                                    <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 'bold', marginBottom: '6px' }}>⏱️ ตรวจสอบใน ({adminCountdownSec}s)</div>
+                                    <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 'bold', marginBottom: '6px' }}>
+                                      {ord.status.includes('รอจัดส่ง') ? '🎫 รอแอดมินส่งรหัส PIN' : `⏱️ ตรวจสอบใน (${adminCountdownSec}s)`}
+                                    </div>
                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                                      <button onClick={() => handleAdminApproveOrder(ord)} style={{ backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>✅ อนุมัติ</button>
-                                      <button onClick={() => handleAdminRejectOrder(ord)} style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}>❌ ยกเลิก</button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAdminApproveOrder(ord)}
+                                        style={{ backgroundColor: ord.status.includes('รอจัดส่ง') ? '#f59e0b' : '#10b981', color: ord.status.includes('รอจัดส่ง') ? '#000000' : '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: '900', cursor: 'pointer', fontSize: '12px' }}
+                                        title={ord.status.includes('รอจัดส่ง') ? 'คลิกเพื่อยืนยันว่าส่งรหัส PIN ให้ลูกค้าแล้ว' : 'คลิกเพื่ออนุมัติออเดอร์'}
+                                      >
+                                        {ord.status.includes('รอจัดส่ง') ? '🎫 จัดส่งรหัสแล้ว' : '✅ อนุมัติ'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAdminRejectOrder(ord)}
+                                        style={{ backgroundColor: '#ef4444', color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '11px' }}
+                                      >
+                                        ❌ ยกเลิก
+                                      </button>
                                     </div>
                                   </div>
                                 ) : (
@@ -8220,9 +8244,8 @@ const [authMode, setAuthMode] = useState('login');
                         {/* ยอดเงินสุทธิพร้อมคิดค่าธรรมเนียม TrueMoney */}
                         {(() => {
                           const baseAmt = selectedPackage.price * packageQuantity;
-                          const trueFeePct = paymentSettings.true?.feePercent !== undefined ? Number(paymentSettings.true.feePercent) : 3.5;
-                          const trueFeeAmt = trueFeePct > 0 ? Math.round((baseAmt * (trueFeePct / 100)) * 100) / 100 : 0;
-                          const trueTotalAmt = (baseAmt + trueFeeAmt).toFixed(2);
+                          const trueFeeAmt = paymentSettings.true?.feeBaht !== undefined ? Number(paymentSettings.true.feeBaht) : 3;
+                          const trueTotalAmt = (baseAmt + trueFeeAmt).toString();
                           return (
                             <>
                               <div style={{ backgroundColor: '#fff7ed', border: '1.5px solid #fed7aa', borderRadius: '14px', padding: '10px', marginBottom: '12px', display: 'inline-block' }}>
@@ -8256,10 +8279,10 @@ const [authMode, setAuthMode] = useState('login');
                                     </button>
                                   </div>
                                 </div>
-                                {trueFeePct > 0 && (
+                                {trueFeeAmt > 0 && (
                                   <div style={{ fontSize: '11px', color: '#9a3412', borderTop: '1px dashed #fed7aa', paddingTop: '6px', marginTop: '6px', display: 'flex', justifyContent: 'space-between' }}>
                                     <span>ราคาสินค้า: ฿{baseAmt.toLocaleString()}</span>
-                                    <span>ค่าธรรมเนียม TrueMoney ({trueFeePct}%): <b style={{ color: '#ea580c' }}>+฿{trueFeeAmt.toFixed(2)}</b></span>
+                                    <span>ค่าธรรมเนียม TrueMoney: <b style={{ color: '#ea580c' }}>+฿{trueFeeAmt}</b></span>
                                   </div>
                                 )}
                               </div>
@@ -8313,9 +8336,8 @@ const [authMode, setAuthMode] = useState('login');
                         {/* ยอดเงินสุทธิ */}
                         {(() => {
                           const baseAmt = selectedPackage.price * packageQuantity;
-                          const trueFeePct = paymentSettings.true?.feePercent !== undefined ? Number(paymentSettings.true.feePercent) : 3.5;
-                          const trueFeeAmt = trueFeePct > 0 ? Math.round((baseAmt * (trueFeePct / 100)) * 100) / 100 : 0;
-                          const trueTotalAmt = (baseAmt + trueFeeAmt).toFixed(2);
+                          const trueFeeAmt = paymentSettings.true?.feeBaht !== undefined ? Number(paymentSettings.true.feeBaht) : 3;
+                          const trueTotalAmt = (baseAmt + trueFeeAmt).toString();
                           return (
                             <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '10px 14px', border: '1px solid #fed7aa', marginBottom: '12px' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
