@@ -3141,20 +3141,25 @@ const [authMode, setAuthMode] = useState('login');
       setFloatingTimer(10);
       setActiveOrderFirebaseKey(newKey);
 
-      // ระบบแจก Cat Coin แคชแบ็กสะสมตลอดชีพ (เมื่อชำระด้วยเงินสด/โอน/พร้อมเพย์)
-      const perPackReward = (!isPayingWithWallet && selectedPackage && selectedPackage.catCoinReward) ? selectedPackage.catCoinReward : 0;
+      // E-PIN ไม่ต้องแจก Coin แต่ถ้าจ่ายผ่านเครดิตร้าน (Cat Coin Wallet) ให้บวก Coin เหมือนปกติ!
+      const perPackReward = (!isEpinCard && selectedPackage && selectedPackage.catCoinReward) ? selectedPackage.catCoinReward : 0;
       const totalCoinGift = perPackReward * (packageQuantity || 1);
 
-      let rewardAlertText = isPayingWithWallet ? 'ชำระด้วย Cat Coin Wallet (หักเหรียญเรียบร้อย)' : 'ไม่มีของขวัญ Cat Coin ในแพ็กเกจนี้';
+      let rewardAlertText = 'ไม่มีของขวัญ Cat Coin ในแพ็กเกจนี้';
 
-      if (!isEpinCard && !isPayingWithWallet && totalCoinGift > 0) {
-        if (user && user.firebaseKey) {
+      if (totalCoinGift > 0) {
+        // ค้นหา firebaseKey ของผู้ใช้ให้ชัวร์ 100%
+        const activeKey = user?.firebaseKey || registeredUsers.find(u => u.username && user?.username && u.username.toLowerCase() === user.username.toLowerCase())?.firebaseKey;
+
+        if (user && activeKey) {
           currentBalance = currentBalance + totalCoinGift;
-          set(ref(db, `users/${user.firebaseKey}/balance`), currentBalance);
-          const updatedUserObj = { ...user, balance: currentBalance };
+          set(ref(db, `users/${activeKey}/balance`), currentBalance);
+          const updatedUserObj = { ...user, balance: currentBalance, firebaseKey: activeKey };
           setUser(updatedUserObj);
           try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUserObj)); } catch (e) {}
-          rewardAlertText = `🎁 แคชแบ็ก: มอบ +${totalCoinGift} Cat Coin เข้ากระเป๋าทันที (ได้รับทุกออเดอร์ 🐱🪙)`;
+          rewardAlertText = isPayingWithWallet 
+            ? `🎁 ได้รับเงินคืน +${totalCoinGift} Cat Coin เข้ากระเป๋าเรียบร้อย (ชำระผ่านเครดิตร้าน 🐱🪙)`
+            : `🎁 แคชแบ็ก: มอบ +${totalCoinGift} Cat Coin เข้ากระเป๋าทันที (ได้รับทุกออเดอร์ 🐱🪙)`;
         } else {
           rewardAlertText = `🎁 ของขวัญ: สิทธิ์รับ +${totalCoinGift} Cat Coin (สมัครสมาชิกเพื่อสะสมเหรียญ)`;
           try {
@@ -3264,6 +3269,21 @@ const [authMode, setAuthMode] = useState('login');
       };
 
       const newKey = createRealtimeOrder(newOrder);
+
+      // มอบ Cat Coin ให้ทันทีสำหรับออเดอร์ TrueMoney โอนเบอร์
+      const perPackReward = (selectedPackage && selectedPackage.catCoinReward) ? selectedPackage.catCoinReward : 0;
+      const totalCoinGift = perPackReward * (packageQuantity || 1);
+      if (totalCoinGift > 0 && user) {
+        const activeKey = user?.firebaseKey || registeredUsers.find(u => u.username && user?.username && u.username.toLowerCase() === user.username.toLowerCase())?.firebaseKey;
+        if (activeKey) {
+          const newBal = (Number(user.balance) || 0) + totalCoinGift;
+          set(ref(db, `users/${activeKey}/balance`), newBal);
+          const updatedUserObj = { ...user, balance: newBal, firebaseKey: activeKey };
+          setUser(updatedUserObj);
+          try { localStorage.setItem('cyber_current_logged_user', JSON.stringify(updatedUserObj)); } catch (e) {}
+        }
+      }
+
       sendLineOrderNotification(newOrder);
       setFloatingTimer(10);
       setActiveOrderFirebaseKey(newKey);
@@ -8087,10 +8107,23 @@ const [authMode, setAuthMode] = useState('login');
                     <span>ยอดที่ต้องชำระ:</span>
                     <b style={{ color: '#34d399', fontSize: '18px' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()} Coin</b>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#fbbf24', marginTop: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>ยอดเหรียญปัจจุบัน: <b>฿{(user?.balance || 0).toLocaleString()} Coin</b></span>
-                    <span style={{ color: '#38bdf8' }}>คงเหลือหลังหัก: <b>฿{Math.max(0, (user?.balance || 0) - (selectedPackage.price * packageQuantity)).toLocaleString()} Coin</b></span>
-                  </div>
+                  {(() => {
+                    const isEpin = selectedGame.category === 'card' || selectedGame.id.includes('razer');
+                    const packReward = (!isEpin && selectedPackage && selectedPackage.catCoinReward) ? selectedPackage.catCoinReward * packageQuantity : 0;
+                    const finalAfterReward = Math.max(0, (user?.balance || 0) - (selectedPackage.price * packageQuantity)) + packReward;
+                    return (
+                      <div style={{ fontSize: '12px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fbbf24' }}>
+                          <span>ยอดเหรียญปัจจุบัน: <b>฿{(user?.balance || 0).toLocaleString()} Coin</b></span>
+                          {packReward > 0 && <span style={{ color: '#34d399', fontWeight: 'bold' }}>🎁 ได้เงินคืน: +{packReward} Coin</span>}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#38bdf8', borderTop: '1px dashed #374151', paddingTop: '4px' }}>
+                          <span>ยอดสุทธิคงเหลือหลังหัก & ได้รับ Coin:</span>
+                          <b>฿{finalAfterReward.toLocaleString()} Coin</b>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
