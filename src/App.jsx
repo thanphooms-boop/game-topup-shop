@@ -1300,12 +1300,12 @@ const [authMode, setAuthMode] = useState('login');
       image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิตอันดับ 1 🔥',
       packages: [
-        { id: 'v1', name: '475 VP', price: 128, originalPrice: 130, cost: 125, profit: 3, bonus: '⚡ ประหยัด ฿2 +แต้ม VIP' },
-        { id: 'v2', name: '1,000 VP', price: 255, originalPrice: 260, cost: 249, profit: 6, bonus: '🔥 ขายดี ประหยัด ฿5 +แรงค์ VIP' },
-        { id: 'v3', name: '2,050 VP', price: 510, originalPrice: 520, cost: 499, profit: 11, bonus: '⚡ ยอดฮิต ประหยัด ฿10 +แรงค์ VIP' },
-        { id: 'v4', name: '3,650 VP', price: 905, originalPrice: 920, cost: 882, profit: 23, bonus: '⭐ พรีเมียม ประหยัด ฿15 +VIP' },
-        { id: 'v5', name: '5,350 VP', price: 1295, originalPrice: 1320, cost: 1263, profit: 32, bonus: '💥 สุดคุ้ม ประหยัด ฿25 +VIP' },
-        { id: 'v6', name: '11,000 VP (Whale Pack)', price: 2580, originalPrice: 2640, cost: 2525, profit: 55, bonus: '👑 Whale คุ้มสุด ประหยัด ฿60 VIP' }
+        { id: 'v1', name: '475 VP', price: 128, originalPrice: 130, cost: 125, profit: 3, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
+        { id: 'v2', name: '1,000 VP', price: 255, originalPrice: 260, cost: 249, profit: 6, catCoinReward: 2, bonus: '🔥 +2 Cat Coins 🐱🪙' },
+        { id: 'v3', name: '2,050 VP', price: 510, originalPrice: 520, cost: 499, profit: 11, catCoinReward: 4, bonus: '⚡ +4 Cat Coins 🐱🪙' },
+        { id: 'v4', name: '3,650 VP', price: 905, originalPrice: 920, cost: 882, profit: 23, catCoinReward: 8, bonus: '⭐ +8 Cat Coins 🐱🪙' },
+        { id: 'v5', name: '5,350 VP', price: 1295, originalPrice: 1320, cost: 1263, profit: 32, catCoinReward: 12, bonus: '💥 +12 Cat Coins 🐱🪙' },
+        { id: 'v6', name: '11,000 VP (Whale Pack)', price: 2580, originalPrice: 2640, cost: 2525, profit: 55, catCoinReward: 25, bonus: '👑 +25 Cat Coins 🐱🪙 (Whale คุ้มสุด)' }
       ]
     },
     {
@@ -1316,12 +1316,12 @@ const [authMode, setAuthMode] = useState('login');
       image: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=500&q=80',
       badge: 'ยอดฮิต MOBA ⚔️',
       packages: [
-        { id: 'r1', name: '60 คูปอง', price: 49.5, originalPrice: 50, cost: 49, profit: 0.5, bonus: '⚡ คุ้มค่า ประหยัด ฿0.5' },
-        { id: 'r2', name: '110 คูปอง', price: 89.5, originalPrice: 90, cost: 89, profit: 0.5, bonus: '⚡ เติมไว ประหยัด ฿0.5' },
-        { id: 'r3', name: '185 คูปอง', price: 148, originalPrice: 150, cost: 145, profit: 3, bonus: '🔥 ขายดี ประหยัด ฿2' },
-        { id: 'r4', name: '370 คูปอง', price: 296, originalPrice: 300, cost: 292, profit: 4, bonus: '⭐ ยอดฮิต ประหยัด ฿4' },
-        { id: 'r5', name: '620 คูปอง', price: 493, originalPrice: 500, cost: 487, profit: 6, bonus: '💥 สุดคุ้ม ประหยัด ฿7' },
-        { id: 'r6', name: '1,240 คูปอง (Big Pack)', price: 985, originalPrice: 1000, cost: 972, profit: 13, bonus: '👑 Big Pack ประหยัด ฿15 VIP' }
+        { id: 'r1', name: '60 คูปอง', price: 49.5, originalPrice: 50, cost: 49, profit: 0.5, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+        { id: 'r2', name: '110 คูปอง', price: 89.5, originalPrice: 90, cost: 89, profit: 0.5, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+        { id: 'r3', name: '185 คูปอง', price: 148, originalPrice: 150, cost: 145, profit: 3, catCoinReward: 1, bonus: '🔥 +1 Cat Coin 🐱🪙' },
+        { id: 'r4', name: '370 คูปอง', price: 296, originalPrice: 300, cost: 292, profit: 4, catCoinReward: 2, bonus: '⭐ +2 Cat Coins 🐱🪙' },
+        { id: 'r5', name: '620 คูปอง', price: 493, originalPrice: 500, cost: 487, profit: 6, catCoinReward: 3, bonus: '💥 +3 Cat Coins 🐱🪙' },
+        { id: 'r6', name: '1,240 คูปอง (Big Pack)', price: 985, originalPrice: 1000, cost: 972, profit: 13, catCoinReward: 6, bonus: '👑 +6 Cat Coins 🐱🪙 (Big Pack คุ้มสุด)' }
       ]
     },
     {
