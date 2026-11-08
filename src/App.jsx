@@ -3577,7 +3577,7 @@ const [authMode, setAuthMode] = useState('login');
     });
   }, [orders, guestTrackQuery]);
 
-  const adminItemsPerPage = 10;
+  const adminItemsPerPage = 5;
   const totalAdminPages = Math.ceil(filteredOrders.length / adminItemsPerPage) || 1;
   const paginatedAdminOrders = filteredOrders.slice((adminOrdersPage - 1) * adminItemsPerPage, adminOrdersPage * adminItemsPerPage);
 
@@ -3608,7 +3608,7 @@ const [authMode, setAuthMode] = useState('login');
   const todayOrders = searchedOrders.filter(o => o.dateKey === currentDayStr);
   const pastOrders = searchedOrders.filter(o => o.dateKey !== currentDayStr);
 
-  const customerItemsPerPage = 10;
+  const customerItemsPerPage = 5;
   const totalCustomerTodayPages = Math.ceil(todayOrders.length / customerItemsPerPage) || 1;
   const paginatedTodayOrders = todayOrders.slice((customerOrdersPage - 1) * customerItemsPerPage, customerOrdersPage * customerItemsPerPage);
 
@@ -5662,22 +5662,6 @@ const [authMode, setAuthMode] = useState('login');
             <div style={{ borderBottom: '1px solid #374151', paddingBottom: '15px', marginBottom: '20px' }}>
               <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>📋 เช็คสถานะคำสั่งซื้อและประวัติการทำรายการ</h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#c084fc', flexWrap: 'wrap' }}>
-                <span style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: currentUserRank.bg,
-                  border: `1.5px solid ${currentUserRank.border}`,
-                  color: currentUserRank.color,
-                  padding: '3px 10px',
-                  borderRadius: '16px',
-                  fontSize: '11px',
-                  fontWeight: '900',
-                  boxShadow: currentUserRank.glow
-                }}>
-                  <RankEmblem tier={currentUserRank.tier} size={18} />
-                  <span>{currentUserRank.name}</span>
-                </span>
                 <span>👤 บัญชีผู้ใช้งาน:</span>
                 <b style={{ color: '#ffffff', backgroundColor: 'rgba(147,51,234,0.3)', padding: '2px 10px', borderRadius: '6px', border: '1px solid #9333ea' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
                 <span style={{ fontSize: '11px', color: '#38bdf8', marginLeft: '4px' }}>(ยอดเติมแพ็กเกจสะสม: ฿{currentUserSpending.toLocaleString()})</span>
@@ -5838,10 +5822,43 @@ const [authMode, setAuthMode] = useState('login');
               )}
 
               {totalCustomerTodayPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    disabled={customerOrdersPage <= 1}
+                    onClick={() => setCustomerOrdersPage(prev => Math.max(1, prev - 1))}
+                    style={{ backgroundColor: customerOrdersPage <= 1 ? '#111827' : '#1e293b', color: customerOrdersPage <= 1 ? '#4b5563' : '#ffffff', border: '1px solid #374151', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: customerOrdersPage <= 1 ? 'not-allowed' : 'pointer' }}
+                  >
+                    ◀ ก่อนหน้า
+                  </button>
                   {Array.from({ length: totalCustomerTodayPages }, (_, i) => i + 1).map((pageNum) => (
-                    <button key={pageNum} onClick={() => setCustomerOrdersPage(pageNum)} style={{ backgroundColor: customerOrdersPage === pageNum ? '#9333ea' : '#030712', color: '#ffffff', border: '1px solid ' + (customerOrdersPage === pageNum ? '#a855f7' : '#374151'), borderRadius: '8px', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}>{pageNum}</button>
+                    <button
+                      key={pageNum}
+                      type="button"
+                      onClick={() => setCustomerOrdersPage(pageNum)}
+                      style={{
+                        backgroundColor: customerOrdersPage === pageNum ? '#9333ea' : '#030712',
+                        color: '#ffffff',
+                        border: '1.5px solid ' + (customerOrdersPage === pageNum ? '#c084fc' : '#374151'),
+                        borderRadius: '8px',
+                        padding: '6px 14px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        fontSize: '13px',
+                        boxShadow: customerOrdersPage === pageNum ? '0 0 10px rgba(147,51,234,0.5)' : 'none'
+                      }}
+                    >
+                      {pageNum}
+                    </button>
                   ))}
+                  <button
+                    type="button"
+                    disabled={customerOrdersPage >= totalCustomerTodayPages}
+                    onClick={() => setCustomerOrdersPage(prev => Math.min(totalCustomerTodayPages, prev + 1))}
+                    style={{ backgroundColor: customerOrdersPage >= totalCustomerTodayPages ? '#111827' : '#1e293b', color: customerOrdersPage >= totalCustomerTodayPages ? '#4b5563' : '#ffffff', border: '1px solid #374151', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: customerOrdersPage >= totalCustomerTodayPages ? 'not-allowed' : 'pointer' }}
+                  >
+                    ถัดไป ▶
+                  </button>
                 </div>
               )}
             </div>
@@ -7373,10 +7390,43 @@ const [authMode, setAuthMode] = useState('login');
                       </div>
 
                       {totalAdminPages > 1 && (
-                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', alignItems: 'center', marginTop: '18px', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            disabled={adminOrdersPage <= 1}
+                            onClick={() => setAdminOrdersPage(prev => Math.max(1, prev - 1))}
+                            style={{ backgroundColor: adminOrdersPage <= 1 ? '#111827' : '#1e293b', color: adminOrdersPage <= 1 ? '#4b5563' : '#ffffff', border: '1px solid #374151', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: adminOrdersPage <= 1 ? 'not-allowed' : 'pointer' }}
+                          >
+                            ◀ ก่อนหน้า
+                          </button>
                           {Array.from({ length: totalAdminPages }, (_, i) => i + 1).map((pageNum) => (
-                            <button key={pageNum} onClick={() => setAdminOrdersPage(pageNum)} style={{ backgroundColor: adminOrdersPage === pageNum ? '#9333ea' : '#030712', color: '#ffffff', border: '1px solid ' + (adminOrdersPage === pageNum ? '#a855f7' : '#374151'), borderRadius: '8px', padding: '8px 14px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}>{pageNum}</button>
+                            <button
+                              key={pageNum}
+                              type="button"
+                              onClick={() => setAdminOrdersPage(pageNum)}
+                              style={{
+                                backgroundColor: adminOrdersPage === pageNum ? '#9333ea' : '#030712',
+                                color: '#ffffff',
+                                border: '1.5px solid ' + (adminOrdersPage === pageNum ? '#c084fc' : '#374151'),
+                                borderRadius: '8px',
+                                padding: '6px 14px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                boxShadow: adminOrdersPage === pageNum ? '0 0 10px rgba(147,51,234,0.5)' : 'none'
+                              }}
+                            >
+                              {pageNum}
+                            </button>
                           ))}
+                          <button
+                            type="button"
+                            disabled={adminOrdersPage >= totalAdminPages}
+                            onClick={() => setAdminOrdersPage(prev => Math.min(totalAdminPages, prev + 1))}
+                            style={{ backgroundColor: adminOrdersPage >= totalAdminPages ? '#111827' : '#1e293b', color: adminOrdersPage >= totalAdminPages ? '#4b5563' : '#ffffff', border: '1px solid #374151', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', fontWeight: 'bold', cursor: adminOrdersPage >= totalAdminPages ? 'not-allowed' : 'pointer' }}
+                          >
+                            ถัดไป ▶
+                          </button>
                         </div>
                       )}
                     </div>
