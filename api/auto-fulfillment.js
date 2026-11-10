@@ -1,6 +1,6 @@
 // api/auto-fulfillment.js
 // ระบบเตรียมพร้อมเชื่อมต่อ API บอทเติมเกมอัตโนมัติ 100% (Game Top-up Provider Gateway)
-// รองรับการต่อ API จากผู้ให้บริการราคาส่ง (LnwTrue, SEAGM, SmileOne, UniPin ฯลฯ)
+// รองรับการต่อ API จาก WonDD (Member: Thanphoom) และผู้ให้บริการราคาส่งอื่นๆ
 // ปลอดภัย 100%: หากยังไม่ได้ใส่ API Key จริง ระบบจะบันทึกสถานะรอแอดมินเติมมือโดยอัตโนมัติ ไม่กระทบระบบเดิม
 
 export default async function handler(req, res) {
@@ -16,8 +16,8 @@ export default async function handler(req, res) {
 
   // รองรับ GET เพื่อเช็กสถานะการเชื่อมต่อบอท API
   if (req.method === 'GET') {
-    const hasApiKey = !!process.env.GAME_PROVIDER_API_KEY;
-    const providerName = process.env.GAME_PROVIDER_NAME || 'ยังไม่ได้ตั้งค่าผู้ให้บริการ (Manual Admin Mode)';
+    const hasApiKey = !!process.env.WONDD_API_KEY || !!process.env.GAME_PROVIDER_API_KEY;
+    const providerName = process.env.WONDD_API_KEY ? 'WonDD API Gateway (Thanphoom)' : (process.env.GAME_PROVIDER_NAME || 'ยังไม่ได้ตั้งค่า API Key (Manual Admin Mode)');
 
     return res.status(200).json({
       status: 'ready',
@@ -25,8 +25,8 @@ export default async function handler(req, res) {
       provider: providerName,
       isConfigured: hasApiKey,
       instructions: hasApiKey
-        ? 'พร้อมยิงคำสั่งเติมเกมอัตโนมัติ 100%'
-        : 'ขณะนี้อยู่ในโหมดแอดมินเติมมือ เมื่อมี API Key ให้เพิ่มใน Vercel Environment Variables: GAME_PROVIDER_API_KEY และ GAME_PROVIDER_SECRET'
+        ? 'พร้อมยิงคำสั่งเติมเกมอัตโนมัติ 100% ผ่าน WonDD API'
+        : 'ขณะนี้อยู่ในโหมดแอดมินเติมมือ เมื่อแอดมิน WonDD ส่ง API Key มา ให้เพิ่มใน Vercel: WONDD_API_KEY, WONDD_API_SECRET และ WONDD_MEMBER_ID (Thanphoom)'
     });
   }
 
@@ -48,20 +48,21 @@ export default async function handler(req, res) {
       customerContact
     } = req.body || {};
 
-    const API_KEY = process.env.GAME_PROVIDER_API_KEY;
-    const API_SECRET = process.env.GAME_PROVIDER_SECRET;
-    const PROVIDER_ENDPOINT = process.env.GAME_PROVIDER_ENDPOINT; // เช่น https://api.provider.com/v1/order
+    const WONDD_KEY = process.env.WONDD_API_KEY || process.env.GAME_PROVIDER_API_KEY;
+    const WONDD_SECRET = process.env.WONDD_API_SECRET || process.env.GAME_PROVIDER_SECRET;
+    const WONDD_MEMBER_ID = process.env.WONDD_MEMBER_ID || 'Thanphoom';
+    const PROVIDER_ENDPOINT = process.env.WONDD_API_ENDPOINT || process.env.GAME_PROVIDER_ENDPOINT;
 
     const DB_URL = 'https://cyber-topup-game-default-rtdb.asia-southeast1.firebasedatabase.app';
 
-    // กรณีที่ยังไม่ได้ตั้งค่า API Key จากผู้ให้บริการจริง (โหมดเตรียมพร้อม)
-    if (!API_KEY || !PROVIDER_ENDPOINT) {
-      console.log(`[Auto-Fulfillment] ออเดอร์ ${orderId} (${gameName}): ยังไม่มี API Key ระบบจัดส่งเข้าคิวแอดมินเติมมือตามปกติ`);
+    // กรณีที่ยังไม่ได้ตั้งค่า API Key จาก WonDD (โหมดสแตนด์บายปลอดภัย 100%)
+    if (!WONDD_KEY || !PROVIDER_ENDPOINT) {
+      console.log(`[Auto-Fulfillment] ออเดอร์ ${orderId} (${gameName}): ยังไม่ได้ใส่ API Key จาก WonDD จัดส่งเข้าคิวแอดมินดูแลเติมมือตามปกติ`);
 
       return res.status(200).json({
         success: true,
         mode: 'manual_pending',
-        message: 'บันทึกออเดอร์เข้าคิวแอดมินเติมมือเรียบร้อย (ระบบพร้อมเชื่อมต่อ API ทันทีเมื่อใส่คีย์)',
+        message: 'บันทึกออเดอร์เข้าคิวแอดมินเติมมือเรียบร้อย (ระบบพร้อมยิง API อัตโนมัติทันทีเมื่อแอดมิน WonDD ส่งคีย์มา)',
         orderId: orderId,
         detail: {
           game: gameName,
@@ -72,10 +73,12 @@ export default async function handler(req, res) {
       });
     }
 
-    // กรณีที่มี API Key จากผู้ให้บริการแล้ว: ทำการยิงคำสั่งซื้ออัตโนมัติ 100%
-    console.log(`[Auto-Fulfillment] กำลังยิง API อัตโนมัติไปยังผู้ให้บริการสำหรับออเดอร์: ${orderId}`);
+    // กรณีที่มี API Key จาก WonDD เรียบร้อยแล้ว: ยิงคำสั่งซื้ออัตโนมัติ 100%
+    console.log(`[Auto-Fulfillment] กำลังยิง API อัตโนมัติไปยัง WonDD สำหรับออเดอร์: ${orderId}`);
 
     const payload = {
+      member_id: WONDD_MEMBER_ID,
+      api_key: WONDD_KEY,
       order_id: orderId,
       game_code: gameId,
       package_code: packageId,
@@ -88,16 +91,16 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`,
-        'X-API-Secret': API_SECRET || ''
+        'Authorization': `Bearer ${WONDD_KEY}`,
+        'X-API-Secret': WONDD_SECRET || ''
       },
       body: JSON.stringify(payload)
     });
 
     const result = await providerResponse.json().catch(() => ({}));
 
-    if (providerResponse.ok && (result.success || result.status === 'success' || result.code === 200)) {
-      // ผู้ให้บริการเติมสำเร็จทันที -> อัปเดต Firebase ให้ลูกค้าเป็น "✅ เติมเข้าเกมสำเร็จแล้ว (AUTO 100%)"
+    if (providerResponse.ok && (result.success || result.status === 'success' || result.code === 200 || result.status_code === '00')) {
+      // WonDD เติมสำเร็จทันที -> อัปเดตสถานะใน Firebase ให้ลูกค้าเห็นว่า "✅ เติมเข้าเกมสำเร็จแล้ว (AUTO 100%)"
       if (orderId) {
         try {
           const snapshot = await fetch(`${DB_URL}/orders.json`);
@@ -120,16 +123,16 @@ export default async function handler(req, res) {
       return res.status(200).json({
         success: true,
         mode: 'auto_completed',
-        message: 'ยิงบอทเติมเกมอัตโนมัติสำเร็จเรียบร้อยแล้ว!',
+        message: 'ยิงบอทเติมเกมผ่าน WonDD อัตโนมัติสำเร็จเรียบร้อยแล้ว!',
         providerResult: result
       });
     } else {
-      // หากทางผู้ให้บริการแจ้งยอดเงินสำรองหมดหรือติดขัด -> ส่งเข้าคิวแอดมินเติมมือแทนทันที ไม่ทำให้ออเดอร์สูญหาย
-      console.warn('[Auto-Fulfillment] Provider error, falling back to manual admin:', result);
+      // หากเครดิตใน WonDD ไม่พอ หรือระบบเกมปิดปรับปรุง -> ส่งเข้าคิวแอดมินเติมมือแทนทันที เงินไม่หาย ออเดอร์ไม่หลุด
+      console.warn('[Auto-Fulfillment] WonDD provider response warning, falling back to manual admin:', result);
       return res.status(200).json({
         success: true,
         mode: 'fallback_manual',
-        message: 'ระบบส่งต่อให้แอดมินดูแลเติมมือแทนเนื่องจากเซิร์ฟเวอร์ผู้ให้บริการติดขัด',
+        message: 'ระบบส่งต่อให้แอดมินดูแลเติมมือแทนเนื่องจากเซิร์ฟเวอร์ WonDD แจ้งว่า: ' + (result.message || 'ติดขัดชั่วคราว'),
         errorDetail: result
       });
     }
