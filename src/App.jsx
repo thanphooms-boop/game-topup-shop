@@ -2432,7 +2432,7 @@ const [authMode, setAuthMode] = useState('login');
       packageFeeBaht: 0,
       walletFeeBaht: 0,
       merchantId: 'M039117',
-      apiKey: 'jEaAwcf57E69ER7CeouBBxTCp5J0wqps0dGy5H5kLuzojLVS8NfrJHuSJspFMJEy',
+      apiKey: '',
       mode: 'sandbox',
       label: 'QR พร้อมเพย์ อัตโนมัติ (ChillPay ไม่ต้องแนบสลิป)'
     }
@@ -2508,6 +2508,18 @@ const [authMode, setAuthMode] = useState('login');
             walletEnabled: val.truemoneycard?.walletEnabled !== undefined ? val.truemoneycard.walletEnabled : (val.truemoneycard?.enabled !== false),
             enabled: val.truemoneycard?.enabled !== false,
             feeBaht: val.truemoneycard?.feeBaht !== undefined ? Number(val.truemoneycard.feeBaht) : (val.truemoneycard?.feePercent !== undefined && Number(val.truemoneycard.feePercent) <= 50 ? Number(val.truemoneycard.feePercent) : 10)
+          },
+          chillpay: {
+            ...prev.chillpay,
+            ...(val.chillpay || {}),
+            packageEnabled: val.chillpay?.packageEnabled !== undefined ? val.chillpay.packageEnabled : false,
+            walletEnabled: val.chillpay?.walletEnabled !== undefined ? val.chillpay.walletEnabled : false,
+            enabled: val.chillpay?.enabled !== undefined ? val.chillpay.enabled : false,
+            feeBaht: val.chillpay?.feeBaht !== undefined ? Number(val.chillpay.feeBaht) : 0,
+            merchantId: 'M039117',
+            apiKey: '',
+            mode: val.chillpay?.mode || 'sandbox',
+            label: 'QR พร้อมเพย์ อัตโนมัติ (ChillPay ไม่ต้องแนบสลิป)'
           }
         }));
       }
@@ -2516,9 +2528,10 @@ const [authMode, setAuthMode] = useState('login');
   }, []);
 
   const handleTogglePaymentScope = (methodId, scope = 'all') => {
-    const current = paymentSettings[methodId] || { enabled: true, packageEnabled: true, walletEnabled: true };
-    const curPkg = current.packageEnabled !== undefined ? current.packageEnabled : (current.enabled !== false);
-    const curWlt = current.walletEnabled !== undefined ? current.walletEnabled : (current.enabled !== false);
+    const isChill = methodId === 'chillpay';
+    const current = paymentSettings[methodId] || (isChill ? { enabled: false, packageEnabled: false, walletEnabled: false } : { enabled: true, packageEnabled: true, walletEnabled: true });
+    const curPkg = current.packageEnabled !== undefined ? current.packageEnabled : (!isChill && current.enabled !== false);
+    const curWlt = current.walletEnabled !== undefined ? current.walletEnabled : (!isChill && current.enabled !== false);
 
     let nextPkg = curPkg;
     let nextWlt = curWlt;
