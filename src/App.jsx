@@ -21,6 +21,157 @@ const auth = getAuth(app);
 
 // สไตล์ CSS สำหรับเอฟเฟคปุ่มทุกปุ่มและองค์ประกอบที่คลิกได้ในเว็บ (Hover & Active Effects)
 const cyberGlobalStyles = `
+  /* Anti-Horizontal Overflow Rules (Strict Viewport Lockdown for Mobile) */
+  html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #root {
+    overflow-x: hidden !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  *, *:before, *:after {
+    box-sizing: border-box !important;
+  }
+
+  /* Responsive Header Architecture */
+  .meow-header {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 10px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .meow-header-row-1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 12px;
+  }
+
+  .meow-header-desktop-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .meow-mobile-user-row {
+    display: none;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .meow-mobile-login-btn {
+    display: none;
+  }
+
+  .meow-nav-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  @media (max-width: 768px) {
+    .meow-header {
+      padding: 8px 10px !important;
+      gap: 6px !important;
+    }
+
+    .meow-header-row-1 {
+      gap: 8px !important;
+      justify-content: space-between !important;
+    }
+
+    .meow-header-desktop-actions {
+      gap: 6px !important;
+      max-width: 68% !important;
+    }
+
+    /* Hide bulky desktop user pill on mobile */
+    .meow-desktop-user-pill {
+      display: none !important;
+    }
+
+    .meow-desktop-login-wrap {
+      display: none !important;
+    }
+
+    .meow-mobile-login-btn {
+      display: inline-flex !important;
+    }
+
+    /* Show sleek mobile user bar on Row 2 */
+    .meow-mobile-user-row {
+      display: flex !important;
+      width: 100% !important;
+    }
+
+    /* Mobile Pill Scrollable Navigation */
+    .meow-nav-bar {
+      display: flex !important;
+      align-items: center !important;
+      gap: 5px !important;
+      overflow-x: auto !important;
+      white-space: nowrap !important;
+      -webkit-overflow-scrolling: touch !important;
+      max-width: 100% !important;
+      padding-bottom: 2px !important;
+      scrollbar-width: none !important;
+    }
+    .meow-nav-bar::-webkit-scrollbar {
+      display: none !important;
+    }
+
+    /* Compact Theme Button on Mobile */
+    .meow-theme-btn {
+      padding: 6px 9px !important;
+    }
+    .meow-theme-label {
+      display: none !important;
+    }
+
+    /* Main Container Lockdown */
+    main {
+      padding: 0 10px !important;
+      margin: 14px auto !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      overflow-x: hidden !important;
+    }
+
+    /* LINE Widget Floating on Mobile */
+    .line-floating-btn-wrap {
+      bottom: 18px !important;
+      right: 14px !important;
+      max-width: calc(100vw - 28px) !important;
+    }
+    .line-floating-btn {
+      padding: 8px 14px !important;
+    }
+
+    /* Game Detail Card padding on mobile */
+    .meow-game-detail-card {
+      padding: 18px 12px !important;
+      border-radius: 20px !important;
+    }
+  }
+
   @keyframes marqueeScroll {
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
@@ -4052,10 +4203,23 @@ const [authMode, setAuthMode] = useState('login');
       backgroundImage: tColors.bgPattern,
       backgroundSize: '32px 32px',
       backgroundPosition: '0 0, 16px 16px',
-      color: tColors.textPrimary, minHeight: '100vh', fontFamily: 'sans-serif', paddingBottom: '60px', position: 'relative',
+      color: tColors.textPrimary, 
+      minHeight: '100vh', 
+      width: '100%',
+      maxWidth: '100vw',
+      overflowX: 'hidden',
+      boxSizing: 'border-box',
+      fontFamily: 'sans-serif', 
+      paddingBottom: '60px', 
+      position: 'relative',
       transition: 'background-color 0.3s ease, color 0.3s ease'
     }}>
-      <style>{cyberGlobalStyles}</style>
+      <style>{`
+        ${cyberGlobalStyles}
+        body {
+          background-color: ${tColors.bg} !important;
+        }
+      `}</style>
 
       {/* Modal แจ้งเตือนลูกค้าที่ไม่ได้สมัครสมาชิก ให้กดรับเหรียญ Cat Coin เข้ากระเป๋า */}
       {guestPendingReward && (
@@ -4519,37 +4683,171 @@ const [authMode, setAuthMode] = useState('login');
         </div>
       )}
 
-      <header style={{ backgroundColor: tColors.headerBg, backdropFilter: 'blur(16px)', borderBottom: tColors.headerBorder, padding: '10px 28px', position: 'sticky', top: 0, zIndex: 50, display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: isDarkMode ? '0 4px 20px rgba(0,0,0,0.5)' : '0 4px 15px rgba(249, 115, 22, 0.06)', transition: 'all 0.3s ease' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
-          <div style={{ 
-            width: '48px', height: '48px', borderRadius: '16px', 
-            background: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)', 
-            border: '2px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-            boxShadow: '0 6px 20px rgba(249, 115, 22, 0.35)',
-            fontSize: '24px'
-          }}>
-            🐱
+      <header className="meow-header" style={{ 
+        backgroundColor: tColors.headerBg, 
+        backdropFilter: 'blur(16px)', 
+        borderBottom: tColors.headerBorder, 
+        position: 'sticky', 
+        top: 0, 
+        zIndex: 50, 
+        boxShadow: isDarkMode ? '0 4px 20px rgba(0,0,0,0.5)' : '0 4px 15px rgba(249, 115, 22, 0.06)'
+      }}>
+        {/* ROW 1: Logo (Left) + Top Actions (Right: Theme Toggle + Nav Pills) */}
+        <div className="meow-header-row-1">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
+            <div style={{ 
+              width: '42px', height: '42px', borderRadius: '14px', 
+              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)', 
+              border: '2px solid #fed7aa', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+              boxShadow: '0 6px 20px rgba(249, 115, 22, 0.35)',
+              fontSize: '22px',
+              flexShrink: 0
+            }}>
+              🐱
+            </div>
+
+            <div>
+              <div style={{ fontSize: '18px', fontWeight: '900', background: 'linear-gradient(135deg, #ea580c 0%, #db2777 50%, #7c3aed 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: '1.1', letterSpacing: '0.5px' }}>
+                MEOW TOPUP
+              </div>
+              <div style={{ fontSize: '9px', fontWeight: '900', color: '#f59e0b', letterSpacing: '1px' }}>
+                🐾 CUTE & FAST GAME STORE 🪙
+              </div>
+            </div>
           </div>
 
-          <div>
-            <div style={{ fontSize: '20px', fontWeight: '900', background: 'linear-gradient(135deg, #ea580c 0%, #db2777 50%, #7c3aed 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', lineHeight: '1.1', letterSpacing: '0.5px' }}>
-              MEOW TOPUP
-            </div>
-            <div style={{ fontSize: '10px', fontWeight: '900', color: '#f59e0b', letterSpacing: '1px' }}>
-              🐾 CUTE & FAST GAME STORE 🪙
-            </div>
+          <div className="meow-header-desktop-actions">
+            {/* Desktop User Pill (Hidden on Mobile) */}
+            {user ? (
+              <div className="meow-desktop-user-pill" style={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? '2px solid #334155' : '2px solid #fed7aa', borderRadius: '16px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', position: 'relative', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
+                <div style={{ fontSize: '12px', display: 'flex', alignItems: 'center' }}>
+                  <span style={{ color: '#9ca3af' }}>👤 ผู้ใช้: </span>
+                  <b style={{ color: '#c084fc', marginLeft: '4px' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
+                </div>
+                {user.email && !user.emailVerified && (
+                  <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button 
+                      type="button" 
+                      onClick={handleResendEmailVerification}
+                      title="คลิกเพื่อส่งลิงก์ยืนยันตัวตนไปยังอีเมลที่ลงทะเบียนไว้"
+                      style={{ 
+                        backgroundColor: 'rgba(245, 158, 11, 0.25)', 
+                        border: '1px solid #f59e0b', 
+                        color: '#fbbf24', 
+                        padding: '2px 8px', 
+                        borderRadius: '6px', 
+                        fontSize: '10px', 
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      ⚠️ ยืนยันเมล
+                    </button>
+                  </div>
+                )}
+                <div style={{ borderLeft: '2px solid #fed7aa', paddingLeft: '12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ color: '#64748b' }}>🐱🪙 Cat Coin: </span>
+                  <b style={{ color: '#ea580c', fontSize: '14px', fontWeight: '900' }}>{(user.balance || 0).toLocaleString()} Coin</b>
+                  <span style={{ color: '#94a3b8', fontSize: '11px' }}>(฿{(user.balance || 0).toLocaleString()})</span>
+                </div>
+                
+                <button 
+                  onClick={() => { setShowTopupWalletModal(true); setWalletStep(1); }} 
+                  style={{ background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '10px', fontSize: '11px', fontWeight: '900', cursor: 'pointer', boxShadow: '0 4px 12px rgba(249, 115, 22, 0.35)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <span>+ เติม Cat Coin</span>
+                  <span>🐾</span>
+                </button>
+              </div>
+            ) : (
+              <div className="meow-desktop-login-wrap" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <button 
+                  type="button"
+                  onClick={() => { setShowAuthModal(true); setAuthMode('login'); }} 
+                  style={{ 
+                    background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)', 
+                    color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '12px', 
+                    fontSize: '12px', fontWeight: '900', cursor: 'pointer', 
+                    boxShadow: '0 4px 15px rgba(249, 115, 22, 0.35)', 
+                    display: 'flex', alignItems: 'center', gap: '6px' 
+                  }}
+                >
+                  <span>🔑 เข้าสู่ระบบ / สมาชิก</span>
+                </button>
+              </div>
+            )}
+
+            {/* Nav and Controls */}
+            <nav className="meow-nav-bar">
+              {/* Theme Toggle Button */}
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="meow-theme-btn"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  backgroundColor: isDarkMode ? '#1e293b' : '#ffedd5',
+                  border: isDarkMode ? '2px solid #f97316' : '2px solid #ea580c',
+                  color: isDarkMode ? '#fbbf24' : '#c2410c',
+                  padding: '7px 12px',
+                  borderRadius: '12px',
+                  fontSize: '11px',
+                  fontWeight: '900',
+                  cursor: 'pointer',
+                  boxShadow: isDarkMode ? '0 0 12px rgba(249, 115, 22, 0.35)' : '0 2px 8px rgba(234, 88, 12, 0.15)',
+                  transition: 'all 0.25s ease',
+                  flexShrink: 0
+                }}
+                title="สลับธีม สว่าง / มืด"
+              >
+                <span style={{ fontSize: '14px' }}>{isDarkMode ? '🌙' : '☀️'}</span>
+                <span className="meow-theme-label">{isDarkMode ? 'โหมดมืด' : 'โหมดสว่าง'}</span>
+              </button>
+
+              <button className="meow-nav-btn" onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} style={{ background: activeTab === 'shop' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'shop' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '7px 14px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '11px', boxShadow: activeTab === 'shop' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)', flexShrink: 0 }}>🐱 หน้าร้าน</button>
+              
+              {user && (
+                <button className="meow-nav-btn" onClick={() => setActiveTab('track')} style={{ background: activeTab === 'track' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'track' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '7px 14px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '11px', boxShadow: activeTab === 'track' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)', flexShrink: 0 }}>📋 เช็คสถานะ</button>
+              )}
+              
+              {isUserAdmin && (
+                <button className="meow-nav-btn" onClick={() => setActiveTab('admin')} style={{ background: activeTab === 'admin' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'admin' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '7px 14px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '11px', boxShadow: activeTab === 'admin' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)', flexShrink: 0 }}>⚙️ หลังบ้าน</button>
+              )}
+              
+              {user ? (
+                <button className="meow-nav-btn" onClick={handleLogout} style={{ backgroundColor: '#fee2e2', border: '2px solid #fca5a5', color: '#dc2626', padding: '7px 12px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '11px', flexShrink: 0 }}>🚪 ออก</button>
+              ) : (
+                <button className="meow-mobile-login-btn" type="button" onClick={() => { setShowAuthModal(true); setAuthMode('login'); }} style={{ background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)', color: '#ffffff', border: 'none', padding: '7px 12px', borderRadius: '12px', fontSize: '11px', fontWeight: '900', cursor: 'pointer', boxShadow: '0 4px 12px rgba(249, 115, 22, 0.35)', flexShrink: 0 }}>🔑 เข้าสู่ระบบ</button>
+              )}
+            </nav>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-          {user ? (
-            <div style={{ backgroundColor: isDarkMode ? '#1e293b' : '#ffffff', border: isDarkMode ? '2px solid #334155' : '2px solid #fed7aa', borderRadius: '16px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', position: 'relative', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}>
-              <div style={{ fontSize: '12px', display: 'flex', alignItems: 'center' }}>
-                <span style={{ color: '#9ca3af' }}>👤 ผู้ใช้: </span>
-                <b style={{ color: '#c084fc', marginLeft: '4px' }}>{user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}</b>
-              </div>
-              {user.email && !user.emailVerified && (
-                <div style={{ borderLeft: '1px solid #374151', paddingLeft: '12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        {/* ROW 2 (MOBILE ONLY): Dedicated Responsive User Status Card */}
+        {user && (
+          <div className="meow-mobile-user-row">
+            <div style={{
+              backgroundColor: isDarkMode ? '#1e293b' : '#ffffff',
+              border: isDarkMode ? '2px solid #334155' : '2px solid #fed7aa',
+              borderRadius: '14px',
+              padding: '6px 10px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              boxSizing: 'border-box',
+              gap: '6px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+            }}>
+              {/* User Name & Verify */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', minWidth: 0, flexShrink: 1 }}>
+                <span style={{ fontSize: '11px', color: '#9ca3af', whiteSpace: 'nowrap' }}>👤</span>
+                <b style={{ color: '#c084fc', fontSize: '11px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '85px' }}>
+                  {user.username && user.username.includes('@') ? user.username.split('@')[0] : user.username}
+                </b>
+                {user.email && !user.emailVerified && (
                   <button 
                     type="button" 
                     onClick={handleResendEmailVerification}
@@ -4558,85 +4856,52 @@ const [authMode, setAuthMode] = useState('login');
                       backgroundColor: 'rgba(245, 158, 11, 0.25)', 
                       border: '1px solid #f59e0b', 
                       color: '#fbbf24', 
-                      padding: '2px 8px', 
-                      borderRadius: '6px', 
-                      fontSize: '10px', 
+                      padding: '2px 5px', 
+                      borderRadius: '5px', 
+                      fontSize: '9px', 
                       fontWeight: 'bold',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
                     }}
                   >
-                    ⚠️ ยืนยันเมล
+                    ⚠️ ยืนยัน
                   </button>
-                </div>
-              )}
-              <div style={{ borderLeft: '2px solid #fed7aa', paddingLeft: '12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <span style={{ color: '#64748b' }}>🐱🪙 Cat Coin: </span>
-                <b style={{ color: '#ea580c', fontSize: '14px', fontWeight: '900' }}>{(user.balance || 0).toLocaleString()} Coin</b>
-                <span style={{ color: '#94a3b8', fontSize: '11px' }}>(฿{(user.balance || 0).toLocaleString()})</span>
+                )}
               </div>
-              
+
+              {/* Coin Balance */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '3px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <span style={{ fontSize: '11px', color: '#64748b' }}>🐱🪙</span>
+                <b style={{ color: '#ea580c', fontSize: '12px', fontWeight: '900' }}>{(user.balance || 0).toLocaleString()} C</b>
+                <span style={{ color: '#94a3b8', fontSize: '10px' }}>(฿{(user.balance || 0).toLocaleString()})</span>
+              </div>
+
+              {/* Topup Button */}
               <button 
                 onClick={() => { setShowTopupWalletModal(true); setWalletStep(1); }} 
-                style={{ background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)', color: '#ffffff', border: 'none', padding: '6px 14px', borderRadius: '10px', fontSize: '11px', fontWeight: '900', cursor: 'pointer', boxShadow: '0 4px 12px rgba(249, 115, 22, 0.35)', display: 'flex', alignItems: 'center', gap: '4px' }}
+                style={{ 
+                  background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)', 
+                  color: '#ffffff', 
+                  border: 'none', 
+                  padding: '5px 10px', 
+                  borderRadius: '9px', 
+                  fontSize: '10px', 
+                  fontWeight: '900', 
+                  cursor: 'pointer', 
+                  boxShadow: '0 3px 10px rgba(249, 115, 22, 0.35)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '3px',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
+                }}
               >
-                <span>+ เติม Cat Coin</span>
+                <span>+ เติมเหรียญ</span>
                 <span>🐾</span>
               </button>
             </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <button 
-                type="button"
-                onClick={() => { setShowAuthModal(true); setAuthMode('login'); }} 
-                style={{ 
-                  background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)', 
-                  color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '12px', 
-                  fontSize: '12px', fontWeight: '900', cursor: 'pointer', 
-                  boxShadow: '0 4px 15px rgba(249, 115, 22, 0.35)', 
-                  display: 'flex', alignItems: 'center', gap: '6px' 
-                }}
-              >
-                <span>🔑 เข้าสู่ระบบ / สมาชิก</span>
-              </button>
-            </div>
-          )}
-
-          <nav style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {/* ☀️ / 🌙 THEME TOGGLE BUTTON */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                backgroundColor: isDarkMode ? '#1e293b' : '#ffedd5',
-                border: isDarkMode ? '2px solid #f97316' : '2px solid #ea580c',
-                color: isDarkMode ? '#fbbf24' : '#c2410c',
-                padding: '7px 14px',
-                borderRadius: '14px',
-                fontSize: '12px',
-                fontWeight: '900',
-                cursor: 'pointer',
-                boxShadow: isDarkMode ? '0 0 12px rgba(249, 115, 22, 0.35)' : '0 2px 8px rgba(234, 88, 12, 0.15)',
-                transition: 'all 0.25s ease'
-              }}
-              title="สลับธีม สว่าง / มืด"
-            >
-              <span style={{ fontSize: '15px' }}>{isDarkMode ? '🌙' : '☀️'}</span>
-              <span>{isDarkMode ? 'โหมดมืด' : 'โหมดสว่าง'}</span>
-              <span style={{ fontSize: '11px' }}>🐾</span>
-            </button>
-            <button onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} style={{ background: activeTab === 'shop' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'shop' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '8px 16px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px', boxShadow: activeTab === 'shop' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)' }}>🐱 หน้าร้าน</button>
-            {user && (
-              <button onClick={() => setActiveTab('track')} style={{ background: activeTab === 'track' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'track' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '8px 16px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px', boxShadow: activeTab === 'track' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)' }}>📋 เช็คสถานะ</button>
-            )}
-            {isUserAdmin && (
-              <button onClick={() => setActiveTab('admin')} style={{ background: activeTab === 'admin' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'admin' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '8px 16px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px', boxShadow: activeTab === 'admin' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)' }}>⚙️ หลังบ้าน</button>
-            )}
-            {user && <button onClick={handleLogout} style={{ backgroundColor: '#fee2e2', border: '2px solid #fca5a5', color: '#dc2626', padding: '8px 14px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '12px' }}>🚪 ออก</button>}
-          </nav>
-        </div>
+          </div>
+        )}
       </header>
       {emailVerifyMsg && (
         <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.25)', borderBottom: '1px solid #10b981', color: '#6ee7b7', padding: '10px 20px', textAlign: 'center', fontSize: '13px', fontWeight: 'bold' }}>
@@ -5076,7 +5341,7 @@ const [authMode, setAuthMode] = useState('login');
         )}
 
         {activeTab === 'shop' && selectedGame && (
-          <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.98)', borderRadius: '28px', padding: '35px', border: '1.5px solid rgba(147, 51, 234, 0.35)', boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7)' }}>
+          <div className="meow-game-detail-card" style={{ backgroundColor: 'rgba(15, 23, 42, 0.98)', borderRadius: '28px', padding: '35px', border: '1.5px solid rgba(147, 51, 234, 0.35)', boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7)' }}>
             <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#fb923c', padding: '8px 18px', borderRadius: '12px', cursor: 'pointer', marginBottom: '24px', fontWeight: '900', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span>🐾</span>
               <span>← กลับไปหน้าเลือกเกม</span>
@@ -8721,7 +8986,7 @@ const [authMode, setAuthMode] = useState('login');
         )}
 
             {/* LINE OFFICIAL FLOATING CONTACT WIDGET (เอฟเฟกต์ลอยขยับได้นิดหน่อย สวยงาม ดูเป็นทางการ) */}
-      <div style={{ position: 'fixed', bottom: '25px', right: '25px', zIndex: 99 }}>
+      <div className="line-floating-btn-wrap" style={{ position: 'fixed', bottom: '25px', right: '25px', zIndex: 99 }}>
         <div
           onClick={() => setShowLineModal(true)}
           className="line-floating-btn"
