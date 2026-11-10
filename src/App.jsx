@@ -2394,16 +2394,36 @@ const [authMode, setAuthMode] = useState('login');
 
   // ระบบตั้งค่าเปิด/ปิด ช่องทางชำระเงิน และคิดค่าธรรมเนียม ซิงค์ Firebase Realtime Database
   const [paymentSettings, setPaymentSettings] = useState({
-    wallet: { enabled: true, feeBaht: 0, label: 'Cat Coin Wallet (เหรียญร้าน 🐱🪙)' },
-    qrcode: { enabled: true, feeBaht: 0, label: 'โอนเงินธนาคาร (SCB) / พร้อมเพย์' },
+    wallet: { 
+      enabled: true, 
+      packageEnabled: true, 
+      walletEnabled: false, 
+      feeBaht: 0, 
+      label: 'Cat Coin Wallet (เหรียญร้าน 🐱🪙)' 
+    },
+    qrcode: { 
+      enabled: true, 
+      packageEnabled: true, 
+      walletEnabled: true, 
+      feeBaht: 0, 
+      label: 'โอนเงินธนาคาร (SCB) / พร้อมเพย์' 
+    },
     true: { 
       enabled: true, 
+      packageEnabled: true, 
+      walletEnabled: true, 
       feeBaht: 3, 
       packageFeeBaht: 3, 
       walletFeeBaht: 15, 
       label: 'TrueMoney Wallet & สแกนพร้อมเพย์' 
     },
-    truemoneycard: { enabled: true, feeBaht: 10, label: 'บัตรเติมเงินทรูมันนี่ (14 หลัก)' }
+    truemoneycard: { 
+      enabled: true, 
+      packageEnabled: true, 
+      walletEnabled: true, 
+      feeBaht: 10, 
+      label: 'บัตรเติมเงินทรูมันนี่ (14 หลัก)' 
+    }
   });
   const [adminOpenPaymentSettings, setAdminOpenPaymentSettings] = useState(true);
   // โหมดการจ่ายของ TrueMoney: 'promptpay' (สแกน QR อัตโนมัติ), 'voucher' (ซองของขวัญ ไม่ต้องแนบสลิป), หรือ 'transfer' (โอนเบอร์ส่งแอดมินตรวจ)
@@ -2433,6 +2453,10 @@ const [authMode, setAuthMode] = useState('login');
   const handleSetFulfillmentMode = (mode) => {
     setFulfillmentMode(mode);
     set(ref(db, 'system_admin_settings/fulfillment_mode'), mode);
+    if (mode === 'manual') {
+      setFloatingTimer(0);
+      setActiveOrderFirebaseKey(null);
+    }
   };
 
   useEffect(() => {
@@ -2441,11 +2465,26 @@ const [authMode, setAuthMode] = useState('login');
       const val = snapshot.val();
       if (val && typeof val === 'object') {
         setPaymentSettings(prev => ({
-          wallet: { ...prev.wallet, ...(val.wallet || {}) },
-          qrcode: { ...prev.qrcode, ...(val.qrcode || {}) },
+          wallet: { 
+            ...prev.wallet, 
+            ...(val.wallet || {}),
+            packageEnabled: val.wallet?.packageEnabled !== undefined ? val.wallet.packageEnabled : (val.wallet?.enabled !== false),
+            walletEnabled: false,
+            enabled: val.wallet?.packageEnabled !== undefined ? val.wallet.packageEnabled : (val.wallet?.enabled !== false)
+          },
+          qrcode: { 
+            ...prev.qrcode, 
+            ...(val.qrcode || {}),
+            packageEnabled: val.qrcode?.packageEnabled !== undefined ? val.qrcode.packageEnabled : (val.qrcode?.enabled !== false),
+            walletEnabled: val.qrcode?.walletEnabled !== undefined ? val.qrcode.walletEnabled : (val.qrcode?.enabled !== false),
+            enabled: val.qrcode?.enabled !== false
+          },
           true: {
             ...prev.true,
             ...(val.true || {}),
+            packageEnabled: val.true?.packageEnabled !== undefined ? val.true.packageEnabled : (val.true?.enabled !== false),
+            walletEnabled: val.true?.walletEnabled !== undefined ? val.true.walletEnabled : (val.true?.enabled !== false),
+            enabled: val.true?.enabled !== false,
             packageFeeBaht: val.true?.packageFeeBaht !== undefined ? Number(val.true.packageFeeBaht) : (val.true?.feeBaht !== undefined ? Number(val.true.feeBaht) : 3),
             walletFeeBaht: val.true?.walletFeeBaht !== undefined ? Number(val.true.walletFeeBaht) : 15,
             feeBaht: val.true?.packageFeeBaht !== undefined ? Number(val.true.packageFeeBaht) : (val.true?.feeBaht !== undefined ? Number(val.true.feeBaht) : 3)
@@ -2453,6 +2492,9 @@ const [authMode, setAuthMode] = useState('login');
           truemoneycard: {
             ...prev.truemoneycard,
             ...(val.truemoneycard || {}),
+            packageEnabled: val.truemoneycard?.packageEnabled !== undefined ? val.truemoneycard.packageEnabled : (val.truemoneycard?.enabled !== false),
+            walletEnabled: val.truemoneycard?.walletEnabled !== undefined ? val.truemoneycard.walletEnabled : (val.truemoneycard?.enabled !== false),
+            enabled: val.truemoneycard?.enabled !== false,
             feeBaht: val.truemoneycard?.feeBaht !== undefined ? Number(val.truemoneycard.feeBaht) : (val.truemoneycard?.feePercent !== undefined && Number(val.truemoneycard.feePercent) <= 50 ? Number(val.truemoneycard.feePercent) : 10)
           }
         }));
@@ -2461,17 +2503,47 @@ const [authMode, setAuthMode] = useState('login');
     return () => unsubscribe();
   }, []);
 
-  const handleTogglePaymentMethod = (methodId) => {
-    const current = paymentSettings[methodId] || { enabled: true, feePercent: 0 };
-    const nextEnabled = current.enabled === false ? true : false;
+  const handleTogglePaymentScope = (methodId, scope = 'all') => {
+    const current = paymentSettings[methodId] || { enabled: true, packageEnabled: true, walletEnabled: true };
+    const curPkg = current.packageEnabled !== undefined ? current.packageEnabled : (current.enabled !== false);
+    const curWlt = current.walletEnabled !== undefined ? current.walletEnabled : (current.enabled !== false);
+
+    let nextPkg = curPkg;
+    let nextWlt = curWlt;
+
+    if (scope === 'package') {
+      nextPkg = !curPkg;
+    } else if (scope === 'wallet') {
+      nextWlt = !curWlt;
+    } else {
+      const nextAll = current.enabled === false;
+      nextPkg = nextAll;
+      nextWlt = nextAll;
+    }
+
+    const nextOverall = (methodId === 'wallet') ? nextPkg : (nextPkg || nextWlt);
+
     setPaymentSettings(prev => ({
       ...prev,
       [methodId]: {
         ...prev[methodId],
-        enabled: nextEnabled
+        packageEnabled: nextPkg,
+        walletEnabled: nextWlt,
+        enabled: nextOverall
       }
     }));
-    set(ref(db, `system_admin_settings/payment_settings/${methodId}/enabled`), nextEnabled);
+
+    if (scope === 'package' || scope === 'all') {
+      set(ref(db, `system_admin_settings/payment_settings/${methodId}/packageEnabled`), nextPkg);
+    }
+    if (scope === 'wallet' || scope === 'all') {
+      set(ref(db, `system_admin_settings/payment_settings/${methodId}/walletEnabled`), nextWlt);
+    }
+    set(ref(db, `system_admin_settings/payment_settings/${methodId}/enabled`), nextOverall);
+  };
+
+  const handleTogglePaymentMethod = (methodId) => {
+    handleTogglePaymentScope(methodId, 'all');
   };
 
   const handleUpdatePaymentFee = (methodId, newFee, field = 'feeBaht') => {
@@ -2693,17 +2765,17 @@ const [authMode, setAuthMode] = useState('login');
 
   const paymentMethods = basePaymentList.map(pm => {
     const setting = paymentSettings[pm.id] || {};
-    const isEnabled = setting.enabled !== false;
-    const fee = setting.feeBaht !== undefined ? Number(setting.feeBaht) : (setting.feePercent !== undefined ? Number(setting.feePercent) : pm.defaultFeeBaht);
+    const isPkgEnabled = setting.packageEnabled !== undefined ? setting.packageEnabled !== false : setting.enabled !== false;
+    const fee = setting.packageFeeBaht !== undefined ? Number(setting.packageFeeBaht) : (setting.feeBaht !== undefined ? Number(setting.feeBaht) : (setting.feePercent !== undefined ? Number(setting.feePercent) : pm.defaultFeeBaht));
     let desc = pm.desc;
     if (fee > 0) {
       desc = `${pm.desc} (+ค่าธรรมเนียม ฿${fee})`;
     }
     return {
       ...pm,
-      enabled: isEnabled,
+      enabled: isPkgEnabled,
       feeBaht: fee,
-      desc: isEnabled ? desc : '🔴 ปิดปรับปรุงชั่วคราว (กรุณาเลือกช่องทางอื่น)'
+      desc: isPkgEnabled ? desc : '🔴 ปิดรับชำระสำหรับซื้อแพ็กเกจชั่วคราว'
     };
   });
 
@@ -3033,10 +3105,29 @@ const [authMode, setAuthMode] = useState('login');
   const handleWalletNextStep = () => {
     const amt = parseFloat(topupAmount);
     if (isNaN(amt) || amt <= 0) {
+      alert('⚠️ กรุณาระบุจำนวนเงินที่ต้องการเติมเครดิตร้านค้าให้ถูกต้องครับ');
+      return;
+    }
+
+    const isQrcodeWalletOpen = paymentSettings.qrcode?.walletEnabled !== undefined ? paymentSettings.qrcode.walletEnabled !== false : paymentSettings.qrcode?.enabled !== false;
+    const isTrueWalletOpen = paymentSettings.true?.walletEnabled !== undefined ? paymentSettings.true.walletEnabled !== false : paymentSettings.true?.enabled !== false;
+    const isCardWalletOpen = paymentSettings.truemoneycard?.walletEnabled !== undefined ? paymentSettings.truemoneycard.walletEnabled !== false : paymentSettings.truemoneycard?.enabled !== false;
+
+    if (walletPaymentMethod === 'qrcode' && !isQrcodeWalletOpen) {
+      alert('⚠️ ช่องทางโอนเงินธนาคาร (SCB / พร้อมเพย์) ปิดปรับปรุงสำหรับการเติมเครดิตชั่วคราว กรุณาเลือกช่องทางอื่นครับ');
+      return;
+    }
+    if (walletPaymentMethod === 'true' && !isTrueWalletOpen) {
+      alert('⚠️ ช่องทาง TrueMoney Wallet ปิดปรับปรุงสำหรับการเติมเครดิตชั่วคราว กรุณาเลือกช่องทางอื่นครับ');
+      return;
+    }
+    if (walletPaymentMethod === 'truemoneycard' && !isCardWalletOpen) {
+      alert('⚠️ ช่องทางบัตรเติมเงินทรูมันนี่ 14 หลัก ปิดปรับปรุงสำหรับการเติมเครดิตชั่วคราว กรุณาเลือกช่องทางอื่นครับ');
       return;
     }
 
     if (walletPaymentMethod === 'truemoneycard' && (!truemoneyCard14 || truemoneyCard14.length < 14)) {
+      alert('⚠️ กรุณากรอกรหัสบัตรเติมเงินทรูมันนี่ให้ครบ 14 หลักครับ');
       return;
     }
 
@@ -3119,7 +3210,11 @@ const [authMode, setAuthMode] = useState('login');
 
     const newKey = createRealtimeOrder(newWalletOrder);
     sendLineOrderNotification(newWalletOrder);
-    setFloatingTimer(10);
+    if (fulfillmentMode === 'auto_10s') {
+      setFloatingTimer(10);
+    } else {
+      setFloatingTimer(0);
+    }
     setActiveOrderFirebaseKey(newKey);
     setActiveTab('track');
 
@@ -4668,7 +4763,7 @@ const [authMode, setAuthMode] = useState('login');
       )}
 
       
-      {floatingTimer > 0 && (
+      {floatingTimer > 0 && fulfillmentMode === 'auto_10s' && (
         <div style={{
           position: 'fixed', bottom: '95px', right: '25px', zIndex: 98,
           backgroundColor: 'rgba(15, 23, 42, 0.95)', border: '2px solid #34d399',
@@ -4678,7 +4773,7 @@ const [authMode, setAuthMode] = useState('login');
           <div style={{ fontSize: '22px' }}>⏳</div>
           <div>
             <div style={{ fontSize: '12px', color: '#9ca3af' }}>ระบบกำลังเติมเงิน</div>
-            <div style={{ fontSize: '15px', fontWeight: '900', color: '#34d399' }}>กำลังรอแอดมินอนุมัติ ({floatingTimer}s)</div>
+            <div style={{ fontSize: '15px', fontWeight: '900', color: '#34d399' }}>ระบบกำลังเติมเงินอัตโนมัติ ({floatingTimer}s)</div>
           </div>
         </div>
       )}
@@ -6637,14 +6732,14 @@ const [authMode, setAuthMode] = useState('login');
                     {/* 1. Cat Coin Wallet */}
                     <div style={{ 
                       backgroundColor: '#0a0f1d', 
-                      border: `1.5px solid ${paymentSettings.wallet?.enabled !== false ? 'rgba(168, 85, 247, 0.6)' : '#ef4444'}`, 
+                      border: `1.5px solid ${paymentSettings.wallet?.packageEnabled !== false && paymentSettings.wallet?.enabled !== false ? 'rgba(168, 85, 247, 0.6)' : '#ef4444'}`, 
                       borderRadius: '16px', 
                       padding: '18px', 
                       display: 'flex', 
                       flexDirection: 'column', 
                       justifyContent: 'space-between',
-                      boxShadow: paymentSettings.wallet?.enabled !== false ? '0 4px 20px rgba(168,85,247,0.15)' : 'none',
-                      minHeight: '310px'
+                      boxShadow: paymentSettings.wallet?.packageEnabled !== false && paymentSettings.wallet?.enabled !== false ? '0 4px 20px rgba(168,85,247,0.15)' : 'none',
+                      minHeight: '340px'
                     }}>
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -6657,64 +6752,76 @@ const [authMode, setAuthMode] = useState('login');
                             fontWeight: 'bold', 
                             padding: '3px 8px', 
                             borderRadius: '6px', 
-                            color: paymentSettings.wallet?.enabled !== false ? '#34d399' : '#fca5a5', 
-                            backgroundColor: paymentSettings.wallet?.enabled !== false ? 'rgba(52,211,153,0.15)' : 'rgba(239,68,68,0.2)',
-                            border: `1px solid ${paymentSettings.wallet?.enabled !== false ? '#10b981' : '#ef4444'}`
+                            color: paymentSettings.wallet?.packageEnabled !== false ? '#34d399' : '#fca5a5', 
+                            backgroundColor: paymentSettings.wallet?.packageEnabled !== false ? 'rgba(52,211,153,0.15)' : 'rgba(239,68,68,0.2)',
+                            border: `1px solid ${paymentSettings.wallet?.packageEnabled !== false ? '#10b981' : '#ef4444'}`
                           }}>
-                            {paymentSettings.wallet?.enabled !== false ? '🟢 เปิดใช้งาน' : '🔴 ปิดใช้งาน'}
+                            {paymentSettings.wallet?.packageEnabled !== false ? '🟢 เปิดใช้งาน' : '🔴 ปิดใช้งาน'}
                           </span>
                         </div>
                         <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 12px 0' }}>
                           กระเป๋าเหรียญสะสมของร้านค้า (1 Coin = ฿1)
                         </p>
 
-                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '12px', border: '1px solid #1f2937', marginBottom: '14px' }}>
-                          <div style={{ fontSize: '11px', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1f2937', marginBottom: '12px' }}>
+                          <div style={{ fontSize: '11px', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
                             <span style={{ color: '#34d399' }}>✓</span>
-                            <span>หักเหรียญในบัญชีอัตโนมัติ 100%</span>
-                          </div>
-                          <div style={{ fontSize: '11px', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                            <span style={{ color: '#34d399' }}>✓</span>
-                            <span>ไม่มีค่าธรรมเนียม (ฟรี 0%)</span>
+                            <span>หักเหรียญในบัญชีอัตโนมัติ 100% (ฟรี 0%)</span>
                           </div>
                           <div style={{ fontSize: '11px', color: '#9ca3af', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span>💡</span>
-                            <span>โอนไว ปลอดภัย ไม่ต้องรอแอดมิน</span>
+                            <span>ใช้ชำระเงินสำหรับซื้อแพ็กเกจเกม</span>
+                          </div>
+                        </div>
+
+                        {/* กล่องเปิด-ปิด แยกรายการ */}
+                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1f2937' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#c084fc', marginBottom: '8px' }}>
+                            🎛️ จัดการเปิด-ปิดระบบ:
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold' }}>1. ซื้อแพ็กเกจเกม:</div>
+                              <div style={{ fontSize: '10px', color: paymentSettings.wallet?.packageEnabled !== false ? '#34d399' : '#ef4444' }}>
+                                {paymentSettings.wallet?.packageEnabled !== false ? '● เปิดให้ชำระด้วย Coin' : '○ ปิดการชำระด้วย Coin'}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePaymentScope('wallet', 'package')}
+                              style={{
+                                backgroundColor: paymentSettings.wallet?.packageEnabled !== false ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                                color: paymentSettings.wallet?.packageEnabled !== false ? '#fca5a5' : '#34d399',
+                                border: `1px solid ${paymentSettings.wallet?.packageEnabled !== false ? '#ef4444' : '#10b981'}`,
+                                padding: '5px 10px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {paymentSettings.wallet?.packageEnabled !== false ? '🔴 สั่งปิดรับ' : '🟢 สั่งเปิดรับ'}
+                            </button>
                           </div>
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleTogglePaymentMethod('wallet')}
-                        style={{ 
-                          width: '100%', 
-                          backgroundColor: paymentSettings.wallet?.enabled !== false ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.2)', 
-                          color: paymentSettings.wallet?.enabled !== false ? '#fca5a5' : '#34d399', 
-                          border: `1px solid ${paymentSettings.wallet?.enabled !== false ? '#ef4444' : '#10b981'}`, 
-                          padding: '10px', 
-                          borderRadius: '10px', 
-                          fontSize: '12px', 
-                          fontWeight: 'bold', 
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        {paymentSettings.wallet?.enabled !== false ? '🔴 ปิดใช้งานช่องทางนี้' : '🟢 เปิดใช้งานช่องทางนี้'}
-                      </button>
+                      <div style={{ fontSize: '10px', color: '#64748b', textAlign: 'center', marginTop: '10px' }}>
+                        * เติมเครดิตร้าน: เหรียญสะสม ไม่ต้องเปิดรับชำระตัวเอง
+                      </div>
                     </div>
 
                     {/* 2. SCB & PromptPay */}
                     <div style={{ 
                       backgroundColor: '#0a0f1d', 
-                      border: `1.5px solid ${paymentSettings.qrcode?.enabled !== false ? 'rgba(56, 189, 248, 0.6)' : '#ef4444'}`, 
+                      border: `1.5px solid ${(paymentSettings.qrcode?.packageEnabled !== false || paymentSettings.qrcode?.walletEnabled !== false) ? 'rgba(56, 189, 248, 0.6)' : '#ef4444'}`, 
                       borderRadius: '16px', 
                       padding: '18px', 
                       display: 'flex', 
                       flexDirection: 'column', 
                       justifyContent: 'space-between',
-                      boxShadow: paymentSettings.qrcode?.enabled !== false ? '0 4px 20px rgba(56,189,248,0.15)' : 'none',
-                      minHeight: '310px'
+                      boxShadow: (paymentSettings.qrcode?.packageEnabled !== false || paymentSettings.qrcode?.walletEnabled !== false) ? '0 4px 20px rgba(56,189,248,0.15)' : 'none',
+                      minHeight: '340px'
                     }}>
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -6727,65 +6834,98 @@ const [authMode, setAuthMode] = useState('login');
                             fontWeight: 'bold', 
                             padding: '3px 8px', 
                             borderRadius: '6px', 
-                            color: paymentSettings.qrcode?.enabled !== false ? '#34d399' : '#fca5a5', 
-                            backgroundColor: paymentSettings.qrcode?.enabled !== false ? 'rgba(52,211,153,0.15)' : 'rgba(239,68,68,0.2)',
-                            border: `1px solid ${paymentSettings.qrcode?.enabled !== false ? '#10b981' : '#ef4444'}`
+                            color: (paymentSettings.qrcode?.packageEnabled !== false && paymentSettings.qrcode?.walletEnabled !== false) ? '#34d399' : (paymentSettings.qrcode?.packageEnabled !== false || paymentSettings.qrcode?.walletEnabled !== false) ? '#f59e0b' : '#fca5a5', 
+                            backgroundColor: (paymentSettings.qrcode?.packageEnabled !== false && paymentSettings.qrcode?.walletEnabled !== false) ? 'rgba(52,211,153,0.15)' : (paymentSettings.qrcode?.packageEnabled !== false || paymentSettings.qrcode?.walletEnabled !== false) ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)',
+                            border: `1px solid ${(paymentSettings.qrcode?.packageEnabled !== false && paymentSettings.qrcode?.walletEnabled !== false) ? '#10b981' : (paymentSettings.qrcode?.packageEnabled !== false || paymentSettings.qrcode?.walletEnabled !== false) ? '#f59e0b' : '#ef4444'}`
                           }}>
-                            {paymentSettings.qrcode?.enabled !== false ? '🟢 เปิดใช้งาน' : '🔴 ปิดใช้งาน'}
+                            {(paymentSettings.qrcode?.packageEnabled !== false && paymentSettings.qrcode?.walletEnabled !== false) ? '🟢 เปิดทั้งคู่' : (paymentSettings.qrcode?.packageEnabled !== false || paymentSettings.qrcode?.walletEnabled !== false) ? '🟡 เปิดบางส่วน' : '🔴 ปิดทุกส่วน'}
                           </span>
                         </div>
-                        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 12px 0' }}>
-                          โอนเงินบัญชีธนาคาร & สแกน QR พร้อมเพย์
+                        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 10px 0' }}>
+                          โอนเงินบัญชีธนาคาร & สแกน QR พร้อมเพย์ (SlipOK ตรวจสลิป)
                         </p>
 
-                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '12px', border: '1px solid #1f2937', marginBottom: '14px' }}>
-                          <div style={{ fontSize: '11px', color: '#e2e8f0', marginBottom: '4px' }}>
-                            🏢 บัญชี SCB: <b style={{ color: '#ffffff' }}>558-265124-6</b>
+                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1f2937', marginBottom: '12px' }}>
+                          <div style={{ fontSize: '11px', color: '#e2e8f0', marginBottom: '3px' }}>
+                            🏢 SCB: <b style={{ color: '#ffffff' }}>558-265124-6</b> | 📱 พร้อมเพย์: <b style={{ color: '#38bdf8' }}>095-626-7172</b>
                           </div>
-                          <div style={{ fontSize: '11px', color: '#e2e8f0', marginBottom: '6px' }}>
-                            📱 พร้อมเพย์: <b style={{ color: '#38bdf8' }}>095-626-7172</b>
+                          <div style={{ fontSize: '10px', color: '#34d399' }}>
+                            ✓ ตรวจสลิปออโต้ 24 ชม. • ไม่มีค่าธรรมเนียม (ฟรี)
                           </div>
-                          <div style={{ fontSize: '11px', color: '#34d399', display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                            <span>⚡</span>
-                            <span>ตรวจสลิปอัตโนมัติ 24 ชม. (SlipOK)</span>
+                        </div>
+
+                        {/* กล่องเปิด-ปิด แยกรายการระหว่าง ซื้อแพ็กเกจ vs เติมเครดิตร้าน */}
+                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1f2937' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '8px' }}>
+                            🎛️ เปิด-ปิดแยกรายการ:
                           </div>
-                          <div style={{ fontSize: '10px', color: '#9ca3af' }}>
-                            ✓ ไม่มีค่าธรรมเนียม (ฟรี)
+
+                          {/* 1. ซื้อแพ็กเกจเกม */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', marginBottom: '6px', borderBottom: '1px dashed #1f2937' }}>
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold' }}>1. ซื้อแพ็กเกจเกม:</div>
+                              <div style={{ fontSize: '10px', color: paymentSettings.qrcode?.packageEnabled !== false ? '#34d399' : '#ef4444' }}>
+                                {paymentSettings.qrcode?.packageEnabled !== false ? '● เปิดรับชำระ' : '○ ปิดรับชำระ'}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePaymentScope('qrcode', 'package')}
+                              style={{
+                                backgroundColor: paymentSettings.qrcode?.packageEnabled !== false ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                                color: paymentSettings.qrcode?.packageEnabled !== false ? '#fca5a5' : '#34d399',
+                                border: `1px solid ${paymentSettings.qrcode?.packageEnabled !== false ? '#ef4444' : '#10b981'}`,
+                                padding: '5px 10px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {paymentSettings.qrcode?.packageEnabled !== false ? '🔴 สั่งปิดรับ' : '🟢 สั่งเปิดรับ'}
+                            </button>
+                          </div>
+
+                          {/* 2. เติมเครดิตร้าน */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold' }}>2. เติมเครดิตร้าน:</div>
+                              <div style={{ fontSize: '10px', color: paymentSettings.qrcode?.walletEnabled !== false ? '#34d399' : '#ef4444' }}>
+                                {paymentSettings.qrcode?.walletEnabled !== false ? '● เปิดรับชำระ' : '○ ปิดรับชำระ'}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePaymentScope('qrcode', 'wallet')}
+                              style={{
+                                backgroundColor: paymentSettings.qrcode?.walletEnabled !== false ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                                color: paymentSettings.qrcode?.walletEnabled !== false ? '#fca5a5' : '#34d399',
+                                border: `1px solid ${paymentSettings.qrcode?.walletEnabled !== false ? '#ef4444' : '#10b981'}`,
+                                padding: '5px 10px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {paymentSettings.qrcode?.walletEnabled !== false ? '🔴 สั่งปิดรับ' : '🟢 สั่งเปิดรับ'}
+                            </button>
                           </div>
                         </div>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleTogglePaymentMethod('qrcode')}
-                        style={{ 
-                          width: '100%', 
-                          backgroundColor: paymentSettings.qrcode?.enabled !== false ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.2)', 
-                          color: paymentSettings.qrcode?.enabled !== false ? '#fca5a5' : '#34d399', 
-                          border: `1px solid ${paymentSettings.qrcode?.enabled !== false ? '#ef4444' : '#10b981'}`, 
-                          padding: '10px', 
-                          borderRadius: '10px', 
-                          fontSize: '12px', 
-                          fontWeight: 'bold', 
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        {paymentSettings.qrcode?.enabled !== false ? '🔴 ปิดใช้งานช่องทางนี้' : '🟢 เปิดใช้งานช่องทางนี้'}
-                      </button>
                     </div>
 
                     {/* 3. TrueMoney Wallet & สแกนพร้อมเพย์ */}
                     <div style={{ 
                       backgroundColor: '#0a0f1d', 
-                      border: `1.5px solid ${paymentSettings.true?.enabled !== false ? 'rgba(249, 115, 22, 0.7)' : '#ef4444'}`, 
+                      border: `1.5px solid ${(paymentSettings.true?.packageEnabled !== false || paymentSettings.true?.walletEnabled !== false) ? 'rgba(249, 115, 22, 0.7)' : '#ef4444'}`, 
                       borderRadius: '16px', 
                       padding: '18px', 
                       display: 'flex', 
                       flexDirection: 'column', 
                       justifyContent: 'space-between',
-                      boxShadow: paymentSettings.true?.enabled !== false ? '0 4px 20px rgba(249,115,22,0.2)' : 'none',
-                      minHeight: '310px'
+                      boxShadow: (paymentSettings.true?.packageEnabled !== false || paymentSettings.true?.walletEnabled !== false) ? '0 4px 20px rgba(249,115,22,0.2)' : 'none',
+                      minHeight: '340px'
                     }}>
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -6798,92 +6938,121 @@ const [authMode, setAuthMode] = useState('login');
                             fontWeight: 'bold', 
                             padding: '3px 8px', 
                             borderRadius: '6px', 
-                            color: paymentSettings.true?.enabled !== false ? '#34d399' : '#fca5a5', 
-                            backgroundColor: paymentSettings.true?.enabled !== false ? 'rgba(52,211,153,0.15)' : 'rgba(239,68,68,0.2)',
-                            border: `1px solid ${paymentSettings.true?.enabled !== false ? '#10b981' : '#ef4444'}`
+                            color: (paymentSettings.true?.packageEnabled !== false && paymentSettings.true?.walletEnabled !== false) ? '#34d399' : (paymentSettings.true?.packageEnabled !== false || paymentSettings.true?.walletEnabled !== false) ? '#f59e0b' : '#fca5a5', 
+                            backgroundColor: (paymentSettings.true?.packageEnabled !== false && paymentSettings.true?.walletEnabled !== false) ? 'rgba(52,211,153,0.15)' : (paymentSettings.true?.packageEnabled !== false || paymentSettings.true?.walletEnabled !== false) ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)',
+                            border: `1px solid ${(paymentSettings.true?.packageEnabled !== false && paymentSettings.true?.walletEnabled !== false) ? '#10b981' : (paymentSettings.true?.packageEnabled !== false || paymentSettings.true?.walletEnabled !== false) ? '#f59e0b' : '#ef4444'}`
                           }}>
-                            {paymentSettings.true?.enabled !== false ? '🟢 เปิดใช้งาน' : '🔴 ปิดใช้งาน'}
+                            {(paymentSettings.true?.packageEnabled !== false && paymentSettings.true?.walletEnabled !== false) ? '🟢 เปิดทั้งคู่' : (paymentSettings.true?.packageEnabled !== false || paymentSettings.true?.walletEnabled !== false) ? '🟡 เปิดบางส่วน' : '🔴 ปิดทุกส่วน'}
                           </span>
                         </div>
                         <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 10px 0' }}>
                           สแกนพร้อมเพย์ / ซองของขวัญ / โอนเบอร์ 063-880-1739
                         </p>
 
-                        {/* กล่องตั้งค่าค่าธรรมเนียมโอนเบอร์แบบแยกรายการ จัดวางแถวสวยงามไม่ตัดบรรทัด */}
-                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '12px', border: '1px solid #1f2937', marginBottom: '14px' }}>
+                        {/* กล่องเปิด-ปิด แยกรายการ และตั้งค่าธรรมเนียมโอนเบอร์ */}
+                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1f2937' }}>
                           <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#fb923c', marginBottom: '8px' }}>
-                            ⚙️ ค่าธรรมเนียมโอนเบอร์วอลเล็ต (บาท):
+                            🎛️ เปิด-ปิด & ค่าธรรมเนียมโอนเบอร์:
                           </div>
 
-                          {/* รายการที่ 1: ซื้อแพ็กเกจเกม */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', marginBottom: '6px', borderBottom: '1px dashed #1f2937' }}>
-                            <span style={{ fontSize: '11px', color: '#cbd5e1' }}>1. ซื้อแพ็กเกจเกม:</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {/* 1. ซื้อแพ็กเกจเกม */}
+                          <div style={{ paddingBottom: '8px', marginBottom: '8px', borderBottom: '1px dashed #1f2937' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                              <div>
+                                <span style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold' }}>1. ซื้อแพ็กเกจเกม:</span>
+                                <span style={{ fontSize: '10px', marginLeft: '6px', color: paymentSettings.true?.packageEnabled !== false ? '#34d399' : '#ef4444' }}>
+                                  {paymentSettings.true?.packageEnabled !== false ? '● เปิดรับ' : '○ ปิดรับ'}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleTogglePaymentScope('true', 'package')}
+                                style={{
+                                  backgroundColor: paymentSettings.true?.packageEnabled !== false ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                                  color: paymentSettings.true?.packageEnabled !== false ? '#fca5a5' : '#34d399',
+                                  border: `1px solid ${paymentSettings.true?.packageEnabled !== false ? '#ef4444' : '#10b981'}`,
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {paymentSettings.true?.packageEnabled !== false ? '🔴 ปิด' : '🟢 เปิด'}
+                              </button>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#9ca3af' }}>
+                              <span>+ค่าธรรมเนียมโอนเบอร์:</span>
                               <input
                                 type="number"
                                 min="0"
                                 max="500"
                                 value={paymentSettings.true?.packageFeeBaht ?? paymentSettings.true?.feeBaht ?? 3}
                                 onChange={(e) => handleUpdatePaymentFee('true', e.target.value, 'packageFeeBaht')}
-                                style={{ width: '55px', backgroundColor: '#030712', border: '1px solid #f97316', borderRadius: '6px', padding: '4px 6px', color: '#ffffff', fontSize: '12px', textAlign: 'center', fontWeight: 'bold', outline: 'none' }}
+                                style={{ width: '50px', backgroundColor: '#030712', border: '1px solid #f97316', borderRadius: '6px', padding: '3px 6px', color: '#ffffff', fontSize: '11px', textAlign: 'center', fontWeight: 'bold', outline: 'none' }}
                               />
-                              <span style={{ fontSize: '11px', color: '#9ca3af' }}>บาท</span>
+                              <span>บาท</span>
                             </div>
                           </div>
 
-                          {/* รายการที่ 2: เติมเครดิตร้าน */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                            <span style={{ fontSize: '11px', color: '#cbd5e1' }}>2. เติมเครดิตร้าน:</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          {/* 2. เติมเครดิตร้าน */}
+                          <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                              <div>
+                                <span style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold' }}>2. เติมเครดิตร้าน:</span>
+                                <span style={{ fontSize: '10px', marginLeft: '6px', color: paymentSettings.true?.walletEnabled !== false ? '#34d399' : '#ef4444' }}>
+                                  {paymentSettings.true?.walletEnabled !== false ? '● เปิดรับ' : '○ ปิดรับ'}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleTogglePaymentScope('true', 'wallet')}
+                                style={{
+                                  backgroundColor: paymentSettings.true?.walletEnabled !== false ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                                  color: paymentSettings.true?.walletEnabled !== false ? '#fca5a5' : '#34d399',
+                                  border: `1px solid ${paymentSettings.true?.walletEnabled !== false ? '#ef4444' : '#10b981'}`,
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {paymentSettings.true?.walletEnabled !== false ? '🔴 ปิด' : '🟢 เปิด'}
+                              </button>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#9ca3af' }}>
+                              <span>+ค่าธรรมเนียมโอนเบอร์:</span>
                               <input
                                 type="number"
                                 min="0"
                                 max="500"
                                 value={paymentSettings.true?.walletFeeBaht ?? 15}
                                 onChange={(e) => handleUpdatePaymentFee('true', e.target.value, 'walletFeeBaht')}
-                                style={{ width: '55px', backgroundColor: '#030712', border: '1px solid #f59e0b', borderRadius: '6px', padding: '4px 6px', color: '#ffffff', fontSize: '12px', textAlign: 'center', fontWeight: 'bold', outline: 'none' }}
+                                style={{ width: '50px', backgroundColor: '#030712', border: '1px solid #f59e0b', borderRadius: '6px', padding: '3px 6px', color: '#ffffff', fontSize: '11px', textAlign: 'center', fontWeight: 'bold', outline: 'none' }}
                               />
-                              <span style={{ fontSize: '11px', color: '#9ca3af' }}>บาท</span>
+                              <span>บาท</span>
                             </div>
                           </div>
 
-                          <div style={{ fontSize: '10px', color: '#34d399', borderTop: '1px solid #1f2937', paddingTop: '6px', marginTop: '4px' }}>
-                            ✓ สแกนพร้อมเพย์ & ซองของขวัญ = ไม่มีค่าธรรมเนียม
+                          <div style={{ fontSize: '10px', color: '#34d399', borderTop: '1px solid #1f2937', paddingTop: '6px', marginTop: '6px' }}>
+                            ✓ สแกนพร้อมเพย์ & ซองของขวัญ = ฟรี 0 บาท
                           </div>
                         </div>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleTogglePaymentMethod('true')}
-                        style={{ 
-                          width: '100%', 
-                          backgroundColor: paymentSettings.true?.enabled !== false ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.2)', 
-                          color: paymentSettings.true?.enabled !== false ? '#fca5a5' : '#34d399', 
-                          border: `1px solid ${paymentSettings.true?.enabled !== false ? '#ef4444' : '#10b981'}`, 
-                          padding: '10px', 
-                          borderRadius: '10px', 
-                          fontSize: '12px', 
-                          fontWeight: 'bold', 
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        {paymentSettings.true?.enabled !== false ? '🔴 ปิดใช้งานช่องทางนี้' : '🟢 เปิดใช้งานช่องทางนี้'}
-                      </button>
                     </div>
 
                     {/* 4. บัตรเติมเงินทรูมันนี่ (14 หลัก) */}
                     <div style={{ 
                       backgroundColor: '#0a0f1d', 
-                      border: `1.5px solid ${paymentSettings.truemoneycard?.enabled !== false ? 'rgba(244, 63, 94, 0.6)' : '#ef4444'}`, 
+                      border: `1.5px solid ${(paymentSettings.truemoneycard?.packageEnabled !== false || paymentSettings.truemoneycard?.walletEnabled !== false) ? 'rgba(244, 63, 94, 0.6)' : '#ef4444'}`, 
                       borderRadius: '16px', 
                       padding: '18px', 
                       display: 'flex', 
                       flexDirection: 'column', 
                       justifyContent: 'space-between',
-                      boxShadow: paymentSettings.truemoneycard?.enabled !== false ? '0 4px 20px rgba(244,63,94,0.15)' : 'none',
-                      minHeight: '310px'
+                      boxShadow: (paymentSettings.truemoneycard?.packageEnabled !== false || paymentSettings.truemoneycard?.walletEnabled !== false) ? '0 4px 20px rgba(244,63,94,0.15)' : 'none',
+                      minHeight: '340px'
                     }}>
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -6896,20 +7065,19 @@ const [authMode, setAuthMode] = useState('login');
                             fontWeight: 'bold', 
                             padding: '3px 8px', 
                             borderRadius: '6px', 
-                            color: paymentSettings.truemoneycard?.enabled !== false ? '#34d399' : '#fca5a5', 
-                            backgroundColor: paymentSettings.truemoneycard?.enabled !== false ? 'rgba(52,211,153,0.15)' : 'rgba(239,68,68,0.2)',
-                            border: `1px solid ${paymentSettings.truemoneycard?.enabled !== false ? '#10b981' : '#ef4444'}`
+                            color: (paymentSettings.truemoneycard?.packageEnabled !== false && paymentSettings.truemoneycard?.walletEnabled !== false) ? '#34d399' : (paymentSettings.truemoneycard?.packageEnabled !== false || paymentSettings.truemoneycard?.walletEnabled !== false) ? '#f59e0b' : '#fca5a5', 
+                            backgroundColor: (paymentSettings.truemoneycard?.packageEnabled !== false && paymentSettings.truemoneycard?.walletEnabled !== false) ? 'rgba(52,211,153,0.15)' : (paymentSettings.truemoneycard?.packageEnabled !== false || paymentSettings.truemoneycard?.walletEnabled !== false) ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)',
+                            border: `1px solid ${(paymentSettings.truemoneycard?.packageEnabled !== false && paymentSettings.truemoneycard?.walletEnabled !== false) ? '#10b981' : (paymentSettings.truemoneycard?.packageEnabled !== false || paymentSettings.truemoneycard?.walletEnabled !== false) ? '#f59e0b' : '#ef4444'}`
                           }}>
-                            {paymentSettings.truemoneycard?.enabled !== false ? '🟢 เปิดใช้งาน' : '🔴 ปิดใช้งาน'}
+                            {(paymentSettings.truemoneycard?.packageEnabled !== false && paymentSettings.truemoneycard?.walletEnabled !== false) ? '🟢 เปิดทั้งคู่' : (paymentSettings.truemoneycard?.packageEnabled !== false || paymentSettings.truemoneycard?.walletEnabled !== false) ? '🟡 เปิดบางส่วน' : '🔴 ปิดทุกส่วน'}
                           </span>
                         </div>
                         <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 10px 0' }}>
                           รหัสบัตรเงินสด 14 หลัก แอดมินเติมเข้าแอป
                         </p>
 
-                        {/* กล่องตั้งค่าค่าธรรมเนียมบัตร */}
-                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '12px', border: '1px solid #1f2937', marginBottom: '14px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1f2937', marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontSize: '11px', color: '#cbd5e1' }}>ค่าธรรมเนียมบัตร:</span>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                               <input
@@ -6918,35 +7086,72 @@ const [authMode, setAuthMode] = useState('login');
                                 max="500"
                                 value={paymentSettings.truemoneycard?.feeBaht ?? 10}
                                 onChange={(e) => handleUpdatePaymentFee('truemoneycard', e.target.value)}
-                                style={{ width: '55px', backgroundColor: '#030712', border: '1px solid #f43f5e', borderRadius: '6px', padding: '4px 6px', color: '#ffffff', fontSize: '12px', textAlign: 'center', fontWeight: 'bold', outline: 'none' }}
+                                style={{ width: '50px', backgroundColor: '#030712', border: '1px solid #f43f5e', borderRadius: '6px', padding: '3px 6px', color: '#ffffff', fontSize: '11px', textAlign: 'center', fontWeight: 'bold', outline: 'none' }}
                               />
                               <span style={{ fontSize: '11px', color: '#9ca3af' }}>บาท</span>
                             </div>
                           </div>
-                          <div style={{ fontSize: '10px', color: '#9ca3af' }}>
-                            💡 คิดค่าธรรมเนียมคงที่ต่อบัตร 1 ใบ
+                        </div>
+
+                        {/* กล่องเปิด-ปิด แยกรายการ */}
+                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1f2937' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#f43f5e', marginBottom: '8px' }}>
+                            🎛️ เปิด-ปิดแยกรายการ:
+                          </div>
+
+                          {/* 1. ซื้อแพ็กเกจเกม */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', marginBottom: '6px', borderBottom: '1px dashed #1f2937' }}>
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold' }}>1. ซื้อแพ็กเกจเกม:</div>
+                              <div style={{ fontSize: '10px', color: paymentSettings.truemoneycard?.packageEnabled !== false ? '#34d399' : '#ef4444' }}>
+                                {paymentSettings.truemoneycard?.packageEnabled !== false ? '● เปิดรับชำระ' : '○ ปิดรับชำระ'}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePaymentScope('truemoneycard', 'package')}
+                              style={{
+                                backgroundColor: paymentSettings.truemoneycard?.packageEnabled !== false ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                                color: paymentSettings.truemoneycard?.packageEnabled !== false ? '#fca5a5' : '#34d399',
+                                border: `1px solid ${paymentSettings.truemoneycard?.packageEnabled !== false ? '#ef4444' : '#10b981'}`,
+                                padding: '5px 10px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {paymentSettings.truemoneycard?.packageEnabled !== false ? '🔴 สั่งปิดรับ' : '🟢 สั่งเปิดรับ'}
+                            </button>
+                          </div>
+
+                          {/* 2. เติมเครดิตร้าน */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold' }}>2. เติมเครดิตร้าน:</div>
+                              <div style={{ fontSize: '10px', color: paymentSettings.truemoneycard?.walletEnabled !== false ? '#34d399' : '#ef4444' }}>
+                                {paymentSettings.truemoneycard?.walletEnabled !== false ? '● เปิดรับชำระ' : '○ ปิดรับชำระ'}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePaymentScope('truemoneycard', 'wallet')}
+                              style={{
+                                backgroundColor: paymentSettings.truemoneycard?.walletEnabled !== false ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                                color: paymentSettings.truemoneycard?.walletEnabled !== false ? '#fca5a5' : '#34d399',
+                                border: `1px solid ${paymentSettings.truemoneycard?.walletEnabled !== false ? '#ef4444' : '#10b981'}`,
+                                padding: '5px 10px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {paymentSettings.truemoneycard?.walletEnabled !== false ? '🔴 สั่งปิดรับ' : '🟢 สั่งเปิดรับ'}
+                            </button>
                           </div>
                         </div>
                       </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleTogglePaymentMethod('truemoneycard')}
-                        style={{ 
-                          width: '100%', 
-                          backgroundColor: paymentSettings.truemoneycard?.enabled !== false ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.2)', 
-                          color: paymentSettings.truemoneycard?.enabled !== false ? '#fca5a5' : '#34d399', 
-                          border: `1px solid ${paymentSettings.truemoneycard?.enabled !== false ? '#ef4444' : '#10b981'}`, 
-                          padding: '10px', 
-                          borderRadius: '10px', 
-                          fontSize: '12px', 
-                          fontWeight: 'bold', 
-                          cursor: 'pointer',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        {paymentSettings.truemoneycard?.enabled !== false ? '🔴 ปิดใช้งานช่องทางนี้' : '🟢 เปิดใช้งานช่องทางนี้'}
-                      </button>
                     </div>
 
                   </div>
@@ -9742,11 +9947,43 @@ const [authMode, setAuthMode] = useState('login');
                 <input type="text" inputMode="numeric" placeholder="ระบุจำนวนเงิน (บาท)..." value={topupAmount} onChange={(e) => setTopupAmount(e.target.value.replace(/[^0-9]/g, ''))} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '12px', padding: '12px', color: '#ffffff', fontSize: '20px', textAlign: 'center', fontWeight: 'bold', outline: 'none', marginBottom: '15px', boxSizing: 'border-box' }} />
                 <div style={{ textAlign: 'left', marginBottom: '15px' }}>
                   <label style={{ fontSize: '12px', color: '#9ca3af', display: 'block', marginBottom: '8px' }}>เลือกช่องทางชำระเงิน</label>
-                  <select value={walletPaymentMethod} onChange={(e) => setWalletPaymentMethod(e.target.value)} style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '13px', outline: 'none' }}>
-                    <option value="qrcode">โอนเงินธนาคาร (SCB / พร้อมเพย์ - ไม่มีค่าธรรมเนียม)</option>
-                    <option value="true">TrueMoney Wallet (สแกนพร้อมเพย์ หรือโอนเบอร์)</option>
-                    <option value="truemoneycard">บัตรเติมเงินทรูมันนี่ (14 หลัก)</option>
-                  </select>
+                  {(() => {
+                    const isQrcodeWalletOpen = paymentSettings.qrcode?.walletEnabled !== undefined ? paymentSettings.qrcode.walletEnabled !== false : paymentSettings.qrcode?.enabled !== false;
+                    const isTrueWalletOpen = paymentSettings.true?.walletEnabled !== undefined ? paymentSettings.true.walletEnabled !== false : paymentSettings.true?.enabled !== false;
+                    const isCardWalletOpen = paymentSettings.truemoneycard?.walletEnabled !== undefined ? paymentSettings.truemoneycard.walletEnabled !== false : paymentSettings.truemoneycard?.enabled !== false;
+                    const isAllWalletClosed = !isQrcodeWalletOpen && !isTrueWalletOpen && !isCardWalletOpen;
+
+                    return (
+                      <>
+                        {isAllWalletClosed && (
+                          <div style={{ backgroundColor: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#fca5a5', padding: '8px 12px', borderRadius: '8px', fontSize: '11px', marginBottom: '10px', textAlign: 'center' }}>
+                            ⚠️ ขณะนี้ระบบเติมเครดิตร้านค้าปิดรับชำระชั่วคราวทุกช่องทาง กรุณาติดต่อแอดมินทาง LINE Official
+                          </div>
+                        )}
+                        <select 
+                          value={walletPaymentMethod} 
+                          onChange={(e) => setWalletPaymentMethod(e.target.value)} 
+                          style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '13px', outline: 'none' }}
+                        >
+                          {isQrcodeWalletOpen ? (
+                            <option value="qrcode">โอนเงินธนาคาร (SCB / พร้อมเพย์ - ไม่มีค่าธรรมเนียม)</option>
+                          ) : (
+                            <option value="qrcode" disabled style={{ color: '#ef4444' }}>โอนเงินธนาคาร (SCB / พร้อมเพย์) - 🔴 ปิดรับชั่วคราว</option>
+                          )}
+                          {isTrueWalletOpen ? (
+                            <option value="true">TrueMoney Wallet (สแกนพร้อมเพย์ หรือโอนเบอร์)</option>
+                          ) : (
+                            <option value="true" disabled style={{ color: '#ef4444' }}>TrueMoney Wallet - 🔴 ปิดรับชั่วคราว</option>
+                          )}
+                          {isCardWalletOpen ? (
+                            <option value="truemoneycard">บัตรเติมเงินทรูมันนี่ (14 หลัก)</option>
+                          ) : (
+                            <option value="truemoneycard" disabled style={{ color: '#ef4444' }}>บัตรเติมเงินทรูมันนี่ (14 หลัก) - 🔴 ปิดรับชั่วคราว</option>
+                          )}
+                        </select>
+                      </>
+                    );
+                  })()}
                 </div>
                 {walletPaymentMethod === 'true' && (
                   <div style={{ textAlign: 'left', marginBottom: '15px', backgroundColor: '#030712', padding: '12px', borderRadius: '10px', border: '1px solid #f97316' }}>
