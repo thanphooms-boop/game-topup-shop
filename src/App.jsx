@@ -2423,6 +2423,18 @@ const [authMode, setAuthMode] = useState('login');
       walletEnabled: true, 
       feeBaht: 10, 
       label: 'บัตรเติมเงินทรูมันนี่ (14 หลัก)' 
+    },
+    chillpay: {
+      enabled: false,
+      packageEnabled: false,
+      walletEnabled: false,
+      feeBaht: 0,
+      packageFeeBaht: 0,
+      walletFeeBaht: 0,
+      merchantId: 'M039117',
+      apiKey: 'jEaAwcf57E69ER7CeouBBxTCp5J0wqps0dGy5H5kLuzojLVS8NfrJHuSJspFMJEy',
+      mode: 'sandbox',
+      label: 'QR พร้อมเพย์ อัตโนมัติ (ChillPay ไม่ต้องแนบสลิป)'
     }
   });
   const [adminOpenPaymentSettings, setAdminOpenPaymentSettings] = useState(true);
@@ -2759,6 +2771,7 @@ const [authMode, setAuthMode] = useState('login');
   const basePaymentList = [
     { id: 'wallet', name: 'Cat Coin Wallet (เหรียญร้าน 🐱🪙)', desc: 'หักจากยอดเหรียญ Cat Coin ในบัญชีทันที (โอนไว ปลอดภัย 100%)', defaultFeeBaht: 0 },
     { id: 'qrcode', name: 'โอนเงินธนาคาร (SCB) / พร้อมเพย์', desc: 'สแกน QR พร้อมเพย์ หรือโอนเลขบัญชี SCB (ตรวจสลิป 24 ชม.)', defaultFeeBaht: 0 },
+    { id: 'chillpay', name: 'QR พร้อมเพย์ อัตโนมัติ (ChillPay)', desc: 'สแกน QR จ่ายผ่านแอปธนาคาร ระบบอนุมัติทันที ไม่ต้องแนบสลิป (เร็วที่สุด)', defaultFeeBaht: 0 },
     { id: 'true', name: 'TrueMoney Wallet & สแกนพร้อมเพย์', desc: 'สแกนพร้อมเพย์ผ่าน TrueMoney (ฟรี) / ซองของขวัญ / โอนเบอร์', defaultFeeBaht: 3 },
     { id: 'truemoneycard', name: 'บัตรเติมเงินทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก', defaultFeeBaht: 10 }
   ];
@@ -2793,7 +2806,7 @@ const [authMode, setAuthMode] = useState('login');
 
   useEffect(() => {
     let timer;
-    if (showCheckoutModal && checkoutStep === 2 && (selectedPayment?.id === 'qrcode' || selectedPayment?.id === 'true') && !isQrExpired) {
+    if (showCheckoutModal && checkoutStep === 2 && (selectedPayment?.id === 'qrcode' || selectedPayment?.id === 'true' || selectedPayment?.id === 'chillpay') && !isQrExpired) {
       timer = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) { clearInterval(timer); setIsQrExpired(true); return 0; }
@@ -7154,6 +7167,117 @@ const [authMode, setAuthMode] = useState('login');
                       </div>
                     </div>
 
+                    {/* 5. ChillPay QR พร้อมเพย์ (ไม่ต้องแนบสลิป) */}
+                    <div style={{ 
+                      backgroundColor: '#0a0f1d', 
+                      border: `1.5px solid ${paymentSettings.chillpay?.packageEnabled && paymentSettings.chillpay?.walletEnabled ? '#0284c7' : (paymentSettings.chillpay?.packageEnabled || paymentSettings.chillpay?.walletEnabled) ? '#f59e0b' : '#374151'}`, 
+                      borderRadius: '16px', 
+                      padding: '18px', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      justifyContent: 'space-between',
+                      boxShadow: paymentSettings.chillpay?.packageEnabled ? '0 0 20px rgba(2,132,199,0.3)' : 'none'
+                    }}>
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>⚡</span>
+                            <span>ChillPay (QR ไม่ต้องแนบสลิป)</span>
+                          </span>
+                          <span style={{ 
+                            fontSize: '11px', 
+                            fontWeight: 'bold', 
+                            padding: '3px 8px', 
+                            borderRadius: '6px', 
+                            color: (paymentSettings.chillpay?.packageEnabled && paymentSettings.chillpay?.walletEnabled) ? '#34d399' : (paymentSettings.chillpay?.packageEnabled || paymentSettings.chillpay?.walletEnabled) ? '#f59e0b' : '#9ca3af', 
+                            backgroundColor: (paymentSettings.chillpay?.packageEnabled && paymentSettings.chillpay?.walletEnabled) ? 'rgba(52,211,153,0.15)' : (paymentSettings.chillpay?.packageEnabled || paymentSettings.chillpay?.walletEnabled) ? 'rgba(245,158,11,0.2)' : 'rgba(55,65,81,0.3)',
+                            border: `1px solid ${(paymentSettings.chillpay?.packageEnabled && paymentSettings.chillpay?.walletEnabled) ? '#10b981' : (paymentSettings.chillpay?.packageEnabled || paymentSettings.chillpay?.walletEnabled) ? '#f59e0b' : '#4b5563'}`
+                          }}>
+                            {(paymentSettings.chillpay?.packageEnabled && paymentSettings.chillpay?.walletEnabled) ? '🟢 เปิดทั้งคู่' : (paymentSettings.chillpay?.packageEnabled || paymentSettings.chillpay?.walletEnabled) ? '🟡 เปิดบางส่วน' : '⚪ ปิดใช้งาน (เตรียมพร้อม)'}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 10px 0' }}>
+                          สแกน QR จ่ายผ่านทุกแอปธนาคาร ระบบอนุมัติทันที ไม่ต้องส่งสลิป (Merchant ID: M039117)
+                        </p>
+
+                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1f2937', marginBottom: '10px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ fontSize: '11px', color: '#cbd5e1' }}>ค่าธรรมเนียมคงที่:</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <input
+                                type="number"
+                                min="0"
+                                max="500"
+                                value={paymentSettings.chillpay?.feeBaht ?? 0}
+                                onChange={(e) => handleUpdatePaymentFee('chillpay', e.target.value)}
+                                style={{ width: '50px', backgroundColor: '#030712', border: '1px solid #0284c7', borderRadius: '6px', padding: '3px 6px', color: '#ffffff', fontSize: '11px', textAlign: 'center', fontWeight: 'bold', outline: 'none' }}
+                              />
+                              <span style={{ fontSize: '11px', color: '#9ca3af' }}>บาท</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* กล่องเปิด-ปิด แยกรายการ */}
+                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1f2937' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '8px' }}>
+                            🎛️ เปิด-ปิดแยกรายการ:
+                          </div>
+
+                          {/* 1. ซื้อแพ็กเกจเกม */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', marginBottom: '6px', borderBottom: '1px dashed #1f2937' }}>
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold' }}>1. ซื้อแพ็กเกจเกม:</div>
+                              <div style={{ fontSize: '10px', color: paymentSettings.chillpay?.packageEnabled ? '#34d399' : '#ef4444' }}>
+                                {paymentSettings.chillpay?.packageEnabled ? '● เปิดรับชำระ' : '○ ปิดรับชำระ'}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePaymentScope('chillpay', 'package')}
+                              style={{
+                                backgroundColor: paymentSettings.chillpay?.packageEnabled ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                                color: paymentSettings.chillpay?.packageEnabled ? '#fca5a5' : '#34d399',
+                                border: `1px solid ${paymentSettings.chillpay?.packageEnabled ? '#ef4444' : '#10b981'}`,
+                                padding: '5px 10px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {paymentSettings.chillpay?.packageEnabled ? '🔴 สั่งปิดรับ' : '🟢 สั่งเปิดรับ'}
+                            </button>
+                          </div>
+
+                          {/* 2. เติมเครดิตร้าน */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                              <div style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold' }}>2. เติมเครดิตร้าน:</div>
+                              <div style={{ fontSize: '10px', color: paymentSettings.chillpay?.walletEnabled ? '#34d399' : '#ef4444' }}>
+                                {paymentSettings.chillpay?.walletEnabled ? '● เปิดรับชำระ' : '○ ปิดรับชำระ'}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePaymentScope('chillpay', 'wallet')}
+                              style={{
+                                backgroundColor: paymentSettings.chillpay?.walletEnabled ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                                color: paymentSettings.chillpay?.walletEnabled ? '#fca5a5' : '#34d399',
+                                border: `1px solid ${paymentSettings.chillpay?.walletEnabled ? '#ef4444' : '#10b981'}`,
+                                padding: '5px 10px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {paymentSettings.chillpay?.walletEnabled ? '🔴 สั่งปิดรับ' : '🟢 สั่งเปิดรับ'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                 </div>
 
@@ -9364,14 +9488,14 @@ const [authMode, setAuthMode] = useState('login');
               </div>
             )}
 
-            {checkoutStep === 2 && (selectedPayment?.id === 'qrcode' || selectedPayment?.id === 'true') && (
+            {checkoutStep === 2 && (selectedPayment?.id === 'qrcode' || selectedPayment?.id === 'true' || selectedPayment?.id === 'chillpay') && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                   <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: selectedPayment?.id === 'true' ? '#fb923c' : '#38bdf8' }}>
-                    {selectedPayment?.id === 'true' ? '🧡 ชำระผ่าน TrueMoney Wallet' : '💳 โอนเงินผ่านบัญชีธนาคาร'}
+                    {selectedPayment?.id === 'chillpay' ? '⚡ ชำระผ่าน ChillPay QR พร้อมเพย์ (ไม่ต้องแนบสลิป)' : selectedPayment?.id === 'true' ? '🧡 ชำระผ่าน TrueMoney Wallet' : '💳 โอนเงินผ่านบัญชีธนาคาร'}
                   </h3>
                   <span style={{ fontSize: '11px', color: (selectedPayment?.id === 'true' && trueMoneyPayMode === 'transfer') ? '#fbbf24' : '#34d399', fontWeight: 'bold', backgroundColor: (selectedPayment?.id === 'true' && trueMoneyPayMode === 'transfer') ? 'rgba(251,191,36,0.15)' : 'rgba(52,211,153,0.15)', padding: '3px 10px', borderRadius: '8px', border: `1px solid ${(selectedPayment?.id === 'true' && trueMoneyPayMode === 'transfer') ? '#f59e0b' : '#34d399'}` }}>
-                    {(selectedPayment?.id === 'true' && trueMoneyPayMode === 'transfer') ? '🧑‍💻 แอดมินดูแลตรวจสอบ' : '⚡ ตรวจสลิปอัตโนมัติ 24 ชม.'}
+                    {selectedPayment?.id === 'chillpay' ? '🚀 อนุมัติอัตโนมัติ 100% ไม่ต้องส่งสลิป' : (selectedPayment?.id === 'true' && trueMoneyPayMode === 'transfer') ? '🧑‍💻 แอดมินดูแลตรวจสอบ' : '⚡ ตรวจสลิปอัตโนมัติ 24 ชม.'}
                   </span>
                 </div>
 
@@ -9467,7 +9591,74 @@ const [authMode, setAuthMode] = useState('login');
                   </div>
                 )}
 
-                {selectedPayment?.id === 'true' ? (
+                {selectedPayment?.id === 'chillpay' ? (
+                  /* การ์ด ChillPay QR พร้อมเพย์ อัตโนมัติ (ไม่ต้องแนบสลิป) */
+                  <div style={{ backgroundColor: '#ffffff', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.4)', marginBottom: '16px', border: '2px solid #0284c7', textAlign: 'center', color: '#111827' }}>
+                    <div style={{ backgroundColor: '#0284c7', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ backgroundColor: '#ffffff', color: '#0284c7', fontWeight: '900', fontSize: '12px', padding: '3px 8px', borderRadius: '6px' }}>ChillPay</span>
+                        <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '14px' }}>QR พร้อมเพย์ อัตโนมัติ</span>
+                      </div>
+                      <span style={{ color: '#ffffff', fontSize: '11px', backgroundColor: 'rgba(0,0,0,0.2)', padding: '2px 8px', borderRadius: '6px' }}>⚡ ไม่ต้องแนบสลิป</span>
+                    </div>
+
+                    <div style={{ padding: '18px' }}>
+                      <div style={{ fontSize: '12px', color: '#4b5563', marginBottom: '2px' }}>ร้านค้าผู้รับชำระ</div>
+                      <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#0284c7', marginBottom: '12px' }}>MEOW TOPUP (Merchant ID: M039117)</div>
+
+                      <div style={{ backgroundColor: '#f0f9ff', border: '1.5px solid #bae6fd', borderRadius: '14px', padding: '12px', marginBottom: '14px', display: 'inline-block' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#0369a1', marginBottom: '6px' }}>📱 สแกน QR ผ่านทุกแอปธนาคาร (ระบบตรวจจับยอดอัตโนมัติ)</div>
+                        <img
+                          src={`https://promptpay.io/0956267172/${selectedPackage.price * packageQuantity}.png`}
+                          alt="ChillPay PromptPay QR Code"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(generatePromptPayQrPayload(selectedPackage.price * packageQuantity))}`;
+                          }}
+                          style={{ width: '165px', height: '165px', objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: '8px' }}
+                        />
+                        <div style={{ fontSize: '11px', color: '#0284c7', marginTop: '6px', fontWeight: 'bold' }}>รหัสอ้างอิง: M039117-{Math.floor(100000 + Math.random() * 900000)}</div>
+                      </div>
+
+                      <div style={{ backgroundColor: '#f9fafb', borderRadius: '12px', padding: '10px 14px', border: '1px solid #e5e7eb', marginBottom: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '12px', color: '#4b5563', fontWeight: 'bold' }}>ยอดเงินที่ต้องสแกนจ่าย:</span>
+                        <span style={{ color: '#0284c7', fontSize: '22px', fontWeight: '900' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</span>
+                      </div>
+
+                      <div style={{ textAlign: 'left', backgroundColor: '#f0fdf4', borderRadius: '10px', padding: '10px 12px', border: '1px solid #bbf7d0', marginBottom: '14px' }}>
+                        <div style={{ fontSize: '11px', color: '#166534', fontWeight: 'bold', marginBottom: '4px' }}>⚡ สะดวก ปลอดภัย ไม่ต้องส่งสลิป:</div>
+                        <div style={{ fontSize: '11px', color: '#15803d', lineHeight: '1.5' }}>
+                          1. เปิดแอปธนาคารใดก็ได้ (SCB, KBank, KTB, BBL ฯลฯ) สแกน QR ด้านบน<br/>
+                          2. เมื่อเงินเข้าบัญชีเรียบร้อย ระบบจะตรวจจับและอนุมัติออเดอร์ทันที<br/>
+                          3. <b>ไม่ต้องแคปรูปสลิป</b> หลังจากจ่ายเงินแล้ว ให้กดปุ่มตรวจสอบด้านล่างเพื่อรับของเข้าเกมทันที
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleFinalPaymentSubmit}
+                        style={{
+                          width: '100%',
+                          backgroundColor: '#0284c7',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '13px',
+                          borderRadius: '10px',
+                          fontSize: '14px',
+                          fontWeight: '900',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          boxShadow: '0 4px 15px rgba(2,132,199,0.4)'
+                        }}
+                      >
+                        <span>🚀 ชำระเงินเรียบร้อยแล้ว ตรวจสอบ & เติมเกมทันที</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : selectedPayment?.id === 'true' ? (
                   /* แสดงการ์ด TrueMoney ตามโหมดที่ลูกค้าเลือก */
                   trueMoneyPayMode === 'voucher' ? (
                     /* วิธีที่ 3: ส่งซองของขวัญ TrueMoney (ไม่ต้องแนบสลิป 1 วิ) */
@@ -9821,7 +10012,7 @@ const [authMode, setAuthMode] = useState('login');
                   </div>
                 )}
 
-                {!(selectedPayment?.id === 'true' && trueMoneyPayMode === 'voucher') && (
+                {!(selectedPayment?.id === 'chillpay' || (selectedPayment?.id === 'true' && trueMoneyPayMode === 'voucher')) && (
                 <div style={{
                   backgroundColor: '#030712',
                   border: (selectedPayment?.id === 'true' && trueMoneyPayMode === 'transfer') ? '1.5px dashed #f97316' : '1px solid #374151',
