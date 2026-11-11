@@ -104,7 +104,12 @@ export default async function handler(req, res) {
               `📱 ตอบแชทบนมือถือ: เปิดแอป LINE Official Account\n` +
               `━━━━━━━━━━━━━━━━━━━━`;
 
-            // ยิงแจ้งเตือนพร้อมเสียงเข้ากลุ่มแอดมินทันที
+            // ตรวจสอบเวลาปัจจุบันในประเทศไทย (Asia/Bangkok)
+            const nowBkk = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+            const bkkHour = nowBkk.getHours();
+            const isOffHours = bkkHour >= 22 || bkkHour < 7;
+
+            // ยิงแจ้งเตือนเข้ากลุ่มแอดมินทันที
             await fetch('https://api.line.me/v2/bot/message/push', {
               method: 'POST',
               headers: {
@@ -116,11 +121,137 @@ export default async function handler(req, res) {
                 messages: [
                   {
                     type: 'text',
-                    text: alertGroupMsg,
+                    text: (isOffHours ? '🌙 [นอกเวลาทำการ 22:00-07:00]\n' : '') + alertGroupMsg,
                   },
                 ],
               }),
             });
+
+            // หากเป็นช่วงเวลา 22:00 - 06:59 น. ให้บอทตอบกลับลูกค้าด้วย Flex Message สุดสวยพร้อมลูกเล่น
+            if (isOffHours && event.replyToken) {
+              const offHoursFlex = {
+                type: 'flex',
+                altText: '‼️ ขณะนี้เป็นเวลาปิดทำการแอดมิน (เปิดให้บริการ 07.00 - 22.00 น.)',
+                contents: {
+                  type: 'bubble',
+                  size: 'mega',
+                  header: {
+                    type: 'box',
+                    layout: 'vertical',
+                    backgroundColor: '#1e1b4b',
+                    paddingAll: '16px',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: '‼️ ขณะนี้เป็นเวลาปิดทำการแอดมิน ‼️',
+                        color: '#fca5a5',
+                        weight: 'bold',
+                        size: 'md',
+                        align: 'center',
+                        wrap: true
+                      },
+                      {
+                        type: 'text',
+                        text: '🌙 พี่เหมียวแอดมินกำลังพักผ่อนอยู่ครับ 💤',
+                        color: '#c4b5fd',
+                        size: 'xs',
+                        align: 'center',
+                        margin: 'sm'
+                      }
+                    ]
+                  },
+                  body: {
+                    type: 'box',
+                    layout: 'vertical',
+                    backgroundColor: '#0f172a',
+                    paddingAll: '18px',
+                    spacing: 'md',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: `สวัสดีครับ คุณ ${customerName} 🐱`,
+                        color: '#ffffff',
+                        weight: 'bold',
+                        size: 'sm'
+                      },
+                      {
+                        type: 'box',
+                        layout: 'vertical',
+                        backgroundColor: '#1e293b',
+                        cornerRadius: '12px',
+                        paddingAll: '14px',
+                        borderColor: '#f59e0b',
+                        borderWidth: '1px',
+                        spacing: 'xs',
+                        contents: [
+                          {
+                            type: 'text',
+                            text: '🕒 เวลาทำการแอดมิน (MEOW TOPUP)',
+                            color: '#fbbf24',
+                            weight: 'bold',
+                            size: 'sm'
+                          },
+                          {
+                            type: 'text',
+                            text: '📅 เปิดให้บริการทุกวัน : 07.00 - 22.00 น.',
+                            color: '#f8fafc',
+                            weight: 'bold',
+                            size: 'sm',
+                            margin: 'xs'
+                          },
+                          {
+                            type: 'text',
+                            text: '✨ (นอกเวลา 22:00 - 07:00 น. สามารถฝากข้อความไว้ได้เลย)',
+                            color: '#94a3b8',
+                            size: 'xxs',
+                            wrap: true,
+                            margin: 'xs'
+                          }
+                        ]
+                      },
+                      {
+                        type: 'text',
+                        text: '⚡ หมายเหตุ: หน้าเว็บไซต์ยังเปิดให้สั่งซื้อและสแกนจ่ายได้ตลอด 24 ชม. แอดมินจะรีบมาตอบแชททันทีเวลา 07.00 น. ครับ!',
+                        color: '#34d399',
+                        size: 'xs',
+                        wrap: true
+                      }
+                    ]
+                  },
+                  footer: {
+                    type: 'box',
+                    layout: 'vertical',
+                    backgroundColor: '#0f172a',
+                    paddingAll: '12px',
+                    contents: [
+                      {
+                        type: 'button',
+                        style: 'primary',
+                        color: '#f97316',
+                        height: 'sm',
+                        action: {
+                          type: 'uri',
+                          label: '🛒 ไปที่หน้าร้าน MEOW TOPUP (24 ชม.)',
+                          uri: 'https://game-topup-shop-one.vercel.app'
+                        }
+                      }
+                    ]
+                  }
+                }
+              };
+
+              await fetch('https://api.line.me/v2/bot/message/reply', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${CHANNEL_ACCESS_TOKEN}`,
+                },
+                body: JSON.stringify({
+                  replyToken: event.replyToken,
+                  messages: [offHoursFlex],
+                }),
+              });
+            }
           }
         }
       }
