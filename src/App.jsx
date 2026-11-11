@@ -992,6 +992,7 @@ const [authMode, setAuthMode] = useState('login');
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
   const [showForgotConfirmPassword, setShowForgotConfirmPassword] = useState(false);
   const [forgotStatusMsg, setForgotStatusMsg] = useState({ text: '', type: '' });
+  const [forgotSendingOtp, setForgotSendingOtp] = useState(false);
   const [emailVerifyMsg, setEmailVerifyMsg] = useState('');
   const resetForgotState = () => {
     setForgotStep(1);
@@ -1043,8 +1044,25 @@ const [authMode, setAuthMode] = useState('login');
     }
   };
 
-  const handleRequestOtpSubmit = (e) => {
+  const getThaiTodayDateKey = () => {
+    try {
+      return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+    } catch {
+      const d = new Date(Date.now() + 7 * 60 * 60 * 1000);
+      return d.toISOString().slice(0, 10);
+    }
+  };
+
+  const maskEmailAddress = (emailStr) => {
+    if (!emailStr || !emailStr.includes('@')) return emailStr || '';
+    const [local, domain] = emailStr.split('@');
+    if (local.length <= 2) return `${local[0] || '*'}***@${domain}`;
+    return `${local.slice(0, 2)}${'*'.repeat(Math.min(5, local.length - 2))}@${domain}`;
+  };
+
+  const handleRequestOtpSubmit = async (e) => {
     e.preventDefault();
+    if (forgotSendingOtp) return;
     setForgotStatusMsg({ text: '', type: '' });
 
     const inputClean = forgotEmailInput.trim();
@@ -1063,30 +1081,109 @@ const [authMode, setAuthMode] = useState('login');
       return;
     }
 
+    if (!matched.email || !matched.email.includes('@')) {
+      setForgotStatusMsg({ text: '⚠️ บัญชีนี้ยังไม่ได้ผูกอีเมลไว้ในระบบ กรุณาติดต่อแอดมินทาง LINE Official เพื่อช่วยรีเซ็ตรหัสผ่านครับ', type: 'error' });
+      return;
+    }
+
+    // ตรวจสอบสิทธิ์เปลี่ยนรหัสผ่านได้สูงสุด 1 ครั้งต่อวัน
+    const todayKey = getThaiTodayDateKey();
+    if (matched.lastPasswordResetDate === todayKey) {
+      setForgotStatusMsg({
+        text: '⚠️ บัญชีนี้ได้เปลี่ยนรหัสผ่านไปแล้วในวันนี้ (จำกัดเปลี่ยนได้ 1 ครั้งต่อวัน) กรุณาลองใหม่อีกครั้งในวันพรุ่งนี้ครับ',
+        type: 'error'
+      });
+      return;
+    }
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(otp);
-    setForgotTargetUser(matched);
-    setOtpCountdown(300);
-    setOtpResendCountdown(60);
-    setForgotOtpInput('');
-    setForgotStep(2);
-    setForgotStatusMsg({
-      text: `📧 ส่งรหัส OTP 6 หลักไปยัง ${matched.email || matched.username} เรียบร้อยแล้ว (รหัส OTP ของคุณคือ: ${otp})`,
-      type: 'success'
-    });
+    setForgotSendingOtp(true);
+    try {
+      const apiBase = (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost')
+        ? 'https://game-topup-shop-one.vercel.app/api/send-otp'
+        : '/api/send-otp';
+
+      const resp = await fetch(apiBase, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: matched.email,
+          username: matched.username,
+          otp
+        })
+      });
+      const data = await resp.json().catch(() => ({}));
+
+      if (!resp.ok || !data.success) {
+        setForgotStatusMsg({
+          text: `❌ ${data.message || 'ไม่สามารถส่งอีเมล OTP ได้ในขณะนี้ กรุณาลองใหม่หรือติดต่อแอดมิน'}`,
+          type: 'error'
+        });
+        return;
+      }
+
+      setGeneratedOtp(otp);
+      setForgotTargetUser(matched);
+      setOtpCountdown(300);
+      setOtpResendCountdown(60);
+      setForgotOtpInput('');
+      setForgotStep(2);
+      setForgotStatusMsg({
+        text: `📧 ส่งรหัส OTP 6 หลักไปยังอีเมล ${maskEmailAddress(matched.email)} เรียบร้อยแล้ว กรุณาเช็กใน Inbox หรือ Junk/Spam (เปลี่ยนรหัสได้ 1 ครั้ง/วัน)`,
+        type: 'success'
+      });
+    } catch (err) {
+      setForgotStatusMsg({
+        text: '❌ เกิดข้อผิดพลาดในการเชื่อมต่อระบบส่งอีเมล: ' + err.message,
+        type: 'error'
+      });
+    } finally {
+      setForgotSendingOtp(false);
+    }
   };
 
-  const handleResendOtp = () => {
-    if (otpResendCountdown > 0) return;
+  const handleResendOtp = async () => {
+    if (otpResendCountdown > 0 || forgotSendingOtp || !forgotTargetUser?.email) return;
     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(newOtp);
-    setOtpCountdown(300);
-    setOtpResendCountdown(60);
-    setForgotOtpInput('');
-    setForgotStatusMsg({
-      text: `🔄 ส่งรหัส OTP ใหม่เรียบร้อยแล้ว (รหัส OTP: ${newOtp})`,
-      type: 'success'
-    });
+    setForgotSendingOtp(true);
+    try {
+      const apiBase = (typeof window !== 'undefined' && window.location && window.location.hostname === 'localhost')
+        ? 'https://game-topup-shop-one.vercel.app/api/send-otp'
+        : '/api/send-otp';
+
+      const resp = await fetch(apiBase, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: forgotTargetUser.email,
+          username: forgotTargetUser.username,
+          otp: newOtp
+        })
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok || !data.success) {
+        setForgotStatusMsg({
+          text: `❌ ${data.message || 'ส่งรหัส OTP ใหม่ไม่สำเร็จ กรุณาลองอีกครั้ง'}`,
+          type: 'error'
+        });
+        return;
+      }
+      setGeneratedOtp(newOtp);
+      setOtpCountdown(300);
+      setOtpResendCountdown(60);
+      setForgotOtpInput('');
+      setForgotStatusMsg({
+        text: `🔄 ส่งรหัส OTP ใหม่ไปยังอีเมล ${maskEmailAddress(forgotTargetUser.email)} เรียบร้อยแล้ว กรุณาเช็กกล่องข้อความ`,
+        type: 'success'
+      });
+    } catch (err) {
+      setForgotStatusMsg({
+        text: '❌ ไม่สามารถส่งรหัส OTP ใหม่ได้: ' + err.message,
+        type: 'error'
+      });
+    } finally {
+      setForgotSendingOtp(false);
+    }
   };
 
   const handleVerifyOtpSubmit = (e) => {
@@ -1139,8 +1236,21 @@ const [authMode, setAuthMode] = useState('login');
       return;
     }
 
+    const todayKey = getThaiTodayDateKey();
+    if (forgotTargetUser.lastPasswordResetDate === todayKey) {
+      setForgotStatusMsg({
+        text: '⚠️ บัญชีนี้ได้เปลี่ยนรหัสผ่านไปแล้วในวันนี้ (จำกัด 1 ครั้งต่อวัน) กรุณาลองใหม่พรุ่งนี้ครับ',
+        type: 'error'
+      });
+      return;
+    }
+
     const newPass = forgotNewPassword.trim();
-    set(ref(db, `users/${forgotTargetUser.firebaseKey}/password`), newPass)
+    Promise.all([
+      set(ref(db, `users/${forgotTargetUser.firebaseKey}/password`), newPass),
+      set(ref(db, `users/${forgotTargetUser.firebaseKey}/lastPasswordResetDate`), todayKey),
+      set(ref(db, `users/${forgotTargetUser.firebaseKey}/lastPasswordResetAt`), new Date().toISOString())
+    ])
       .then(() => {
         setUsernameInput(forgotTargetUser.username);
         setPasswordInput(newPass);
