@@ -859,7 +859,12 @@ const redeemTrueMoneyVoucher = async (voucherUrl, expectedAmount, metadata = {})
     if (response.ok && data.success) {
       return { success: true, data: data.data, message: data.message };
     } else {
-      return { success: false, message: data.message || 'ไม่สามารถรับซองของขวัญได้' };
+      return {
+        success: false,
+        cloudflareBlocked: !!data.cloudflareBlocked,
+        voucherUrl: data.voucherUrl || voucherUrl,
+        message: data.message || 'ไม่สามารถรับซองของขวัญได้'
+      };
     }
   } catch (err) {
     console.error('Call /api/redeem-voucher error:', err);
@@ -3430,6 +3435,45 @@ const [authMode, setAuthMode] = useState('login');
       setTrueMoneyVoucherUrl('');
       alert(`🎉 รับซองของขวัญสำเร็จ ยอดเงิน ฿${result.data?.receivedAmount || basePrice} เข้าบัญชีร้านแล้ว! ระบบกำลังจัดส่งแพ็กเกจเข้าไอดีของคุณทันทีครับ`);
       setActiveTab('track');
+    } else if (result.cloudflareBlocked) {
+      const targetGameChar = playerId.trim();
+      const pkgSummary = `${selectedPackage.name}${packageQuantity > 1 ? ` x${packageQuantity}` : ''}`;
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+      const dateKey = `${year}-${month}-${day}`;
+      const costPerItem = selectedPackage.cost !== undefined ? selectedPackage.cost : Math.round(selectedPackage.price * 0.90);
+      const totalProfit = Math.max(0, (selectedPackage.price - costPerItem) * packageQuantity);
+
+      const pendingVoucherOrder = {
+        id: generatedOrderId,
+        game: selectedGame.name,
+        package: pkgSummary,
+        price: basePrice,
+        profit: totalProfit,
+        player: user ? user.username : 'guest_user',
+        gameChar: targetGameChar,
+        voucherUrl: result.voucherUrl || trueMoneyVoucherUrl.trim(),
+        paymentMethod: `TrueMoney ซองของขวัญ (รอแอดมินกดรับซอง)`,
+        status: '⏳ รอแอดมินกดรับซองของขวัญ',
+        time: thaiTime,
+        dateKey: dateKey,
+        timestamp: Date.now()
+      };
+
+      createRealtimeOrder(pendingVoucherOrder);
+      sendLineOrderNotification({
+        ...pendingVoucherOrder,
+        gameChar: `${targetGameChar} | ลิงก์ซอง: ${pendingVoucherOrder.voucherUrl}`
+      });
+
+      setShowCheckoutModal(false);
+      setCheckoutStep(1);
+      setTrueMoneyVoucherUrl('');
+      alert('🧧 ส่งลิงก์ซองของขวัญให้แอดมินเรียบร้อยแล้ว! แอดมินจะกดรับซองและเติมเข้าไอดีเกมให้ภายใน 1-3 นาทีครับ');
+      setActiveTab('track');
     } else {
       setTrueMoneyVoucherError(result.message || 'ไม่สามารถรับซองของขวัญได้ กรุณาตรวจสอบลิงก์อีกครั้ง');
     }
@@ -3501,6 +3545,44 @@ const [authMode, setAuthMode] = useState('login');
       setTopupAmount('');
       setWalletVoucherUrl('');
       alert(`🎉 รับซองของขวัญสำเร็จ! เติมเครดิตเข้ากระเป๋าจำนวน ฿${amt.toLocaleString()} เรียบร้อยแล้วครับ`);
+      setActiveTab('track');
+    } else if (result.cloudflareBlocked) {
+      const targetUsername = user ? user.username : 'user11';
+      const now = new Date();
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      const thaiTime = `${day}/${month}/${year} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+      const dateKey = `${year}-${month}-${day}`;
+
+      const pendingWalletVoucher = {
+        id: generatedOrderId,
+        game: 'เติมเครดิตร้าน',
+        package: `+฿${amt.toLocaleString()}`,
+        price: amt,
+        profit: 0,
+        player: targetUsername,
+        gameChar: 'เติมเครดิตร้าน (ซองของขวัญ)',
+        voucherUrl: result.voucherUrl || walletVoucherUrl.trim(),
+        paymentMethod: 'TrueMoney ซองของขวัญ (รอแอดมินกดรับซอง)',
+        status: '⏳ รอแอดมินกดรับซองของขวัญ',
+        type: 'wallet',
+        time: thaiTime,
+        dateKey: dateKey,
+        timestamp: Date.now()
+      };
+
+      createRealtimeOrder(pendingWalletVoucher);
+      sendLineOrderNotification({
+        ...pendingWalletVoucher,
+        gameChar: `เติมเครดิต | ลิงก์ซอง: ${pendingWalletVoucher.voucherUrl}`
+      });
+
+      setShowTopupWalletModal(false);
+      setWalletStep(1);
+      setTopupAmount('');
+      setWalletVoucherUrl('');
+      alert('🧧 ส่งลิงก์ซองของขวัญให้แอดมินเรียบร้อยแล้ว! แอดมินจะกดรับซองและเพิ่มเครดิตให้ภายใน 1-3 นาทีครับ');
       setActiveTab('track');
     } else {
       setWalletVoucherError(result.message || 'ไม่สามารถรับซองของขวัญได้ กรุณาตรวจสอบลิงก์อีกครั้ง');
@@ -8799,6 +8881,19 @@ const [authMode, setAuthMode] = useState('login');
                                   </div>
                                 )}
                                 <div style={{ fontSize: '12px', color: '#f472b6', marginTop: '4px', fontWeight: 'bold' }}>💳 ช่องทางชำระเงิน: {ord.paymentMethod || 'Cyber Wallet (เครดิตร้าน)'} {ord.feeAmount > 0 && <span style={{ color: '#fb923c', fontSize: '11px' }}>(ค่าธรรมเนียม +฿{ord.feeAmount})</span>}</div>
+                                {ord.voucherUrl && (
+                                  <div style={{ fontSize: '12px', color: '#fca5a5', marginTop: '6px', backgroundColor: 'rgba(220,38,38,0.15)', border: '1.5px solid #ef4444', padding: '6px 12px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                    <span style={{ fontWeight: 'bold' }}>🧧 ซองของขวัญ TrueMoney:</span>
+                                    <a
+                                      href={ord.voucherUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      style={{ backgroundColor: '#dc2626', color: '#ffffff', textDecoration: 'none', padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}
+                                    >
+                                      🧧 เปิดลิงก์ซองเพื่อรับเงิน ↗
+                                    </a>
+                                  </div>
+                                )}
                                 {ord.truemoneyCard && (
                                   <div style={{ fontSize: '12px', color: '#fb923c', marginTop: '6px', backgroundColor: 'rgba(249,115,22,0.15)', border: '1.5px solid #f97316', padding: '6px 12px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                     <span style={{ fontWeight: 'bold' }}>🎟️ รหัสบัตรทรู 14 หลัก:</span>
