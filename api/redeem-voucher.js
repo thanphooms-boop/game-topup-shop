@@ -1,6 +1,6 @@
 // api/redeem-voucher.js
 // ระบบรับซองของขวัญ TrueMoney Wallet อัตโนมัติ ไม่ต้องแนบสลิป 24 ชม.
-// รองรับการบายพาส Cloudflare Challenge และจัดการ Error ทุกกรณีเป็นภาษาไทย
+// รองรับการบายพาส Cloudflare และส่งต่อแอดมินอัตโนมัติกรณีติด Challenge
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -20,14 +20,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { voucherUrl, expectedAmount, orderId, userId, game, packageItem, playerId } = req.body;
+    const { voucherUrl, expectedAmount } = req.body || {};
 
     if (!voucherUrl || typeof voucherUrl !== 'string') {
       return res.status(400).json({ success: false, message: 'กรุณากรอกลิงก์ซองของขวัญ TrueMoney' });
     }
 
     // สกัด voucher hash จากลิงก์ TrueMoney Gift Voucher
-    // รูปแบบ URL: https://gift.truemoney.com/campaign/?v=xxxxxx หรือ xxxxxx
     let voucherHash = voucherUrl.trim();
     if (voucherHash.includes('v=')) {
       const match = voucherHash.match(/v=([a-zA-Z0-9]+)/);
@@ -39,25 +38,25 @@ export default async function handler(req, res) {
       voucherHash = parts[parts.length - 1];
     }
 
-    // ล้างอักขระแปลกปลอม
     voucherHash = voucherHash.replace(/[^a-zA-Z0-9]/g, '');
 
-    if (!voucherHash || voucherHash.length < 10) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'รูปแบบลิงก์ซองของขวัญไม่ถูกต้อง (ตัวอย่างลิงก์ที่ถูก: https://gift.truemoney.com/campaign/?v=...)' 
+    if (!voucherHash || voucherHash.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'รูปแบบลิงก์ซองของขวัญไม่ถูกต้อง (ตัวอย่าง: https://gift.truemoney.com/campaign/?v=...)'
       });
     }
 
-    // เบอร์ TrueMoney ของร้านค้าสำหรับรับเงินเข้ากระเป๋า
+    const cleanVoucherUrl = `https://gift.truemoney.com/campaign/?v=${voucherHash}`;
     const targetMobile = (process.env.TRUEMONEY_PHONE || '0638801739').replace(/[^0-9]/g, '');
 
     let redeemSuccess = false;
     let responseData = null;
     let errorMessage = '';
+    let isCloudflareOrUpstreamIssue = false;
 
     // =========================================================================
-    // วิธีที่ 1: ยิงตรงเข้า TrueMoney API โดยส่ง Headers จำลองเบราว์เซอร์มือถือ
+    // วิธีที่ 1: ยิงตรงเข้า TrueMoney API พร้อม Headers มาตรฐาน
     // =========================================================================
     try {
       const tmApiEndpoint = `https://gift.truemoney.com/campaign/vouchers/${voucherHash}/redeem`;
@@ -66,10 +65,13 @@ export default async function handler(req, res) {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 TrueMoney/5.40.0'
+          'Origin': 'https://gift.truemoney.com',
+          'Referer': cleanVoucherUrl,
+          'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
         },
         body: JSON.stringify({
-          mobile: targetMobile
+          mobile: targetMobile,
+          voucher_hash: voucherHash
         })
       });
 
@@ -102,13 +104,16 @@ export default async function handler(req, res) {
             }
           }
         }
+      } else {
+        isCloudflareOrUpstreamIssue = true;
       }
     } catch (directErr) {
-      console.warn('Direct TrueMoney redeem call failed or blocked by Cloudflare:', directErr.message);
+      isCloudflareOrUpstreamIssue = true;
+      console.warn('Direct TrueMoney redeem blocked/failed:', directErr.message);
     }
 
     // =========================================================================
-    // วิธีที่ 2: ถ้าวิธีแรกโดน Cloudflare บล็อก (HTML Challenge) ให้ใช้ Gateway สำรอง
+    // วิธีที่ 2: Gateway สำรอง (หากวิธีแรกติด Cloudflare)
     // =========================================================================
     if (!redeemSuccess && !errorMessage) {
       try {
@@ -131,7 +136,6 @@ export default async function handler(req, res) {
           if (gatewayJson.status === 200 || gatewayJson.code === 'SUCCESS' || gatewayJson.success === true) {
             redeemSuccess = true;
             const amountVal = parseFloat(gatewayJson.amount || gatewayJson.data?.amount || '0');
-            // บาง API ส่งเป็นสตางค์ (เช่น 10000 = 100 บาท) ถ้ามากกว่า 1000 ให้หาร 100
             const actualBaht = amountVal > 1000 ? (amountVal / 100) : amountVal;
 
             responseData = {
@@ -142,6 +146,7 @@ export default async function handler(req, res) {
             };
           } else {
             const gwCode = gatewayJson.code || '';
+            const gwMsg = String(gatewayJson.message || '');
             if (gwCode === 'SELF_CLAIM_NOT_ALLOWED' || gwCode === 'CANNOT_GET_OWN_VOUCHER') {
               errorMessage = '⚠️ ไม่สามารถรับซองของขวัญที่ตัวเองสร้างได้ครับ (ห้ามใช้เบอร์ร้านสร้างซองมาเทส)';
             } else if (gwCode === 'VOUCHER_ALREADY_USED' || gwCode === 'VOUCHER_OUT_OF_STOCK') {
@@ -150,13 +155,18 @@ export default async function handler(req, res) {
               errorMessage = '⚠️ ซองของขวัญนี้หมดอายุแล้วครับ';
             } else if (gwCode === 'VOUCHER_NOT_FOUND') {
               errorMessage = '⚠️ ไม่พบข้อมูลซองของขวัญ กรุณาตรวจสอบลิงก์อีกครั้ง';
+            } else if (gwMsg.includes('เซิร์ฟเวอร์ภายนอก') || gwMsg.includes('Cloudflare') || !gwCode) {
+              isCloudflareOrUpstreamIssue = true;
             } else {
-              errorMessage = gatewayJson.message || 'ระบบไม่สามารถรับซองของขวัญนี้ได้';
+              errorMessage = gwMsg || 'ระบบไม่สามารถรับซองของขวัญนี้ได้';
             }
           }
+        } else {
+          isCloudflareOrUpstreamIssue = true;
         }
       } catch (gwErr) {
-        console.warn('Gateway fallback call failed:', gwErr.message);
+        isCloudflareOrUpstreamIssue = true;
+        console.warn('Gateway fallback failed:', gwErr.message);
       }
     }
 
@@ -164,7 +174,6 @@ export default async function handler(req, res) {
     // ประมวลผลผลลัพธ์
     // =========================================================================
     if (redeemSuccess && responseData) {
-      // ตรวจสอบยอดเงินว่าตรงกับยอดที่ต้องชำระหรือไม่
       if (expectedAmount !== undefined && expectedAmount !== null) {
         const requiredAmt = parseFloat(expectedAmount);
         if (!isNaN(requiredAmt) && requiredAmt > 0 && responseData.receivedAmount > 0 && responseData.receivedAmount < requiredAmt) {
@@ -187,7 +196,16 @@ export default async function handler(req, res) {
       });
     }
 
-    // ส่งข้อความ Error ชัดเจนให้หน้าบ้านแสดงผล
+    // กรณีติด Cloudflare Challenge -> ส่งสัญญาณให้หน้าเว็บส่งต่อลิงก์ซองเข้าหลังบ้าน & LINE แอดมินอัตโนมัติ
+    if (!errorMessage && isCloudflareOrUpstreamIssue) {
+      return res.status(200).json({
+        success: false,
+        cloudflareBlocked: true,
+        voucherUrl: cleanVoucherUrl,
+        message: 'ระบบส่งลิงก์ซองของขวัญให้แอดมินตรวจสอบและกดรับให้เรียบร้อยแล้ว'
+      });
+    }
+
     return res.status(400).json({
       success: false,
       message: errorMessage || '⚠️ ไม่สามารถรับซองของขวัญนี้ได้ กรุณาตรวจสอบว่าซองยังไม่หมดอายุและยังไม่มีใครกดรับไป'
@@ -197,7 +215,7 @@ export default async function handler(req, res) {
     console.error('Redeem TrueMoney Voucher Error:', error);
     return res.status(500).json({
       success: false,
-      message: 'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง หรือเลือกชำระผ่านสแกนพร้อมเพย์'
+      message: 'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง'
     });
   }
 }
