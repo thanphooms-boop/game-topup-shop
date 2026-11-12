@@ -2747,28 +2747,60 @@ const [authMode, setAuthMode] = useState('login');
   };
 
   // ไอคอนสกุลเงิน/เพชร/ตั๋ว/กล่องสุ่ม 3D จากโฟลเดอร์ public/images/ (ปลอดลิขสิทธิ์ 100%)
+  // ธีมตกแต่งหน้าเลือกแพ็คเกจแยกตามเอกลักษณ์ของแต่ละเกม
+  const getGameTheme = (gameId) => {
+    const themes = {
+      rov: { accent: '#f59e0b', secondary: '#a855f7', priceColor: '#fbbf24', tagline: '⚔️ MOBA 5v5 • คูปองเข้าไวอัตโนมัติ' },
+      freefire: { accent: '#f97316', secondary: '#38bdf8', priceColor: '#38bdf8', tagline: '🔥 Battle Royale • เพชรเข้าตรง UID' },
+      pubg: { accent: '#eab308', secondary: '#f59e0b', priceColor: '#facc15', tagline: '🪖 สมรภูมิ Erangel • UC แท้ 100%' },
+      mlbb: { accent: '#3b82f6', secondary: '#06b6d4', priceColor: '#38bdf8', tagline: '⚡ MOBA 5v5 • เพชรเข้าไวทันใจ' },
+      arenabreakout: { accent: '#f59e0b', secondary: '#94a3b8', priceColor: '#fbbf24', tagline: '🎯 Tactical Extraction • Bonds & เซฟ' },
+      swordofjustice: { accent: '#10b981', secondary: '#fbbf24', priceColor: '#34d399', tagline: '🏮 ยุทธภพจอมยุทธ์ • หยกลวดลาย SEA' },
+      valorant: { accent: '#ff4655', secondary: '#f43f5e', priceColor: '#fb7185', tagline: '🎯 Tactical 5v5 • Riot ID ไทย' },
+      heartopia: { accent: '#f472b6', secondary: '#fb7185', priceColor: '#f472b6', tagline: '💖 Cozy World • เพชรหัวใจ & สมาชิก' },
+      mhoutlanders: { accent: '#dc2626', secondary: '#f59e0b', priceColor: '#fb923c', tagline: '🐉 ออกล่ามอนสเตอร์ยักษ์ • Crest Coin' },
+      identityv: { accent: '#e11d48', secondary: '#a855f7', priceColor: '#fda4af', tagline: '🕯️ คฤหาสน์ 1v4 • Echoes & แพ็คเกจ' },
+      codm: { accent: '#eab308', secondary: '#38bdf8', priceColor: '#facc15', tagline: '🎖️ สมรภูมิ FPS • CP เติมตรง UID' },
+      bloodstrike: { accent: '#ef4444', secondary: '#f59e0b', priceColor: '#fbbf24', tagline: '🩸 FPS Battle Royale • Gold & Pass' },
+      deltaforce: { accent: '#06b6d4', secondary: '#3b82f6', priceColor: '#22d3ee', tagline: '🚁 ปฏิบัติการพิเศษ • Delta Coin Garena' },
+      undawn: { accent: '#f97316', secondary: '#eab308', priceColor: '#fb923c', tagline: '🧟 เอาชีวิตรอด Open World • RC เติมไว' },
+      haikyu: { accent: '#fb923c', secondary: '#38bdf8', priceColor: '#fbbf24', tagline: '🏐 คู่ตบฟ้าประทาน • เพชรรุ้ง & ตั๋ว' },
+      razergold_card: { accent: '#22c55e', secondary: '#eab308', priceColor: '#4ade80', tagline: '💳 บัตร e-Pin แท้ • ส่งรหัส PIN ทันที' },
+    };
+    return themes[gameId] || { accent: '#a855f7', secondary: '#38bdf8', priceColor: '#38bdf8', tagline: '⚡ เติมเกมอัตโนมัติ 24 ชม.' };
+  };
+
   const renderPackageCurrencyIcon = (gameId, pkgName = '') => {
     const n = String(pkgName).toLowerCase();
-    const isTicketOrPass = n.includes('ตั๋ว') || n.includes('ticket') || n.includes('pass') || n.includes('พาส') || n.includes('สมาชิก') || n.includes('รายสัปดาห์') || n.includes('รายเดือน') || n.includes('กองทุน') || n.includes('fund') || n.includes('เติบโต') || n.includes('เลเวล') || n.includes('เชียร์') || n.includes('ความทรงจำ') || n.includes('ผู้เล่นใหม่') || n.includes('select') || n.includes('razer');
     const isChest = n.includes('เสบียง') || n.includes('กล่อง') || n.includes('chest') || n.includes('case') || n.includes('supplies') || n.includes('bazaar') || n.includes('lucky') || n.includes('สมบัติ') || n.includes('เบาะแส') || n.includes('แรงบันดาลใจ') || n.includes('treasures');
+    const isTicketOrPass = n.includes('ตั๋ว') || n.includes('ticket') || n.includes('pass') || n.includes('พาส') || n.includes('สมาชิก') || n.includes('รายสัปดาห์') || n.includes('รายเดือน') || n.includes('กองทุน') || n.includes('fund') || n.includes('เติบโต') || n.includes('เลเวล') || n.includes('เชียร์') || n.includes('ความทรงจำ') || n.includes('ผู้เล่นใหม่') || n.includes('select');
 
-    let imgFile = 'coin.png';
-    if (isChest) {
-      imgFile = 'chest.png';
-    } else if (isTicketOrPass) {
-      imgFile = 'pass.png';
-    } else if (gameId === 'rov') {
-      imgFile = 'coupon.png';
-    } else if (gameId === 'valorant') {
-      imgFile = 'vp.png';
-    } else if (gameId === 'identityv') {
-      imgFile = 'echo.png';
-    } else if (gameId === 'swordofjustice') {
-      imgFile = 'jade.png';
-    } else if (['freefire', 'mlbb', 'heartopia', 'haikyu'].includes(gameId)) {
-      imgFile = 'diamond.png';
-    } else {
-      imgFile = 'coin.png';
+    const perGameIcons = {
+      rov: 'rov.png',
+      freefire: 'freefire.png',
+      pubg: 'pubg.png',
+      mlbb: 'mlbb.png',
+      arenabreakout: 'arenabreakout.png',
+      swordofjustice: 'swordofjustice.png',
+      valorant: 'valorant.png',
+      heartopia: 'heartopia.png',
+      mhoutlanders: 'mhoutlanders.png',
+      identityv: 'identityv.png',
+      codm: 'codm.png',
+      bloodstrike: 'bloodstrike.png',
+      deltaforce: 'deltaforce.png',
+      undawn: 'undawn.png',
+      haikyu: 'haikyu.png',
+      razergold_card: 'razergold_card.png',
+    };
+
+    let imgFile = perGameIcons[gameId] || 'coin.png';
+    if (gameId !== 'razergold_card') {
+      if (isChest) {
+        imgFile = 'chest.png';
+      } else if (isTicketOrPass) {
+        imgFile = 'pass.png';
+      }
     }
 
     return (
@@ -6240,8 +6272,10 @@ const [authMode, setAuthMode] = useState('login');
           </div>
         )}
 
-        {activeTab === 'shop' && selectedGame && (
-          <div className="meow-game-detail-card" style={{ backgroundColor: 'rgba(15, 23, 42, 0.98)', borderRadius: '28px', padding: '35px', border: '1.5px solid rgba(147, 51, 234, 0.35)', boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7)' }}>
+        {activeTab === 'shop' && selectedGame && (() => {
+          const gameTheme = getGameTheme(selectedGame.id);
+          return (
+          <div className="meow-game-detail-card" style={{ backgroundColor: 'rgba(15, 23, 42, 0.98)', borderRadius: '28px', padding: '35px', border: `1.5px solid ${gameTheme.accent}55`, boxShadow: `0 25px 60px rgba(0, 0, 0, 0.75), 0 0 40px ${gameTheme.accent}18`, position: 'relative', overflow: 'hidden' }}>
             <button onClick={() => navigateToGame(null)} style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#fb923c', padding: '8px 18px', borderRadius: '12px', cursor: 'pointer', marginBottom: '24px', fontWeight: '900', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span>🐾</span>
               <span>← กลับไปหน้าเลือกเกม</span>
@@ -6262,18 +6296,52 @@ const [authMode, setAuthMode] = useState('login');
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap' }}>
-              <img src={selectedGame.image} alt={selectedGame.name} style={{ width: '100px', height: '100px', borderRadius: '16px', objectFit: 'cover', border: '2px solid #a855f7' }} />
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <h2 style={{ fontSize: '26px', fontWeight: '900', margin: '0 0 6px 0', color: '#ffffff' }}>{selectedGame.name}</h2>
+            <div style={{
+              position: 'relative',
+              display: 'flex',
+              gap: '20px',
+              alignItems: 'center',
+              marginBottom: '28px',
+              flexWrap: 'wrap',
+              padding: '22px 24px',
+              borderRadius: '22px',
+              overflow: 'hidden',
+              border: `1.5px solid ${gameTheme.accent}45`,
+              background: `linear-gradient(120deg, rgba(9, 13, 22, 0.94) 30%, ${gameTheme.accent}24 100%)`,
+              boxShadow: `0 12px 30px rgba(0,0,0,0.45), inset 0 1px 0 ${gameTheme.accent}33`
+            }}>
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: `url(${selectedGame.image})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                opacity: 0.14,
+                filter: 'blur(12px)',
+                pointerEvents: 'none'
+              }} />
+              <img src={selectedGame.image} alt={selectedGame.name} style={{ position: 'relative', zIndex: 1, width: '96px', height: '96px', borderRadius: '18px', objectFit: 'cover', border: `2.5px solid ${gameTheme.accent}`, boxShadow: `0 0 22px ${gameTheme.accent}55` }} />
+              <div style={{ position: 'relative', zIndex: 1, flex: 1, minWidth: '200px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                  <h2 style={{ fontSize: '26px', fontWeight: '900', margin: 0, color: '#ffffff', textShadow: `0 2px 14px ${gameTheme.accent}55` }}>{selectedGame.name}</h2>
+                  <span style={{
+                    backgroundColor: `${gameTheme.accent}22`,
+                    color: gameTheme.priceColor,
+                    border: `1px solid ${gameTheme.accent}66`,
+                    padding: '3px 10px',
+                    borderRadius: '999px',
+                    fontSize: '11px',
+                    fontWeight: '800'
+                  }}>
+                    {gameTheme.tagline}
+                  </span>
                   {gameStockStatus[selectedGame.id] === false && (
                     <span style={{ backgroundColor: '#ef4444', color: '#ffffff', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold' }}>
                       สต็อกหมดชั่วคราว
                     </span>
                   )}
                 </div>
-                <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>ผู้ให้บริการ: {selectedGame.publisher} | เลือกแพ็กเกจด้านล่างเพื่อเติมเงิน</p>
+                <p style={{ fontSize: '13px', color: '#cbd5e1', margin: 0 }}>ผู้ให้บริการ: <b style={{ color: '#ffffff' }}>{selectedGame.publisher}</b> | เลือกแพ็กเกจด้านล่างเพื่อเติมเงินอัตโนมัติ</p>
               </div>
             </div>
 
@@ -6581,7 +6649,12 @@ const [authMode, setAuthMode] = useState('login');
             )}
 
             <div style={{ marginBottom: '30px' }}>
-              <label style={{ fontSize: '13px', color: '#c084fc', display: 'block', marginBottom: '12px', fontWeight: 'bold' }}>2. เลือกแพ็กเกจเติมเกม</label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                <label style={{ fontSize: '14px', color: gameTheme.priceColor, fontWeight: '900', margin: 0 }}>2. เลือกแพ็กเกจเติมเกม ({selectedGame.name})</label>
+                <span style={{ fontSize: '11px', color: '#cbd5e1', backgroundColor: `${gameTheme.accent}18`, border: `1px solid ${gameTheme.accent}44`, padding: '3px 10px', borderRadius: '999px', fontWeight: 'bold' }}>
+                  มีให้เลือก {selectedGame.packages.length} แพ็กเกจ
+                </span>
+              </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '15px' }}>
                 {selectedGame.packages.map((pkg) => {
                   const isPkgOutOfStock = packageStockStatus[`${selectedGame.id}_${pkg.id}`] === false;
@@ -6598,13 +6671,13 @@ const [authMode, setAuthMode] = useState('login');
                         setPackageQuantity(1); 
                       }} 
                       style={{ 
-                        backgroundColor: isPkgOutOfStock ? 'rgba(239, 68, 68, 0.1)' : isSelected ? 'rgba(249, 115, 22, 0.15)' : '#030712', 
-                        border: isPkgOutOfStock ? '1.5px solid #ef4444' : isSelected ? '2px solid #f97316' : '1px solid #1f2937', 
+                        background: isPkgOutOfStock ? 'rgba(239, 68, 68, 0.1)' : isSelected ? `linear-gradient(135deg, ${gameTheme.accent}28 0%, rgba(15, 23, 42, 0.95) 100%)` : `linear-gradient(160deg, rgba(15, 23, 42, 0.95) 0%, #030712 100%)`, 
+                        border: isPkgOutOfStock ? '1.5px solid #ef4444' : isSelected ? `2px solid ${gameTheme.accent}` : `1px solid ${gameTheme.accent}33`, 
                         borderRadius: '18px', padding: '16px', 
                         cursor: isPkgOutOfStock ? 'not-allowed' : 'pointer',
                         transition: 'all 0.25s', position: 'relative', overflow: 'hidden',
                         opacity: isPkgOutOfStock ? 0.75 : 1,
-                        boxShadow: isSelected ? '0 0 20px rgba(249, 115, 22, 0.3)' : 'none'
+                        boxShadow: isSelected ? `0 0 24px ${gameTheme.accent}55` : `0 4px 14px rgba(0,0,0,0.35)`
                       }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
@@ -6630,7 +6703,7 @@ const [authMode, setAuthMode] = useState('login');
 
                       {/* แสดงราคาขาย พร้อมราคาเดิมขีดฆ่า และป้ายประหยัดเงิน */}
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '19px', fontWeight: '900', color: isPkgOutOfStock ? '#9ca3af' : '#38bdf8' }}>
+                        <span style={{ fontSize: '19px', fontWeight: '900', color: isPkgOutOfStock ? '#9ca3af' : gameTheme.priceColor }}>
                           ฿{pkg.price.toLocaleString()}
                         </span>
 
@@ -6991,7 +7064,8 @@ const [authMode, setAuthMode] = useState('login');
               );
             })()}
           </div>
-        )}
+          );
+        })()}
 
         {activeTab === 'track' && (
           !user ? (
