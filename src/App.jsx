@@ -1602,8 +1602,8 @@ const [authMode, setAuthMode] = useState('login');
       badge: 'ยอดฮิต MOBA ⚔️',
       packages: [
 { id: 'r1', name: '11 คูปอง', price: 10, originalPrice: 10, cost: 9.40, profit: 0.60, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'r2', name: '24 คูปอง', price: 19, originalPrice: 20, cost: 18.80, profit: 0.20, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'r3', name: '60 คูปอง', price: 48, originalPrice: 50, cost: 47.00, profit: 1.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'r2', name: '24 คูปอง', price: 20, originalPrice: 20, cost: 18.80, profit: 1.20, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'r3', name: '60 คูปอง', price: 49, originalPrice: 50, cost: 47.00, profit: 2.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'r4', name: '110 คูปอง', price: 87, originalPrice: 90, cost: 84.60, profit: 2.40, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'r5', name: '185 คูปอง', price: 144, originalPrice: 150, cost: 141.00, profit: 3.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'r7', name: '370 คูปอง', price: 290, originalPrice: 300, cost: 282.00, profit: 8.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
@@ -1620,9 +1620,9 @@ const [authMode, setAuthMode] = useState('login');
       badge: 'ยอดนิยมอันดับ 1 🎯',
       packages: [
 { id: 'ff1', name: '33 เพชร', price: 10, originalPrice: 10, cost: 9.40, profit: 0.60, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'ff2', name: '68 เพชร', price: 19, originalPrice: 20, cost: 18.80, profit: 0.20, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'ff3', name: '172 เพชร', price: 48, originalPrice: 50, cost: 47.00, profit: 1.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
-{ id: 'ff4', name: '310 เพชร', price: 86, originalPrice: 90, cost: 84.60, profit: 1.40, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'ff2', name: '68 เพชร', price: 20, originalPrice: 20, cost: 18.80, profit: 1.20, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'ff3', name: '172 เพชร', price: 49, originalPrice: 50, cost: 47.00, profit: 2.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'ff4', name: '310 เพชร', price: 87, originalPrice: 90, cost: 84.60, profit: 2.40, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ff5', name: '517 เพชร', price: 145, originalPrice: 150, cost: 141.00, profit: 4.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ff12', name: '690 เพชร', price: 193, originalPrice: 200, cost: 188.00, profit: 5.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'ff6', name: '1,052 เพชร', price: 291, originalPrice: 300, cost: 282.00, profit: 9.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
@@ -1630,7 +1630,7 @@ const [authMode, setAuthMode] = useState('login');
 { id: 'ff8', name: '3,698 เพชร', price: 973, originalPrice: 1000, cost: 940.00, profit: 33.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
 { id: 'ff9', name: 'บูย่าห์พาส (Booyah Pass)', price: 87, originalPrice: 90, cost: 84.60, profit: 2.40, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ff13', name: 'สมาชิกเพชรแบบมินิ (Weekly Lite)', price: 32, originalPrice: 34, cost: 31.33, profit: 0.67, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'ff10', name: 'สมาชิกเพชรรายสัปดาห์', price: 64, originalPrice: 69, cost: 62.76, profit: 1.24, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'ff10', name: 'สมาชิกเพชรรายสัปดาห์', price: 65, originalPrice: 69, cost: 62.76, profit: 2.24, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ff11', name: 'สมาชิกเพชรรายเดือน', price: 293, originalPrice: 300, cost: 282.00, profit: 11.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'ff14', name: 'แพ็คเกจเติบโต เลเวล 6', price: 7, originalPrice: 7, cost: 6.27, profit: 0.73, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
 { id: 'ff15', name: 'แพ็คเกจเติบโต เลเวล 10', price: 17, originalPrice: 17, cost: 15.67, profit: 1.33, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
@@ -1679,7 +1679,7 @@ const [authMode, setAuthMode] = useState('login');
 { id: 'ml15', name: '792 Diamonds', price: 346, originalPrice: 419, cost: 335.66, profit: 10.34, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'ml6', name: '1,049 Diamonds', price: 489, originalPrice: 549, cost: 475.00, profit: 14.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
 { id: 'ml7', name: '2,195 Diamonds', price: 921, originalPrice: 1090, cost: 900.00, profit: 21.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
-{ id: 'ml16', name: '3,688 Diamonds', price: 1519, originalPrice: 1790, cost: 1501.40, profit: 17.60, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
+{ id: 'ml16', name: '3,688 Diamonds', price: 1531, originalPrice: 1790, cost: 1501.40, profit: 29.60, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
 { id: 'ml17', name: '5,532 Diamonds', price: 2334, originalPrice: 2690, cost: 2267.13, profit: 66.87, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' },
 { id: 'ml18', name: '9,288 Diamonds', price: 3873, originalPrice: 4490, cost: 3765.03, profit: 107.97, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' },
 { id: 'ml19', name: 'Twilight Miya Pass', price: 257, originalPrice: 299, cost: 249.65, profit: 7.35, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' }
@@ -3287,7 +3287,6 @@ const [authMode, setAuthMode] = useState('login');
   const basePaymentList = [
     { id: 'wallet', name: 'Cat Coin Wallet (เหรียญร้าน 🐱🪙)', desc: 'หักจากยอดเหรียญ Cat Coin ในบัญชีทันที (โอนไว ปลอดภัย 100%)', defaultFeeBaht: 0 },
     { id: 'qrcode', name: 'โอนเงินธนาคาร (KBank) / พร้อมเพย์', desc: 'สแกน QR พร้อมเพย์ หรือโอนเลขบัญชี KBank (ตรวจสลิป 24 ชม.)', defaultFeeBaht: 0 },
-    { id: 'chillpay', name: 'QR พร้อมเพย์ อัตโนมัติ (ChillPay)', desc: 'สแกน QR จ่ายผ่านแอปธนาคาร ระบบอนุมัติทันที ไม่ต้องแนบสลิป (เร็วที่สุด)', defaultFeeBaht: 0 },
     { id: 'true', name: 'TrueMoney Wallet & สแกนพร้อมเพย์', desc: 'สแกนพร้อมเพย์ผ่าน TrueMoney (ฟรี) / ซองของขวัญ / โอนเบอร์', defaultFeeBaht: 3 },
     { id: 'truemoneycard', name: 'บัตรเติมเงินทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก', defaultFeeBaht: 10 }
   ];
@@ -7839,131 +7838,7 @@ const [authMode, setAuthMode] = useState('login');
                       </div>
                     </div>
 
-                    {/* 5. ChillPay QR พร้อมเพย์ (ไม่ต้องแนบสลิป) */}
-                    <div style={{ 
-                      backgroundColor: '#0a0f1d', 
-                      border: `1.5px solid ${paymentSettings.chillpay?.packageEnabled && paymentSettings.chillpay?.walletEnabled ? '#0284c7' : (paymentSettings.chillpay?.packageEnabled || paymentSettings.chillpay?.walletEnabled) ? '#f59e0b' : '#374151'}`, 
-                      borderRadius: '16px', 
-                      padding: '18px', 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      justifyContent: 'space-between',
-                      boxShadow: paymentSettings.chillpay?.packageEnabled ? '0 0 20px rgba(2,132,199,0.3)' : 'none'
-                    }}>
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                          <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span>⚡</span>
-                            <span>ChillPay (QR ไม่ต้องแนบสลิป)</span>
-                          </span>
-                          <span style={{ 
-                            fontSize: '11px', 
-                            fontWeight: 'bold', 
-                            padding: '3px 8px', 
-                            borderRadius: '6px', 
-                            color: (paymentSettings.chillpay?.packageEnabled && paymentSettings.chillpay?.walletEnabled) ? '#34d399' : (paymentSettings.chillpay?.packageEnabled || paymentSettings.chillpay?.walletEnabled) ? '#f59e0b' : '#9ca3af', 
-                            backgroundColor: (paymentSettings.chillpay?.packageEnabled && paymentSettings.chillpay?.walletEnabled) ? 'rgba(52,211,153,0.15)' : (paymentSettings.chillpay?.packageEnabled || paymentSettings.chillpay?.walletEnabled) ? 'rgba(245,158,11,0.2)' : 'rgba(55,65,81,0.3)',
-                            border: `1px solid ${(paymentSettings.chillpay?.packageEnabled && paymentSettings.chillpay?.walletEnabled) ? '#10b981' : (paymentSettings.chillpay?.packageEnabled || paymentSettings.chillpay?.walletEnabled) ? '#f59e0b' : '#4b5563'}`
-                          }}>
-                            {(paymentSettings.chillpay?.packageEnabled && paymentSettings.chillpay?.walletEnabled) ? '🟢 เปิดทั้งคู่' : (paymentSettings.chillpay?.packageEnabled || paymentSettings.chillpay?.walletEnabled) ? '🟡 เปิดบางส่วน' : '⚪ ปิดใช้งาน (เตรียมพร้อม)'}
-                          </span>
-                        </div>
-                        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 10px 0' }}>
-                          สแกน QR จ่ายผ่านทุกแอปธนาคาร ระบบอนุมัติทันที ไม่ต้องส่งสลิป (Merchant ID: M039117)
-                        </p>
 
-                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1f2937', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '11px', color: '#cbd5e1' }}>ค่าธรรมเนียม % (ไม่ต้องแนบสลิป):</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <input
-                                type="number"
-                                min="0"
-                                max="20"
-                                step="0.25"
-                                value={paymentSettings.chillpay?.feePercent ?? 3.5}
-                                onChange={(e) => handleUpdatePaymentFee('chillpay', e.target.value, 'feePercent')}
-                                style={{ width: '56px', backgroundColor: '#030712', border: '1px solid #0284c7', borderRadius: '6px', padding: '3px 6px', color: '#38bdf8', fontSize: '11px', textAlign: 'center', fontWeight: 'bold', outline: 'none' }}
-                              />
-                              <span style={{ fontSize: '11px', color: '#9ca3af' }}>%</span>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '11px', color: '#cbd5e1' }}>ค่าธรรมเนียมคงที่เพิ่มเติม:</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <input
-                                type="number"
-                                min="0"
-                                max="500"
-                                value={paymentSettings.chillpay?.feeBaht ?? 0}
-                                onChange={(e) => handleUpdatePaymentFee('chillpay', e.target.value, 'feeBaht')}
-                                style={{ width: '56px', backgroundColor: '#030712', border: '1px solid #0284c7', borderRadius: '6px', padding: '3px 6px', color: '#ffffff', fontSize: '11px', textAlign: 'center', fontWeight: 'bold', outline: 'none' }}
-                              />
-                              <span style={{ fontSize: '11px', color: '#9ca3af' }}>บาท</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* กล่องเปิด-ปิด แยกรายการ */}
-                        <div style={{ backgroundColor: '#111827', borderRadius: '10px', padding: '10px 12px', border: '1px solid #1f2937' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8', marginBottom: '8px' }}>
-                            🎛️ เปิด-ปิดแยกรายการ:
-                          </div>
-
-                          {/* 1. ซื้อแพ็กเกจเกม */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '6px', marginBottom: '6px', borderBottom: '1px dashed #1f2937' }}>
-                            <div>
-                              <div style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold' }}>1. ซื้อแพ็กเกจเกม:</div>
-                              <div style={{ fontSize: '10px', color: paymentSettings.chillpay?.packageEnabled ? '#34d399' : '#ef4444' }}>
-                                {paymentSettings.chillpay?.packageEnabled ? '● เปิดรับชำระ' : '○ ปิดรับชำระ'}
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleTogglePaymentScope('chillpay', 'package')}
-                              style={{
-                                backgroundColor: paymentSettings.chillpay?.packageEnabled ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
-                                color: paymentSettings.chillpay?.packageEnabled ? '#fca5a5' : '#34d399',
-                                border: `1px solid ${paymentSettings.chillpay?.packageEnabled ? '#ef4444' : '#10b981'}`,
-                                padding: '5px 10px',
-                                borderRadius: '8px',
-                                fontSize: '11px',
-                                fontWeight: 'bold',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              {paymentSettings.chillpay?.packageEnabled ? '🔴 สั่งปิดรับ' : '🟢 สั่งเปิดรับ'}
-                            </button>
-                          </div>
-
-                          {/* 2. เติมเครดิตร้าน */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                              <div style={{ fontSize: '12px', color: '#ffffff', fontWeight: 'bold' }}>2. เติมเครดิตร้าน:</div>
-                              <div style={{ fontSize: '10px', color: paymentSettings.chillpay?.walletEnabled ? '#34d399' : '#ef4444' }}>
-                                {paymentSettings.chillpay?.walletEnabled ? '● เปิดรับชำระ' : '○ ปิดรับชำระ'}
-                              </div>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleTogglePaymentScope('chillpay', 'wallet')}
-                              style={{
-                                backgroundColor: paymentSettings.chillpay?.walletEnabled ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
-                                color: paymentSettings.chillpay?.walletEnabled ? '#fca5a5' : '#34d399',
-                                border: `1px solid ${paymentSettings.chillpay?.walletEnabled ? '#ef4444' : '#10b981'}`,
-                                padding: '5px 10px',
-                                borderRadius: '8px',
-                                fontSize: '11px',
-                                fontWeight: 'bold',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              {paymentSettings.chillpay?.walletEnabled ? '🔴 สั่งปิดรับ' : '🟢 สั่งเปิดรับ'}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
 
                   </div>
                 </div>
