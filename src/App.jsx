@@ -2916,6 +2916,13 @@ const [authMode, setAuthMode] = useState('login');
       feeBaht: 10, 
       label: 'บัตรเติมเงินทรูมันนี่ (14 หลัก)' 
     },
+    androidqr: {
+      enabled: false,
+      packageEnabled: false,
+      walletEnabled: false,
+      feeBaht: 0,
+      label: 'QR สตางค์อัตโนมัติ 0% (Android ไม่ต้องแนบสลิป)'
+    },
     chillpay: {
       enabled: false,
       packageEnabled: false,
@@ -3002,6 +3009,14 @@ const [authMode, setAuthMode] = useState('login');
             enabled: val.truemoneycard?.enabled !== false,
             feeBaht: val.truemoneycard?.feeBaht !== undefined ? Number(val.truemoneycard.feeBaht) : (val.truemoneycard?.feePercent !== undefined && Number(val.truemoneycard.feePercent) <= 50 ? Number(val.truemoneycard.feePercent) : 10)
           },
+          androidqr: {
+            ...prev.androidqr,
+            ...(val.androidqr || {}),
+            packageEnabled: val.androidqr?.packageEnabled === true,
+            walletEnabled: val.androidqr?.walletEnabled === true,
+            enabled: val.androidqr?.enabled === true,
+            feeBaht: 0
+          },
           chillpay: {
             ...prev.chillpay,
             ...(val.chillpay || {}),
@@ -3081,6 +3096,71 @@ const [authMode, setAuthMode] = useState('login');
       set(ref(db, `system_admin_settings/payment_settings/${methodId}/feeBaht`), feeNum);
     }
   };
+
+  const [androidSatangBill, setAndroidSatangBill] = useState(null);
+  const [androidSatangError, setAndroidSatangError] = useState('');
+  const [androidSatangPaid, setAndroidSatangPaid] = useState(false);
+
+  // จองยอดเศษสตางค์ (.01 - .99) แบบไม่ซ้ำกันภายใน 15 นาที สำหรับระบบ Android 0%
+  const allocateAndroidSatangBill = async (baseAmount, meta = {}) => {
+    setAndroidSatangError('');
+    setAndroidSatangPaid(false);
+    setAndroidSatangBill(null);
+    const intBase = Math.round(Number(baseAmount) || 0);
+    if (intBase <= 0) return null;
+
+    try {
+      const snap = await get(ref(db, 'satang_bills'));
+      const bills = snap.exists() ? snap.val() : {};
+      const now = Date.now();
+      const usedAmounts = new Set();
+
+      Object.values(bills || {}).forEach((b) => {
+        if (b && b.status === 'pending' && (!b.expiresAt || Number(b.expiresAt) > now)) {
+          usedAmounts.add(Number(Number(b.expectedAmount).toFixed(2)));
+        }
+      });
+
+      const candidates = [];
+      for (let c = 1; c <= 99; c++) {
+        const amt = Number((intBase + c / 100).toFixed(2));
+        if (!usedAmounts.has(amt)) candidates.push(amt);
+      }
+
+      if (candidates.length === 0) {
+        setAndroidSatangError('⚠️ ขณะนี้มีผู้ทำรายการจำนวนมาก กรุณารอ 1–2 นาทีแล้วกดสร้าง QR ใหม่ หรืออัปโหลดสลิปผ่านช่องทาง ตรวจสลิปอัตโนมัติ (SlipOK) ได้ทันทีครับ');
+        return null;
+      }
+
+      const chosenAmount = candidates[Math.floor(Math.random() * candidates.length)];
+      const billData = {
+        ...meta,
+        baseAmount: intBase,
+        expectedAmount: chosenAmount,
+        status: 'pending',
+        createdAt: now,
+        expiresAt: now + 15 * 60 * 1000
+      };
+      const newRef = push(ref(db, 'satang_bills'), billData);
+      const created = { key: newRef.key, ...billData };
+      setAndroidSatangBill(created);
+      return created;
+    } catch (e) {
+      setAndroidSatangError('เกิดข้อผิดพลาดในการสร้างบิล QR สตางค์ กรุณาลองใหม่หรือใช้ SlipOK แทนครับ');
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (!androidSatangBill?.key) return;
+    const billRef = ref(db, `satang_bills/${androidSatangBill.key}/status`);
+    const unsub = onValue(billRef, (snap) => {
+      if (snap.val() === 'paid') {
+        setAndroidSatangPaid(true);
+      }
+    });
+    return () => unsub();
+  }, [androidSatangBill?.key]);
 
   const getChillPayFeeBaht = (baseAmount) => {
     const amt = Number(baseAmount) || 0;
@@ -3286,6 +3366,7 @@ const [authMode, setAuthMode] = useState('login');
 
   const basePaymentList = [
     { id: 'wallet', name: 'Cat Coin Wallet (เหรียญร้าน 🐱🪙)', desc: 'หักจากยอดเหรียญ Cat Coin ในบัญชีทันที (โอนไว ปลอดภัย 100%)', defaultFeeBaht: 0 },
+    ...(paymentSettings.androidqr?.packageEnabled ? [{ id: 'androidqr', name: 'QR สตางค์อัตโนมัติ 0% (ไม่ต้องแนบสลิป)', desc: 'สแกนจ่ายยอดเศษสตางค์ เติมเข้าทันที + คืนเศษเข้า Cat Coin', defaultFeeBaht: 0 }] : []),
     { id: 'qrcode', name: 'โอนเงินธนาคาร (KBank) / พร้อมเพย์', desc: 'สแกน QR พร้อมเพย์ หรือโอนเลขบัญชี KBank (ตรวจสลิป 24 ชม.)', defaultFeeBaht: 0 },
     { id: 'true', name: 'TrueMoney Wallet & สแกนพร้อมเพย์', desc: 'สแกนพร้อมเพย์ผ่าน TrueMoney (ฟรี) / ซองของขวัญ / โอนเบอร์', defaultFeeBaht: 3 },
     { id: 'truemoneycard', name: 'บัตรเติมเงินทรูมันนี่', desc: 'เติมด้วยรหัสบัตร 14 หลัก', defaultFeeBaht: 10 }
@@ -4189,7 +4270,24 @@ const [authMode, setAuthMode] = useState('login');
     if (selectedPayment.id === 'qrcode' || selectedPayment.id === 'true') {
       setTimeLeft(300);
       setIsQrExpired(false);
-      setCheckoutStep(2); // ข้ามไปหน้าแนบสลิปทันที ไม่ต้องถามรหัสผ่านเว็บ
+      if (selectedPayment?.id === 'androidqr') {
+        const activeKey = user?.firebaseKey || registeredUsers.find(u => u.username && user?.username && u.username.toLowerCase() === user.username.toLowerCase())?.firebaseKey || '';
+        const ordId = 'ORD-QR-' + Math.floor(10000 + Math.random() * 90000);
+        allocateAndroidSatangBill(selectedPackage.price * packageQuantity, {
+          type: 'game',
+          orderId: ordId,
+          userFirebaseKey: activeKey,
+          gameId: selectedGame.id,
+          gameName: selectedGame.name,
+          packageId: selectedPackage.id,
+          packageName: `${selectedPackage.name} (x${packageQuantity} แพ็ก)`,
+          playerId: playerId.trim(),
+          zoneId: selectedGame.id === 'heartopia' ? heartopiaAid.trim() : '',
+          server: selectedGame.id === 'heartopia' ? heartopiaServer : (genshinServer || 'Asia'),
+          catCoinReward: (selectedPackage.catCoinReward || 0) * packageQuantity
+        });
+      }
+      setCheckoutStep(2); // ข้ามไปหน้าแนบสลิป/สแกน QR ทันที
       setShowCheckoutModal(true);
     } else if (selectedPayment.id === 'wallet') {
       setTimeLeft(180);
@@ -7838,6 +7936,93 @@ const [authMode, setAuthMode] = useState('login');
                       </div>
                     </div>
 
+                    {/* 5. QR สตางค์อัตโนมัติ 0% (Android Webhook) */}
+                    <div style={{
+                      backgroundColor: '#0a0f1d',
+                      border: `1.5px solid ${(paymentSettings.androidqr?.packageEnabled || paymentSettings.androidqr?.walletEnabled) ? '#10b981' : '#374151'}`,
+                      borderRadius: '16px',
+                      padding: '18px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      boxShadow: (paymentSettings.androidqr?.packageEnabled || paymentSettings.androidqr?.walletEnabled) ? '0 0 20px rgba(16,185,129,0.25)' : 'none'
+                    }}>
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '15px', fontWeight: 'bold', color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>📱 QR สตางค์ 0% (Android)</span>
+                          </span>
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 'bold',
+                            padding: '3px 10px',
+                            borderRadius: '20px',
+                            color: (paymentSettings.androidqr?.packageEnabled && paymentSettings.androidqr?.walletEnabled) ? '#34d399' : (paymentSettings.androidqr?.packageEnabled || paymentSettings.androidqr?.walletEnabled) ? '#f59e0b' : '#9ca3af',
+                            backgroundColor: (paymentSettings.androidqr?.packageEnabled && paymentSettings.androidqr?.walletEnabled) ? 'rgba(52,211,153,0.15)' : (paymentSettings.androidqr?.packageEnabled || paymentSettings.androidqr?.walletEnabled) ? 'rgba(245,158,11,0.2)' : 'rgba(55,65,81,0.3)',
+                            border: `1px solid ${(paymentSettings.androidqr?.packageEnabled && paymentSettings.androidqr?.walletEnabled) ? '#10b981' : (paymentSettings.androidqr?.packageEnabled || paymentSettings.androidqr?.walletEnabled) ? '#f59e0b' : '#4b5563'}`
+                          }}>
+                            {(paymentSettings.androidqr?.packageEnabled && paymentSettings.androidqr?.walletEnabled) ? '🟢 เปิดทั้งคู่' : (paymentSettings.androidqr?.packageEnabled || paymentSettings.androidqr?.walletEnabled) ? '🟡 เปิดบางส่วน' : '⚪ ปิดใช้งาน (รอ Android)'}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 12px 0' }}>
+                          สแกน QR ยอดสุ่มสตางค์ 0% ไม่ต้องแนบสลิป + คืนเศษสตางค์เข้า Cat Coin อัตโนมัติ
+                        </p>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', backgroundColor: '#030712', padding: '12px', borderRadius: '10px', border: '1px solid #1f2937' }}>
+                          <div style={{ fontSize: '11px', color: '#34d399', fontWeight: 'bold', marginBottom: '2px' }}>🎛️ เปิด-ปิดแยกรายการ:</div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                            <div>
+                              <div style={{ fontSize: '11px', color: '#e2e8f0', fontWeight: 'bold' }}>1. ซื้อแพ็กเกจเกม:</div>
+                              <div style={{ fontSize: '10px', color: paymentSettings.androidqr?.packageEnabled ? '#34d399' : '#ef4444' }}>
+                                {paymentSettings.androidqr?.packageEnabled ? '● เปิดรับชำระ' : '○ ปิดรับชำระ'}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePaymentStatus('androidqr', 'package')}
+                              style={{
+                                backgroundColor: paymentSettings.androidqr?.packageEnabled ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                                border: `1px solid ${paymentSettings.androidqr?.packageEnabled ? '#ef4444' : '#10b981'}`,
+                                color: paymentSettings.androidqr?.packageEnabled ? '#fca5a5' : '#34d399',
+                                padding: '6px 12px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {paymentSettings.androidqr?.packageEnabled ? '🔴 สั่งปิดรับ' : '🟢 สั่งเปิดรับ'}
+                            </button>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', borderTop: '1px dashed #1f2937', paddingTop: '8px' }}>
+                            <div>
+                              <div style={{ fontSize: '11px', color: '#e2e8f0', fontWeight: 'bold' }}>2. เติมเครดิตร้าน:</div>
+                              <div style={{ fontSize: '10px', color: paymentSettings.androidqr?.walletEnabled ? '#34d399' : '#ef4444' }}>
+                                {paymentSettings.androidqr?.walletEnabled ? '● เปิดรับชำระ' : '○ ปิดรับชำระ'}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleTogglePaymentStatus('androidqr', 'wallet')}
+                              style={{
+                                backgroundColor: paymentSettings.androidqr?.walletEnabled ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+                                border: `1px solid ${paymentSettings.androidqr?.walletEnabled ? '#ef4444' : '#10b981'}`,
+                                color: paymentSettings.androidqr?.walletEnabled ? '#fca5a5' : '#34d399',
+                                padding: '6px 12px',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {paymentSettings.androidqr?.walletEnabled ? '🔴 สั่งปิดรับ' : '🟢 สั่งเปิดรับ'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
 
 
                   </div>
@@ -10078,7 +10263,7 @@ const [authMode, setAuthMode] = useState('login');
               </div>
             )}
 
-            {checkoutStep === 2 && (selectedPayment?.id === 'qrcode' || selectedPayment?.id === 'true' || selectedPayment?.id === 'chillpay') && (
+            {checkoutStep === 2 && (selectedPayment?.id === 'androidqr' || selectedPayment?.id === 'qrcode' || selectedPayment?.id === 'true' || selectedPayment?.id === 'chillpay') && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                   <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: selectedPayment?.id === 'true' ? '#fb923c' : '#38bdf8' }}>
@@ -10088,6 +10273,42 @@ const [authMode, setAuthMode] = useState('login');
                     {selectedPayment?.id === 'chillpay' ? '🚀 อนุมัติอัตโนมัติ 100% ไม่ต้องส่งสลิป' : (selectedPayment?.id === 'true' && trueMoneyPayMode === 'transfer') ? '🧑‍💻 แอดมินดูแลตรวจสอบ' : '⚡ ตรวจสลิปอัตโนมัติ 24 ชม.'}
                   </span>
                 </div>
+
+                {selectedPayment?.id === 'androidqr' && (
+                  <div style={{ backgroundColor: '#030712', border: '1.5px solid #10b981', borderRadius: '16px', padding: '18px', textAlign: 'center', marginBottom: '16px' }}>
+                    {androidSatangError ? (
+                      <div style={{ backgroundColor: 'rgba(239,68,68,0.18)', border: '1px solid #ef4444', color: '#fca5a5', padding: '12px', borderRadius: '10px', fontSize: '12px', lineHeight: 1.5 }}>
+                        {androidSatangError}
+                      </div>
+                    ) : androidSatangPaid ? (
+                      <div style={{ padding: '20px', color: '#34d399', fontWeight: 'bold', fontSize: '15px' }}>
+                        ✅ ได้รับยอดเงินเรียบร้อย! ระบบกำลังเติมเกมให้คุณอัตโนมัติครับ
+                      </div>
+                    ) : androidSatangBill ? (
+                      <div>
+                        <div style={{ fontSize: '12px', color: '#34d399', fontWeight: 'bold', marginBottom: '8px' }}>
+                          📱 สแกน QR พร้อมเพย์ (ล็อกยอดอัตโนมัติ ไม่ต้องแนบสลิป)
+                        </div>
+                        <img
+                          src={`https://promptpay.io/0638801739/${androidSatangBill.expectedAmount.toFixed(2)}.png`}
+                          alt="Android Satang PromptPay QR"
+                          style={{ width: '190px', height: '190px', borderRadius: '12px', backgroundColor: '#ffffff', padding: '6px', margin: '0 auto 10px auto', display: 'block' }}
+                        />
+                        <div style={{ fontSize: '22px', fontWeight: '900', color: '#34d399' }}>
+                          ฿{androidSatangBill.expectedAmount.toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '4px' }}>
+                          เศษสตางค์ +฿{(androidSatangBill.expectedAmount - androidSatangBill.baseAmount).toFixed(2)} ระบบจะคืนเข้ากระเป๋า Cat Coin ให้ทันทีหลังโอน
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#fbbf24', marginTop: '8px' }}>
+                          ⏳ กำลังรอรับยอดอัตโนมัติจากธนาคาร... (กรุณาโอนภายใน 15 นาที)
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ color: '#9ca3af', fontSize: '13px', padding: '20px' }}>⏳ กำลังสร้าง QR ยอดสุ่มสตางค์...</div>
+                    )}
+                  </div>
+                )}
 
                 {/* แถบเลือกวิธีชำระสำหรับ TrueMoney Wallet: สแกนพร้อมเพย์ (ฟรี) vs ซองของขวัญ (ไม่ต้องแนบสลิป) vs โอนเบอร์ (+ค่าธรรมเนียม) */}
                 {selectedPayment?.id === 'true' && (
@@ -10754,6 +10975,9 @@ const [authMode, setAuthMode] = useState('login');
                           onChange={(e) => setWalletPaymentMethod(e.target.value)} 
                           style={{ width: '100%', backgroundColor: '#030712', border: '1px solid #374151', borderRadius: '10px', padding: '10px', color: '#ffffff', fontSize: '13px', outline: 'none' }}
                         >
+                          {paymentSettings.androidqr?.walletEnabled && (
+                            <option value="androidqr">📱 QR สตางค์อัตโนมัติ 0% (ไม่ต้องแนบสลิป)</option>
+                          )}
                           {isQrcodeWalletOpen ? (
                             <option value="qrcode">โอนเงินธนาคาร (KBank / พร้อมเพย์ - ไม่มีค่าธรรมเนียม)</option>
                           ) : (
@@ -10792,7 +11016,12 @@ const [authMode, setAuthMode] = useState('login');
                   <button onClick={resetWalletModal} style={{ flex: 1, backgroundColor: '#374151', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>ยกเลิก</button>
                   <button 
                     disabled={!topupAmount || parseFloat(topupAmount) <= 0} 
-                    onClick={(walletPaymentMethod === 'qrcode' || walletPaymentMethod === 'true' || walletPaymentMethod === 'chillpay') ? () => setWalletStep(2) : handleWalletConfirmPayment} 
+                    onClick={walletPaymentMethod === 'androidqr' ? async () => {
+                      const amt = parseFloat(topupAmount) || 0;
+                      const activeKey = user?.firebaseKey || registeredUsers.find(u => u.username && user?.username && u.username.toLowerCase() === user.username.toLowerCase())?.firebaseKey || '';
+                      await allocateAndroidSatangBill(amt, { type: 'wallet', userFirebaseKey: activeKey, username: user?.username || 'guest' });
+                      setWalletStep(2);
+                    } : (walletPaymentMethod === 'qrcode' || walletPaymentMethod === 'true' || walletPaymentMethod === 'chillpay') ? () => setWalletStep(2) : handleWalletConfirmPayment} 
                     style={{ flex: 1, backgroundColor: (!topupAmount || parseFloat(topupAmount) <= 0) ? '#374151' : '#9333ea', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}
                   >
                     {walletPaymentMethod === 'chillpay' ? 'ถัดไป (สแกน QR ไม่ต้องแนบสลิป) →' : (walletPaymentMethod === 'qrcode' || walletPaymentMethod === 'true') ? 'ถัดไป (โอน & แนบสลิป) →' : 'ยืนยันการเติมเงิน'}
@@ -10804,6 +11033,39 @@ const [authMode, setAuthMode] = useState('login');
                 <h3 style={{ fontSize: '18px', fontWeight: 'bold', margin: '0 0 6px 0', color: walletPaymentMethod === 'true' ? '#fb923c' : '#38bdf8' }}>
                   {walletPaymentMethod === 'chillpay' ? '⚡ ชำระผ่าน ChillPay QR (ไม่ต้องแนบสลิป)' : walletPaymentMethod === 'true' ? '🧡 ชำระผ่าน TrueMoney เติมเครดิต' : '💳 โอนเงินแลกรับเหรียญ Cat Coin 🐱🪙'}
                 </h3>
+
+                {walletPaymentMethod === 'androidqr' && (
+                  <div style={{ backgroundColor: '#030712', border: '1.5px solid #10b981', borderRadius: '16px', padding: '16px', textAlign: 'center', marginBottom: '14px' }}>
+                    {androidSatangError ? (
+                      <div style={{ backgroundColor: 'rgba(239,68,68,0.18)', border: '1px solid #ef4444', color: '#fca5a5', padding: '12px', borderRadius: '10px', fontSize: '12px', lineHeight: 1.5 }}>
+                        {androidSatangError}
+                      </div>
+                    ) : androidSatangPaid ? (
+                      <div style={{ padding: '18px', color: '#34d399', fontWeight: 'bold', fontSize: '14px' }}>
+                        ✅ เติมเหรียญ Cat Coin เข้ากระเป๋าเรียบร้อยแล้ว!
+                      </div>
+                    ) : androidSatangBill ? (
+                      <div>
+                        <img
+                          src={`https://promptpay.io/0638801739/${androidSatangBill.expectedAmount.toFixed(2)}.png`}
+                          alt="Android Satang Wallet QR"
+                          style={{ width: '175px', height: '175px', borderRadius: '12px', backgroundColor: '#ffffff', padding: '6px', margin: '0 auto 8px auto', display: 'block' }}
+                        />
+                        <div style={{ fontSize: '20px', fontWeight: '900', color: '#34d399' }}>
+                          ฿{androidSatangBill.expectedAmount.toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '4px' }}>
+                          ระบบจะเติมเต็มจำนวน ฿{androidSatangBill.expectedAmount.toFixed(2)} เข้า Cat Coin ให้ทันที
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#fbbf24', marginTop: '6px' }}>
+                          ⏳ กำลังรอรับยอดอัตโนมัติ (ภายใน 15 นาที)...
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ color: '#9ca3af', fontSize: '12px', padding: '16px' }}>⏳ กำลังสร้าง QR ยอดสุ่มสตางค์...</div>
+                    )}
+                  </div>
+                )}
 
                 {/* แถบสลับวิธีชำระ TrueMoney สำหรับเติมเครดิต: สแกนพร้อมเพย์ vs ซองของขวัญ vs โอนเบอร์ */}
                 {walletPaymentMethod === 'true' && (
