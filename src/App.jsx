@@ -2366,6 +2366,17 @@ const [authMode, setAuthMode] = useState('login');
   const [showTopupWalletModal, setShowTopupWalletModal] = useState(false);
   const [topupAmount, setTopupAmount] = useState('');
   const [walletPaymentMethod, setWalletPaymentMethod] = useState('qrcode');
+  useEffect(() => {
+    if (!showTopupWalletModal) return;
+    const isAndOpen = paymentSettings.androidqr?.walletEnabled === true;
+    const isQrOpen = paymentSettings.qrcode?.walletEnabled !== undefined ? paymentSettings.qrcode.walletEnabled !== false : paymentSettings.qrcode?.enabled !== false;
+    const isTrOpen = paymentSettings.true?.walletEnabled !== undefined ? paymentSettings.true.walletEnabled !== false : paymentSettings.true?.enabled !== false;
+    const isCdOpen = paymentSettings.truemoneycard?.walletEnabled !== undefined ? paymentSettings.truemoneycard.walletEnabled !== false : paymentSettings.truemoneycard?.enabled !== false;
+    if (isAndOpen) setWalletPaymentMethod('androidqr');
+    else if (isQrOpen) setWalletPaymentMethod('qrcode');
+    else if (isTrOpen) setWalletPaymentMethod('true');
+    else if (isCdOpen) setWalletPaymentMethod('truemoneycard');
+  }, [showTopupWalletModal]);
   const [walletStep, setWalletStep] = useState(1);
   const [walletTimeLeft, setWalletTimeLeft] = useState(180);
   const [walletSlipFile, setWalletSlipFile] = useState(null);
@@ -3395,7 +3406,7 @@ const [authMode, setAuthMode] = useState('login');
       feePercent,
       desc: isPkgEnabled ? desc : '🔴 ปิดรับชำระสำหรับซื้อแพ็กเกจชั่วคราว'
     };
-  });
+  }).filter(pm => pm.enabled);
 
   const EyeIcon = ({ show }) => show ? (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c084fc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -10978,20 +10989,14 @@ const [authMode, setAuthMode] = useState('login');
                           {paymentSettings.androidqr?.walletEnabled && (
                             <option value="androidqr">📱 QR สตางค์อัตโนมัติ 0% (ไม่ต้องแนบสลิป)</option>
                           )}
-                          {isQrcodeWalletOpen ? (
+                          {isQrcodeWalletOpen && (
                             <option value="qrcode">โอนเงินธนาคาร (KBank / พร้อมเพย์ - ไม่มีค่าธรรมเนียม)</option>
-                          ) : (
-                            <option value="qrcode" disabled style={{ color: '#ef4444' }}>โอนเงินธนาคาร (KBank / พร้อมเพย์) - 🔴 ปิดรับชั่วคราว</option>
                           )}
-                          {isTrueWalletOpen ? (
+                          {isTrueWalletOpen && (
                             <option value="true">TrueMoney Wallet (สแกนพร้อมเพย์ หรือโอนเบอร์)</option>
-                          ) : (
-                            <option value="true" disabled style={{ color: '#ef4444' }}>TrueMoney Wallet - 🔴 ปิดรับชั่วคราว</option>
                           )}
-                          {isCardWalletOpen ? (
+                          {isCardWalletOpen && (
                             <option value="truemoneycard">บัตรเติมเงินทรูมันนี่ (14 หลัก)</option>
-                          ) : (
-                            <option value="truemoneycard" disabled style={{ color: '#ef4444' }}>บัตรเติมเงินทรูมันนี่ (14 หลัก) - 🔴 ปิดรับชั่วคราว</option>
                           )}
                         </select>
                       </>
