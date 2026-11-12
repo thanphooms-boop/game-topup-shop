@@ -111,9 +111,12 @@ export default async function handler(req, res) {
       }),
     });
 
-    // 2. คืนเศษสตางค์ (.01 - .99) + โบนัส Cat Coin เข้ากระเป๋าให้สมาชิกที่ล็อกอิน
+    // 2. เติมเครดิตเข้ากระเป๋า Cat Coin (ถ้าเป็นการเติมเครดิตร้าน เติมเต็มยอดที่โอน; ถ้าซื้อแพ็กเกจ คืนเศษสตางค์ + โบนัส Cat Coin)
     const satangRefund = Number((receivedAmount - Math.floor(receivedAmount)).toFixed(2));
-    const totalCoinAdd = Number((satangRefund + (Number(bill.catCoinReward) || 0)).toFixed(2));
+    const totalCoinAdd = bill.type === 'wallet'
+      ? Number(receivedAmount.toFixed(2))
+      : Number((satangRefund + (Number(bill.catCoinReward) || 0)).toFixed(2));
+
     if (bill.userFirebaseKey && totalCoinAdd > 0) {
       const uResp = await fetch(`${DB_URL}/users/${bill.userFirebaseKey}/balance.json`);
       const curBal = uResp.ok ? Number(await uResp.json()) || 0 : 0;
