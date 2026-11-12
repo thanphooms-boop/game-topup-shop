@@ -6280,20 +6280,22 @@ const [authMode, setAuthMode] = useState('login');
           const gameTheme = getGameTheme(selectedGame.id);
           return (
           <div className="meow-game-detail-card" style={{ background: `linear-gradient(160deg, ${gameTheme.bgFrom} 0%, ${gameTheme.bgMid} 48%, ${gameTheme.bgTo} 100%)`, borderRadius: '28px', padding: '35px', border: `1.5px solid ${gameTheme.accent}66`, boxShadow: `0 25px 60px rgba(0, 0, 0, 0.8), 0 0 55px ${gameTheme.accent}24`, position: 'relative', overflow: 'hidden' }}>
-            {/* พื้นหลังลายเกมและแสงธีมประจำเกมทั่วทั้งหน้า */}
+            {/* ภาพพื้นหลังธีมเกมแบบเต็มหน้าคมชัด พร้อมไล่เฉดสีประจำเกมให้อ่านง่าย */}
             <div style={{
               position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '420px',
+              inset: 0,
               backgroundImage: `url(${selectedGame.image})`,
               backgroundSize: 'cover',
-              backgroundPosition: 'center top',
-              opacity: 0.12,
-              filter: 'blur(26px) saturate(1.4)',
-              maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+              backgroundPosition: 'center center',
+              opacity: 0.30,
+              filter: 'blur(2px) saturate(1.25) contrast(1.06)',
+              transform: 'scale(1.03)',
+              pointerEvents: 'none'
+            }} />
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: `linear-gradient(155deg, ${gameTheme.bgFrom}cc 0%, ${gameTheme.bgMid}bf 50%, ${gameTheme.bgTo}eb 100%)`,
               pointerEvents: 'none'
             }} />
             <div style={{
@@ -6356,8 +6358,10 @@ const [authMode, setAuthMode] = useState('login');
                 backgroundImage: `url(${selectedGame.image})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
-                opacity: 0.14,
-                filter: 'blur(12px)',
+                opacity: 0.36,
+                filter: 'blur(1px) saturate(1.2)',
+                maskImage: 'linear-gradient(to left, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.2) 70%, rgba(0,0,0,0.05) 100%)',
+                WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.2) 70%, rgba(0,0,0,0.05) 100%)',
                 pointerEvents: 'none'
               }} />
               <img src={selectedGame.image} alt={selectedGame.name} style={{ position: 'relative', zIndex: 1, width: '96px', height: '96px', borderRadius: '18px', objectFit: 'cover', border: `2.5px solid ${gameTheme.accent}`, boxShadow: `0 0 22px ${gameTheme.accent}55` }} />
