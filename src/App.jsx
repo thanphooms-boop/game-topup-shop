@@ -1632,12 +1632,12 @@ const [authMode, setAuthMode] = useState('login');
 { id: 'ff13', name: 'สมาชิกเพชรแบบมินิ (Weekly Lite)', price: 33, originalPrice: 34, cost: 31.33, profit: 1.67, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
 { id: 'ff10', name: 'สมาชิกเพชรรายสัปดาห์', price: 65, originalPrice: 69, cost: 62.76, profit: 2.24, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ff11', name: 'สมาชิกเพชรรายเดือน', price: 290, originalPrice: 300, cost: 282.00, profit: 8.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
-{ id: 'ff14', name: 'แพ็คเกจเติบโต เลเวล 6', price: 7, originalPrice: 7, cost: 6.27, profit: 0.73, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'ff15', name: 'แพ็คเกจเติบโต เลเวล 10', price: 17, originalPrice: 17, cost: 15.67, profit: 1.33, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'ff16', name: 'แพ็คเกจเติบโต เลเวล 15', price: 17, originalPrice: 17, cost: 15.67, profit: 1.33, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'ff17', name: 'แพ็คเกจเติบโต เลเวล 20', price: 17, originalPrice: 17, cost: 15.67, profit: 1.33, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'ff18', name: 'แพ็คเกจเติบโต เลเวล 25', price: 17, originalPrice: 17, cost: 15.67, profit: 1.33, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'ff19', name: 'แพ็คเกจเติบโต เลเวล 30', price: 23, originalPrice: 24, cost: 21.93, profit: 1.07, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' }
+{ id: 'ff14', name: 'แพ็คเกจเติบโต เลเวล 6', price: 10, originalPrice: 10, cost: 6.27, profit: 3.73, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'ff15', name: 'แพ็คเกจเติบโต เลเวล 10', price: 21, originalPrice: 21, cost: 15.67, profit: 5.33, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'ff16', name: 'แพ็คเกจเติบโต เลเวล 15', price: 21, originalPrice: 21, cost: 15.67, profit: 5.33, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'ff17', name: 'แพ็คเกจเติบโต เลเวล 20', price: 21, originalPrice: 21, cost: 15.67, profit: 5.33, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'ff18', name: 'แพ็คเกจเติบโต เลเวล 25', price: 21, originalPrice: 21, cost: 15.67, profit: 5.33, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'ff19', name: 'แพ็คเกจเติบโต เลเวล 30', price: 27, originalPrice: 27, cost: 21.93, profit: 5.07, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' }
       ]
     },
     {
@@ -1649,8 +1649,8 @@ const [authMode, setAuthMode] = useState('login');
       badge: 'Battle Royale ฮิต 🔥',
       packages: [
 { id: 'p1', name: '60 UC', price: 34, originalPrice: 35, cost: 31.00, profit: 3.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'p2', name: '325 UC (300+25)', price: 153, originalPrice: 179, cost: 152.00, profit: 1.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
-{ id: 'p3', name: '660 UC (600+60)', price: 306, originalPrice: 349, cost: 305.00, profit: 1.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'p2', name: '325 UC (300+25)', price: 154, originalPrice: 179, cost: 152.00, profit: 2.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'p3', name: '660 UC (600+60)', price: 307, originalPrice: 349, cost: 305.00, profit: 2.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'p4', name: '1,800 UC (1500+300)', price: 769, originalPrice: 879, cost: 752.00, profit: 17.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
 { id: 'p5', name: '3,850 UC (3000+850)', price: 1528, originalPrice: 1750, cost: 1481.00, profit: 47.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
 { id: 'p6', name: '8,100 UC (6000+2100)', price: 2904, originalPrice: 3500, cost: 2900.00, profit: 4.00, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' }
@@ -1664,25 +1664,25 @@ const [authMode, setAuthMode] = useState('login');
       image: 'https://play-lh.googleusercontent.com/r3VU-78TGaJWewvEll8oNl0SF-ESsOiS--jQkdcSOSblzu9fY0j3xWA49pIjsGXOfheldafcPQHV_eegp_Z-MQ=w240-h480-rw',
       badge: 'MOBA ยอดนิยม ⚔️',
       packages: [
-{ id: 'ml1', name: 'One Time Weekly (บัตรรายสัปดาห์)', price: 48, originalPrice: 59, cost: 47.20, profit: 0.80, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'ml1', name: 'One Time Weekly (บัตรรายสัปดาห์)', price: 49, originalPrice: 59, cost: 47.20, profit: 1.80, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ml8', name: '50+5 Diamonds (เติมครั้งแรกโบนัส 50)', price: 29, originalPrice: 29, cost: 24.48, profit: 4.52, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'ml2', name: '86 Diamonds', price: 39, originalPrice: 49, cost: 38.46, profit: 0.54, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'ml2', name: '86 Diamonds', price: 40, originalPrice: 49, cost: 38.46, profit: 1.54, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
 { id: 'ml9', name: '150+15 Diamonds (เติมครั้งแรกโบนัส 150)', price: 79, originalPrice: 89, cost: 72.72, profit: 6.28, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
-{ id: 'ml3', name: '172 Diamonds', price: 77, originalPrice: 95, cost: 75.87, profit: 1.13, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'ml3', name: '172 Diamonds', price: 78, originalPrice: 95, cost: 75.87, profit: 2.13, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ml10', name: '250+25 Diamonds (เติมครั้งแรกโบนัส 250)', price: 124, originalPrice: 139, cost: 116.43, profit: 7.57, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
-{ id: 'ml4', name: '257 Diamonds', price: 109, originalPrice: 139, cost: 108.74, profit: 0.26, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'ml4', name: '257 Diamonds', price: 110, originalPrice: 139, cost: 108.74, profit: 1.26, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ml11', name: '343 Diamonds', price: 152, originalPrice: 179, cost: 146.85, profit: 5.15, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
-{ id: 'ml12', name: '429 Diamonds', price: 185, originalPrice: 229, cost: 184.26, profit: 0.74, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'ml12', name: '429 Diamonds', price: 186, originalPrice: 229, cost: 184.26, profit: 1.74, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'ml13', name: '500+65 Diamonds (เติมครั้งแรกโบนัส 500)', price: 253, originalPrice: 279, cost: 239.16, profit: 13.84, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
-{ id: 'ml14', name: '600 Diamonds', price: 256, originalPrice: 319, cost: 254.89, profit: 1.11, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
-{ id: 'ml5', name: '706 Diamonds', price: 299, originalPrice: 369, cost: 297.55, profit: 1.45, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
-{ id: 'ml15', name: '792 Diamonds', price: 337, originalPrice: 419, cost: 335.66, profit: 1.34, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
-{ id: 'ml6', name: '1,049 Diamonds', price: 489, originalPrice: 549, cost: 475.00, profit: 14.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
+{ id: 'ml14', name: '600 Diamonds', price: 257, originalPrice: 319, cost: 254.89, profit: 2.11, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'ml5', name: '706 Diamonds', price: 300, originalPrice: 369, cost: 297.55, profit: 2.45, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'ml15', name: '792 Diamonds', price: 338, originalPrice: 419, cost: 335.66, profit: 2.34, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'ml6', name: '1,049 Diamonds', price: 486, originalPrice: 549, cost: 475.00, profit: 11.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
 { id: 'ml7', name: '2,195 Diamonds', price: 906, originalPrice: 1090, cost: 900.00, profit: 6.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
-{ id: 'ml16', name: '3,688 Diamonds', price: 1504, originalPrice: 1790, cost: 1501.40, profit: 2.60, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
-{ id: 'ml17', name: '5,532 Diamonds', price: 2271, originalPrice: 2690, cost: 2267.13, profit: 3.87, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' },
-{ id: 'ml18', name: '9,288 Diamonds', price: 3769, originalPrice: 4490, cost: 3765.03, profit: 3.97, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' },
-{ id: 'ml19', name: 'Twilight Miya Pass', price: 251, originalPrice: 299, cost: 249.65, profit: 1.35, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' }
+{ id: 'ml16', name: '3,688 Diamonds', price: 1505, originalPrice: 1790, cost: 1501.40, profit: 3.60, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
+{ id: 'ml17', name: '5,532 Diamonds', price: 2272, originalPrice: 2690, cost: 2267.13, profit: 4.87, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' },
+{ id: 'ml18', name: '9,288 Diamonds', price: 3770, originalPrice: 4490, cost: 3765.03, profit: 4.97, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' },
+{ id: 'ml19', name: 'Twilight Miya Pass', price: 252, originalPrice: 299, cost: 249.65, profit: 2.35, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' }
       ]
     },
     {
@@ -1694,17 +1694,17 @@ const [authMode, setAuthMode] = useState('login');
       badge: 'FPS เอาตัวรอด 🎯',
       packages: [
 { id: 'ab1', name: '66 Bonds', price: 30, originalPrice: 39, cost: 29.00, profit: 1.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'ab2', name: '335 Bonds', price: 142, originalPrice: 189, cost: 141.00, profit: 1.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'ab2', name: '335 Bonds', price: 143, originalPrice: 189, cost: 141.00, profit: 2.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ab3', name: '675 Bonds', price: 284, originalPrice: 375, cost: 280.00, profit: 4.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'ab4', name: '1,690 Bonds', price: 700, originalPrice: 939, cost: 698.00, profit: 2.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
 { id: 'ab5', name: '3,400 Bonds', price: 1393, originalPrice: 1870, cost: 1390.00, profit: 3.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
 { id: 'ab8', name: '6,820 Bonds', price: 2784, originalPrice: 3590, cost: 2780.00, profit: 4.00, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' },
 { id: 'ab9', name: 'Beginner Select', price: 28, originalPrice: 35, cost: 27.00, profit: 1.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
 { id: 'ab10', name: 'Monthly Advanced Battle Pass', price: 35, originalPrice: 39, cost: 33.00, profit: 2.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'ab6', name: 'Bulletproof Case (เซฟ 4 ช่อง 30 วัน)', price: 81, originalPrice: 110, cost: 80.00, profit: 1.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'ab6', name: 'Bulletproof Case (เซฟ 4 ช่อง 30 วัน)', price: 82, originalPrice: 110, cost: 80.00, profit: 2.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ab7', name: 'Monthly Premium Battle Pass', price: 132, originalPrice: 135, cost: 125.00, profit: 7.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ab11', name: 'Composite Case Privileges', price: 240, originalPrice: 259, cost: 225.00, profit: 15.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
-{ id: 'ab12', name: 'Quarterly Premium Battle Pass Bundle', price: 381, originalPrice: 419, cost: 380.00, profit: 1.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' }
+{ id: 'ab12', name: 'Quarterly Premium Battle Pass Bundle', price: 382, originalPrice: 419, cost: 380.00, profit: 2.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' }
       ]
     },
     {
@@ -1722,7 +1722,7 @@ const [authMode, setAuthMode] = useState('login');
 { id: 'soj5', name: '3,808 Ornate Jades', price: 1556, originalPrice: 1790, cost: 1530.00, profit: 26.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
 { id: 'soj7', name: '7,776 Ornate Jades', price: 2985, originalPrice: 3290, cost: 2950.00, profit: 35.00, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' },
 { id: 'soj8', name: 'Exquisite Treasures', price: 12, originalPrice: 12, cost: 9.00, profit: 3.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'soj6', name: 'Monthly Pass (บัตรรายเดือน)', price: 148, originalPrice: 169, cost: 147.00, profit: 1.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'soj6', name: 'Monthly Pass (บัตรรายเดือน)', price: 149, originalPrice: 169, cost: 147.00, profit: 2.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'soj9', name: 'Basic Battle Pass', price: 279, originalPrice: 300, cost: 265.00, profit: 14.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'soj10', name: 'Battle Pass Upgrade', price: 445, originalPrice: 469, cost: 435.00, profit: 10.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
 { id: 'soj11', name: 'Advanced Battle Pass', price: 657, originalPrice: 699, cost: 655.00, profit: 2.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' }
@@ -1754,14 +1754,14 @@ const [authMode, setAuthMode] = useState('login');
       packages: [
 { id: 'ht1', name: '20 Heart Diamond', price: 20, originalPrice: 25, cost: 19.00, profit: 1.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
 { id: 'ht2', name: '60 Heart Diamond', price: 36, originalPrice: 39, cost: 35.00, profit: 1.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'ht3', name: '320 Heart Diamond', price: 177, originalPrice: 199, cost: 176.00, profit: 1.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
-{ id: 'ht4', name: '730 Heart Diamond', price: 350, originalPrice: 399, cost: 349.00, profit: 1.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'ht3', name: '320 Heart Diamond', price: 178, originalPrice: 199, cost: 176.00, profit: 2.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'ht4', name: '730 Heart Diamond', price: 351, originalPrice: 399, cost: 349.00, profit: 2.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'ht5', name: '1,370 Heart Diamond', price: 642, originalPrice: 729, cost: 640.00, profit: 2.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
 { id: 'ht6', name: '2,130 Heart Diamond', price: 993, originalPrice: 1099, cost: 990.00, profit: 3.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
 { id: 'ht7', name: '3,550 Heart Diamond', price: 1643, originalPrice: 1790, cost: 1640.00, profit: 3.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
 { id: 'ht8', name: '7,050 Heart Diamond', price: 3204, originalPrice: 3490, cost: 3200.00, profit: 4.00, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' },
 { id: 'ht9', name: 'สมาชิกสมาคมลูกโอ๊กระดับต้น', price: 22, originalPrice: 25, cost: 21.00, profit: 1.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'ht10', name: 'สมาชิกสมาคมลูกโอ๊กทองคำ', price: 110, originalPrice: 125, cost: 109.00, profit: 1.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'ht10', name: 'สมาชิกสมาคมลูกโอ๊กทองคำ', price: 111, originalPrice: 125, cost: 109.00, profit: 2.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ht11', name: 'กล่องของขวัญแฟชั่น', price: 181, originalPrice: 199, cost: 179.00, profit: 2.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'ht12', name: 'อัปเกรดกล่องของขวัญ', price: 206, originalPrice: 219, cost: 199.00, profit: 7.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'ht13', name: 'กล่องของขวัญแฟชั่นหรูหรา', price: 355, originalPrice: 379, cost: 349.00, profit: 6.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' }
@@ -1775,10 +1775,10 @@ const [authMode, setAuthMode] = useState('login');
       image: 'https://play-lh.googleusercontent.com/JV1dZ_JLAI60SLZKjj3QVOMdFOTHEf_MyfAJdwoKsaBecbyj6DZ1xWfmi-iiMq_XUwBMVTROg5v5eWBtyzNuJhg=w526-h296-rw',
       badge: 'Action Hunting 🐉',
       packages: [
-{ id: 'mh1', name: '67 Coin', price: 33, originalPrice: 35, cost: 32.90, profit: 0.10, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'mh2', name: '338 Coin', price: 169, originalPrice: 179, cost: 168.26, profit: 0.74, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
-{ id: 'mh3', name: '1,120 Coin', price: 518, originalPrice: 549, cost: 516.06, profit: 1.94, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
-{ id: 'mh4', name: '1,478 Coin', price: 687, originalPrice: 729, cost: 685.26, profit: 1.74, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
+{ id: 'mh1', name: '67 Coin', price: 34, originalPrice: 35, cost: 32.90, profit: 1.10, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'mh2', name: '338 Coin', price: 170, originalPrice: 179, cost: 168.26, profit: 1.74, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'mh3', name: '1,120 Coin', price: 519, originalPrice: 549, cost: 516.06, profit: 2.94, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
+{ id: 'mh4', name: '1,478 Coin', price: 688, originalPrice: 729, cost: 685.26, profit: 2.74, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
 { id: 'mh5', name: '2,320 Coin', price: 1037, originalPrice: 1100, cost: 1034.00, profit: 3.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
 { id: 'mh6', name: '3,980 Coin', price: 1695, originalPrice: 1800, cost: 1692.00, profit: 3.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
 { id: 'mh7', name: '8,280 Coin', price: 3482, originalPrice: 3700, cost: 3478.00, profit: 4.00, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' }
@@ -1794,7 +1794,7 @@ const [authMode, setAuthMode] = useState('login');
       packages: [
 { id: 'idv1', name: '66 Echoes', price: 33, originalPrice: 35, cost: 32.00, profit: 1.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
 { id: 'idv2', name: '203 Echoes', price: 101, originalPrice: 109, cost: 97.00, profit: 4.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
-{ id: 'idv3', name: '335 Echoes', price: 161, originalPrice: 179, cost: 160.00, profit: 1.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'idv3', name: '335 Echoes', price: 162, originalPrice: 179, cost: 160.00, profit: 2.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'idv4', name: '759 Echoes', price: 328, originalPrice: 359, cost: 318.00, profit: 10.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'idv5', name: '2,227 Echoes', price: 975, originalPrice: 1090, cost: 955.00, profit: 20.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
 { id: 'idv6', name: '3,663 Echoes', price: 1610, originalPrice: 1850, cost: 1595.00, profit: 15.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
@@ -1831,16 +1831,16 @@ const [authMode, setAuthMode] = useState('login');
       badge: 'FPS มาแรง 🔥',
       packages: [
 { id: 'bs1', name: '105 Gold', price: 28, originalPrice: 35, cost: 26.00, profit: 2.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'bs2', name: '320 Gold', price: 81, originalPrice: 99, cost: 80.00, profit: 1.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
-{ id: 'bs3', name: '540 Gold', price: 131, originalPrice: 169, cost: 130.00, profit: 1.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
-{ id: 'bs4', name: '1,100 Gold', price: 266, originalPrice: 329, cost: 265.00, profit: 1.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'bs2', name: '320 Gold', price: 82, originalPrice: 99, cost: 80.00, profit: 2.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'bs3', name: '540 Gold', price: 132, originalPrice: 169, cost: 130.00, profit: 2.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'bs4', name: '1,100 Gold', price: 267, originalPrice: 329, cost: 265.00, profit: 2.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'bs5', name: '2,260 Gold', price: 522, originalPrice: 649, cost: 520.00, profit: 2.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
 { id: 'bs6', name: '5,800 Gold', price: 1293, originalPrice: 1490, cost: 1290.00, profit: 3.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
-{ id: 'bs8', name: 'Ultra Skin Lucky Chest', price: 17, originalPrice: 20, cost: 16.00, profit: 1.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'bs9', name: 'Lucky Bag Week', price: 32, originalPrice: 39, cost: 31.00, profit: 1.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'bs10', name: 'Level-Up Pass', price: 62, originalPrice: 75, cost: 60.00, profit: 2.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
-{ id: 'bs11', name: 'Strike Pass Elite', price: 124, originalPrice: 149, cost: 120.00, profit: 4.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
-{ id: 'bs7', name: 'Strike Pass Premium', price: 273, originalPrice: 299, cost: 265.00, profit: 8.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' }
+{ id: 'bs8', name: 'Ultra Skin Lucky Chest', price: 21, originalPrice: 21, cost: 16.00, profit: 5.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'bs9', name: 'Lucky Bag Week', price: 36, originalPrice: 39, cost: 31.00, profit: 5.00, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'bs10', name: 'Level-Up Pass', price: 66, originalPrice: 75, cost: 60.00, profit: 6.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'bs11', name: 'Strike Pass Elite', price: 121, originalPrice: 149, cost: 120.00, profit: 1.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'bs7', name: 'Strike Pass Premium', price: 267, originalPrice: 299, cost: 265.00, profit: 2.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' }
       ]
     },
     {
@@ -1851,8 +1851,8 @@ const [authMode, setAuthMode] = useState('login');
       image: 'https://play-lh.googleusercontent.com/JeXWmt6zPqeb8KtLnULXWpYG9l6syolkbks5N2T4RX2D5vAqSnrnVG0nY4aN0ZqpgJezfruup_naTlXU3osuow=w240-h480-rw',
       badge: 'Tactical Shooter 🎖️',
       packages: [
-{ id: 'df10', name: '19 Coins', price: 10, originalPrice: 10, cost: 9.40, profit: 0.60, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'df11', name: '32 Coins', price: 17, originalPrice: 18, cost: 16.29, profit: 0.71, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'df10', name: '19 Coins', price: 11, originalPrice: 11, cost: 9.40, profit: 1.60, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'df11', name: '32 Coins', price: 18, originalPrice: 18, cost: 16.29, profit: 1.71, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
 { id: 'df1', name: '63 Coins', price: 33, originalPrice: 34, cost: 31.96, profit: 1.04, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
 { id: 'df2', name: '336 Coins', price: 169, originalPrice: 176, cost: 164.81, profit: 4.19, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'df3', name: '482 Coins', price: 235, originalPrice: 246, cost: 230.61, profit: 4.39, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
@@ -1865,9 +1865,9 @@ const [authMode, setAuthMode] = useState('login');
 { id: 'df14', name: '25,272 Coins', price: 9780, originalPrice: 10400, cost: 9776.00, profit: 4.00, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' },
 { id: 'df8', name: 'เสบียง Aurora', price: 24, originalPrice: 24, cost: 22.56, profit: 1.44, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
 { id: 'df9', name: 'ขั้นสูง เสบียง Aurora', price: 72, originalPrice: 74, cost: 68.94, profit: 3.06, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
-{ id: 'df15', name: 'Ahsarah Bazaar', price: 24, originalPrice: 24, cost: 22.56, profit: 1.44, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'df16', name: 'Competition Supplies', price: 24, originalPrice: 24, cost: 22.56, profit: 1.44, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'df17', name: 'Competition Supplies - Advanced', price: 71, originalPrice: 74, cost: 68.94, profit: 2.06, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' }
+{ id: 'df15', name: 'Ahsarah Bazaar', price: 28, originalPrice: 28, cost: 22.56, profit: 5.44, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'df16', name: 'Competition Supplies', price: 28, originalPrice: 28, cost: 22.56, profit: 5.44, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'df17', name: 'Competition Supplies - Advanced', price: 75, originalPrice: 75, cost: 68.94, profit: 6.06, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' }
       ]
     },
     {
@@ -1878,7 +1878,7 @@ const [authMode, setAuthMode] = useState('login');
       image: 'https://play-lh.googleusercontent.com/kb-SsHpL709ykTLyRaKeP9odU8B6nQSdziNZkkLWevwvgDdu7fcT-PPKG7NQO6H7k1dsGO4c4NlK_OxJyzLt=w526-h296-rw',
       badge: 'Survival Open-World 🧟',
       packages: [
-{ id: 'ud1', name: '55 RC', price: 20, originalPrice: 20, cost: 18.80, profit: 1.20, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
+{ id: 'ud1', name: '55 RC', price: 24, originalPrice: 24, cost: 18.80, profit: 5.20, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
 { id: 'ud2', name: '138 RC', price: 50, originalPrice: 50, cost: 47.00, profit: 3.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ud3', name: '253 RC', price: 90, originalPrice: 90, cost: 84.60, profit: 5.40, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ud4', name: '440 RC', price: 148, originalPrice: 150, cost: 141.00, profit: 7.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
@@ -1892,7 +1892,7 @@ const [authMode, setAuthMode] = useState('login');
 { id: 'ud8', name: 'คูปองเสบียงรายสัปดาห์', price: 80, originalPrice: 80, cost: 73.95, profit: 6.05, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ud9', name: 'คูปองเสบียงรายเดือน', price: 130, originalPrice: 130, cost: 120.95, profit: 9.05, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
 { id: 'ud14', name: 'กองทุนเติบโต', price: 270, originalPrice: 270, cost: 252.55, profit: 17.45, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
-{ id: 'ud15', name: 'กองทุนอีลีต', price: 337, originalPrice: 349, cost: 327.75, profit: 9.25, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'ud15', name: 'กองทุนอีลีต', price: 338, originalPrice: 349, cost: 327.75, profit: 10.25, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'ud16', name: 'Ace Fund', price: 366, originalPrice: 379, cost: 355.95, profit: 10.05, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'ud17', name: 'Advanced Glory Pass', price: 380, originalPrice: 380, cost: 355.95, profit: 24.05, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' }
       ]
@@ -1906,25 +1906,25 @@ const [authMode, setAuthMode] = useState('login');
       badge: 'อนิเมะวอลเลย์บอล 🏐',
       packages: [
 { id: 'hq1', name: '60 Star Gems', price: 33, originalPrice: 34, cost: 31.33, profit: 1.67, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'hq2', name: '300 Star Gems', price: 158, originalPrice: 167, cost: 156.67, profit: 1.33, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'hq2', name: '300 Star Gems', price: 159, originalPrice: 167, cost: 156.67, profit: 2.33, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'hq3', name: '980 Star Gems', price: 472, originalPrice: 500, cost: 470.00, profit: 2.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
 { id: 'hq4', name: '1,980 Star Gems', price: 943, originalPrice: 1000, cost: 940.00, profit: 3.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
-{ id: 'hq5', name: '3,280 Star Gems', price: 1569, originalPrice: 1667, cost: 1566.67, profit: 2.33, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
-{ id: 'hq6', name: '6,480 Star Gems', price: 3137, originalPrice: 3334, cost: 3133.33, profit: 3.67, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' },
+{ id: 'hq5', name: '3,280 Star Gems', price: 1570, originalPrice: 1667, cost: 1566.67, profit: 3.33, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
+{ id: 'hq6', name: '6,480 Star Gems', price: 3138, originalPrice: 3334, cost: 3133.33, profit: 4.67, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' },
 { id: 'hq7', name: 'แพ็กสำหรับผู้เล่นใหม่', price: 33, originalPrice: 33, cost: 28.20, profit: 4.80, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
 { id: 'hq8', name: 'แพ็กเชียร์ครั้งแรก', price: 200, originalPrice: 210, cost: 197.40, profit: 2.60, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
-{ id: 'hq9', name: 'โบนัสเพิ่มเลเวล', price: 283, originalPrice: 300, cost: 282.00, profit: 1.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'hq9', name: 'โบนัสเพิ่มเลเวล', price: 284, originalPrice: 300, cost: 282.00, profit: 2.00, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'hq10', name: 'แพ็กความทรงจำครั้งแรก', price: 707, originalPrice: 750, cost: 705.00, profit: 2.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
 { id: 'hq11', name: 'แพ็กการเติบโตครั้งแรก', price: 848, originalPrice: 900, cost: 846.00, profit: 2.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
 { id: 'hq12', name: 'ตั๋วรับสมัคร x1', price: 30, originalPrice: 30, cost: 28.20, profit: 1.80, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'hq13', name: 'ตั๋วรับสมัคร x5', price: 142, originalPrice: 150, cost: 141.00, profit: 1.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
-{ id: 'hq14', name: 'ตั๋วรับสมัคร x10', price: 368, originalPrice: 390, cost: 366.60, profit: 1.40, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'hq13', name: 'ตั๋วรับสมัคร x5', price: 143, originalPrice: 150, cost: 141.00, profit: 2.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'hq14', name: 'ตั๋วรับสมัคร x10', price: 369, originalPrice: 390, cost: 366.60, profit: 2.40, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'hq15', name: 'ตั๋วรับสมัคร x20', price: 848, originalPrice: 900, cost: 846.00, profit: 2.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
 { id: 'hq16', name: 'ตั๋วรับสมัคร x30', price: 1413, originalPrice: 1500, cost: 1410.00, profit: 3.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
 { id: 'hq17', name: 'ตั๋วรับสมัคร x55', price: 2824, originalPrice: 3000, cost: 2820.00, profit: 4.00, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' },
 { id: 'hq18', name: 'ตั๋วรับสมัครอัลตร้า I', price: 30, originalPrice: 30, cost: 28.20, profit: 1.80, catCoinReward: 0, bonus: '⚡ เติมไว ราคาประหยัด' },
-{ id: 'hq19', name: 'ตั๋วรับสมัครอัลตร้า II', price: 142, originalPrice: 150, cost: 141.00, profit: 1.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
-{ id: 'hq20', name: 'ตั๋วรับสมัครอัลตร้า III', price: 368, originalPrice: 390, cost: 366.60, profit: 1.40, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
+{ id: 'hq19', name: 'ตั๋วรับสมัครอัลตร้า II', price: 143, originalPrice: 150, cost: 141.00, profit: 2.00, catCoinReward: 0.25, bonus: '⚡ +0.25 Cat Coin 🐱🪙' },
+{ id: 'hq20', name: 'ตั๋วรับสมัครอัลตร้า III', price: 369, originalPrice: 390, cost: 366.60, profit: 2.40, catCoinReward: 0.5, bonus: '⚡ +0.5 Cat Coin 🐱🪙' },
 { id: 'hq21', name: 'ตั๋วรับสมัครอัลตร้า IV', price: 848, originalPrice: 900, cost: 846.00, profit: 2.00, catCoinReward: 1, bonus: '⚡ +1 Cat Coin 🐱🪙' },
 { id: 'hq22', name: 'ตั๋วรับสมัครอัลตร้า V', price: 1413, originalPrice: 1500, cost: 1410.00, profit: 3.00, catCoinReward: 2, bonus: '⚡ +2 Cat Coin 🐱🪙' },
 { id: 'hq23', name: 'ตั๋วรับสมัครอัลตร้า VI', price: 2824, originalPrice: 3000, cost: 2820.00, profit: 4.00, catCoinReward: 3, bonus: '⚡ +3 Cat Coin 🐱🪙' }
@@ -1938,7 +1938,7 @@ const [authMode, setAuthMode] = useState('login');
       image: 'https://media.gold.razer.com/goldweb/content/catalogs/gold/razer-gold-pin/attachment/KJDUEX2SMF5GK4RAI5XWYZC7K5UGS5DF.png',
       badge: 'ส่งรหัส PIN ทันที ⚡',
       packages: [
-{ id: 'rg50', name: '50 THB (Razer Gold PIN)', price: 48, originalPrice: 50, cost: 47.5, profit: 0.50, bonus: '⚡ ประหยัด ฿1 ส่งรหัสไว' },
+{ id: 'rg50', name: '50 THB (Razer Gold PIN)', price: 49, originalPrice: 50, cost: 47.5, profit: 1.50, bonus: '⚡ ประหยัด ฿1 ส่งรหัสไว' },
 { id: 'rg100', name: '100 THB (Razer Gold PIN)', price: 96, originalPrice: 100, cost: 95.0, profit: 1.00, bonus: '🔥 ขายดี ประหยัด ฿2' },
 { id: 'rg300', name: '300 THB (Razer Gold PIN)', price: 286, originalPrice: 300, cost: 285.0, profit: 1.00, bonus: '⚡ ยอดฮิต ประหยัด ฿6' },
 { id: 'rg500', name: '500 THB (Razer Gold PIN)', price: 476, originalPrice: 500, cost: 475.0, profit: 1.00, bonus: '⭐ พรีเมียม ประหยัด ฿10' },
