@@ -1575,6 +1575,64 @@ const [authMode, setAuthMode] = useState('login');
   const [packageQuantity, setPackageQuantity] = useState(1);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [showPolicyModal, setShowPolicyModal] = useState(null); // 'terms' | 'refund' | 'pdpa' | 'antiscam' | null
+  const [showUidGuide, setShowUidGuide] = useState(false);
+  const [qrTimeLeft, setQrTimeLeft] = useState(900);
+  const [lastOrder, setLastOrder] = useState(() => {
+    try {
+      const saved = localStorage.getItem('meow_last_order');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const handleQuickReorder = (ord) => {
+    if (!ord) return;
+    const game = gamesData.find((g) => g.id === ord.gameId);
+    if (!game) return;
+    const pkg = game.packages.find((p) => p.id === ord.packageId) || game.packages[0];
+    setActiveTab('shop');
+    setSelectedGame(game);
+    setSelectedPackage(pkg || null);
+    setPackageQuantity(ord.quantity || 1);
+    setPlayerId(ord.playerId || '');
+    if (ord.heartopiaAid) setHeartopiaAid(ord.heartopiaAid);
+    if (ord.heartopiaServer) setHeartopiaServer(ord.heartopiaServer);
+    if (ord.genshinServer) setGenshinServer(ord.genshinServer);
+    setAgreeTerms(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (!showCheckoutModal || checkoutStep !== 2) return;
+    setQrTimeLeft(900);
+    const timer = setInterval(() => {
+      setQrTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [showCheckoutModal, checkoutStep]);
+
+  const formatQrCountdown = (secs) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
+
+  const getUidGuideText = (game) => {
+    if (!game) return '';
+    const guides = {
+      valorant: 'เปิดเกม VALORANT หรือ Riot Client แล้วนำเมาส์ชี้ที่ชื่อมุมขวาบน จะเห็นชื่อและแท็ก เช่น MeowGamer#TH1 ให้กรอกทั้งชื่อและ #TAG ให้ครบถ้วน',
+      rov: 'เข้าเกม RoV > กดโปรไฟล์มุมซ้ายบน > กดปุ่มตั้งค่า (เฟือง) > เลือก "คัดลอก OpenID" หรือดูเลข OpenID ในหน้าบัญชี',
+      freefire: 'เข้าเกม Free Fire > กดที่โปรไฟล์มุมซ้ายบน > คัดลอกตัวเลข UID ใต้ชื่อตัวละครมาวางได้เลย',
+      pubg: 'เข้าเกม PUBG Mobile > กดที่รูปโปรไฟล์มุมซ้ายบน > คัดลอกเลข Character ID (ตัวเลขล้วน) ด้านบนขวาของหน้าโปรไฟล์',
+      mlbb: 'เข้าเกม Mobile Legends > กดโปรไฟล์มุมซ้ายบน > ดูตัวเลข User ID และ (Zone ID) ในวงเล็บ 4-5 หลัก กรอกให้ครบทั้งคู่',
+      heartopia: 'เข้าเกม Heartopia > เปิดเมนูตั้งค่าหรือโปรไฟล์ > คัดลอกรหัส AID ของบัญชี และเลือก Server (เช่น Sea / Asia) ให้ตรงกับที่เล่น',
+      razergold_card: 'เลือกรับรหัส PIN ทาง LINE ID หรือ Email ที่ใช้งานได้จริง ระบบจะส่งรหัส 14-16 หลักให้หลังตรวจสอบสลิปสำเร็จ',
+    };
+    return guides[game.id] || `เข้าเกม ${game.name} > กดที่หน้าโปรไฟล์ตัวละคร > คัดลอกเลข UID / Player ID ประจำตัวมาวางให้ถูกต้อง (ไม่ต้องใช้รหัสผ่าน)`;
+  };
 
   const [eventGame, setEventGame] = useState('VALORANT');
   const [eventPlayerId, setEventPlayerId] = useState('');
@@ -4351,6 +4409,22 @@ const [authMode, setAuthMode] = useState('login');
     if (!playerId.trim()) {
       return;
     }
+    if (selectedGame && selectedPackage) {
+      const savedOrder = {
+        gameId: selectedGame.id,
+        gameName: selectedGame.name,
+        packageId: selectedPackage.id,
+        packageName: selectedPackage.name,
+        price: selectedPackage.price,
+        quantity: packageQuantity || 1,
+        playerId: playerId.trim(),
+        heartopiaAid,
+        heartopiaServer,
+        genshinServer
+      };
+      setLastOrder(savedOrder);
+      try { localStorage.setItem('meow_last_order', JSON.stringify(savedOrder)); } catch (e) {}
+    }
     setCheckoutPasswordError('');
     
     const totalPrice = selectedPackage.price * packageQuantity;
@@ -6154,6 +6228,68 @@ const [authMode, setAuthMode] = useState('login');
 
             <div style={{ marginBottom: '20px' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#ffffff' }}>
+                {/* แถบจุดเด่นความน่าเชื่อถือ & 3 ขั้นตอนสั้นๆ */}
+                <div style={{
+                  marginBottom: '18px',
+                  padding: '12px 16px',
+                  borderRadius: '14px',
+                  background: isDarkMode ? 'linear-gradient(90deg, rgba(15,23,42,0.92), rgba(30,27,75,0.88))' : 'linear-gradient(90deg, #fff7ed, #fdf2f8)',
+                  border: isDarkMode ? '1px solid rgba(56,189,248,0.28)' : '1px solid #fed7aa',
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '10px',
+                  fontSize: '12px'
+                }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ backgroundColor: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.4)', padding: '3px 10px', borderRadius: '999px', fontWeight: '800' }}>
+                      🟢 ระบบอัตโนมัติพร้อมให้บริการ 24 ชม.
+                    </span>
+                    <span style={{ color: isDarkMode ? '#e2e8f0' : '#334155', fontWeight: '700' }}>🔒 ใช้แค่ UID ไม่ใช้รหัสผ่าน</span>
+                    <span style={{ color: isDarkMode ? '#e2e8f0' : '#334155', fontWeight: '700' }}>⚡ เข้าไว 1–3 นาที</span>
+                    <span style={{ color: isDarkMode ? '#e2e8f0' : '#334155', fontWeight: '700' }}>🐱 สะสม Cat Coin ลดเพิ่ม</span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: isDarkMode ? '#94a3b8' : '#64748b', fontWeight: '600' }}>
+                    1. เลือกเกม & กรอก UID → 2. สแกน QR PromptPay → 3. เข้าไอดีอัตโนมัติ
+                  </div>
+                </div>
+                {lastOrder && (
+                  <div style={{
+                    marginBottom: '16px',
+                    padding: '10px 16px',
+                    borderRadius: '14px',
+                    background: isDarkMode ? 'rgba(16,185,129,0.12)' : '#ecfdf5',
+                    border: '1px solid rgba(16,185,129,0.45)',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    fontSize: '12px'
+                  }}>
+                    <span style={{ color: isDarkMode ? '#d1fae5' : '#065f46', fontWeight: '700' }}>
+                      🔄 เติมซ้ำล่าสุด: <b>{lastOrder.gameName}</b> — {lastOrder.packageName} (x{lastOrder.quantity || 1}) • ID: <b>{lastOrder.playerId}</b>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleQuickReorder(lastOrder)}
+                      style={{
+                        background: 'linear-gradient(135deg, #10b981, #059669)',
+                        color: '#ffffff',
+                        border: 'none',
+                        padding: '6px 14px',
+                        borderRadius: '999px',
+                        fontWeight: 'bold',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 10px rgba(16,185,129,0.35)'
+                      }}
+                    >
+                      ⚡ เติมซ้ำใน 1 คลิก
+                    </button>
+                  </div>
+                )}
                 🐾 เลือกเกมโปรดที่ต้องการเติม ({filteredGames.length} เกมพร้อมส่งทันที)
               </h2>
             </div>
@@ -6477,6 +6613,21 @@ const [authMode, setAuthMode] = useState('login');
               </div>
             ) : (
               <div style={{ marginBottom: '25px', backgroundColor: 'rgba(15, 23, 42, 0.75)', border: '1.5px solid #334155', borderRadius: '18px', padding: '18px 22px', maxWidth: '580px', boxShadow: '0 4px 20px rgba(0,0,0,0.3)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '700' }}>🔒 เติมตรงเข้าไอดี ไม่ต้องให้รหัสผ่าน</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowUidGuide((v) => !v)}
+                    style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.45)', color: '#38bdf8', fontSize: '11px', fontWeight: 'bold', padding: '3px 10px', borderRadius: '999px', cursor: 'pointer' }}
+                  >
+                    ❓ วิธีดู UID / ID เกมนี้
+                  </button>
+                </div>
+                {showUidGuide && (
+                  <div style={{ marginBottom: '12px', padding: '10px 12px', borderRadius: '10px', backgroundColor: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.35)', color: '#e0f2fe', fontSize: '12px', lineHeight: 1.5 }}>
+                    💡 <b>วิธีดูไอดี ({selectedGame.name}):</b> {getUidGuideText(selectedGame)}
+                  </div>
+                )}
                 {selectedGame.id === 'valorant' && (
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -7146,10 +7297,70 @@ const [authMode, setAuthMode] = useState('login');
               const isGameOut = gameStockStatus[selectedGame?.id] === false;
               const isPkgOut = selectedPackage && packageStockStatus[`${selectedGame?.id}_${selectedPackage.id}`] === false;
               const isWalletLocked = selectedPayment?.id === 'wallet' && !user;
-              const isDisabled = !playerId.trim() || !selectedPackage || !selectedPayment || isGameOut || isPkgOut || isWalletLocked;
+              const isDisabled = !agreeTerms || !playerId.trim() || !selectedPackage || !selectedPayment || isGameOut || isPkgOut || isWalletLocked;
 
               return (
-                <button 
+                <div>
+                  {selectedPackage && playerId.trim() && (
+                    <div style={{
+                      marginBottom: '12px',
+                      padding: '12px 16px',
+                      borderRadius: '14px',
+                      backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                      border: '1px solid rgba(168, 85, 247, 0.4)',
+                      fontSize: '12px',
+                      color: '#e2e8f0',
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                      gap: '8px'
+                    }}>
+                      <div><span style={{ color: '#94a3b8' }}>เกม/แพ็กเกจ:</span><br/><b>{selectedGame.name} — {selectedPackage.name} x{packageQuantity}</b></div>
+                      <div><span style={{ color: '#94a3b8' }}>ไอดีปลายทาง:</span><br/><b style={{ color: '#38bdf8' }}>{playerId}</b></div>
+                      <div><span style={{ color: '#94a3b8' }}>ยอดโอนสุทธิ:</span><br/><b style={{ color: '#34d399', fontSize: '14px' }}>฿{(selectedPackage.price * packageQuantity).toLocaleString()}</b></div>
+                    </div>
+                  )}
+
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '10px',
+                    marginBottom: '12px',
+                    padding: '10px 14px',
+                    borderRadius: '12px',
+                    backgroundColor: agreeTerms ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.08)',
+                    border: `1px solid ${agreeTerms ? 'rgba(16,185,129,0.45)' : 'rgba(248,113,113,0.45)'}`,
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    color: '#e2e8f0',
+                    lineHeight: 1.5
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={agreeTerms}
+                      onChange={(e) => setAgreeTerms(e.target.checked)}
+                      style={{ marginTop: '3px', width: '16px', height: '16px', accentColor: '#10b981', cursor: 'pointer' }}
+                    />
+                    <span>
+                      ฉันตรวจสอบ <b>UID / Server / Email</b> ถูกต้องแล้ว (เติมแล้วไม่สามารถดึงคืนหรือย้ายไอดีได้) และยอมรับ{' '}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPolicyModal('terms'); }}
+                        style={{ background: 'none', border: 'none', padding: 0, color: '#38bdf8', textDecoration: 'underline', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        ข้อกำหนดการใช้บริการ (7 ข้อ)
+                      </button>
+                      {' '}และ{' '}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowPolicyModal('refund'); }}
+                        style={{ background: 'none', border: 'none', padding: 0, color: '#fbbf24', textDecoration: 'underline', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                      >
+                        นโยบายคืนเงินภายใน 24 ชม.
+                      </button>
+                    </span>
+                  </label>
+
+                  <button 
                   disabled={isDisabled}
                   onClick={() => {
                     if (isGameOut) {
@@ -7180,9 +7391,12 @@ const [authMode, setAuthMode] = useState('login');
                     : !selectedPackage 
                     ? 'กรุณาเลือกแพ็กเกจเติมเกม' 
                     : !selectedPayment 
-                    ? 'กรุณาเลือกช่องทางชำระเงิน' 
+                    ? 'กรุณาเลือกช่องทางชำระเงิน'
+                    : !agreeTerms
+                    ? '☑️ กรุณาติ๊กยืนยัน UID และยอมรับข้อกำหนดก่อนชำระเงิน'
                     : `ยืนยันชำระเงิน ฿${(selectedPackage.price * packageQuantity).toLocaleString()} (${packageQuantity} แพ็ก)`}
-                </button>
+                  </button>
+                </div>
               );
             })()}
           </div>
@@ -10531,6 +10745,29 @@ const [authMode, setAuthMode] = useState('login');
                   </span>
                 </div>
 
+                {/* แถบเวลานับถอยหลังอายุ QR & ทวนไอดีปลายทาง */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                  marginBottom: '12px',
+                  padding: '8px 12px',
+                  borderRadius: '10px',
+                  backgroundColor: qrTimeLeft <= 60 ? 'rgba(239,68,68,0.15)' : 'rgba(251,191,36,0.1)',
+                  border: `1px solid ${qrTimeLeft <= 60 ? '#ef4444' : 'rgba(251,191,36,0.4)'}`,
+                  fontSize: '11px',
+                  color: qrTimeLeft <= 60 ? '#fca5a5' : '#fde68a'
+                }}>
+                  <span>🎯 ไอดีปลายทาง: <b style={{ color: '#ffffff' }}>{playerId}</b></span>
+                  <span>
+                    {qrTimeLeft > 0
+                      ? <>⏳ ชำระภายใน <b>{formatQrCountdown(qrTimeLeft)}</b> (ห้ามสแกน QR เดิมซ้ำหลังหมดเวลา)</>
+                      : <b>⚠️ QR หมดอายุแล้ว กรุณากดย้อนกลับเพื่อสร้าง QR ใหม่</b>}
+                  </span>
+                </div>
+
                 {selectedPayment?.id === 'androidqr' && (
                   <div style={{ backgroundColor: '#030712', border: '1.5px solid #10b981', borderRadius: '16px', padding: '18px', textAlign: 'center', marginBottom: '16px' }}>
                     {androidSatangError ? (
@@ -11873,10 +12110,82 @@ const [authMode, setAuthMode] = useState('login');
         </div>
       )}
 
-      <footer style={{ textAlign: 'center', marginTop: '50px', padding: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', color: '#9ca3af', fontSize: '13px' }}>
-        <p style={{ margin: 0 }}>🐱 <b>MEOW TOPUP</b> - บริการเติมเกมออนไลน์ สดใส รวดเร็ว เติมง่ายด้วย Cat Coin ตลอด 24 ชั่วโมง 🐾</p>
-        <p style={{ margin: '8px auto 0', maxWidth: '720px', fontSize: '11px', color: '#6b7280', lineHeight: 1.5 }}>
-          MEOW TOPUP เป็นร้านค้าตัวแทนจำหน่ายอิสระ ไม่ได้เป็นเว็บไซต์ทางการหรือมีความเกี่ยวข้องกับผู้พัฒนาเกมใด ๆ ชื่อเกม โลโก้ และเครื่องหมายการค้าทั้งหมดเป็นทรัพย์สินของเจ้าของลิขสิทธิ์นั้น ๆ
+      {/* Modal แสดงข้อกำหนด นโยบายคืนเงิน PDPA และประกาศเตือนเพจปลอม */}
+      {showPolicyModal && (
+        <div
+          onClick={() => setShowPolicyModal(null)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(2,6,23,0.82)', backdropFilter: 'blur(6px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: '640px', maxHeight: '85vh', overflowY: 'auto', backgroundColor: '#0f172a', border: '1.5px solid #6366f1', borderRadius: '20px', padding: '24px', color: '#e2e8f0', boxShadow: '0 20px 50px rgba(0,0,0,0.75)' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '12px' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', color: '#ffffff' }}>
+                {showPolicyModal === 'terms' && '📜 ข้อกำหนดและเงื่อนไขการใช้บริการ (MEOW TOPUP)'}
+                {showPolicyModal === 'refund' && '💸 นโยบายการคืนเงินและแก้ไขปัญหา'}
+                {showPolicyModal === 'pdpa' && '🔐 นโยบายความเป็นส่วนตัว (PDPA)'}
+                {showPolicyModal === 'antiscam' && '🚨 ประกาศเตือนเพจปลอมและช่องทางทางการ'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowPolicyModal(null)}
+                style={{ background: '#1e293b', border: '1px solid #475569', color: '#ffffff', borderRadius: '8px', padding: '4px 10px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                ✕ ปิด
+              </button>
+            </div>
+
+            {showPolicyModal === 'terms' && (
+              <div style={{ fontSize: '13px', lineHeight: 1.7, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <p style={{ margin: 0 }}><b>1. กรอก UID / Server / Email ผิด = จบการส่งมอบ:</b> เมื่อระบบเติมเข้าไอดีหรือส่งรหัส PIN ไปยังข้อมูลที่ลูกค้ากรอกแล้ว ถือว่าการส่งมอบเสร็จสมบูรณ์ ไม่สามารถย้ายไอดี ดึงคืน หรือคืนเงินได้ทุกกรณี</p>
+                <p style={{ margin: 0 }}><b>2. ระยะเวลาตรวจสอบและคืนเงิน:</b> กรณีเติมไม่เข้า โอนเกิน หรือระบบขัดข้อง ร้านจะตรวจสอบและดำเนินการแก้ไข/คืนเงินให้<b>ภายใน 24 ชั่วโมง หรือจนกว่าการตรวจสอบหลักฐานกับระบบกลางจะเสร็จสมบูรณ์</b></p>
+                <p style={{ margin: 0 }}><b>3. ยึด Log ระบบกลางเป็นหลักฐานชี้ขาด:</b> หากระบบแสดงสถานะสำเร็จแต่ลูกค้าแจ้งว่าไม่ได้รับของ ต้องส่งภาพประวัติในเกมพร้อมสลิปตัวจริงภายใน 24 ชม. คำตัดสินจาก Log ผู้ให้บริการถือเป็นที่สิ้นสุด</p>
+                <p style={{ margin: 0 }}><b>4. ห้ามใช้สลิปซ้ำหรือปลอมสลิป:</b> สลิป 1 ใบใช้ได้ 1 ออเดอร์ หากพบการแก้ไขหรือใช้สลิปซ้ำ ระบบจะยกเลิกออเดอร์ ริบ Cat Coin ระงับบัญชีถาวร และดำเนินคดีตามกฎหมาย</p>
+                <p style={{ margin: 0 }}><b>5. บัตร e-Pin (Razer Gold PIN):</b> เมื่อระบบส่งรหัสให้ทาง LINE หรือ Email แล้ว ไม่รับเปลี่ยนหรือคืนเงินทุกกรณี</p>
+                <p style={{ margin: 0 }}><b>6. ห้ามโอนจากบัญชีบุคคลอื่น / ดึงเงินคืนโดยทุจริต:</b> ต้องโอนจากบัญชีของตนเองเท่านั้น หากมีการแจ้งอายัดหรือดึงเงินคืนหลังได้รับสินค้า ร้านจะนำหลักฐาน UID, เวลาทำรายการ และ IP ส่งดำเนินคดีและแจ้งระงับไอดีเกม</p>
+                <p style={{ margin: 0 }}><b>7. การใช้ Cat Coin / โค้ดส่วนลด:</b> หากพบการปั่นออเดอร์หรือใช้ช่องโหว่ระบบ ร้านมีสิทธิ์ริบสิทธิ์และระงับบัญชีทันที</p>
+              </div>
+            )}
+
+            {showPolicyModal === 'refund' && (
+              <div style={{ fontSize: '13px', lineHeight: 1.7, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <p style={{ margin: 0 }}>• <b>กรณีที่สามารถขอคืนเงิน / ปรับยอดได้:</b> ระบบเติมล้มเหลว, สินค้าหมดสต็อกหลังโอนแล้ว, หรือโอนเงินยอดซ้ำ/ยอดเกิน</p>
+                <p style={{ margin: 0 }}>• <b>ระยะเวลาดำเนินการ:</b> คืนเงินเข้าบัญชีต้นทางหรือปรับเข้า Cat Coin <b>ภายใน 24 ชั่วโมง หรือจนกว่าการตรวจสอบหลักฐานกับธนาคารและระบบกลางจะเสร็จสมบูรณ์</b></p>
+                <p style={{ margin: 0 }}>• <b>กรณีที่ไม่สามารถคืนเงินได้:</b> ลูกค้ากรอก UID / Server / Email ผิดพลาดเอง หรือเปิดรับรหัส e-Pin ไปแล้ว</p>
+                <p style={{ margin: 0 }}>• <b>ช่องทางแจ้งเรื่อง:</b> ทัก LINE OA <b>@462piycg</b> พร้อมแนบ 1) เลขออเดอร์ 2) สลิปตัวจริง 3) เลข UID</p>
+              </div>
+            )}
+
+            {showPolicyModal === 'pdpa' && (
+              <div style={{ fontSize: '13px', lineHeight: 1.7, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <p style={{ margin: 0 }}>• ร้าน MEOW TOPUP จัดเก็บเฉพาะข้อมูลที่จำเป็นต่อการทำรายการ ได้แก่ UID/ไอดีเกม, อีเมลหรือ LINE ID สำหรับส่งรหัส e-Pin, ประวัติออเดอร์ และรูปสลิปโอนเงิน</p>
+                <p style={{ margin: 0 }}>• ข้อมูลทั้งหมดใช้เพื่อการตรวจสอบยอดเงิน ส่งมอบสินค้า และช่วยเหลือลูกค้าเท่านั้น <b>ไม่มีการเก็บรหัสผ่านเกมของลูกค้า และไม่นำข้อมูลไปจำหน่ายหรือเผยแพร่ต่อบุคคลภายนอก</b></p>
+              </div>
+            )}
+
+            {showPolicyModal === 'antiscam' && (
+              <div style={{ fontSize: '13px', lineHeight: 1.7, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <p style={{ margin: 0, color: '#fca5a5' }}><b>⚠️ โปรดระวังมิจฉาชีพแอบอ้างชื่อร้าน MEOW TOPUP</b></p>
+                <p style={{ margin: 0 }}>• เว็บไซต์ทางการเดียวของร้านคือ: <b>https://game-topup-shop-one.vercel.app</b></p>
+                <p style={{ margin: 0 }}>• ช่องทางติดต่อแอดมินทางการเดียวคือ: <b>LINE OA @462piycg</b></p>
+                <p style={{ margin: 0 }}>• ทางร้าน<b>ไม่มีนโยบายทักแชทส่วนตัวไปขอรหัสผ่านเกม</b> หรือให้โอนเงินนอกระบบหน้าเว็บเด็ดขาด</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <footer style={{ textAlign: 'center', marginTop: '50px', padding: '24px 20px', borderTop: '1px solid rgba(255,255,255,0.08)', color: '#9ca3af', fontSize: '13px' }}>
+        <p style={{ margin: 0 }}>🐱 <b>MEOW TOPUP</b> - บริการเติมเกมออนไลน์อัตโนมัติ 24 ชั่วโมง | LINE OA: <b style={{ color: '#34d399' }}>@462piycg</b> 🐾</p>
+        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '14px', marginTop: '12px', fontSize: '12px' }}>
+          <button type="button" onClick={() => setShowPolicyModal('terms')} style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', textDecoration: 'underline', fontWeight: '600' }}>📜 ข้อกำหนดการใช้บริการ (7 ข้อ)</button>
+          <button type="button" onClick={() => setShowPolicyModal('refund')} style={{ background: 'none', border: 'none', color: '#fbbf24', cursor: 'pointer', textDecoration: 'underline', fontWeight: '600' }}>💸 นโยบายคืนเงิน (24 ชม.)</button>
+          <button type="button" onClick={() => setShowPolicyModal('pdpa')} style={{ background: 'none', border: 'none', color: '#c084fc', cursor: 'pointer', textDecoration: 'underline', fontWeight: '600' }}>🔐 นโยบายความเป็นส่วนตัว (PDPA)</button>
+          <button type="button" onClick={() => setShowPolicyModal('antiscam')} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', textDecoration: 'underline', fontWeight: '600' }}>🚨 เตือนเพจปลอม / ช่องทางทางการ</button>
+        </div>
+        <p style={{ margin: '10px auto 0', maxWidth: '760px', fontSize: '11px', color: '#6b7280', lineHeight: 1.5 }}>
+          MEOW TOPUP เป็นร้านค้าตัวแทนจำหน่ายอิสระ ไม่ได้เป็นเว็บไซต์ทางการหรือมีความเกี่ยวข้องกับผู้พัฒนาเกมใด ๆ ชื่อเกม โลโก้ และเครื่องหมายการค้าทั้งหมดเป็นทรัพย์สินของเจ้าของลิขสิทธิ์นั้น ๆ • ติดต่อแอดมินเฉพาะ LINE OA @462piycg เท่านั้น
         </p>
               <div style={{ marginTop: '12px', textAlign: 'center' }}>
           {!user && (
