@@ -6871,7 +6871,7 @@ const [authMode, setAuthMode] = useState('login');
                       </div>
                     </div>
                   );
-                      })
+                      })}
                     </div>
                   </div>
                 );
