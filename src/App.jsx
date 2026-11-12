@@ -2685,94 +2685,46 @@ const [authMode, setAuthMode] = useState('login');
     }
   };
 
-  // ไอคอนสกุลเงิน/เพชร/ตั๋ว/กล่องสุ่มเฉพาะเกมบนการ์ดแพ็กเกจ (SVG วาดเอง ปลอดลิขสิทธิ์ 100%)
+  // ไอคอนสกุลเงิน/เพชร/ตั๋ว/กล่องสุ่ม 3D จากโฟลเดอร์ public/images/ (ปลอดลิขสิทธิ์ 100%)
   const renderPackageCurrencyIcon = (gameId, pkgName = '') => {
     const n = String(pkgName).toLowerCase();
-    const isTicket = n.includes('ตั๋ว') || n.includes('ticket');
-    const isChestOrSupply = n.includes('เสบียง') || n.includes('กล่อง') || n.includes('chest') || n.includes('case') || n.includes('supplies') || n.includes('bazaar') || n.includes('lucky') || n.includes('สมบัติ') || n.includes('เบาะแส') || n.includes('แรงบันดาลใจ') || n.includes('treasures');
-    const isPassOrMember = n.includes('pass') || n.includes('พาส') || n.includes('สมาชิก') || n.includes('รายสัปดาห์') || n.includes('รายเดือน') || n.includes('กองทุน') || n.includes('fund') || n.includes('เติบโต') || n.includes('เลเวล') || n.includes('เชียร์') || n.includes('ความทรงจำ') || n.includes('ผู้เล่นใหม่') || n.includes('select') || n.includes('razer');
+    const isTicketOrPass = n.includes('ตั๋ว') || n.includes('ticket') || n.includes('pass') || n.includes('พาส') || n.includes('สมาชิก') || n.includes('รายสัปดาห์') || n.includes('รายเดือน') || n.includes('กองทุน') || n.includes('fund') || n.includes('เติบโต') || n.includes('เลเวล') || n.includes('เชียร์') || n.includes('ความทรงจำ') || n.includes('ผู้เล่นใหม่') || n.includes('select') || n.includes('razer');
+    const isChest = n.includes('เสบียง') || n.includes('กล่อง') || n.includes('chest') || n.includes('case') || n.includes('supplies') || n.includes('bazaar') || n.includes('lucky') || n.includes('สมบัติ') || n.includes('เบาะแส') || n.includes('แรงบันดาลใจ') || n.includes('treasures');
 
-    if (isTicket) {
-      return (
-        <span style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(249,115,22,0.3), rgba(234,88,12,0.12))', border: '1px solid rgba(251,146,60,0.65)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M3 8a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 000 4v2a2 2 0 01-2 2H5a2 2 0 01-2-2v-2a2 2 0 000-4V8z" fill="#fb923c" fillOpacity="0.28" stroke="#fb923c" strokeWidth="1.8"/>
-            <path d="M12 8l1.1 2.2 2.4.3-1.7 1.7.4 2.4-2.2-1.1-2.2 1.1.4-2.4-1.7-1.7 2.4-.3L12 8z" fill="#fde047"/>
-          </svg>
-        </span>
-      );
+    let imgFile = 'coin.png';
+    if (isChest) {
+      imgFile = 'chest.png';
+    } else if (isTicketOrPass) {
+      imgFile = 'pass.png';
+    } else if (gameId === 'rov') {
+      imgFile = 'coupon.png';
+    } else if (gameId === 'valorant') {
+      imgFile = 'vp.png';
+    } else if (gameId === 'identityv') {
+      imgFile = 'echo.png';
+    } else if (gameId === 'swordofjustice') {
+      imgFile = 'jade.png';
+    } else if (['freefire', 'mlbb', 'heartopia', 'haikyu'].includes(gameId)) {
+      imgFile = 'diamond.png';
+    } else {
+      imgFile = 'coin.png';
     }
-    if (isChestOrSupply) {
-      return (
-        <span style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(16,185,129,0.28), rgba(5,150,105,0.12))', border: '1px solid rgba(52,211,153,0.6)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="8" width="18" height="11" rx="2.5" fill="#34d399" fillOpacity="0.25" stroke="#34d399" strokeWidth="1.8"/>
-            <path d="M3 12h18M9 8V6a3 3 0 016 0v2" stroke="#6ee7b7" strokeWidth="1.8" strokeLinecap="round"/>
-            <circle cx="12" cy="14.5" r="1.5" fill="#fde047"/>
-          </svg>
-        </span>
-      );
-    }
-    if (isPassOrMember) {
-      return (
-        <span style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(245,158,11,0.3), rgba(217,119,6,0.12))', border: '1px solid rgba(251,191,36,0.65)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M4 17l2-9 6 4 6-4 2 9H4z" fill="#fbbf24" fillOpacity="0.3" stroke="#fbbf24" strokeWidth="1.8" strokeLinejoin="round"/>
-            <circle cx="12" cy="6" r="1.5" fill="#fde68a"/>
-          </svg>
-        </span>
-      );
-    }
-    if (gameId === 'rov') {
-      return (
-        <span style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(59,130,246,0.32), rgba(37,99,235,0.12))', border: '1px solid rgba(96,165,250,0.7)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <polygon points="12,2 20,8 17,21 7,21 4,8" fill="#60a5fa" fillOpacity="0.35" stroke="#93c5fd" strokeWidth="1.8" strokeLinejoin="round"/>
-            <polygon points="12,5 16,10 12,18 8,10" fill="#dbeafe" fillOpacity="0.75"/>
-          </svg>
-        </span>
-      );
-    }
-    if (gameId === 'valorant') {
-      return (
-        <span style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(244,63,94,0.32), rgba(225,29,72,0.12))', border: '1px solid rgba(251,113,133,0.7)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <polygon points="12,3 21,12 12,21 3,12" fill="#f43f5e" fillOpacity="0.32" stroke="#fb7185" strokeWidth="1.8" strokeLinejoin="round"/>
-            <polygon points="12,7 16,12 12,17 8,12" fill="#fda4af"/>
-          </svg>
-        </span>
-      );
-    }
-    if (['freefire', 'mlbb', 'heartopia', 'haikyu', 'swordofjustice'].includes(gameId)) {
-      const color = gameId === 'heartopia' ? '#f472b6' : gameId === 'swordofjustice' ? '#34d399' : gameId === 'haikyu' ? '#a78bfa' : '#38bdf8';
-      return (
-        <span style={{ width: '34px', height: '34px', borderRadius: '10px', background: `linear-gradient(135deg, ${color}38, ${color}12)`, border: `1px solid ${color}88`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M6 4h12l4 6-10 11L2 10l4-6z" fill={color} fillOpacity="0.35" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/>
-            <path d="M2 10h20M12 21L8.5 10 12 4l3.5 6L12 21z" stroke="#ffffff" strokeOpacity="0.7" strokeWidth="1.3" strokeLinejoin="round"/>
-          </svg>
-        </span>
-      );
-    }
-    if (gameId === 'identityv') {
-      return (
-        <span style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(168,85,247,0.32), rgba(126,34,206,0.12))', border: '1px solid rgba(192,132,252,0.7)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="8.5" fill="#c084fc" fillOpacity="0.28" stroke="#c084fc" strokeWidth="1.8"/>
-            <polygon points="12,6 16,12 12,18 8,12" fill="#e9d5ff" fillOpacity="0.8"/>
-          </svg>
-        </span>
-      );
-    }
-    // Gold Coins / UC / CP / Bonds / RC (PUBG, CODM, Blood Strike, Delta Force, Undawn, MH Outlanders, Arena Breakout)
+
     return (
-      <span style={{ width: '34px', height: '34px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(250,204,21,0.32), rgba(202,138,4,0.12))', border: '1px solid rgba(250,204,21,0.65)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="8.5" fill="#facc15" fillOpacity="0.32" stroke="#facc15" strokeWidth="1.8"/>
-          <circle cx="12" cy="12" r="4.8" stroke="#fef08a" strokeWidth="1.4"/>
-          <path d="M12 9.5v5M10.5 11h3" stroke="#fef08a" strokeWidth="1.4" strokeLinecap="round"/>
-        </svg>
-      </span>
+      <img
+        src={`/images/${imgFile}`}
+        alt={pkgName || gameId}
+        style={{
+          width: '38px',
+          height: '38px',
+          borderRadius: '10px',
+          objectFit: 'cover',
+          flexShrink: 0,
+          border: '1px solid rgba(255,255,255,0.14)',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.45)',
+          backgroundColor: '#0b1120'
+        }}
+      />
     );
   };
 
