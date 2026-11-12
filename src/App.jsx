@@ -1605,14 +1605,6 @@ const [authMode, setAuthMode] = useState('login');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  useEffect(() => {
-    if (!showCheckoutModal || checkoutStep !== 2) return;
-    setQrTimeLeft(900);
-    const timer = setInterval(() => {
-      setQrTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [showCheckoutModal, checkoutStep]);
 
   const formatQrCountdown = (secs) => {
     const m = Math.floor(secs / 60);
@@ -3336,6 +3328,16 @@ const [authMode, setAuthMode] = useState('login');
 
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState(1);
+
+  useEffect(() => {
+    if (!showCheckoutModal || checkoutStep !== 2) return;
+    setQrTimeLeft(900);
+    const timer = setInterval(() => {
+      setQrTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [showCheckoutModal, checkoutStep]);
+
   const [checkoutPassword, setCheckoutPassword] = useState('');
   const [showCheckoutPassword, setShowCheckoutPassword] = useState(false);
   const [checkoutPasswordError, setCheckoutPasswordError] = useState('');
