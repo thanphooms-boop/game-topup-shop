@@ -1950,6 +1950,56 @@ const [authMode, setAuthMode] = useState('login');
   ]);
   const [giftCodes, setGiftCodes] = useState([]);
 
+  // ระบบเปลี่ยนหน้าแบบ SPA แยก URL รายเกม (/game/<id>) รองรับปุ่ม Back ของเบราว์เซอร์และแชร์ลิงก์ตรง
+  const navigateToGame = (game) => {
+    if (game) {
+      setActiveTab('shop');
+      setSelectedGame(game);
+      setSelectedPackage(null);
+      setPackageQuantity(1);
+      setPlayerId('');
+      const targetPath = `/game/${encodeURIComponent(game.id)}`;
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({ gameId: game.id }, '', targetPath);
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setSelectedGame(null);
+      if (window.location.pathname.startsWith('/game/')) {
+        window.history.pushState({ gameId: null }, '', '/');
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  useEffect(() => {
+    const syncFromUrl = () => {
+      const match = window.location.pathname.match(/^\/game\/([^/]+)\/?$/);
+      if (match) {
+        const gid = decodeURIComponent(match[1]);
+        const found = gamesData.find((g) => g.id === gid);
+        if (found) {
+          setActiveTab('shop');
+          setSelectedGame(found);
+          setSelectedPackage(null);
+          setPackageQuantity(1);
+          window.scrollTo(0, 0);
+          return;
+        }
+      }
+      setSelectedGame(null);
+    };
+    syncFromUrl();
+    window.addEventListener('popstate', syncFromUrl);
+    return () => window.removeEventListener('popstate', syncFromUrl);
+  }, [gamesData]);
+
+  useEffect(() => {
+    document.title = selectedGame
+      ? `เติมเกม ${selectedGame.name} | MEOW TOPUP`
+      : 'MEOW TOPUP - เติมเกมออนไลน์อัตโนมัติ 24 ชม.';
+  }, [selectedGame]);
+
   useEffect(() => {
     const giftCodesRef = ref(db, 'giftCodes');
     const unsubscribe = onValue(giftCodesRef, (snapshot) => {
@@ -5544,7 +5594,7 @@ const [authMode, setAuthMode] = useState('login');
       }}>
         {/* ROW 1: Logo (Left) + Top Actions (Right: Theme Toggle + Nav Pills) */}
         <div className="meow-header-row-1">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }} onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }} onClick={() => { setActiveTab('shop'); navigateToGame(null); }}>
             <div style={{ 
               width: '42px', height: '42px', borderRadius: '14px', 
               background: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)', 
@@ -5656,7 +5706,7 @@ const [authMode, setAuthMode] = useState('login');
                 <span className="meow-theme-label">{isDarkMode ? 'โหมดมืด' : 'โหมดสว่าง'}</span>
               </button>
 
-              <button className="meow-nav-btn" onClick={() => { setActiveTab('shop'); setSelectedGame(null); }} style={{ background: activeTab === 'shop' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'shop' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '7px 14px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '11px', boxShadow: activeTab === 'shop' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)', flexShrink: 0 }}>🐱 หน้าร้าน</button>
+              <button className="meow-nav-btn" onClick={() => { setActiveTab('shop'); navigateToGame(null); }} style={{ background: activeTab === 'shop' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'shop' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '7px 14px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '11px', boxShadow: activeTab === 'shop' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)', flexShrink: 0 }}>🐱 หน้าร้าน</button>
               
               {user && (
                 <button className="meow-nav-btn" onClick={() => setActiveTab('track')} style={{ background: activeTab === 'track' ? 'linear-gradient(135deg, #f97316, #ec4899)' : '#ffffff', color: activeTab === 'track' ? '#ffffff' : '#475569', border: '2px solid #fed7aa', padding: '7px 14px', borderRadius: '12px', fontWeight: '900', cursor: 'pointer', fontSize: '11px', boxShadow: activeTab === 'track' ? '0 4px 15px rgba(249, 115, 22, 0.35)' : '0 2px 6px rgba(0,0,0,0.04)', flexShrink: 0 }}>📋 เช็คสถานะ</button>
@@ -6083,7 +6133,7 @@ const [authMode, setAuthMode] = useState('login');
                         alert(`⚠️ ขออภัย ขณะนี้สต็อกของเกม "${game.name}" หมดชั่วคราว ทางร้านกำลังเร่งเติมสต็อก กรุณาเลือกรอหรือเติมเกมอื่นแทนครับ`);
                         return;
                       }
-                      setSelectedGame(game); setSelectedPackage(null); setPackageQuantity(1); setPlayerId('');
+                      navigateToGame(game);
                     }} 
                     style={{
                       opacity: isOutOfStock ? 0.78 : 1,
@@ -6192,7 +6242,7 @@ const [authMode, setAuthMode] = useState('login');
 
         {activeTab === 'shop' && selectedGame && (
           <div className="meow-game-detail-card" style={{ backgroundColor: 'rgba(15, 23, 42, 0.98)', borderRadius: '28px', padding: '35px', border: '1.5px solid rgba(147, 51, 234, 0.35)', boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7)' }}>
-            <button onClick={() => setSelectedGame(null)} style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#fb923c', padding: '8px 18px', borderRadius: '12px', cursor: 'pointer', marginBottom: '24px', fontWeight: '900', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <button onClick={() => navigateToGame(null)} style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#fb923c', padding: '8px 18px', borderRadius: '12px', cursor: 'pointer', marginBottom: '24px', fontWeight: '900', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span>🐾</span>
               <span>← กลับไปหน้าเลือกเกม</span>
             </button>
@@ -6982,7 +7032,7 @@ const [authMode, setAuthMode] = useState('login');
                 </button>
                 <button 
                   type="button"
-                  onClick={() => { setActiveTab('shop'); setSelectedGame(null); }}
+                  onClick={() => { setActiveTab('shop'); navigateToGame(null); }}
                   style={{ 
                     backgroundColor: isDarkMode ? '#374151' : '#f1f5f9', 
                     color: isDarkMode ? '#ffffff' : '#475569', 
@@ -11607,7 +11657,7 @@ const [authMode, setAuthMode] = useState('login');
                   type="button" 
                   onClick={() => {
                     setDeliveredStockModal(null);
-                    setSelectedGame(null);
+                    navigateToGame(null);
                     setActiveTab('track');
                   }} 
                   style={{ flex: 1.2, backgroundColor: '#10b981', color: '#ffffff', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', boxShadow: '0 0 15px rgba(16,185,129,0.4)' }}
