@@ -10759,11 +10759,6 @@ const [authMode, setAuthMode] = useState('login');
                           ) : (
                             <option value="qrcode" disabled style={{ color: '#ef4444' }}>โอนเงินธนาคาร (KBank / พร้อมเพย์) - 🔴 ปิดรับชั่วคราว</option>
                           )}
-                          {isChillpayWalletOpen ? (
-                            <option value="chillpay">⚡ QR พร้อมเพย์ อัตโนมัติ (ChillPay - ไม่ต้องแนบสลิป)</option>
-                          ) : (
-                            <option value="chillpay" disabled style={{ color: '#ef4444' }}>⚡ QR พร้อมเพย์ อัตโนมัติ (ChillPay - ไม่ต้องแนบสลิป) - 🔴 ปิดรับชั่วคราว</option>
-                          )}
                           {isTrueWalletOpen ? (
                             <option value="true">TrueMoney Wallet (สแกนพร้อมเพย์ หรือโอนเบอร์)</option>
                           ) : (
