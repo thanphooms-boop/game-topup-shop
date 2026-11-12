@@ -2747,27 +2747,27 @@ const [authMode, setAuthMode] = useState('login');
   };
 
   // ไอคอนสกุลเงิน/เพชร/ตั๋ว/กล่องสุ่ม 3D จากโฟลเดอร์ public/images/ (ปลอดลิขสิทธิ์ 100%)
-  // ธีมตกแต่งหน้าเลือกแพ็คเกจแยกตามเอกลักษณ์ของแต่ละเกม
+  // ธีมตกแต่งหน้าเลือกแพ็คเกจแยกตามเอกลักษณ์ของแต่ละเกม (ทั้งพื้นหลังใหญ่และธีมการ์ดแพ็ค)
   const getGameTheme = (gameId) => {
     const themes = {
-      rov: { accent: '#f59e0b', secondary: '#a855f7', priceColor: '#fbbf24', tagline: '⚔️ MOBA 5v5 • คูปองเข้าไวอัตโนมัติ' },
-      freefire: { accent: '#f97316', secondary: '#38bdf8', priceColor: '#38bdf8', tagline: '🔥 Battle Royale • เพชรเข้าตรง UID' },
-      pubg: { accent: '#eab308', secondary: '#f59e0b', priceColor: '#facc15', tagline: '🪖 สมรภูมิ Erangel • UC แท้ 100%' },
-      mlbb: { accent: '#3b82f6', secondary: '#06b6d4', priceColor: '#38bdf8', tagline: '⚡ MOBA 5v5 • เพชรเข้าไวทันใจ' },
-      arenabreakout: { accent: '#f59e0b', secondary: '#94a3b8', priceColor: '#fbbf24', tagline: '🎯 Tactical Extraction • Bonds & เซฟ' },
-      swordofjustice: { accent: '#10b981', secondary: '#fbbf24', priceColor: '#34d399', tagline: '🏮 ยุทธภพจอมยุทธ์ • หยกลวดลาย SEA' },
-      valorant: { accent: '#ff4655', secondary: '#f43f5e', priceColor: '#fb7185', tagline: '🎯 Tactical 5v5 • Riot ID ไทย' },
-      heartopia: { accent: '#f472b6', secondary: '#fb7185', priceColor: '#f472b6', tagline: '💖 Cozy World • เพชรหัวใจ & สมาชิก' },
-      mhoutlanders: { accent: '#dc2626', secondary: '#f59e0b', priceColor: '#fb923c', tagline: '🐉 ออกล่ามอนสเตอร์ยักษ์ • Crest Coin' },
-      identityv: { accent: '#e11d48', secondary: '#a855f7', priceColor: '#fda4af', tagline: '🕯️ คฤหาสน์ 1v4 • Echoes & แพ็คเกจ' },
-      codm: { accent: '#eab308', secondary: '#38bdf8', priceColor: '#facc15', tagline: '🎖️ สมรภูมิ FPS • CP เติมตรง UID' },
-      bloodstrike: { accent: '#ef4444', secondary: '#f59e0b', priceColor: '#fbbf24', tagline: '🩸 FPS Battle Royale • Gold & Pass' },
-      deltaforce: { accent: '#06b6d4', secondary: '#3b82f6', priceColor: '#22d3ee', tagline: '🚁 ปฏิบัติการพิเศษ • Delta Coin Garena' },
-      undawn: { accent: '#f97316', secondary: '#eab308', priceColor: '#fb923c', tagline: '🧟 เอาชีวิตรอด Open World • RC เติมไว' },
-      haikyu: { accent: '#fb923c', secondary: '#38bdf8', priceColor: '#fbbf24', tagline: '🏐 คู่ตบฟ้าประทาน • เพชรรุ้ง & ตั๋ว' },
-      razergold_card: { accent: '#22c55e', secondary: '#eab308', priceColor: '#4ade80', tagline: '💳 บัตร e-Pin แท้ • ส่งรหัส PIN ทันที' },
+      rov: { accent: '#f59e0b', secondary: '#a855f7', priceColor: '#fbbf24', bgFrom: '#1f1035', bgMid: '#150c24', bgTo: '#0b0814', tagline: '⚔️ MOBA 5v5 • คูปองเข้าไวอัตโนมัติ' },
+      freefire: { accent: '#f97316', secondary: '#38bdf8', priceColor: '#38bdf8', bgFrom: '#261209', bgMid: '#15101b', bgTo: '#090d16', tagline: '🔥 Battle Royale • เพชรเข้าตรง UID' },
+      pubg: { accent: '#eab308', secondary: '#f59e0b', priceColor: '#facc15', bgFrom: '#211b08', bgMid: '#15130a', bgTo: '#0b0b08', tagline: '🪖 สมรภูมิ Erangel • UC แท้ 100%' },
+      mlbb: { accent: '#3b82f6', secondary: '#06b6d4', priceColor: '#38bdf8', bgFrom: '#0b1c3a', bgMid: '#0b1428', bgTo: '#070b14', tagline: '⚡ MOBA 5v5 • เพชรเข้าไวทันใจ' },
+      arenabreakout: { accent: '#f59e0b', secondary: '#94a3b8', priceColor: '#fbbf24', bgFrom: '#1c1912', bgMid: '#131314', bgTo: '#090a0c', tagline: '🎯 Tactical Extraction • Bonds & เซฟ' },
+      swordofjustice: { accent: '#10b981', secondary: '#fbbf24', priceColor: '#34d399', bgFrom: '#06261c', bgMid: '#081a15', bgTo: '#060e0b', tagline: '🏮 ยุทธภพจอมยุทธ์ • หยกลวดลาย SEA' },
+      valorant: { accent: '#ff4655', secondary: '#f43f5e', priceColor: '#fb7185', bgFrom: '#2a0a12', bgMid: '#190910', bgTo: '#0b070a', tagline: '🎯 Tactical 5v5 • Riot ID ไทย' },
+      heartopia: { accent: '#f472b6', secondary: '#fb7185', priceColor: '#f472b6', bgFrom: '#2e1024', bgMid: '#1c0c19', bgTo: '#0e070d', tagline: '💖 Cozy World • เพชรหัวใจ & สมาชิก' },
+      mhoutlanders: { accent: '#dc2626', secondary: '#f59e0b', priceColor: '#fb923c', bgFrom: '#290d0c', bgMid: '#1a0c0a', bgTo: '#0c0807', tagline: '🐉 ออกล่ามอนสเตอร์ยักษ์ • Crest Coin' },
+      identityv: { accent: '#e11d48', secondary: '#a855f7', priceColor: '#fda4af', bgFrom: '#260b18', bgMid: '#170a14', bgTo: '#0b060a', tagline: '🕯️ คฤหาสน์ 1v4 • Echoes & แพ็คเกจ' },
+      codm: { accent: '#eab308', secondary: '#38bdf8', priceColor: '#facc15', bgFrom: '#1d190b', bgMid: '#121316', bgTo: '#090a0d', tagline: '🎖️ สมรภูมิ FPS • CP เติมตรง UID' },
+      bloodstrike: { accent: '#ef4444', secondary: '#f59e0b', priceColor: '#fbbf24', bgFrom: '#2b0b0c', bgMid: '#190b0c', bgTo: '#0b0708', tagline: '🩸 FPS Battle Royale • Gold & Pass' },
+      deltaforce: { accent: '#06b6d4', secondary: '#3b82f6', priceColor: '#22d3ee', bgFrom: '#07222c', bgMid: '#081620', bgTo: '#060b10', tagline: '🚁 ปฏิบัติการพิเศษ • Delta Coin Garena' },
+      undawn: { accent: '#f97316', secondary: '#eab308', priceColor: '#fb923c', bgFrom: '#261409', bgMid: '#18100a', bgTo: '#0c0907', tagline: '🧟 เอาชีวิตรอด Open World • RC เติมไว' },
+      haikyu: { accent: '#fb923c', secondary: '#38bdf8', priceColor: '#fbbf24', bgFrom: '#261509', bgMid: '#14111d', bgTo: '#090b12', tagline: '🏐 คู่ตบฟ้าประทาน • เพชรรุ้ง & ตั๋ว' },
+      razergold_card: { accent: '#22c55e', secondary: '#eab308', priceColor: '#4ade80', bgFrom: '#072413', bgMid: '#08160e', bgTo: '#060b08', tagline: '💳 บัตร e-Pin แท้ • ส่งรหัส PIN ทันที' },
     };
-    return themes[gameId] || { accent: '#a855f7', secondary: '#38bdf8', priceColor: '#38bdf8', tagline: '⚡ เติมเกมอัตโนมัติ 24 ชม.' };
+    return themes[gameId] || { accent: '#a855f7', secondary: '#38bdf8', priceColor: '#38bdf8', bgFrom: '#181030', bgMid: '#100d20', bgTo: '#080812', tagline: '⚡ เติมเกมอัตโนมัติ 24 ชม.' };
   };
 
   const renderPackageCurrencyIcon = (gameId, pkgName = '') => {
@@ -2806,7 +2806,11 @@ const [authMode, setAuthMode] = useState('login');
     return (
       <img
         src={`/images/${imgFile}`}
-        alt={pkgName || gameId}
+        alt=""
+        onError={(e) => {
+          e.currentTarget.onerror = null;
+          e.currentTarget.style.display = 'none';
+        }}
         style={{
           width: '38px',
           height: '38px',
@@ -6275,7 +6279,43 @@ const [authMode, setAuthMode] = useState('login');
         {activeTab === 'shop' && selectedGame && (() => {
           const gameTheme = getGameTheme(selectedGame.id);
           return (
-          <div className="meow-game-detail-card" style={{ backgroundColor: 'rgba(15, 23, 42, 0.98)', borderRadius: '28px', padding: '35px', border: `1.5px solid ${gameTheme.accent}55`, boxShadow: `0 25px 60px rgba(0, 0, 0, 0.75), 0 0 40px ${gameTheme.accent}18`, position: 'relative', overflow: 'hidden' }}>
+          <div className="meow-game-detail-card" style={{ background: `linear-gradient(160deg, ${gameTheme.bgFrom} 0%, ${gameTheme.bgMid} 48%, ${gameTheme.bgTo} 100%)`, borderRadius: '28px', padding: '35px', border: `1.5px solid ${gameTheme.accent}66`, boxShadow: `0 25px 60px rgba(0, 0, 0, 0.8), 0 0 55px ${gameTheme.accent}24`, position: 'relative', overflow: 'hidden' }}>
+            {/* พื้นหลังลายเกมและแสงธีมประจำเกมทั่วทั้งหน้า */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '420px',
+              backgroundImage: `url(${selectedGame.image})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center top',
+              opacity: 0.12,
+              filter: 'blur(26px) saturate(1.4)',
+              maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+              pointerEvents: 'none'
+            }} />
+            <div style={{
+              position: 'absolute',
+              top: '-90px',
+              right: '-90px',
+              width: '320px',
+              height: '320px',
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${gameTheme.accent}26 0%, transparent 70%)`,
+              pointerEvents: 'none'
+            }} />
+            <div style={{
+              position: 'absolute',
+              bottom: '-100px',
+              left: '-80px',
+              width: '280px',
+              height: '280px',
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${gameTheme.secondary}1f 0%, transparent 70%)`,
+              pointerEvents: 'none'
+            }} />
             <button onClick={() => navigateToGame(null)} style={{ backgroundColor: '#1e293b', border: '1px solid #334155', color: '#fb923c', padding: '8px 18px', borderRadius: '12px', cursor: 'pointer', marginBottom: '24px', fontWeight: '900', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
               <span>🐾</span>
               <span>← กลับไปหน้าเลือกเกม</span>
