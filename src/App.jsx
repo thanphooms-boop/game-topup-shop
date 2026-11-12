@@ -6671,16 +6671,56 @@ const [authMode, setAuthMode] = useState('login');
                         setPackageQuantity(1); 
                       }} 
                       style={{ 
-                        background: isPkgOutOfStock ? 'rgba(239, 68, 68, 0.1)' : isSelected ? `linear-gradient(135deg, ${gameTheme.accent}28 0%, rgba(15, 23, 42, 0.95) 100%)` : `linear-gradient(160deg, rgba(15, 23, 42, 0.95) 0%, #030712 100%)`, 
-                        border: isPkgOutOfStock ? '1.5px solid #ef4444' : isSelected ? `2px solid ${gameTheme.accent}` : `1px solid ${gameTheme.accent}33`, 
+                        background: isPkgOutOfStock
+                          ? 'rgba(239, 68, 68, 0.12)'
+                          : isSelected
+                            ? `linear-gradient(135deg, ${gameTheme.accent}42 0%, ${gameTheme.secondary}28 50%, rgba(9, 13, 24, 0.95) 100%)`
+                            : `linear-gradient(145deg, ${gameTheme.accent}1f 0%, ${gameTheme.secondary}12 48%, rgba(7, 11, 22, 0.96) 100%)`, 
+                        border: isPkgOutOfStock ? '1.5px solid #ef4444' : isSelected ? `2px solid ${gameTheme.accent}` : `1.5px solid ${gameTheme.accent}48`, 
                         borderRadius: '18px', padding: '16px', 
                         cursor: isPkgOutOfStock ? 'not-allowed' : 'pointer',
                         transition: 'all 0.25s', position: 'relative', overflow: 'hidden',
                         opacity: isPkgOutOfStock ? 0.75 : 1,
-                        boxShadow: isSelected ? `0 0 24px ${gameTheme.accent}55` : `0 4px 14px rgba(0,0,0,0.35)`
+                        boxShadow: isSelected ? `0 0 28px ${gameTheme.accent}66, inset 0 1px 0 ${gameTheme.accent}66` : `0 6px 18px rgba(0,0,0,0.45), inset 0 1px 0 ${gameTheme.accent}28`
                       }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                      {/* พื้นหลังลายเกมจางๆ + แสงเรืองมุมการ์ดเฉพาะเกม */}
+                      {!isPkgOutOfStock && (
+                        <>
+                          <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            backgroundImage: `url(${selectedGame.image})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            opacity: isSelected ? 0.18 : 0.10,
+                            filter: 'blur(4px) saturate(1.25)',
+                            pointerEvents: 'none'
+                          }} />
+                          <div style={{
+                            position: 'absolute',
+                            top: '-28px',
+                            right: '-28px',
+                            width: '110px',
+                            height: '110px',
+                            borderRadius: '50%',
+                            background: `radial-gradient(circle, ${gameTheme.accent}44 0%, transparent 70%)`,
+                            pointerEvents: 'none'
+                          }} />
+                          <div style={{
+                            position: 'absolute',
+                            left: 0,
+                            top: '14%',
+                            bottom: '14%',
+                            width: '3.5px',
+                            borderRadius: '0 4px 4px 0',
+                            background: `linear-gradient(180deg, ${gameTheme.accent}, ${gameTheme.secondary})`,
+                            opacity: isSelected ? 1 : 0.65,
+                            pointerEvents: 'none'
+                          }} />
+                        </>
+                      )}
+                      <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                           {renderPackageCurrencyIcon(selectedGame.id, pkg.name)}
                           <div style={{ fontSize: '15px', fontWeight: 'bold', color: isPkgOutOfStock ? '#fca5a5' : '#ffffff', lineHeight: 1.2 }}>
@@ -6697,12 +6737,12 @@ const [authMode, setAuthMode] = useState('login');
                           {isPkgOutOfStock ? '🔴 สต็อกหมด' : '⚡ เติมตรง 100%'}
                         </span>
                       </div>
-<div style={{ fontSize: '12px', color: isPkgOutOfStock ? '#9ca3af' : '#34d399', marginBottom: '8px' }}>
+<div style={{ position: 'relative', zIndex: 1, fontSize: '12px', color: isPkgOutOfStock ? '#9ca3af' : '#34d399', marginBottom: '8px' }}>
                         {isPkgOutOfStock ? '⚠️ สินค้าหมดสต็อกชั่วคราว' : (user ? `สิทธิพิเศษ: ${pkg.bonus}` : (pkg.catCoinReward ? `🐱🪙 สมัครสมาชิกรับ +${pkg.catCoinReward} Coin ฟรี` : `สิทธิพิเศษ: ${pkg.bonus}`))}
                       </div>
 
                       {/* แสดงราคาขาย พร้อมราคาเดิมขีดฆ่า และป้ายประหยัดเงิน */}
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
+                      <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' }}>
                         <span style={{ fontSize: '19px', fontWeight: '900', color: isPkgOutOfStock ? '#9ca3af' : gameTheme.priceColor }}>
                           ฿{pkg.price.toLocaleString()}
                         </span>
