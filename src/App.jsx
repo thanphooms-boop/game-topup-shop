@@ -11,7 +11,6 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [successOrder, setSuccessOrder] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('shop');
 
   const games = [
     { id: 'valorant', name: 'VALORANT', category: 'PC Game', image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=500&auto=format&fit=crop&q=60', popular: true },
@@ -50,6 +49,12 @@ export default function App() {
       { id: 'p2', name: '325 UC', price: 149, originalPrice: 169 },
       { id: 'p3', name: '660 UC', price: 299, originalPrice: 329 },
       { id: 'p4', name: '1,800 UC', price: 790, originalPrice: 850 }
+    ],
+    mlbb: [
+      { id: 'm1', name: '84 Diamonds', price: 35, originalPrice: 39 },
+      { id: 'm2', name: '296 Diamonds', price: 125, originalPrice: 139 },
+      { id: 'm3', name: '568 Diamonds', price: 235, originalPrice: 259 },
+      { id: 'm4', name: '1,163 Diamonds', price: 469, originalPrice: 499 }
     ]
   };
 
@@ -87,9 +92,9 @@ export default function App() {
   const filteredGames = games.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()) || g.category.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950/30 to-slate-900 text-slate-100 pb-16">
+    <div className="min-h-screen bg-slate-950 text-slate-100 pb-16">
       {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-900/80 border-b border-purple-500/20 px-4 lg:px-8 py-3 flex items-center justify-between">
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-900/90 border-b border-purple-500/20 px-4 lg:px-8 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-3 cursor-pointer" onClick={() => { setSelectedGame(null); setSuccessOrder(null); }}>
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-500 to-purple-600 flex items-center justify-center shadow-lg shadow-pink-500/30 text-2xl">
             🐱
@@ -280,7 +285,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* 3. Quantity Selector (NEW FEATURE) */}
+                {/* 3. Quantity Selector */}
                 <div className="space-y-2">
                   <label className="text-sm font-semibold text-slate-300 flex items-center space-x-2">
                     <span className="w-6 h-6 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center text-xs">3</span>
